@@ -1,0 +1,5 @@
+(print "hello")
+(print 1 2 3)
+(print true)
+(print false)
+(print null)
