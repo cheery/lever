@@ -82,7 +82,7 @@ def read(stream):
     raise Exception("unknown character: " + str(ord(stream.character)))
 
 def issym(ch):
-    return ch.isalpha() or ch in "!%&*+-./<=>?@^_|"
+    return ch.isalpha() or ch in "!%&*+-./:;<=>?@^_|"
 
 def isnum(ch):
     return ch.isdigit()

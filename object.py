@@ -1,12 +1,12 @@
 class Object:
     def invoke(self, argv):
         raise Exception("cannot invoke " + self.repr())
-
-    def __getitem__(self, index):
-        raise Exception("cannot iterate " + self.repr())
-
-    def __len__(self):
-        raise Exception("cannot iterate " + self.repr())
+#
+#    def __getitem__(self, index):
+#        raise Exception("cannot iterate " + self.repr())
+#
+#    def __len__(self):
+#        raise Exception("cannot iterate " + self.repr())
 
 class List(Object):
     def __init__(self, items):
