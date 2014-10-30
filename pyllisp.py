@@ -4,6 +4,7 @@ from reader import WontParse, PartialParse, read_file, read_source
 from rpython.config.translationoption import get_combined_translation_config
 from rpython.rlib.rtimer import read_timestamp
 from rpython.rlib.rstacklet import StackletThread
+from rpython.rlib.objectmodel import we_are_translated
 
 config = get_combined_translation_config(translating=True)
 config.translation.continuation = True
@@ -335,30 +336,30 @@ def interpret(env, expr):
     else:
         return expr
 
-if False:
-    from greenlet import getcurrent, greenlet
-    class StackletThreadShim:
-        def __init__(self, config):
-            self.config = config
-            self.null_handle = getcurrent()
+from greenlet import getcurrent, greenlet
+class StackletThreadShim:
+    def __init__(self, config):
+        self.config = config
+        self.null_handle = getcurrent()
 
-        def get_null_handle(self):
-            return self.null_handle
+    def get_null_handle(self):
+        return self.null_handle
 
-        def new(self, callback):
-            g = greenlet(callback)
-            return g.switch(getcurrent(), 0)
+    def new(self, callback):
+        g = greenlet(callback)
+        return g.switch(getcurrent(), 0)
 
-        def switch(self, handle):
-            return handle.switch(getcurrent())
+    def switch(self, handle):
+        return handle.switch(getcurrent())
 
-        def is_empty_handle(self, handle):
-            return handle.dead
-
-    StackletThread = StackletThreadShim
+    def is_empty_handle(self, handle):
+        return handle.dead
 
 def entry_point(argv):
-    process.stacklet = StackletThread(config)
+    if we_are_translated():
+        process.stacklet = StackletThread(config)
+    else:
+        process.stacklet = StackletThreadShim(config)
     process.current = Greenlet(process.stacklet.get_null_handle(), True)
 
     env = Environment(None, global_scope)
