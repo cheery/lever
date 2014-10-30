@@ -15,7 +15,7 @@ class Object:
         raise Exception("cannot ." + name + "= " + self.repr())
 
     def callattr(self, name, argv):
-        raise Exception("cannot ." + name + "! " + self.repr())
+        return self.getattr(name).invoke(argv)
 #
 #    def __getitem__(self, index):
 #        raise Exception("cannot iterate " + self.repr())
@@ -35,6 +35,11 @@ class List(Object):
 
     def __len__(self):
         return len(self.items)
+
+    def getattr(self, name):
+        if name == 'length':
+            return Integer(len(self.items))
+        return Object.getattr(self, name)
 
     def getitem(self, index):
         assert isinstance(index, Integer)
@@ -93,6 +98,24 @@ class BuiltinFunction(Object):
 
     def repr(self):
         return "<built in function " + self.name + ">"
+
+class Module(Object):
+    def __init__(self, name):
+        self.name = name
+        self.namespace = {}
+        self.frozen = False
+
+    def getattr(self, name):
+        return self.namespace[name]
+
+    def setattr(self, name, value):
+        if self.frozen:
+            raise Exception("cannot ." + name + "= frozen module" + self.name)
+        self.namespace[name] = value
+        return value
+
+    def repr(self):
+        return "<module " + self.name + ">"
 
 true = Constant('true')
 false = Constant('false')
