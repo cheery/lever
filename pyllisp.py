@@ -111,6 +111,40 @@ def pyl_callattr(argv):
     assert isinstance(name, String)
     return argv[0].callattr(name.string, argv[2:len(argv)])
 
+class GetAccessor(Object):
+    def __init__(self, name):
+        self.name = name
+
+    def invoke(self, argv):
+        assert len(argv) == 1
+        return argv[0].getattr(self.name)
+
+    def repr(self):
+        return "." + self.name
+
+class SetAccessor(Object):
+    def __init__(self, name):
+        self.name = name
+
+    def invoke(self, argv):
+        assert len(argv) == 2
+        return argv[0].setattr(self.name, argv[1])
+
+    def repr(self):
+        return "." + self.name + '='
+
+class CallAccessor(Object):
+    def __init__(self, name):
+        self.name = name
+
+    def invoke(self, argv):
+        N = len(argv)
+        assert N >= 1
+        return argv[0].callattr(self.name, argv[1:N])
+
+    def repr(self):
+        return "." + self.name + '!'
+
 global_scope = {
     "print": BuiltinFunction(pyl_print, "print"),
     "apply": BuiltinFunction(pyl_apply, "apply"),
@@ -200,6 +234,13 @@ def interpret(env, expr):
             args.append(interpret(env, expr[i]))
         return callee.invoke(args)
     elif isinstance(expr, Symbol):
+        if expr.string.startswith('.'):
+            N = len(expr.string)
+            if expr.string.endswith('='):
+                return SetAccessor(expr.string[1:max(1, N-1)])
+            if expr.string.endswith('!'):
+                return CallAccessor(expr.string[1:max(1, N-1)])
+            return GetAccessor(expr.string[1:N])
         return env.lookup(expr.string)
     else:
         return expr
