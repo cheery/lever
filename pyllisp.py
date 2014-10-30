@@ -1,6 +1,6 @@
 import sys, os
 from object import Object, List, String, Symbol, Integer, BuiltinFunction, true, false, null
-from reader import read_file
+from reader import WontParse, PartialParse, read_file, read_source
 from rpython.config.translationoption import get_combined_translation_config
 from rpython.rlib.rtimer import read_timestamp
 
@@ -21,15 +21,23 @@ class Environment:
             return self.parent.lookup(name)
         raise Exception(name + " not in scope")
 
+class Return(Exception):
+    def __init__(self, retval):
+        self.retval = retval
+
 class Closure(Object):
     def __init__(self, env, expr):
         self.env = env
         self.expr = expr
         self.arglist = []
+        self.vararg = None
         assert isinstance(expr[1], List)
         for symbol in expr[1]:
             assert isinstance(symbol, Symbol)
-            self.arglist.append(symbol.string)
+            if symbol.string.endswith('...'):
+                self.vararg = symbol.string[0:max(0, len(symbol.string)-3)]
+            else:
+                self.arglist.append(symbol.string)
 
     def invoke(self, argv):
         env = Environment(self.env, self.env.global_scope)
@@ -39,10 +47,17 @@ class Closure(Object):
             env.namespace[self.arglist[i]] = argv[i]
         for i in range(b, c):
             env.namespace[self.arglist[i]] = null
-        retval = null
-        for i in range(2, len(self.expr)):
-            interpret(env, self.expr[i])
-        return retval
+        if self.vararg is not None:
+            varg = []
+            for i in range(c, len(argv)):
+                varg.append(argv[i])
+            env.namespace[self.vararg] = List(varg)
+        try:
+            for i in range(2, len(self.expr)):
+                interpret(env, self.expr[i])
+        except Return as ret:
+            return ret.retval
+        return null
 
     def repr(self):
         return self.expr.repr()
@@ -59,8 +74,52 @@ def pyl_print(argv):
     os.write(1, '\n')
     return null
 
+def pyl_apply(argv):
+    N = len(argv) - 1
+    assert N >= 1
+    args = argv[1:N]
+    varg = argv[N]
+    assert isinstance(varg, List)
+    return argv[0].invoke(args + varg.items)
+
+def pyl_list(argv):
+    return List(argv)
+
+def pyl_getitem(argv):
+    assert len(argv) == 2
+    return argv[0].getitem(argv[1])
+
+def pyl_setitem(argv):
+    assert len(argv) == 3
+    return argv[0].setitem(argv[1], argv[2])
+
+def pyl_getattr(argv):
+    assert len(argv) == 2
+    name = argv[1]
+    assert isinstance(name, String)
+    return argv[0].getattr(name.string)
+
+def pyl_setattr(argv):
+    assert len(argv) == 3
+    name = argv[1]
+    assert isinstance(name, String)
+    return argv[0].setattr(name.string, argv[2])
+
+def pyl_callattr(argv):
+    assert len(argv) >= 2
+    name = argv[1]
+    assert isinstance(name, String)
+    return argv[0].callattr(name.string, argv[2:len(argv)])
+
 global_scope = {
     "print": BuiltinFunction(pyl_print, "print"),
+    "apply": BuiltinFunction(pyl_apply, "apply"),
+    "list": BuiltinFunction(pyl_list, "list"),
+    "[]": BuiltinFunction(pyl_getitem, "[]"),
+    "[]=": BuiltinFunction(pyl_setitem, "[]="),
+    "getattr": BuiltinFunction(pyl_getattr, "getattr"),
+    "setattr": BuiltinFunction(pyl_setattr, "setattr"),
+    "callattr": BuiltinFunction(pyl_callattr, "callattr"),
     "true": true,
     "false": false,
     "null": null,
@@ -111,6 +170,10 @@ def func_macro(env, exprs):
     assert len(exprs) > 2
     return Closure(env, exprs)
 
+def return_macro(env, exprs):
+    assert len(exprs) == 2
+    raise Return(interpret(env, exprs[1]))
+
 def is_false(flag):
     return flag is null or flag is false
 
@@ -120,6 +183,7 @@ macros = {
     '=': letvar_macro,
     ':=': setvar_macro,
     'func': func_macro,
+    'return': return_macro,
 }
 
 
@@ -141,17 +205,40 @@ def interpret(env, expr):
         return expr
 
 def entry_point(argv):
-    print "[STAMP BEGIN] "
-    now = read_timestamp()
-    if len(argv) <= 1:
-        raise Exception("too few arguments")
-    lst = read_file(argv[1])
-    assert isinstance(lst, List)
     env = Environment(None, global_scope)
-    for expr in lst:
-        interpret(env, expr)
-    delta = read_timestamp() - now
-    print "[STAMP NOW] " + str(delta)
+    if len(argv) <= 1:
+        prompt = "pyl> "
+        os.write(1, prompt)
+        source = os.read(0, 4096)
+        while source != "":
+            try:
+                try:
+                    lst = read_source(source)
+                except PartialParse as exc:
+                    os.write(1, " "*len(prompt))
+                    source += os.read(0, 4096)
+                else:
+                    assert isinstance(lst, List)
+                    for expr in lst:
+                        retval = interpret(env, expr)
+                        pyl_print([retval])
+                    os.write(1, prompt)
+                    source = os.read(0, 4096)
+            except Exception as exc:
+                os.write(1, exc.__class__.__name__ + ": " + str(exc) + "\n")
+                os.write(1, prompt)
+                source = os.read(0, 4096)
+        if source == "":
+            os.write(1, "\n")
+    else:
+        #now = read_timestamp()
+        #print "[STAMP BEGIN] "
+        lst = read_file(argv[1])
+        assert isinstance(lst, List)
+        for expr in lst:
+            interpret(env, expr)
+        #delta = read_timestamp() - now
+        #print "[STAMP NOW] " + str(delta)
     return 0
 
 def target(*args):

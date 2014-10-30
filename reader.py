@@ -1,5 +1,11 @@
 from object import List, String, Symbol, Integer
 
+class WontParse(Exception):
+    pass
+
+class PartialParse(WontParse):
+    pass
+
 class Stream:
     def __init__(self, source):
         self.source = source
@@ -31,7 +37,7 @@ def read_source(source):
     lst = []
     while not stream.empty:
         if stream.character == ')':
-            raise Exception("excess right parenthesis")
+            raise WontParse("excess right parenthesis")
         node = read(stream)
         if node is not None:
             lst.append(node)
@@ -47,7 +53,7 @@ def read(stream):
         lst = []
         while stream.character != ')':
             if stream.empty:
-                raise Exception("right parenthesis missing")
+                raise PartialParse("right parenthesis missing")
             node = read(stream)
             if node is not None:
                 lst.append(node)
@@ -69,7 +75,7 @@ def read(stream):
         slurp = False
         while stream.character != '"' or slurp:
             if stream.empty:
-                raise Exception("string terminator missing")
+                raise PartialParse("string terminator missing")
             if slurp:
                 slurp = False
             elif stream.character == '\\':
@@ -79,10 +85,10 @@ def read(stream):
         return String(string)
     if stream.character == ')':
         return None
-    raise Exception("unknown character: " + str(ord(stream.character)))
+    raise WontParse("unknown character: " + str(ord(stream.character)))
 
 def issym(ch):
-    return ch.isalpha() or ch in "!%&*+-./:;<=>?@^_|"
+    return ch.isalpha() or ch in "!%&*+-./:;<=>?@[]^_|"
 
 def isnum(ch):
     return ch.isdigit()

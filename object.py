@@ -1,6 +1,21 @@
 class Object:
     def invoke(self, argv):
         raise Exception("cannot invoke " + self.repr())
+
+    def getitem(self, index):
+        raise Exception("cannot [] " + self.repr())
+
+    def setitem(self, index, value):
+        raise Exception("cannot []= " + self.repr())
+
+    def getattr(self, name):
+        raise Exception("cannot ." + name + " " + self.repr())
+
+    def setattr(self, name, value):
+        raise Exception("cannot ." + name + "= " + self.repr())
+
+    def callattr(self, name, argv):
+        raise Exception("cannot ." + name + "! " + self.repr())
 #
 #    def __getitem__(self, index):
 #        raise Exception("cannot iterate " + self.repr())
@@ -20,6 +35,19 @@ class List(Object):
 
     def __len__(self):
         return len(self.items)
+
+    def getitem(self, index):
+        assert isinstance(index, Integer)
+        if not 0 <= index.value < len(self.items):
+            raise Exception("index out of range")
+        return self.items[index.value]
+
+    def setitem(self, index, value):
+        assert isinstance(index, Integer)
+        if not 0 <= index.value < len(self.items):
+            raise Exception("index out of range")
+        self.items[index.value] = value
+        return value
 
     def repr(self):
         out = []
