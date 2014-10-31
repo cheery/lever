@@ -91,7 +91,7 @@ class Constant(Object):
 class BuiltinFunction(Object):
     def __init__(self, func, name=None):
         self.func = func
-        self.name = name if name is None else func.__name__
+        self.name = name if name is not None else func.__name__
 
     def invoke(self, argv):
         return self.func(argv)
@@ -100,10 +100,10 @@ class BuiltinFunction(Object):
         return "<built in function " + self.name + ">"
 
 class Module(Object):
-    def __init__(self, name):
+    def __init__(self, name, namespace, frozen=False):
         self.name = name
-        self.namespace = {}
-        self.frozen = False
+        self.namespace = namespace
+        self.frozen = frozen
 
     def getattr(self, name):
         return self.namespace[name]

@@ -5,6 +5,7 @@ from rpython.config.translationoption import get_combined_translation_config
 from rpython.rlib.rtimer import read_timestamp
 from rpython.rlib.rstacklet import StackletThread
 from rpython.rlib.objectmodel import we_are_translated
+import ffi
 
 config = get_combined_translation_config(translating=True)
 config.translation.continuation = True
@@ -243,6 +244,7 @@ global_scope = {
     "true": true,
     "false": false,
     "null": null,
+    "ffi": ffi.module,
 }
 
 def cond_macro(env, exprs):
