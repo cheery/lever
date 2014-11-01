@@ -1,11 +1,13 @@
 (= dlopen ffi.dlopen)
 (= cdef   ffi.cdef)
+(= cfunc  ffi.cfunc)
 (= long   ffi.long)
 
 (= lib (dlopen "libSDL.so"))
 
-(cdef lib.SDL_Init long  long)
-(cdef lib.SDL_SetVideoMode long  long long long long)
+
+(cdef lib.SDL_Init         (cfunc long  long))
+(cdef lib.SDL_SetVideoMode (cfunc long  long long long long))
 
 (print "trying out")
 (print "SDL_Init ->" (lib.SDL_Init 65535))
