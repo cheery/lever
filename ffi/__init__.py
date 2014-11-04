@@ -1,13 +1,14 @@
 from object import Object, List, String, Symbol, Integer, BuiltinFunction, Module, true, false, null
-from rpython.rtyper.lltypesystem import rffi, lltype
-from rpython.rlib import jit_libffi, rdynload, clibffi
+from rpython.rlib import rdynload
+from systemv import *
+from api import *
 
-def align(x, a):
-    return x + (a - x % a) % a
-
-def sizeof(tp):
-    assert tp.size is not None, "cannot determine size of opaque type"
-    return tp.size
+#def align(x, a):
+#    return x + (a - x % a) % a
+#
+#def sizeof(tp):
+#    assert tp.size is not None, "cannot determine size of opaque type"
+#    return tp.size
 
 class Library(Object):
     def __init__(self, name):
@@ -37,142 +38,10 @@ class Handle(Object):
 
     def invoke(self, argv):
         assert isinstance(self.tp, CFunc)
-        cfunc = self.tp
-        if cfunc.notready:
-            cfunc.prep_cif()
-            cfunc.notready = False
-        cif = cfunc.cif
-        # Exchange buffer is built for every call. Filled with arguments that are passed to the function.
-        argc = len(argv)
-        assert argc == len(cfunc.argtypes), "cfunc arity must match with the call"
-        exc = lltype.malloc(rffi.CCHARP.TO, cif.exchange_size, flavor='raw')
-        for i in range(argc):
-            offset = rffi.ptradd(exc, cif.exchange_args[i])
-            cfunc.argtypes[i].store(offset, argv[i])
-        jit_libffi.jit_ffi_call(cif, self.pointer, exc)
-        retval = null
-        if isinstance(cfunc.restype, Type):
-            offset = rffi.ptradd(exc, cif.exchange_result)
-            retval = cfunc.restype.load(offset)
-        lltype.free(exc, flavor='raw')
-        return retval
+        return self.tp.ccall(self.pointer, argv)
 
     def repr(self):
         return '<handle ' + self.name + ' from ' + self.lib.name + '>'
-
-class Type(Object):
-    pass
-
-class CFunc(Type):
-    def __init__(self, restype, argtypes):
-        self.restype = restype
-        self.argtypes = argtypes
-        self.size = rffi.sizeof(rffi.VOIDP)
-        self.align = self.size
-        self.cif = lltype.nullptr(jit_libffi.CIF_DESCRIPTION)
-        self.notready = True
-
-    def prep_cif(self):
-        # The cif is initialized with the stuff needed to call the function
-        argc = len(self.argtypes)
-
-        cif = lltype.malloc(jit_libffi.CIF_DESCRIPTION, argc, flavor='raw')
-        # atypes points to an array of ffi_type pointers
-        cif.abi = clibffi.FFI_DEFAULT_ABI
-        cif.atypes = lltype.malloc(clibffi.FFI_TYPE_PP.TO, argc, flavor='raw')
-        for i in range(argc):
-            cif.atypes[i] = self.argtypes[i].cast_to_ffitype()
-        cif.nargs = argc
-        if self.restype is null:
-            cif.rtype = clibffi.ffi_type_void
-        else:
-            cif.rtype = self.restype.cast_to_ffitype()
-
-        exchange_size = argc * rffi.sizeof(rffi.VOIDPP)
-        for i in range(argc):
-            argtype = self.argtypes[i]
-            exchange_size = align(exchange_size, argtype.align)
-            cif.exchange_args[i] = exchange_size
-            exchange_size += sizeof(argtype)
-        cif.exchange_result = exchange_size
-        cif.exchange_result_libffi = exchange_size
-        if self.restype is null:
-            exchange_size += 0
-        elif self.restype:
-            exchange_size += sizeof(self.restype)
-        cif.exchange_size = exchange_size
-
-        jit_libffi.jit_ffi_prep_cif(cif)
-        self.cif = cif
-
-    def cast_to_ffitype(self):
-        return clibffi.ffi_type_pointer
-
-    def repr(self):
-        string = '<cfunc ' + self.restype.repr()
-        for argtype in self.argtypes:
-            string += ' ' + argtype.repr()
-        return string + '>'
-
-class Signed(Type):
-    def __init__(self, size):
-        self.size = size
-        self.align = self.size
-
-    def cast_to_ffitype(self):
-        if self.size == rffi.sizeof(rffi.LONG):
-            return clibffi.cast_type_to_ffitype(rffi.LONG)
-        assert False, "undefined ffi type"
-
-    def load(self, offset):
-        if self.size == rffi.sizeof(rffi.LONG):
-            return Integer(rffi.cast(rffi.LONGP, offset)[0])
-        assert False, "undefined ffi type"
-
-    def store(self, offset, value):
-        if not isinstance(value, Integer):
-            raise Exception("cannot transform to primtype")
-        if self.size == rffi.sizeof(rffi.LONG):
-            pnt = rffi.cast(rffi.LONGP, offset)
-            pnt[0] = rffi.cast(rffi.LONG, value.value)
-        else:
-            assert False, "undefined ffi type"
-
-    def repr(self):
-        return "<signed "+str(8*self.size)+">"
-
-class Pointer(Type):
-    def __init__(self, to):
-        self.to = to
-        self.size = rffi.sizeof(rffi.VOIDP)
-        self.align = self.size
-
-    def cast_to_ffitype(self):
-        return clibffi.ffi_type_pointer
-
-    def load(self, offset):
-        return Memory(self.to, rffi.cast(rffi.VOIDP, offset)[0])
-
-    def store(self, offset, value):
-        # type checking here will most likely reduce some cringes, so add some later.
-        if not isinstance(value, Memory):
-            raise Exception("cannot transform to memory")
-        pnt = rffi.cast(rffi.VOIDP, offset)
-        pnt[0] = value.pointer
-
-    def repr(self):
-        return "<* "+self.to.repr()+">"
-
-class Memory(Object):
-    def __init__(self, tp, pointer):
-        self.tp = tp
-        self.pointer = pointer
-
-    def repr(self):
-        name = self.tp.repr()
-        if self.tp is null:
-            name = 'memory'
-        return "<" + name + " " + str(self.pointer) + ">"
 
 def pyl_dlopen(argv):
     assert len(argv) > 0

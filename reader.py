@@ -65,7 +65,12 @@ def read(stream):
             string += stream.advance()
         return Symbol(string)
     if isnum(stream.character):
-        num = ''
+        num = stream.advance()
+        if num == '0' and stream.character == 'x':
+            stream.advance()
+            while ishex(stream.character):
+                num += stream.advance()
+            return Integer(int(num, 16))
         while isnum(stream.character):
             num += stream.advance()
         return Integer(int(num))
@@ -89,6 +94,9 @@ def read(stream):
 
 def issym(ch):
     return ch.isalpha() or ch in "!%&*+-./:;<=>?@[]^_|"
+
+def ishex(ch):
+    return ch.isdigit() or ch in "abcdefABCDEF"
 
 def isnum(ch):
     return ch.isdigit()

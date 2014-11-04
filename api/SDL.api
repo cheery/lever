@@ -1,0 +1,7 @@
+(Surface = opaque)
+(RGB = struct (r = byte) (g = byte) (b = byte))
+(INIT_VIDEO      = 0x0020)
+(INIT_EVERYTHING = 0xFFFF)
+(Init         = long     SDL_Init         long)
+(SetVideoMode = Surface* SDL_SetVideoMode int  int int int)
+(Quit         = void     SDL_Quit)
