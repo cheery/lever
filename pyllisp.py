@@ -247,6 +247,19 @@ global_scope = {
     "ffi": ffi.module,
 }
 
+def global_builtin(name):
+    def _impl(fn):
+        global_scope[name] = BuiltinFunction(fn, name)
+        return fn
+    return _impl
+
+@global_builtin('read-file')
+def pyl_read_file(argv):
+    assert len(argv) >= 1
+    arg0 = argv.pop(0)
+    assert isinstance(arg0, String)
+    return read_file(arg0.string)
+
 def cond_macro(env, exprs):
     retval = null
     for i in range(1, len(exprs)):

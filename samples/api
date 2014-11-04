@@ -1,0 +1,6 @@
+(= sdl (ffi.dlopen "libSDL.so" (ffi.api (read-file "api/SDL.api"))))
+
+(sdl.Init sdl.INIT_EVERYTHING)
+(= screen (sdl.SetVideoMode 640 480 32 0))
+
+(sdl.Quit)

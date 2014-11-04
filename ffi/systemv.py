@@ -6,6 +6,7 @@ def align(x, a):
     return x + (a - x % a) % a
 
 def sizeof(tp):
+    assert isinstance(tp, Type)
     assert tp.size > 0 and tp.align > 0, "cannot determine size of opaque type"
     return tp.size
 
@@ -16,17 +17,22 @@ class Type(Object):
 
 class Signed(Type):
     def __init__(self, size=8):
+        assert isinstance(size, int)
         self.align = size
         self.size = size
 
     def cast_to_ffitype(self):
         if self.size == rffi.sizeof(rffi.LONG):
             return clibffi.cast_type_to_ffitype(rffi.LONG)
+        if self.size == rffi.sizeof(rffi.INT):
+            return clibffi.cast_type_to_ffitype(rffi.INT)
         assert False, "undefined ffi type"
 
     def load(self, offset):
         if self.size == rffi.sizeof(rffi.LONG):
             return Integer(rffi.cast(rffi.LONGP, offset)[0])
+        if self.size == rffi.sizeof(rffi.INT):
+            return Integer(rffi.cast(rffi.LONG, rffi.cast(rffi.INTP, offset)[0]))
         assert False, "undefined ffi type"
 
     def store(self, offset, value):
@@ -35,6 +41,9 @@ class Signed(Type):
         if self.size == rffi.sizeof(rffi.LONG):
             pnt = rffi.cast(rffi.LONGP, offset)
             pnt[0] = rffi.cast(rffi.LONG, value.value)
+        elif self.size == rffi.sizeof(rffi.INT):
+            pnt = rffi.cast(rffi.INTP, offset)
+            pnt[0] = rffi.cast(rffi.INT, value.value)
         else:
             assert False, "undefined ffi type"
 
@@ -44,6 +53,7 @@ class Signed(Type):
 
 class Unsigned(Type):
     def __init__(self, size=8):
+        assert isinstance(size, int)
         self.align = size
         self.size = size
 
@@ -54,7 +64,7 @@ class Unsigned(Type):
 
     def load(self, offset):
         if self.size == rffi.sizeof(rffi.ULONG):
-            return Integer(rffi.cast(rffi.ULONGP, offset)[0])
+            return Integer(rffi.cast(rffi.LONGP, offset)[0])
         assert False, "undefined ffi type"
 
     def store(self, offset, value):
@@ -170,6 +180,7 @@ class CFunc(Type):
 
 class Struct(Type):
     def __init__(self, fields=None):
+        self.offsets = []
         if fields is None:
             self.fields = None
             self.size = 0
@@ -180,19 +191,20 @@ class Struct(Type):
     def define(self, fields):
         assert self.fields is None, "struct can be defined only once"
         self.fields = fields
-        self.offsets = []
         self.align = 1
 
         offset = 0
         for name, tp in fields:
             assert not self.parameter, "parametric field in middle of a structure"
+            assert isinstance(tp, Type)
             if tp.parameter:
                 self.parameter = tp.parameter
             offset = align(offset, tp.align)
-            self.offsets.append((offset, name, tp))
+            self.offsets.append(offset)
             self.align = max(self.align, tp.align)
             offset += sizeof(tp)
         self.size = align(offset, self.align)
+        self.size = 10
 
     def repr(self):
         return '<struct>'
@@ -203,6 +215,7 @@ class Union(Type):
         self.align = 1
         self.size = 0
         for name, tp in fields:
+            assert isinstance(tp, Type)
             self.align = max(self.align, tp.align)
             self.size = max(self.size, sizeof(tp.size))
             assert not tp.parameter, "parametric field in an union"
@@ -211,14 +224,14 @@ class Union(Type):
         return '<union>'
 
 class Array(Type):
-    def __init__(self, tp, length=None):
+    def __init__(self, tp, length=0):
         self.tp = tp
         assert not tp.parameter, "parametric field in an array"
-        if length is None:
+        if length == 0:
             self.parameter = self
             self.size = 0
         else:
-            self.size = sizeof(tp) * length
+            self.size = sizeof(tp) * int(length)
         self.align = tp.align
 
     def repr(self):
