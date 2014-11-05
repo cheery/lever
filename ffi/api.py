@@ -46,30 +46,30 @@ class APISpec(Object):
         node = self.unresolved[name]
         head = node[2]
         arity = len(node)
-        #if sym_eq(head, 'struct'):
-        #    struct = self.names[name]
-        #    fields = []
-        #    for i in range(3, arity):
-        #        fields.append(node[i])
-        #    struct.define(self.resolve_fields(fields))
-        #    self.unresolved.pop(name)
-        #    return struct
-        #elif sym_eq(head, 'union'):
-        #    fields = []
-        #    for i in range(3, arity):
-        #        fields.append(node[i])
-        #    struct = self.names[name] = Union(self.resolve_fields(fields))
-        #    self.unresolved.pop(name)
-        #    return struct
-        #elif sym_eq(head, 'cfunc'):
-        #    assert len(node) >= 4
-        #    restype = node[3]
-        #    argtypes = []
-        #    for i in range(4, arity):
-        #        argtypes.append(node[i])
-        #    self.names[name] = cfunc = self.resolve_cfunc(restype, argtypes)
-        #    self.unresolved.pop(name)
-        #    return cfunc
+        if sym_eq(head, 'struct'):
+            struct = self.names[name]
+            fields = []
+            for i in range(3, arity):
+                fields.append(self.resolve_field(node[i]))
+            struct.define(fields)
+            self.unresolved.pop(name)
+            return struct
+        elif sym_eq(head, 'union'):
+            fields = []
+            for i in range(3, arity):
+                fields.append(self.resolve_field(node[i]))
+            union = self.names[name] = Union(fields)
+            self.unresolved.pop(name)
+            return union
+        elif sym_eq(head, 'cfunc'):
+            assert len(node) >= 4
+            restype = node[3]
+            argtypes = []
+            for i in range(4, arity):
+                argtypes.append(node[i])
+            self.names[name] = cfunc = self.resolve_cfunc(restype, argtypes)
+            self.unresolved.pop(name)
+            return cfunc
         assert arity >= 4, name + " " + str(arity)
         restype = node[2]
         sym = node[3]
@@ -91,27 +91,26 @@ class APISpec(Object):
             argtypes.append(self.resolve_type(argtype_i))
         return CFunc(restype, argtypes)
 
-    def resolve_fields(self, fields):
-        result = []
-        for node in fields:
-            if not isinstance(node, List):
-                raise Exception("api struct/union must consists of field lists: " + node.repr())
-            if len(node) < 3 or not sym_eq(node[1], '=') or not isinstance(node[0], Symbol):
-                raise Exception("api struct/union lists must be of form (<name> = <body>): " + node.repr())
-            name = String(node[0].string)
-            head = node[2]
-            #if sym_eq(head, 'array') and len(node) == 4:
-            #    tp = self.resolve_type(node[3])
-            #    return Array(tp)
-            #if sym_eq(head, 'array') and len(node) == 5:
-            #    tp = self.resolve_type(node[3])
-            #    count = node[4]
-            #    assert isinstance(count, Integer)
-            #    return Array(tp, count.value)
-            if len(node) != 3 and not isinstance(head, Symbol):
-                raise Exception("only references allowed for now: " + node.repr())
-            result.append([name, self.resolve_type(head)])
-        return result
+    def resolve_field(self, node):
+        if not isinstance(node, List):
+            raise Exception("api struct/union must consists of field lists: " + node.repr())
+        if len(node) < 3 or not sym_eq(node[1], '=') or not isinstance(node[0], Symbol):
+            raise Exception("api struct/union lists must be of form (<name> = <body>): " + node.repr())
+        name = String(node[0].string)
+        head = node[2]
+        if sym_eq(head, 'array') and len(node) == 4:
+            raise Exception("NIT")
+        #    tp = self.resolve_type(node[3])
+        #    return Array(tp)
+        if sym_eq(head, 'array') and len(node) == 5:
+            raise Exception("NIT")
+        #    tp = self.resolve_type(node[3])
+        #    count = node[4]
+        #    assert isinstance(count, Integer)
+        #    return Array(tp, count.value)
+        if len(node) != 3 and not isinstance(head, Symbol):
+            raise Exception("only references allowed for now: " + node.repr())
+        return (name.string, self.resolve_type(head))
 
     def resolve_type(self, node):
         if not isinstance(node, Symbol):

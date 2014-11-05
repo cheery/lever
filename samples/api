@@ -3,4 +3,12 @@
 (sdl.Init sdl.INIT_EVERYTHING)
 (= screen (sdl.SetVideoMode 640 480 32 0))
 
+(= event (ffi.malloc sdl.Event))
+(= running true)
+(while running
+    (sdl.WaitEvent event)
+    (cond ((== event.type sdl.QUIT)
+        (= running false))))
+
+(ffi.free event)
 (sdl.Quit)

@@ -260,6 +260,20 @@ def pyl_read_file(argv):
     assert isinstance(arg0, String)
     return read_file(arg0.string)
 
+@global_builtin('==')
+def pyl_equals(argv):
+    assert len(argv) == 2
+    arg0 = argv[0]
+    arg1 = argv[1]
+    if isinstance(arg0, Integer) and isinstance(arg1, Integer):
+        if arg0.value == arg1.value:
+            return true
+        return false
+    if arg0 is arg1:
+        return true
+    else:
+        return false
+
 def cond_macro(env, exprs):
     retval = null
     for i in range(1, len(exprs)):

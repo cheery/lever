@@ -1,6 +1,6 @@
 from object import Object, Integer, null
 from rpython.rtyper.lltypesystem import rffi, lltype
-from rpython.rlib import jit_libffi, clibffi
+from rpython.rlib import jit_libffi, clibffi, unroll
 
 def align(x, a):
     return x + (a - x % a) % a
@@ -10,10 +10,21 @@ def sizeof(tp):
     assert tp.size > 0 and tp.align > 0, "cannot determine size of opaque type"
     return tp.size
 
+def sizeof_a(tp, n):
+    assert isinstance(tp, Type)
+    assert tp.size > 0 and tp.align > 0, "cannot determine size of opaque type"
+    if tp.parameter is not None:
+        return tp.size + sizeof(tp.parameter)*n
+    else:
+        return tp.size * n
+
 class Type(Object):
     parameter = None
     size = 0
     align = 0
+
+signed_types = unroll.unrolling_iterable([rffi.LONG, rffi.INT, rffi.SHORT, rffi.CHAR])
+unsigned_types = unroll.unrolling_iterable([rffi.ULONG, rffi.UINT, rffi.USHORT, rffi.UCHAR])
 
 class Signed(Type):
     def __init__(self, size=8):
@@ -22,34 +33,32 @@ class Signed(Type):
         self.size = size
 
     def cast_to_ffitype(self):
-        if self.size == rffi.sizeof(rffi.LONG):
-            return clibffi.cast_type_to_ffitype(rffi.LONG)
-        if self.size == rffi.sizeof(rffi.INT):
-            return clibffi.cast_type_to_ffitype(rffi.INT)
-        assert False, "undefined ffi type"
+        for rtype in signed_types:
+            if self.size == rffi.sizeof(rtype):
+                return clibffi.cast_type_to_ffitype(rtype)
+        else:
+            assert False, "undefined ffi type"
 
     def load(self, offset):
-        if self.size == rffi.sizeof(rffi.LONG):
-            return Integer(rffi.cast(rffi.LONGP, offset)[0])
-        if self.size == rffi.sizeof(rffi.INT):
-            return Integer(rffi.cast(rffi.LONG, rffi.cast(rffi.INTP, offset)[0]))
-        assert False, "undefined ffi type"
+        for rtype in signed_types:
+            if self.size == rffi.sizeof(rtype):
+                return Integer(rffi.cast(rffi.LONG, rffi.cast(rffi.CArrayPtr(rtype), offset)[0]))
+        else:
+            assert False, "undefined ffi type"
 
     def store(self, offset, value):
         if not isinstance(value, Integer):
             raise Exception("cannot transform to primtype")
-        if self.size == rffi.sizeof(rffi.LONG):
-            pnt = rffi.cast(rffi.LONGP, offset)
-            pnt[0] = rffi.cast(rffi.LONG, value.value)
-        elif self.size == rffi.sizeof(rffi.INT):
-            pnt = rffi.cast(rffi.INTP, offset)
-            pnt[0] = rffi.cast(rffi.INT, value.value)
+        for rtype in signed_types:
+            if self.size == rffi.sizeof(rtype):
+                pnt = rffi.cast(rffi.CArrayPtr(rtype), offset)
+                pnt[0] = rffi.cast(rtype, value.value)
+                break
         else:
             assert False, "undefined ffi type"
 
     def repr(self):
-        return "<signed>"
-        #return "<signed "+str(8*self.size)+">"
+        return "<signed " + str(self.size) + ">"
 
 class Unsigned(Type):
     def __init__(self, size=8):
@@ -58,26 +67,32 @@ class Unsigned(Type):
         self.size = size
 
     def cast_to_ffitype(self):
-        if self.size == rffi.sizeof(rffi.ULONG):
-            return clibffi.cast_type_to_ffitype(rffi.ULONG)
-        assert False, "undefined ffi type"
+        for rtype in unsigned_types:
+            if self.size == rffi.sizeof(rtype):
+                return clibffi.cast_type_to_ffitype(rtype)
+        else:
+            assert False, "undefined ffi type"
 
     def load(self, offset):
-        if self.size == rffi.sizeof(rffi.ULONG):
-            return Integer(rffi.cast(rffi.LONGP, offset)[0])
-        assert False, "undefined ffi type"
+        for rtype in unsigned_types:
+            if self.size == rffi.sizeof(rtype):
+                return Integer(rffi.cast(rffi.LONG, rffi.cast(rffi.CArrayPtr(rtype), offset)[0]))
+        else:
+            assert False, "undefined ffi type"
 
     def store(self, offset, value):
         if not isinstance(value, Integer):
             raise Exception("cannot transform to primtype")
-        if self.size == rffi.sizeof(rffi.ULONG):
-            pnt = rffi.cast(rffi.ULONGP, offset)
-            pnt[0] = rffi.cast(rffi.ULONG, value.value)
+        for rtype in unsigned_types:
+            if self.size == rffi.sizeof(rtype):
+                pnt = rffi.cast(rffi.CArrayPtr(rtype), offset)
+                pnt[0] = rffi.cast(rtype, value.value)
+                break
         else:
             assert False, "undefined ffi type"
 
     def repr(self):
-        return "<signed "+str(8*self.size)+">"
+        return "<unsigned " + str(self.size) + ">"
 
 
 #class Float(Type):
@@ -95,7 +110,7 @@ class Pointer(Type):
         return clibffi.ffi_type_pointer
 
     def load(self, offset):
-        return Memory(self.to, rffi.cast(rffi.VOIDP, offset)[0])
+        return Memory(self.to, rffi.cast(rffi.VOIDPP, offset)[0])
 
     def store(self, offset, value):
         # type checking here will most likely reduce some cringes, so add some later.
@@ -157,7 +172,7 @@ class CFunc(Type):
         # Exchange buffer is built for every call. Filled with arguments that are passed to the function.
         argc = len(argv)
         assert argc == len(self.argtypes), "cfunc arity must match with the call"
-        exc = lltype.malloc(rffi.CCHARP.TO, cif.exchange_size, flavor='raw')
+        exc = lltype.malloc(rffi.VOIDP.TO, cif.exchange_size, flavor='raw')
         for i in range(argc):
             offset = rffi.ptradd(exc, cif.exchange_args[i])
             self.argtypes[i].store(offset, argv[i])
@@ -172,6 +187,16 @@ class CFunc(Type):
     def cast_to_ffitype(self):
         return clibffi.ffi_type_pointer
 
+    def load(self, offset):
+        return Memory(self, rffi.cast(rffi.VOIDPP, offset)[0])
+
+    def store(self, offset, value):
+        # type checking here will most likely reduce some cringes, so add some later.
+        if not isinstance(value, Memory):
+            raise Exception("cannot transform value to memory")
+        pnt = rffi.cast(rffi.VOIDPP, offset)
+        pnt[0] = value.pointer
+
     def repr(self):
         string = '<cfunc ' + self.restype.repr()
         for argtype in self.argtypes:
@@ -181,11 +206,11 @@ class CFunc(Type):
 class Struct(Type):
     def __init__(self, fields=None):
         self.offsets = []
-        if fields is None:
-            self.fields = None
-            self.size = 0
-            self.align = 0
-        else:
+        self.namespace = {}
+        self.size = 0
+        self.align = 0
+        self.fields = None
+        if fields is not None:
             self.define(fields)
 
     def define(self, fields):
@@ -196,32 +221,38 @@ class Struct(Type):
         offset = 0
         for name, tp in fields:
             assert not self.parameter, "parametric field in middle of a structure"
-            assert isinstance(tp, Type)
             if tp.parameter:
                 self.parameter = tp.parameter
             offset = align(offset, tp.align)
             self.offsets.append(offset)
             self.align = max(self.align, tp.align)
+            self.namespace[name] = (offset, tp)
             offset += sizeof(tp)
         self.size = align(offset, self.align)
-        self.size = 10
 
     def repr(self):
-        return '<struct>'
+        names = []
+        for name, tp in self.fields:
+            names.append('.' + name)
+        return '<struct ' + ' '.join(names) + '>'
 
 class Union(Type):
     def __init__(self, fields):
         self.fields = fields
+        self.namespace = {}
         self.align = 1
         self.size = 0
         for name, tp in fields:
-            assert isinstance(tp, Type)
             self.align = max(self.align, tp.align)
-            self.size = max(self.size, sizeof(tp.size))
+            self.size = max(self.size, sizeof(tp))
             assert not tp.parameter, "parametric field in an union"
+            self.namespace[name] = (0, tp)
 
     def repr(self):
-        return '<union>'
+        names = []
+        for name, tp in self.fields:
+            names.append('.' + name)
+        return '<union ' + ' '.join(names) + '>'
 
 class Array(Type):
     def __init__(self, tp, length=0):
@@ -240,7 +271,26 @@ class Array(Type):
 class Memory(Object):
     def __init__(self, tp, pointer):
         self.tp = tp
-        self.pointer = rffi.cast(rffi.VOIDP, pointer)
+        self.pointer = pointer
+
+    def getattr(self, name):
+        if isinstance(self.tp, Pointer):
+            to = self.tp.to
+        else:
+            to = None
+        if isinstance(to, Struct) or isinstance(to, Union):
+            if not name in to.namespace:
+                raise Exception("object does not contain field ." + name)
+            offset, tp = to.namespace[name]
+            pointer = rffi.ptradd(self.pointer, offset)
+            if isinstance(tp, Struct) or isinstance(tp, Union): # or isinstance(tp, Array):
+                return Memory(Pointer(tp), pointer)
+            elif isinstance(tp, Signed) or isinstance(tp, Unsigned):
+                return tp.load(pointer)
+            else:
+                raise Exception("no load supported for all objects")
+        else:
+            raise Exception("cannot attribute access other objects than structs and unions")
 
     def invoke(self, argv):
         if isinstance(self.tp, CFunc):
@@ -250,5 +300,5 @@ class Memory(Object):
     def repr(self):
         name = self.tp.repr()
         if self.tp is null:
-            name = 'memory'
-        return "<" + name + " " + str(self.pointer) + ">"
+            name = ''
+        return "<" + hex(rffi.cast(rffi.LONG, self.pointer)) + " " + name + ">"

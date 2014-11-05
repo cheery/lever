@@ -5,3 +5,137 @@
 (Init         = long     SDL_Init         long)
 (SetVideoMode = Surface* SDL_SetVideoMode int  int int int)
 (Quit         = void     SDL_Quit)
+(RELEASED = 0)
+(PRESSED = 1)
+(NOEVENT = 0)
+(ACTIVEEVENT = 1)
+(KEYDOWN = 2)
+(KEYUP = 3)
+(MOUSEMOTION = 4)
+(MOUSEBUTTONDOWN = 5)
+(MOUSEBUTTONUP = 6)
+(JOYAXISMOTION = 7)
+(JOYBALLMOTION = 8)
+(JOYHATMOTION = 9)
+(JOYBUTTONDOWN = 10)
+(JOYBUTTONUP = 11)
+(QUIT = 12)
+(SYSWMEVENT = 13)
+(EVENT_RESERVEDA = 14)
+(EVENT_RESERVEDB = 15)
+(VIDEORESIZE = 16)
+(VIDEOEXPOSE = 17)
+(EVENT_RESERVED2 = 18)
+(EVENT_RESERVED3 = 19)
+(EVENT_RESERVED4 = 20)
+(EVENT_RESERVED5 = 21)
+(EVENT_RESERVED6 = 22)
+(EVENT_RESERVED7 = 23)
+(USEREVENT = 24)
+(NUMEVENTS = 32)
+(ALLEVENTS = 0xffffffff)
+(PumpEvents = void SDL_PumpEvents)
+(ADDEVENT = 0)
+(PEEKEVENT = 1)
+(GETEVENT = 2)
+(PeepEvents = int SDL_PeepEvents Event* int long uint)
+(PollEvent = int SDL_PollEvent Event*)
+(WaitEvent = int SDL_WaitEvent Event*)
+(PushEvent = int SDL_PushEvent Event*)
+(EventFilter = cfunc int Event*)
+(SetEventFilter = void SDL_SetEventFilter EventFilter)
+(QUERY = -1)
+(IGNORE = 0)
+(DISABLE = 0)
+(ENABLE = 1)
+(EventState = byte SDL_EventState byte int)
+(Event = union
+    (type = byte)
+    (active = ActiveEvent)
+	(key = KeyboardEvent)
+	(motion = MouseMotionEvent)
+	(button = MouseButtonEvent)
+	(jaxis = JoyAxisEvent)
+	(jball = JoyBallEvent)
+	(jhat = JoyHatEvent)
+	(jbutton = JoyButtonEvent)
+	(resize = ResizeEvent)
+	(expose = ExposeEvent)
+	(quit = QuitEvent)
+	(user = UserEvent)
+	(syswm = SysWMEvent))
+
+(ActiveEvent = struct
+    (type = byte)
+    (gain = byte)
+    (state = byte))
+
+(KeyboardEvent = struct
+    (type = byte)
+    (which = byte)
+    (state = byte)
+    (keysym = long))
+
+(MouseMotionEvent = struct
+    (type = byte)
+    (which = byte)
+    (state = byte)
+    (x = ushort)
+    (y = ushort)
+    (xrel = short)
+    (yrel = short))
+
+(MouseButtonEvent = struct
+    (type = byte)
+    (which = byte)
+    (state = byte)
+    (x = ushort)
+    (y = ushort))
+
+(JoyAxisEvent = struct
+    (type = byte)
+    (which = byte)
+    (axis = byte)
+    (value = short))
+
+(JoyBallEvent = struct
+    (type = byte)
+    (which = byte)
+    (ball = byte)
+    (xrel = short)
+    (yrel = short))
+
+(JoyHatEvent = struct
+    (type = byte)
+    (which = byte)
+    (hat = byte)
+    (value = byte))
+
+(JoyButtonEvent = struct
+    (type = byte)
+    (which = byte)
+    (button = byte)
+    (state = byte))
+
+(ResizeEvent = struct
+    (type = byte)
+    (w = int)
+    (h = int))
+
+(ExposeEvent = struct
+    (type = byte))
+
+(QuitEvent = struct
+    (type = byte))
+
+(UserEvent = struct
+    (type = byte)
+    (code = int)
+    (data1 = void*)
+    (data2 = void*))
+
+(SysWMEvent = struct
+    (type = byte)
+    (msg = SysVMmsg*))
+
+(SysVMmsg = opaque)

@@ -60,20 +60,14 @@ def read(stream):
         stream.advance()
         return List(lst)
     if issym(stream.character):
-        string = ''
+        string = stream.advance()
+        if string == '-' and isnum(stream.character):
+            return readNum(string, stream)
         while issym(stream.character) or isnum(stream.character):
             string += stream.advance()
         return Symbol(string)
     if isnum(stream.character):
-        num = stream.advance()
-        if num == '0' and stream.character == 'x':
-            stream.advance()
-            while ishex(stream.character):
-                num += stream.advance()
-            return Integer(int(num, 16))
-        while isnum(stream.character):
-            num += stream.advance()
-        return Integer(int(num))
+        return readNum('', stream)
     if stream.character == '"':
         stream.advance()
         string = ''
@@ -91,6 +85,19 @@ def read(stream):
     if stream.character == ')':
         return None
     raise WontParse("unknown character: " + str(ord(stream.character)))
+
+def readNum(prefix, stream):
+    num = stream.advance()
+    if num == '0' and stream.character == 'x':
+        stream.advance()
+        num = prefix + num
+        while ishex(stream.character):
+            num += stream.advance()
+        return Integer(int(num, 16))
+    num = prefix + num
+    while isnum(stream.character):
+        num += stream.advance()
+    return Integer(int(num))
 
 def issym(ch):
     return ch.isalpha() or ch in "!%&*+-./:;<=>?@[]^_|"

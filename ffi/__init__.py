@@ -1,14 +1,8 @@
 from object import Object, List, String, Symbol, Integer, BuiltinFunction, Module, true, false, null
-from rpython.rlib import rdynload
+from rpython.rtyper.lltypesystem import rffi, lltype
+from rpython.rlib import rdynload, objectmodel
 from systemv import *
 from api import *
-
-#def align(x, a):
-#    return x + (a - x % a) % a
-#
-#def sizeof(tp):
-#    assert tp.size is not None, "cannot determine size of opaque type"
-#    return tp.size
 
 class Library(Object):
     def __init__(self, name, apispec=null):
@@ -78,11 +72,22 @@ def pyl_ptr(argv):
     assert isinstance(to, Type)
     return Pointer(to)
 
+default_api_environment = {
+    'char': Unsigned(1),
+    'byte': Unsigned(1),
+    'sbyte': Signed(1),
+    'short': Unsigned(2),
+    'ushort': Unsigned(2),
+    'int': Signed(4),
+    'uint': Unsigned(4),
+    'long': Signed(Pointer.size),
+    'ulong': Unsigned(Pointer.size),
+}
+
 module = Module("ffi", {
     'cfunc': BuiltinFunction(pyl_cfunc, 'ffi.cfunc'),
     'cdef': BuiltinFunction(pyl_cdef, 'ffi.cdef'),
     'ptr': BuiltinFunction(pyl_ptr, 'ffi.ptr'),
-    'long': Signed(rffi.sizeof(rffi.LONG)),
     'voidp': Pointer(null),
     
 #    #'char': CPrimType(rffi.CHAR, 'char'),
@@ -90,6 +95,8 @@ module = Module("ffi", {
 #    #'ccharpp': CPrimPointer(rffi.CCHARPP, 'ccharpp'),
 #    'ulong': CPrimType(rffi.ULONG, 'ulong'),
 }, frozen=True)
+
+module.namespace.update(default_api_environment)
 
 def ffi_builtin(name):
     def _impl(fn):
@@ -103,14 +110,42 @@ def ffi_api(argv):
     source = argv.pop(0)
     return APISpec(source, default_api_environment)
 
-default_api_environment = {
-    'char': Signed(1),
-    'byte': Unsigned(1),
-    'int': Signed(4),
-    'uint': Unsigned(4),
-    'long': Signed(Pointer.size),
-    'ulong': Unsigned(Pointer.size),
-}
+@ffi_builtin('sizeof')
+def ffi_sizeof(argv):
+    tp = argument(argv, 0, Type)
+    if len(argv) >= 2:
+        n = argument(argv, 1, Integer)
+        return Integer(sizeof_a(tp, n.value))
+    else:
+        return Integer(sizeof(tp))
+
+@ffi_builtin('malloc')
+def ffi_malloc(argv):
+    tp = argument(argv, 0, Type)
+    if len(argv) >= 2:
+        n = argument(argv, 1, Integer)
+        sz = sizeof_a(tp, n.value)
+    else:
+        sz = sizeof(tp)
+    pointer = lltype.malloc(rffi.VOIDP.TO, sz, flavor='raw')
+    return Memory(Pointer(tp), pointer)
+
+@ffi_builtin('free')
+def ffi_free(argv):
+    mem = argument(argv, 0, Memory)
+    lltype.free(mem.pointer, flavor='raw')
+    mem.pointer = rffi.cast(rffi.VOIDP, 0)
+    return null
+
+@objectmodel.specialize.arg(1, 2)
+def argument(argv, i, tp):
+    if i < len(argv):
+        v = argv[i]
+    else:
+        v = null
+    if not isinstance(v, tp):
+        raise Exception("expected " + tp.__name__ + " got " + v.repr())
+    return v
 
 @ffi_builtin('dlopen')
 def pyl_dlopen(argv):
