@@ -274,6 +274,22 @@ def pyl_equals(argv):
     else:
         return false
 
+def binary_arithmetic(name, op):
+    def _impl_(argv):
+        assert len(argv) == 2
+        arg0 = argv[0]
+        arg1 = argv[1]
+        if isinstance(arg0, Integer) and isinstance(arg1, Integer):
+            return Integer(op(arg0.value, arg1.value))
+        raise Exception("cannot i" + name + " " + arg0.repr() + " and " + arg1.repr())
+    global_builtin(name)(_impl_)
+
+binary_arithmetic('+', lambda a, b: a + b)
+binary_arithmetic('-', lambda a, b: a - b)
+binary_arithmetic('*', lambda a, b: a * b)
+binary_arithmetic('/', lambda a, b: a / b)
+binary_arithmetic('%', lambda a, b: a % b)
+
 def cond_macro(env, exprs):
     retval = null
     for i in range(1, len(exprs)):

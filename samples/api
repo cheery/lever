@@ -1,14 +1,30 @@
 (= sdl (ffi.dlopen "libSDL.so" (ffi.api (read-file "api/SDL.api"))))
 
 (sdl.Init sdl.INIT_EVERYTHING)
-(= screen (sdl.SetVideoMode 640 480 32 0))
+(= screen (sdl.SetVideoMode 640 480 32 sdl.DOUBLEBUF))
+
+(= rect (ffi.malloc sdl.Rect))
+(.x= rect 10)
+(.y= rect 0)
+(.w= rect 10)
+(.h= rect screen.h)
+
+(= x 10)
 
 (= event (ffi.malloc sdl.Event))
 (= running true)
 (while running
-    (sdl.WaitEvent event)
-    (cond ((== event.type sdl.QUIT)
-        (= running false))))
+    (cond 
+    ((== 1 (sdl.PollEvent event))
+        (cond
+        ((== event.type sdl.QUIT)
+            (= running false)))))
+    (.x= rect x)
+    (= x (% (+ x 1) 630))
+
+    (sdl.FillRect screen null (sdl.MapRGB screen.format 10 80 10))
+    (sdl.FillRect screen rect (sdl.MapRGB screen.format 10 85 10))
+    (sdl.Flip screen))
 
 (ffi.free event)
 (sdl.Quit)

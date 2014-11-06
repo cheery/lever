@@ -1,5 +1,3 @@
-(Surface = opaque)
-(RGB = struct (r = byte) (g = byte) (b = byte))
 (INIT_VIDEO      = 0x0020)
 (INIT_EVERYTHING = 0xFFFF)
 (Init         = long     SDL_Init         long)
@@ -139,3 +137,82 @@
     (msg = SysVMmsg*))
 
 (SysVMmsg = opaque)
+
+(Rect = struct
+    (x = short)
+    (y = short)
+    (w = ushort)
+    (h = ushort))
+
+(Color = struct
+    (r = byte)
+    (g = byte)
+    (b = byte))
+
+(Palette = struct
+    (ncolors = int)
+    (colors = Color*))
+
+(FillRect = int SDL_FillRect Surface* Rect* uint)
+(Flip = int SDL_Flip Surface*)
+
+(MapRGB = uint SDL_MapRGB PixelFormat* byte byte byte)
+(MapRGBA = uint SDL_MapRGBA PixelFormat* byte byte byte byte)
+
+(GL_SwapBuffers = void SDL_GL_SwapBuffers)
+
+(WM_SetCaption = void WM_SetCaption cstring cstring)
+
+(GL_SetAttribute = int SDL_GL_SetAttribute long int)
+(GL_GetAttribute = int SDL_GL_GetAttribute long int*)
+
+(GL_RED_SIZE = 0)
+(GL_GREEN_SIZE = 1)
+(GL_BLUE_SIZE = 2)
+(GL_ALPHA_SIZE = 3)
+(GL_BUFFER_SIZE = 4)
+(GL_DOUBLEBUFFER = 5)
+(GL_DEPTH_SIZE = 6)
+(GL_STENCIL_SIZE = 7)
+(GL_ACCUM_RED_SIZE = 8)
+(GL_ACCUM_GREEN_SIZE = 9)
+(GL_ACCUM_BLUE_SIZE = 10)
+(GL_ACCUM_ALPHA_SIZE = 11)
+(GL_STEREO = 12)
+(GL_MULTISAMPLEBUFFERS = 13)
+(GL_MULTISAMPLESAMPLES = 14)
+(GL_ACCELERATED_VISUAL = 15)
+(GL_SWAP_CONTROL = 16)
+
+(SWSURFACE  = 0x00000000)
+(HWSURFACE  = 0x00000001)
+(ASYNCBLIT  = 0x00000004)
+(ANYFORMAT  = 0x10000000)
+(HWPALETTE  = 0x20000000)
+(DOUBLEBUF  = 0x40000000)
+(FULLSCREEN = 0x80000000)
+(OPENGL     = 0x00000002)
+(OPENGLBLIT = 0x0000000A)
+(RESIZABLE  = 0x00000010)
+(NOFRAME    = 0x00000020)
+
+(Surface = struct
+    (flags = uint)
+    (format = PixelFormat*)
+    (w = int)
+    (h = int)
+    (pitch = ushort)
+    (pixels = void*)
+    (offset = int)
+    (hwdata = void*)
+    (clip_rect = Rect)
+    (unused1 = uint)
+    (locked = uint)
+    (map = BlitMap*)
+    (format_version = uint)
+    (refcount = int))
+
+(PixelFormat = opaque)
+(BlitMap = opaque)
+
+(GetError = cstring SDL_GetError)

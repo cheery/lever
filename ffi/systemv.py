@@ -110,14 +110,18 @@ class Pointer(Type):
         return clibffi.ffi_type_pointer
 
     def load(self, offset):
-        return Memory(self.to, rffi.cast(rffi.VOIDPP, offset)[0])
+        return Memory(self, rffi.cast(rffi.VOIDPP, offset)[0])
 
     def store(self, offset, value):
         # type checking here will most likely reduce some cringes, so add some later.
-        if not isinstance(value, Memory):
+        if value is null:
+            pointer = lltype.nullptr(rffi.VOIDP.TO)
+        elif isinstance(value, Memory):
+            pointer = value.pointer
+        else:
             raise Exception("cannot transform value to memory")
         pnt = rffi.cast(rffi.VOIDPP, offset)
-        pnt[0] = value.pointer
+        pnt[0] = pointer
 
     def repr(self):
         return "<* "+self.to.repr()+">"
@@ -158,8 +162,9 @@ class CFunc(Type):
         if self.restype is null:
             exchange_size += 0
         elif self.restype:
+            exchange_size = align(exchange_size, self.restype.align)
             exchange_size += sizeof(self.restype)
-        cif.exchange_size = exchange_size
+        cif.exchange_size = align(exchange_size, 8)
 
         jit_libffi.jit_ffi_prep_cif(cif)
         self.cif = cif
@@ -231,6 +236,8 @@ class Struct(Type):
         self.size = align(offset, self.align)
 
     def repr(self):
+        if self.fields is None:
+            return '<opaque>'
         names = []
         for name, tp in self.fields:
             names.append('.' + name)
@@ -285,12 +292,33 @@ class Memory(Object):
             pointer = rffi.ptradd(self.pointer, offset)
             if isinstance(tp, Struct) or isinstance(tp, Union): # or isinstance(tp, Array):
                 return Memory(Pointer(tp), pointer)
-            elif isinstance(tp, Signed) or isinstance(tp, Unsigned):
+            elif isinstance(tp, Signed) or isinstance(tp, Unsigned) or isinstance(tp, Pointer):
                 return tp.load(pointer)
             else:
                 raise Exception("no load supported for all objects")
         else:
             raise Exception("cannot attribute access other objects than structs and unions")
+
+    def setattr(self, name, value):
+        if isinstance(self.tp, Pointer):
+            to = self.tp.to
+        else:
+            to = None
+        if isinstance(to, Struct) or isinstance(to, Union):
+            if not name in to.namespace:
+                raise Exception("object does not contain field ." + name)
+            offset, tp = to.namespace[name]
+            pointer = rffi.ptradd(self.pointer, offset)
+            if isinstance(tp, Struct) or isinstance(tp, Union): # or isinstance(tp, Array):
+                raise Exception("not implemented")
+                #return Memory(Pointer(tp), pointer)
+            elif isinstance(tp, Signed) or isinstance(tp, Unsigned):
+                return tp.store(pointer, value)
+            else:
+                raise Exception("no load supported for all objects")
+        else:
+            raise Exception("cannot attribute access other objects than structs and unions")
+
 
     def invoke(self, argv):
         if isinstance(self.tp, CFunc):
