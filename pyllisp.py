@@ -260,6 +260,20 @@ def pyl_read_file(argv):
     assert isinstance(arg0, String)
     return read_file(arg0.string)
 
+@global_builtin('!=')
+def pyl_equals(argv):
+    assert len(argv) == 2
+    arg0 = argv[0]
+    arg1 = argv[1]
+    if isinstance(arg0, Integer) and isinstance(arg1, Integer):
+        if arg0.value == arg1.value:
+            return false
+        return true
+    if arg0 is arg1:
+        return false
+    else:
+        return true
+
 @global_builtin('==')
 def pyl_equals(argv):
     assert len(argv) == 2
@@ -274,6 +288,35 @@ def pyl_equals(argv):
     else:
         return false
 
+@global_builtin('and')
+def pyl_and(argv):
+    assert len(argv) == 2
+    arg0 = argv[0]
+    arg1 = argv[1]
+    if is_false(arg0) or is_false(arg1):
+        return false
+    else:
+        return true
+
+@global_builtin('or')
+def pyl_or(argv):
+    assert len(argv) == 2
+    arg0 = argv[0]
+    arg1 = argv[1]
+    if is_false(arg0) and is_false(arg1):
+        return false
+    else:
+        return true
+
+@global_builtin('not')
+def pyl_not(argv):
+    assert len(argv) == 1
+    arg0 = argv[0]
+    if is_false(arg0):
+        return true
+    else:
+        return false
+
 def binary_arithmetic(name, op):
     def _impl_(argv):
         assert len(argv) == 2
@@ -284,11 +327,37 @@ def binary_arithmetic(name, op):
         raise Exception("cannot i" + name + " " + arg0.repr() + " and " + arg1.repr())
     global_builtin(name)(_impl_)
 
+def binary_comparison(name, op):
+    def _impl_(argv):
+        assert len(argv) == 2
+        arg0 = argv[0]
+        arg1 = argv[1]
+        if isinstance(arg0, Integer) and isinstance(arg1, Integer):
+            if op(arg0.value, arg1.value):
+                return true
+            else:
+                return false
+        raise Exception("cannot i" + name + " " + arg0.repr() + " and " + arg1.repr())
+    global_builtin(name)(_impl_)
+
 binary_arithmetic('+', lambda a, b: a + b)
 binary_arithmetic('-', lambda a, b: a - b)
 binary_arithmetic('*', lambda a, b: a * b)
 binary_arithmetic('/', lambda a, b: a / b)
 binary_arithmetic('%', lambda a, b: a % b)
+binary_arithmetic('|', lambda a, b: a | b)
+binary_arithmetic('&', lambda a, b: a & b)
+binary_arithmetic('^', lambda a, b: a ^ b)
+binary_arithmetic('<<', lambda a, b: a << b)
+binary_arithmetic('>>', lambda a, b: a >> b)
+binary_arithmetic('min', lambda a, b: min(a,b))
+binary_arithmetic('max', lambda a, b: max(a,b))
+
+
+binary_comparison('<', lambda a, b: a < b)
+binary_comparison('>', lambda a, b: a > b)
+binary_comparison('<=', lambda a, b: a <= b)
+binary_comparison('>=', lambda a, b: a >= b)
 
 def cond_macro(env, exprs):
     retval = null

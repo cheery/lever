@@ -1,4 +1,10 @@
+(INIT_TIMER      = 0x0001)
+(INIT_AUDIO      = 0x0010)
 (INIT_VIDEO      = 0x0020)
+(INIT_CDROM      = 0x0100)
+(INIT_JOYSTICK   = 0x0200)
+(SDL_INIT_NOPARACHUTE = 0x00100000)
+(SDL_INIT_EVENTTHREAD = 0x01000000)
 (INIT_EVERYTHING = 0xFFFF)
 (Init         = long     SDL_Init         long)
 (SetVideoMode = Surface* SDL_SetVideoMode int  int int int)
@@ -72,7 +78,13 @@
     (type = byte)
     (which = byte)
     (state = byte)
-    (keysym = long))
+    (keysym = keysym))
+
+(keysym = struct
+    (scancode = byte)
+    (sym = int)
+    (mod = int)
+    (unicode = ushort))
 
 (MouseMotionEvent = struct
     (type = byte)
@@ -216,3 +228,8 @@
 (BlitMap = opaque)
 
 (GetError = cstring SDL_GetError)
+
+(EnableUNICODE = int SDL_EnableUNICODE int)
+(ShowCursor = int SDL_ShowCursor int)
+(GetTicks = uint SDL_GetTicks)
+(Delay = void SDL_Delay uint)

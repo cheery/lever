@@ -1,29 +1,87 @@
 (= sdl (ffi.dlopen "libSDL.so" (ffi.api (read-file "api/SDL.api"))))
 
 (sdl.Init sdl.INIT_EVERYTHING)
-(= screen (sdl.SetVideoMode 640 480 32 sdl.DOUBLEBUF))
+(sdl.EnableUNICODE 1)
+(sdl.ShowCursor 0)
+(= screen (sdl.SetVideoMode 320 240 32 (| sdl.HWSURFACE sdl.DOUBLEBUF)))
 
-(= rect (ffi.malloc sdl.Rect))
-(.x= rect 10)
-(.y= rect 0)
-(.w= rect 10)
-(.h= rect screen.h)
+(= new-rect (func (x y w h)
+    (= rect (ffi.malloc sdl.Rect))
+    (.x= rect x)
+    (.y= rect y)
+    (.w= rect w)
+    (.h= rect h)
+    (return rect)))
 
-(= x 10)
+(= lpaddle (new-rect 0 0 10 50))
+(= rpaddle (new-rect 310 190 10 50))
+(= ball    (new-rect 50 50 10 10))
+(= b-x 50)
+(= b-y 50)
+(= b-xv 1)
+(= b-yv 1)
+
+(= l-y 0)
+(= r-y 190)
+(= l-up   false)
+(= l-down false)
+(= r-up   false)
+(= r-down false)
+
+(= keyboard-event (func (key)
+    (= keysym key.keysym)
+    (cond
+    ((== keysym.scancode 9) (:= running false))
+    ((== keysym.scancode 111) (:= l-up   (== 1 key.state)))
+    ((== keysym.scancode 116) (:= l-down (== 1 key.state)))
+    ((== keysym.scancode 65)  (:= r-up   (== 1 key.state)))
+    ((== keysym.scancode 64)  (:= r-down (== 1 key.state)))
+    (else
+        (print key.state key.keysym.scancode)))))
 
 (= event (ffi.malloc sdl.Event))
 (= running true)
+(= was (= now (sdl.GetTicks)))
 (while running
     (cond 
     ((== 1 (sdl.PollEvent event))
         (cond
         ((== event.type sdl.QUIT)
-            (= running false)))))
-    (.x= rect x)
-    (= x (% (+ x 1) 630))
+            (= running false))
+        ((== event.type sdl.KEYDOWN) (keyboard-event event.key))
+        ((== event.type sdl.KEYUP)   (keyboard-event event.key)))))
 
-    (sdl.FillRect screen null (sdl.MapRGB screen.format 10 80 10))
-    (sdl.FillRect screen rect (sdl.MapRGB screen.format 10 85 10))
+    (= now (sdl.GetTicks))
+    (= dt (- now was))
+    (sdl.Delay (max (- 5 dt) 0))
+    (= was (sdl.GetTicks))
+
+    (cond
+    (l-up   (= l-y (max 0   (- l-y 1))))
+    (l-down (= l-y (min 190 (+ l-y 1))))
+    (r-up   (= r-y (max 0   (- r-y 1))))
+    (r-down (= r-y (min 190 (+ r-y 1)))))
+
+    (= b-x (+ b-x b-xv))
+    (= b-y (+ b-y b-yv))
+
+    (cond
+    ((>= b-x 310) (= b-xv -1))
+    ((<= b-x 0)   (= b-xv  1)))
+    (cond
+    ((>= b-y 220) (= b-yv -1))
+    ((<= b-y 0)   (= b-yv  1)))
+
+    (.x= ball b-x)
+    (.y= ball b-y)
+    (.y= lpaddle l-y)
+    (.y= rpaddle r-y)
+
+    (sdl.FillRect screen null    (sdl.MapRGB screen.format 0  0   0))
+    (sdl.FillRect screen lpaddle (sdl.MapRGB screen.format 10 185 10))
+    (sdl.FillRect screen rpaddle (sdl.MapRGB screen.format 10 185 10))
+    (sdl.FillRect screen ball    (sdl.MapRGB screen.format 10 185 10))
+
     (sdl.Flip screen))
 
 (ffi.free event)
