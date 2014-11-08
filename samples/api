@@ -22,11 +22,12 @@
     (.h= rect h)
     (return rect)))
 
+(= speed 4)
 (= score 0)
 (= b-x 50)
 (= b-y 50)
-(= b-xv 1)
-(= b-yv 1)
+(= b-xv speed)
+(= b-yv speed)
 
 (= l-y 0)
 (= r-y 190)
@@ -40,10 +41,11 @@
     (:= active true)
     (cond
     ((== keysym.scancode 9) (:= running false))
-    ((== keysym.scancode 111) (:= l-up   (== 1 key.state)))
-    ((== keysym.scancode 116) (:= l-down (== 1 key.state)))
-    ((== keysym.scancode 65)  (:= r-up   (== 1 key.state)))
-    ((== keysym.scancode 64)  (:= r-down (== 1 key.state)))
+    ((== keysym.scancode 28) (:= running false))
+    ((== keysym.scancode 103) (:= l-up   (== 1 key.state)))
+    ((== keysym.scancode 108) (:= l-down (== 1 key.state)))
+    ((== keysym.scancode 57)  (:= r-up   (== 1 key.state)))
+    ((== keysym.scancode 56)  (:= r-down (== 1 key.state)))
     (else
         (print key.state key.keysym.scancode)))))
 
@@ -63,13 +65,16 @@
 
     (= now (sdl.GetTicks))
     (= dt (- now was))
-    (sdl.Delay (max (- 5 dt) 0))
+    (sdl.Delay (max (- 15 dt) 0))
     (= was (sdl.GetTicks))
     
     (cond
     ((and reset-round (or (< score -8) (< 8 score)))
         (sdl.Delay 1500)
-        (= running false))
+        (= reset-round false)
+        (= score 0)
+        (= b-x (- (/ screen.w 2) 5))
+        (= b-y (- (/ screen.h 2) 5)))
     (reset-round
         (sdl.Delay 500)
         (= reset-round false)
@@ -77,10 +82,13 @@
         (= b-y (- (/ screen.h 2) 5))))
 
     (cond
-    (l-up   (= l-y (max 0   (- l-y 1))))
-    (l-down (= l-y (min 190 (+ l-y 1))))
-    (r-up   (= r-y (max 0   (- r-y 1))))
-    (r-down (= r-y (min 190 (+ r-y 1)))))
+    (l-up   (= l-y (max 0   (- l-y speed)))))
+    (cond
+    (l-down (= l-y (min 190 (+ l-y speed)))))
+    (cond
+    (r-up   (= r-y (max 0   (- r-y speed)))))
+    (cond
+    (r-down (= r-y (min 190 (+ r-y speed)))))
 
     (cond (active
         (= b-x (+ b-x b-xv))
@@ -88,23 +96,23 @@
 
     (cond
     ((and (>= b-x 300) (and (< (- r-y 10) b-y) (< b-y (+ r-y 40))))
-        (= b-xv -1))
+        (= b-xv (- 0 speed)))
     ((and (<= b-x  10) (and (< (- l-y 10) b-y) (< b-y (+ l-y 40))))
-        (= b-xv  1))
+        (= b-xv  speed))
     ((>= b-x 310)
         (= reset-round true)
-        (= b-xv -1)
+        (= b-xv (- 0 speed))
         (= score (- score 1)))
     ((<= b-x 0)
         (= reset-round true)
-        (= b-xv 1)
+        (= b-xv speed)
         (= score (+ score 1))))
     (cond
-    ((>= b-y 220) (= b-yv -1))
-    ((<= b-y 0)   (= b-yv  1)))
+    ((>= b-y 220) (= b-yv (- 0 speed)))
+    ((<= b-y 0)   (= b-yv  speed)))
 
     (paint-rect 0 0 screen.w screen.h 0 0 0)
-    (paint-rect (/ screen.w 2) 0 1 screen.h 10 10 10)
+    (paint-rect (/ screen.w 2) 0 1 screen.h 20 20 20)
 
     (= i score)
     (while (> i 0)
