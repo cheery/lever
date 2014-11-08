@@ -5,6 +5,15 @@
 (sdl.ShowCursor 0)
 (= screen (sdl.SetVideoMode 320 240 32 (| sdl.HWSURFACE sdl.DOUBLEBUF)))
 
+(= rect (ffi.malloc sdl.Rect))
+(= paint-rect (func (x y w h  r g b)
+    (.x= rect x)
+    (.y= rect y)
+    (.w= rect w)
+    (.h= rect h)
+    (sdl.FillRect screen rect (sdl.MapRGB screen.format r g b))))
+
+
 (= new-rect (func (x y w h)
     (= rect (ffi.malloc sdl.Rect))
     (.x= rect x)
@@ -13,9 +22,7 @@
     (.h= rect h)
     (return rect)))
 
-(= lpaddle (new-rect 0 0 10 50))
-(= rpaddle (new-rect 310 190 10 50))
-(= ball    (new-rect 50 50 10 10))
+(= score 0)
 (= b-x 50)
 (= b-y 50)
 (= b-xv 1)
@@ -30,6 +37,7 @@
 
 (= keyboard-event (func (key)
     (= keysym key.keysym)
+    (:= active true)
     (cond
     ((== keysym.scancode 9) (:= running false))
     ((== keysym.scancode 111) (:= l-up   (== 1 key.state)))
@@ -41,6 +49,8 @@
 
 (= event (ffi.malloc sdl.Event))
 (= running true)
+(= active  false)
+(= reset-round false)
 (= was (= now (sdl.GetTicks)))
 (while running
     (cond 
@@ -55,6 +65,16 @@
     (= dt (- now was))
     (sdl.Delay (max (- 5 dt) 0))
     (= was (sdl.GetTicks))
+    
+    (cond
+    ((and reset-round (or (< score -8) (< 8 score)))
+        (sdl.Delay 1500)
+        (= running false))
+    (reset-round
+        (sdl.Delay 500)
+        (= reset-round false)
+        (= b-x (- (/ screen.w 2) 5))
+        (= b-y (- (/ screen.h 2) 5))))
 
     (cond
     (l-up   (= l-y (max 0   (- l-y 1))))
@@ -62,25 +82,43 @@
     (r-up   (= r-y (max 0   (- r-y 1))))
     (r-down (= r-y (min 190 (+ r-y 1)))))
 
-    (= b-x (+ b-x b-xv))
-    (= b-y (+ b-y b-yv))
+    (cond (active
+        (= b-x (+ b-x b-xv))
+        (= b-y (+ b-y b-yv))))
 
     (cond
-    ((>= b-x 310) (= b-xv -1))
-    ((<= b-x 0)   (= b-xv  1)))
+    ((and (>= b-x 300) (and (< (- r-y 10) b-y) (< b-y (+ r-y 40))))
+        (= b-xv -1))
+    ((and (<= b-x  10) (and (< (- l-y 10) b-y) (< b-y (+ l-y 40))))
+        (= b-xv  1))
+    ((>= b-x 310)
+        (= reset-round true)
+        (= b-xv -1)
+        (= score (- score 1)))
+    ((<= b-x 0)
+        (= reset-round true)
+        (= b-xv 1)
+        (= score (+ score 1))))
     (cond
     ((>= b-y 220) (= b-yv -1))
     ((<= b-y 0)   (= b-yv  1)))
 
-    (.x= ball b-x)
-    (.y= ball b-y)
-    (.y= lpaddle l-y)
-    (.y= rpaddle r-y)
+    (paint-rect 0 0 screen.w screen.h 0 0 0)
+    (paint-rect (/ screen.w 2) 0 1 screen.h 10 10 10)
 
-    (sdl.FillRect screen null    (sdl.MapRGB screen.format 0  0   0))
-    (sdl.FillRect screen lpaddle (sdl.MapRGB screen.format 10 185 10))
-    (sdl.FillRect screen rpaddle (sdl.MapRGB screen.format 10 185 10))
-    (sdl.FillRect screen ball    (sdl.MapRGB screen.format 10 185 10))
+    (= i score)
+    (while (> i 0)
+        (paint-rect (+ (* i 10) (/ screen.w 2)) 10 5 5 100 185 100)
+        (= i (- i 1)))
+    (= i score)
+    (while (< i 0)
+        (paint-rect (+ (* i 10) (/ screen.w 2)) 10 5 5 100 185 100)
+        (= i (+ i 1)))
+
+    (paint-rect 0   l-y 10 50  10  185 10)
+    (paint-rect 310 r-y 10 50  10  185 10)
+    (paint-rect b-x b-y 10 10  185 185 10)
+
 
     (sdl.Flip screen))
 
