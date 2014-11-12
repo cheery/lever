@@ -1,4 +1,24 @@
+import re
+from rpython.rlib.rarithmetic import intmask
+from rpython.rlib.objectmodel import compute_hash, r_dict
+
+class Error(Exception):
+    def __init__(self, message):
+        self.message = message
+
+def system_hash(obj):
+    return obj.system_hash()
+
+def system_eq(obj, other):
+    return obj.system_eq(other)
+
 class Object:
+    class __metaclass__(type):
+        def __init__(cls, name, bases, dict):
+            if name not in ('Object', 'Interface') and 'interface' not in dict:
+                cls.interface = Interface(
+                    name=re.sub("(.)([A-Z]+)", r"\1 \2", name).lower())
+
     def invoke(self, argv):
         raise Exception("cannot invoke " + self.repr())
 
@@ -23,6 +43,21 @@ class Object:
 #    def __len__(self):
 #        raise Exception("cannot iterate " + self.repr())
 
+    def system_hash(self):
+        return compute_hash(self)
+
+    def system_eq(self, other):
+        return self is other
+
+    def repr(self):
+        return "<" + self.interface.name + ">"
+
+class Interface(Object):
+    def __init__(self, name):
+        self.name = name
+
+Interface.interface = Interface("interface")
+
 class List(Object):
     def __init__(self, items):
         self.items = items
@@ -35,6 +70,28 @@ class List(Object):
 
     def __len__(self):
         return len(self.items)
+
+    def system_hash(self):
+        mult = 1000003
+        x = 0x345678
+        z = len(self.items)
+        for w_item in self.items:
+            y = w_item.system_hash()
+            x = (x ^ y) * mult
+            z -= 1
+            mult += 82520 + z + z
+        x += 97531
+        return intmask(x)
+
+    def system_eq(self, other):
+        if not isinstance(other, List):
+            return False
+        if len(self) != len(other):
+            return False
+        for i in range(len(self)):
+            if not self[i].system_eq(other[i]):
+                return False
+        return True
 
     def getattr(self, name):
         if name == 'length':
@@ -67,12 +124,24 @@ class String(Object):
     def repr(self):
         return '"' + str(self.string) + '"'
 
+    def system_hash(self):
+        return compute_hash(self.string)
+
+    def system_eq(self, other):
+        return self.string == other.string
+
 class Symbol(Object):
     def __init__(self, string):
         self.string = string
 
     def repr(self):
         return str(self.string)
+
+    def system_hash(self):
+        return compute_hash(self.string)
+
+    def system_eq(self, other):
+        return self.string == other.string
 
 class Integer(Object):
     def __init__(self, value):
@@ -81,12 +150,25 @@ class Integer(Object):
     def repr(self):
         return str(self.value)
 
-class Constant(Object):
-    def __init__(self, name):
-        self.name = name
+    def system_hash(self):
+        return compute_hash(self.value)
+
+    def system_eq(self, other):
+        return self.value == other.value
+
+class Null(Object):
+    def repr(self):
+        return 'null'
+
+class Boolean(Object):
+    def __init__(self, flag):
+        self.flag = flag
 
     def repr(self):
-        return self.name
+        if self.flag:
+            return "true"
+        else:
+            return "false"
 
 class BuiltinFunction(Object):
     def __init__(self, func, name=None):
@@ -98,6 +180,7 @@ class BuiltinFunction(Object):
 
     def repr(self):
         return "<built in function " + self.name + ">"
+
 
 class Module(Object):
     def __init__(self, name, namespace, frozen=False):
@@ -117,6 +200,39 @@ class Module(Object):
     def repr(self):
         return "<module " + self.name + ">"
 
-true = Constant('true')
-false = Constant('false')
-null = Constant('null')
+class Multimethod(Object):
+    def __init__(self, arity, default=None):
+        self.arity = arity
+        self.methods = r_dict(system_eq, system_hash, force_non_null=True)
+        self.default = default
+
+    def invoke(self, argv):
+        return self.invoke_method(argv, False)
+
+    def invoke_method(self, argv, suppress_default):
+        if len(argv) < self.arity:
+            raise Error("expected "+str(self.arity)+" arguments, got "+str(len(argv)))
+        typevec = []
+        for i in range(self.arity):
+            typevec.append(argv[i].interface)
+        method = self.methods.get(List(typevec), None)
+        if method is None:
+            if self.default is None or suppress_default:
+                names = []
+                for i in range(self.arity):
+                    names.append(argv[i].interface.name)
+                raise Error("no method for ("+' '.join(names)+")")
+            return self.default.invoke(argv)
+        else:
+            return method.invoke(argv)
+
+    def register(self, *spec):
+        typevec = List(list(cls.interface for cls in spec))
+        def _impl_(fn):
+            self.methods[typevec] = BuiltinFunction(fn)
+            return fn
+        return _impl_
+
+true = Boolean(True)
+false = Boolean(False)
+null = Null()

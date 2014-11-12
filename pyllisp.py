@@ -1,14 +1,16 @@
 import sys, os
-from object import Object, List, String, Symbol, Integer, BuiltinFunction, true, false, null
+from object import Error, Object, List, String, Symbol, Boolean, Integer, BuiltinFunction, Multimethod, true, false, null
 from reader import WontParse, PartialParse, read_file, read_source
 from rpython.config.translationoption import get_combined_translation_config
 from rpython.rlib.rtimer import read_timestamp
-from rpython.rlib.rstacklet import StackletThread
 from rpython.rlib.objectmodel import we_are_translated
 import ffi
 
 config = get_combined_translation_config(translating=True)
-config.translation.continuation = True
+#config.translation.continuation = True
+
+if config.translation.continuation:
+    from rpython.rlib.rstacklet import StackletThread
 
 class GlobalState:
     stacklet = None
@@ -239,13 +241,17 @@ global_scope = {
     "getattr": BuiltinFunction(pyl_getattr, "getattr"),
     "setattr": BuiltinFunction(pyl_setattr, "setattr"),
     "callattr": BuiltinFunction(pyl_callattr, "callattr"),
-    "getcurrent": BuiltinFunction(pyl_getcurrent, "getcurrent"),
-    "greenlet": BuiltinFunction(pyl_greenlet, "greenlet"),
     "true": true,
     "false": false,
     "null": null,
     "ffi": ffi.module,
 }
+
+if config.translation.continuation:
+    global_scope.update({
+        "getcurrent": BuiltinFunction(pyl_getcurrent, "getcurrent"),
+        "greenlet": BuiltinFunction(pyl_greenlet, "greenlet"),
+    })
 
 def global_builtin(name):
     def _impl(fn):
@@ -340,7 +346,47 @@ def binary_comparison(name, op):
         raise Exception("cannot i" + name + " " + arg0.repr() + " and " + arg1.repr())
     global_builtin(name)(_impl_)
 
-binary_arithmetic('+', lambda a, b: a + b)
+global_scope['coerce'] = coerce_method = Multimethod(2, default=None)
+
+@coerce_method.register(Boolean, Integer)
+def coerce_bool_int(argv):
+    if len(argv) != 2:
+        raise Exception("expected exactly 2 arguments")
+    arg0 = argv[0]
+    arg1 = argv[1]
+    assert isinstance(arg0, Boolean)
+    assert isinstance(arg1, Integer)
+    return List([Integer(int(arg0.flag)), arg1])
+
+@coerce_method.register(Integer, Boolean)
+def coerce_bool_int(argv):
+    if len(argv) != 2:
+        raise Exception("expected exactly 2 arguments")
+    arg0 = argv[0]
+    arg1 = argv[1]
+    assert isinstance(arg0, Integer)
+    assert isinstance(arg1, Boolean)
+    return List([arg0, Integer(int(arg1.flag))])
+
+global_scope['+'] = plus_method = Multimethod(2, default=None)
+
+def plus_default(argv):
+    args = coerce_method.invoke(argv)
+    assert isinstance(args, List)
+    return plus_method.invoke_method(args.items, suppress_default=True)
+
+plus_method.default = BuiltinFunction(plus_default)
+
+@plus_method.register(Integer, Integer)
+def plus_int_int(argv):
+    arg0 = argv[0]
+    arg1 = argv[1]
+    assert isinstance(arg0, Integer)
+    assert isinstance(arg1, Integer)
+    return Integer(arg0.value + arg1.value)
+
+#binary_arithmetic('+', lambda a, b: a + b)
+
 binary_arithmetic('-', lambda a, b: a - b)
 binary_arithmetic('*', lambda a, b: a * b)
 binary_arithmetic('/', lambda a, b: a / b)
@@ -470,11 +516,12 @@ class StackletThreadShim:
         return handle.dead
 
 def entry_point(argv):
-    if we_are_translated():
-        process.stacklet = StackletThread(config)
-    else:
-        process.stacklet = StackletThreadShim(config)
-    process.current = Greenlet(process.stacklet.get_null_handle(), True)
+    if config.translation.continuation:
+        if we_are_translated():
+            process.stacklet = StackletThread(config)
+        else:
+            process.stacklet = StackletThreadShim(config)
+        process.current = Greenlet(process.stacklet.get_null_handle(), True)
 
     env = Environment(None, global_scope)
     if len(argv) <= 1:
@@ -495,8 +542,8 @@ def entry_point(argv):
                         pyl_print([retval])
                     os.write(1, prompt)
                     source = os.read(0, 4096)
-            except Exception as exc:
-                os.write(1, exc.__class__.__name__ + ": " + str(exc) + "\n")
+            except Error as exc:
+                os.write(1, exc.__class__.__name__ + ": " + exc.message + "\n")
                 os.write(1, prompt)
                 source = os.read(0, 4096)
         if source == "":
