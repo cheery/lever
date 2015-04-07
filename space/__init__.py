@@ -6,7 +6,6 @@ from multimethod import Multimethod
 from numbers import Integer, Boolean
 from string import String
 
-
 true = Boolean(True)
 false = Boolean(False)
 
@@ -15,3 +14,6 @@ def is_true(flag):
 
 def is_false(flag):
     return flag is null or flag is false
+
+def boolean(cond):
+    return true if cond else false

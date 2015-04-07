@@ -210,3 +210,14 @@ module.namespace['max'] = arithmetic_multimethod(lambda a, b: max(a, b))
 #binary_comparison('>=', lambda a, b: a >= b)
 #binary_comparison('!=', lambda a, b: a != b)
 #binary_comparison('==', lambda a, b: a == b)
+
+def cmp_less(argv):
+    if len(argv) != 2:
+        raise Error("comparisons require 2 arguments")
+    a = argv[0]
+    b = argv[1]
+    assert isinstance(a, Integer)
+    assert isinstance(b, Integer)
+    return boolean(a.value < b.value)
+
+module.namespace['<'] = Builtin(cmp_less, '<')

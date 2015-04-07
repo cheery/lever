@@ -176,6 +176,7 @@ def terminal(ts):
         lc = ts.advance()
         if match(ts.second, 'rc'):
             exp = ts.advance()
+            exp.name = 'symbol'
         else:
             exp = expression(ts)
         rc = ts.advance()

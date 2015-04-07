@@ -97,7 +97,9 @@ class Scope:
 
     def new_label(self):
         if len(self.block.contents) > 0:
-            self.block = self.new_block()
+            exit = self.new_block()
+            self.add(Jump(exit))
+            self.block = exit
         return self.block
 
     def add(self, op):
@@ -266,6 +268,7 @@ def interpret(prog, frame):
             return tmp[op.ref.i]
         else:
             raise space.Error("spaced out")
+    print block.repr(), pc
     raise space.Error("crappy compiler")
 
 def lookup(frame, name):
@@ -409,9 +412,10 @@ def translate(env, exp):
     assert isinstance(exp, reader.Expr)
     if exp.name == 'form' and len(exp.exps) > 0:
         if macro_name(exp) in macros:
-            env.capture_catch = exp.capture
+            if len(exp.capture) > 0:
+                env.capture_catch = exp.capture
             res = macros[macro_name(exp)](env, exp)
-            if len(env.capture_catch) > 0:
+            if len(exp.capture) > 0 and len(env.capture_catch) > 0:
                 raise space.Error(exp.start.str() + ": capture without receiver")
             return res
         # callattr goes here, if it'll be needed
@@ -433,21 +437,50 @@ def translate(env, exp):
     elif exp.name == 'let' or exp.name == 'set':
         lhs, rhs = exp.exps
         rhs = translate(env, rhs)
-        if isinstance(lhs, reader.Literal) and lhs.name == 'symbol':
-            return env.add(SetLocal(lhs.value, rhs, exp.name == 'set'))
-        elif isinstance(lhs, reader.Expr) and lhs.name == 'attr' and  len(lhs.exps) == 2:
-            obj, name = lhs.exps
-            obj = translate(env, obj)
-            assert isinstance(name, reader.Literal)
-            return env.add(SetAttr(obj, name.value, rhs))
-        elif isinstance(lhs, reader.Expr) and lhs.name == 'index' and  len(lhs.exps) == 2:
-            obj, index = lhs.exps
-            obj = translate(env, obj)
-            index = translate(env, index)
-            return env.add(SetItem(obj, index, rhs))
-        else:
-            raise space.Error("no translation for " + lhs.name)
+        return store_value(env, lhs, rhs, exp.name == 'set')
+    elif exp.name == 'aug' and len(exp.exps) == 3:
+        aug, lhs, rhs = exp.exps
+        assert isinstance(aug, reader.Literal)
+        rhs = translate(env, rhs)
+        return store_aug_value(env, aug, lhs, rhs)
     raise space.Error("no translation for " + exp.name)
+
+def store_value(env, lhs, value, upscope):
+    if isinstance(lhs, reader.Literal) and lhs.name == 'symbol':
+        return env.add(SetLocal(lhs.value, value, upscope))
+    elif isinstance(lhs, reader.Expr) and lhs.name == 'attr' and  len(lhs.exps) == 2:
+        obj, name = lhs.exps
+        obj = translate(env, obj)
+        assert isinstance(name, reader.Literal)
+        return env.add(SetAttr(obj, name.value, value))
+    elif isinstance(lhs, reader.Expr) and lhs.name == 'index' and  len(lhs.exps) == 2:
+        obj, index = lhs.exps
+        obj = translate(env, obj)
+        index = translate(env, index)
+        return env.add(SetItem(obj, index, value))
+    else:
+        raise space.Error("no translation for " + lhs.name)
+
+def store_aug_value(env, aug, lhs, value):
+    aug = env.add(Variable(aug.value))
+    if isinstance(lhs, reader.Literal) and lhs.name == 'symbol':
+        name = lhs.value
+        value = env.add(Call(aug, [env.add(Variable(name)), value]))
+        return env.add(SetLocal(name, value, True))
+    elif isinstance(lhs, reader.Expr) and lhs.name == 'attr' and  len(lhs.exps) == 2:
+        obj, name = lhs.exps
+        assert isinstance(name, reader.Literal)
+        obj = translate(env, obj)
+        value = env.add(Call(aug, [env.add(GetAttr(obj, name.value)), value]))
+        return env.add(SetAttr(obj, name.value, value))
+    elif isinstance(lhs, reader.Expr) and lhs.name == 'index' and  len(lhs.exps) == 2:
+        obj, index = lhs.exps
+        obj = translate(env, obj)
+        index = translate(env, index)
+        value = env.add(Call(aug, [env.add(GetItem(obj, index)), value]))
+        return env.add(SetItem(obj, index, value))
+    else:
+        raise space.Error("no translation for " + lhs.name)
 
 def build_closures(parent):
     for i in range(len(parent.functions)):
