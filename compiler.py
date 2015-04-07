@@ -82,6 +82,7 @@ class Scope:
         self.capture_catch = []
         self.functions = []
         self.bodies = []
+        self.chain = []
 
     def new_block(self):
         block = Block(len(self.blocks), [])
@@ -109,6 +110,11 @@ class Scope:
         cap = self.capture_catch
         self.capture_catch = []
         return cap
+
+    def pull_chain(self):
+        chain = self.chain
+        self.chain = []
+        return chain
 
     def close(self):
         return ProgramBody(self.blocks, self.functions)
@@ -296,16 +302,26 @@ def func_macro(env, exp):
 def if_macro(env, exp):
     if len(exp.exps) != 2:
         raise space.Error("no translation for " + exp.name + " with length != 2")
+    chain = env.pull_chain()
     cond = Cond(translate(env, exp.exps[1]))
     env.add(cond)
     cond.then = env.block = env.new_block()
-    cond.exit = env.new_block()
-    val = cond
-    for exp in env.capture(exp):
-        val = translate(env, exp)
+    if len(chain) > 0:
+        first = chain[0]
+        if len(chain) > 1 and macro_name(first.exps[0]) != 'else' and len(first.exps) != 1:
+            raise space.Error(exp.start.str() + ": non-else longer chains not supported")
+        cond.exit = env.block = env.new_block()
+        exit = env.new_block()
+        val = translate_flow(env, first.capture)
+        env.add(Merge(cond, val))
+        env.add(Jump(exit))
+        env.block = cond.then
+    else:
+        cond.exit = exit = env.new_block()
+    val = translate_flow(env, env.capture(exp))
     env.add(Merge(cond, val))
-    env.add(Jump(cond.exit))
-    env.block = cond.exit
+    env.add(Jump(exit))
+    env.block = exit
     return cond
 
 def return_macro(env, exp):
@@ -321,9 +337,7 @@ def while_macro(env, exp):
     env.add(cond)
     cond.then = env.block = env.new_block()
     cond.exit = env.new_block()
-    val = cond
-    for exp in env.capture(exp):
-        val = translate(env, exp)
+    val = translate_flow(env, env.capture(exp))
     env.add(Merge(cond, val))
     env.add(Jump(loop))
     env.block = cond.exit
@@ -335,6 +349,53 @@ macros = {
     'return': return_macro,
     'while': while_macro,
 }
+chain_macros = ['else']
+
+def macro_name(exp):
+    if isinstance(exp, reader.Expr):
+        if exp.name == 'form' and len(exp.exps) > 0:
+            first = exp.exps[0]
+            if isinstance(first, reader.Literal) and first.name == 'symbol':
+                return first.value
+    return ""
+
+def translate_flow(env, exps):
+    val = None
+    for chain in chains(exps):
+        val = translate_chain(env, chain)
+    assert val is not None
+    return val
+
+def translate_map(env, exps):
+    res = []
+    for chain in chains(exps):
+        res.append(translate_chain(env, chain))
+    return res
+
+def chains(exps):
+    out = []
+    chain = None
+    for exp in exps:
+        if chain is None:
+            chain = [exp]
+        elif macro_name(exp) in chain_macros:
+            chain.append(exp)
+        else:
+            out.append(chain)
+            chain = [exp]
+    if chain is not None:
+        out.append(chain)
+    return out
+
+def translate_chain(env, chain):
+    chain_above = env.chain
+    exp = chain.pop(0)
+    env.chain = chain
+    val = translate(env, exp)
+    if len(env.chain) > 0:
+        raise space.Error(exp.start.str() + ": chain without receiver")
+    env.chain = chain_above
+    return val
 
 def translate(env, exp):
     if isinstance(exp, reader.Literal):
@@ -347,18 +408,16 @@ def translate(env, exp):
         raise space.Error("no translation for " + exp.name)
     assert isinstance(exp, reader.Expr)
     if exp.name == 'form' and len(exp.exps) > 0:
-        lhs = exp.exps[0]
-        if isinstance(lhs, reader.Literal) and lhs.value in macros:
+        if macro_name(exp) in macros:
             env.capture_catch = exp.capture
-            res = macros[lhs.value](env, exp)
+            res = macros[macro_name(exp)](env, exp)
+            if len(env.capture_catch) > 0:
+                raise space.Error(exp.start.str() + ": capture without receiver")
             return res
         # callattr goes here, if it'll be needed
-        callee = translate(env, lhs)
-        args = []
-        for i in range(1, len(exp.exps)):
-            args.append(translate(env, exp.exps[i]))
-        for arg in exp.capture:
-            args.append(translate(env, arg))
+        args = translate_map(env, exp.exps)
+        callee = args.pop(0)
+        args.extend(translate_map(env, exp.capture))
         return env.add(Call(callee, args))
     elif exp.name == 'attr' and len(exp.exps) == 2:
         lhs, name = exp.exps
@@ -394,8 +453,7 @@ def build_closures(parent):
     for i in range(len(parent.functions)):
         env = Scope(parent)
         func = parent.functions[i]
-        for exp in parent.bodies[i]:
-            translate(env, exp)
+        translate_flow(env, parent.bodies[i])
         w = env.add(Constant(space.null))
         env.add(Return(w))
         build_closures(env)
@@ -406,9 +464,7 @@ def to_program(exps):
     if len(exps) == 0:
         env.add(Return(env.add(Constant(space.null))))
         return Program(env.close())
-    value = translate(env, exps[0])
-    for i in range(1, len(exps)):
-        value = translate(env, exps[i])
+    value = translate_flow(env, exps)
     env.add(Return(value))
     build_closures(env)
     return Program(env.close())
