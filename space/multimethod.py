@@ -1,6 +1,7 @@
-from interface import Error, Object
-from rpython.rlib.objectmodel import compute_hash, r_dict
 from builtin import Builtin
+from interface import Error, Object
+from list import List
+from rpython.rlib.objectmodel import compute_hash, r_dict
 
 def eq_fn(this, other):
     return this.eq(other)
@@ -15,7 +16,10 @@ class Multimethod(Object):
         self.default = default
 
     def call(self, argv):
-        return self.invoke(self, argv, suppress_default)
+        return self.invoke_method(argv, suppress_default=False)
+
+    def call_suppressed(self, argv):
+        return self.invoke_method(argv, suppress_default=True)
 
     def invoke_method(self, argv, suppress_default):
         if len(argv) < self.arity:
@@ -29,7 +33,7 @@ class Multimethod(Object):
                 names = []
                 for i in range(self.arity):
                     names.append(vec[i].name)
-                raise Error("no method for ["+' '.join(name)+"]")
+                raise Error("no method for ["+' '.join(names)+"]")
             return self.default.call(argv)
         return method.call(argv)
 

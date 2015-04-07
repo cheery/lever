@@ -44,7 +44,7 @@ def read(source):
     ts = L2(CStream(source), table)
     while ts.filled:
         if ts.position.col != 0:
-            raise space.Error(str_pos(ts.first.start) + ": layout error")
+            raise space.Error(ts.first.start.str() + ": layout error")
         exps.append(toplevel(ts, 0))
     return exps
 
@@ -114,13 +114,13 @@ def expression_bare(ts, rbp):
             dot = ts.advance()
             symbol = ts.advance()
             if not match(symbol, 'symbol'):
-                raise space.Error(str_pos(symbol.start) + ": expected symbol")
+                raise space.Error(symbol.start.str() + ": expected symbol")
             left = Expr(left.start, symbol.stop, 'attr', [left, symbol])
         elif match(ts.first, 'lb') and left.stop.eq(ts.first.start):
             lb = ts.advance()
             exps = expressions(ts)
             if not match(ts.first, 'rb'):
-                raise space.Error(str_pos(lb.start) + ": [ truncates at " + str_pos(ts.position))
+                raise space.Error(lb.start.str() + ": [ truncates at " + ts.position.str())
             rb = ts.advance()
             left = Expr(left.start, rb.stop, 'index', [left] + exps)
         elif match_some(ts.first, ['let', 'set']):
@@ -158,7 +158,7 @@ def terminal(ts):
         lp = ts.advance()
         exps = expressions(ts)
         if not match(ts.first, 'rp'):
-            raise space.Error(str_pos(lp.start) + ": form truncates at " + str_pos(ts.position))
+            raise space.Error(lp.start.str() + ": form truncates at " + ts.position.str())
         rp = ts.advance()
         exp = Expr(lp.start, rp.stop, 'form', exps)
         exp.dcf = exp
@@ -167,7 +167,7 @@ def terminal(ts):
         lb = ts.advance()
         exps = expressions(ts)
         if not match(ts.first, 'rb'):
-            raise space.Error(str_pos(lb.start) + ": list truncates at " + str_pos(ts.position))
+            raise space.Error(lb.start.str() + ": list truncates at " + ts.position.str())
         rb = ts.advance()
         exp = Expr(lb.start, rb.stop, 'list', exps)
         exp.dcf = exp
@@ -186,8 +186,8 @@ def terminal(ts):
         exp = expression_chain(ts)
         return Expr(op.start, exp.stop, 'form', [op, exp])
     if ts.filled:
-        raise space.Error(str_pos(ts.position) + ": expected term, got " + ts.first.value)
-    raise space.Error(str_pos(ts.position) + ": expected term, got eof")
+        raise space.Error(ts.position.str() + ": expected term, got " + ts.first.value)
+    raise space.Error(ts.position.str() + ": expected term, got eof")
 
 def match_some(t, names):
     return t is not None and t.name in names
@@ -213,6 +213,3 @@ def on_postfix(left, ts):
         r = ts.second is not None and ts.first.stop.eq(ts.second.start)
         return l and not r
     return False
-
-def str_pos(position):
-    return str(position.lno) + ":" + str(position.col)

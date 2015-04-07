@@ -16,6 +16,9 @@ class Position(object):
     def ne(self, other):
         return self.col != other.col or self.lno != other.lno
 
+    def str(self):
+        return str(self.lno) + ":" + str(self.col)
+
 class Node(object):
     dcf = None # Stands for 'default capturing form'
 

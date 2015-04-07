@@ -42,7 +42,7 @@ class List(Object):
     def setitem(self, index, value):
         if not isinstance(index, Integer):
             raise Error("index not an integer")
-        if not 0 <= index.value < len(self.items):
+        if not 0 <= index.value < len(self.contents):
             raise Error("index out of range")
         self.contents[index.value] = value
         return value

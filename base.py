@@ -138,16 +138,6 @@ def print_(argv):
 #    else:
 #        return false
 #
-#def binary_arithmetic(name, op):
-#    def _impl_(argv):
-#        assert len(argv) == 2
-#        arg0 = argv[0]
-#        arg1 = argv[1]
-#        if isinstance(arg0, Integer) and isinstance(arg1, Integer):
-#            return Integer(op(arg0.value, arg1.value))
-#        raise Exception("cannot i" + name + " " + arg0.repr() + " and " + arg1.repr())
-#    global_builtin(name)(_impl_)
-#
 #def binary_comparison(name, op):
 #    def _impl_(argv):
 #        assert len(argv) == 2
@@ -160,62 +150,63 @@ def print_(argv):
 #                return false
 #        raise Exception("cannot i" + name + " " + arg0.repr() + " and " + arg1.repr())
 #    global_builtin(name)(_impl_)
-#
-#global_scope['coerce'] = coerce_method = Multimethod(2, default=None)
-#
-#@coerce_method.register(Boolean, Integer)
-#def coerce_bool_int(argv):
-#    if len(argv) != 2:
-#        raise Exception("expected exactly 2 arguments")
-#    arg0 = argv[0]
-#    arg1 = argv[1]
-#    assert isinstance(arg0, Boolean)
-#    assert isinstance(arg1, Integer)
-#    return List([Integer(int(arg0.flag)), arg1])
-#
-#@coerce_method.register(Integer, Boolean)
-#def coerce_bool_int(argv):
-#    if len(argv) != 2:
-#        raise Exception("expected exactly 2 arguments")
-#    arg0 = argv[0]
-#    arg1 = argv[1]
-#    assert isinstance(arg0, Integer)
-#    assert isinstance(arg1, Boolean)
-#    return List([arg0, Integer(int(arg1.flag))])
-#
-#global_scope['+'] = plus_method = Multimethod(2, default=None)
-#
-#def plus_default(argv):
-#    args = coerce_method.invoke(argv)
-#    assert isinstance(args, List)
-#    return plus_method.invoke_method(args.items, suppress_default=True)
-#
-#plus_method.default = BuiltinFunction(plus_default)
-#
-#@plus_method.register(Integer, Integer)
-#def plus_int_int(argv):
-#    arg0 = argv[0]
-#    arg1 = argv[1]
-#    assert isinstance(arg0, Integer)
-#    assert isinstance(arg1, Integer)
-#    return Integer(arg0.value + arg1.value)
-#
-##binary_arithmetic('+', lambda a, b: a + b)
-#
-#binary_arithmetic('-', lambda a, b: a - b)
-#binary_arithmetic('*', lambda a, b: a * b)
-#binary_arithmetic('/', lambda a, b: a / b)
-#binary_arithmetic('%', lambda a, b: a % b)
-#binary_arithmetic('|', lambda a, b: a | b)
-#binary_arithmetic('&', lambda a, b: a & b)
-#binary_arithmetic('^', lambda a, b: a ^ b)
-#binary_arithmetic('<<', lambda a, b: a << b)
-#binary_arithmetic('>>', lambda a, b: a >> b)
-#binary_arithmetic('min', lambda a, b: min(a,b))
-#binary_arithmetic('max', lambda a, b: max(a,b))
-#
-#
+
+module.namespace['coerce'] = coerce = Multimethod(2)
+@coerce.multimethod(Boolean, Boolean)
+def _(argv):
+    a = argv[0]
+    b = argv[1]
+    assert isinstance(a, Boolean)
+    assert isinstance(b, Boolean)
+    return List([Integer(int(a.flag)), Integer(int(b.flag))])
+
+@coerce.multimethod(Integer, Boolean)
+def _(argv):
+    a = argv[0]
+    b = argv[1]
+    assert isinstance(a, Integer)
+    assert isinstance(b, Boolean)
+    return List([a, Integer(int(b.flag))])
+
+@coerce.multimethod(Boolean, Integer)
+def _(argv):
+    a = argv[0]
+    b = argv[1]
+    assert isinstance(a, Boolean)
+    assert isinstance(b, Integer)
+    return List([Integer(int(a.flag)), b])
+
+def arithmetic_multimethod(operation):
+    method = Multimethod(2)
+    @Builtin
+    def default(argv):
+        args = coerce.call(argv)
+        assert isinstance(args, List)
+        return method.call_suppressed(args.contents)
+    method.default = default
+    @method.multimethod(Integer, Integer)
+    def _(argv):
+        a = argv[0]
+        b = argv[1]
+        assert isinstance(a, Integer)
+        assert isinstance(b, Integer)
+        return Integer(operation(a.value, b.value))
+    return method
+
+module.namespace['+'] = arithmetic_multimethod(lambda a, b: a + b)
+module.namespace['-'] = arithmetic_multimethod(lambda a, b: a - b)
+module.namespace['*'] = arithmetic_multimethod(lambda a, b: a * b)
+module.namespace['|'] = arithmetic_multimethod(lambda a, b: a | b)
+module.namespace['&'] = arithmetic_multimethod(lambda a, b: a & b)
+module.namespace['^'] = arithmetic_multimethod(lambda a, b: a ^ b)
+module.namespace['<<'] = arithmetic_multimethod(lambda a, b: a << b)
+module.namespace['>>'] = arithmetic_multimethod(lambda a, b: a >> b)
+module.namespace['min'] = arithmetic_multimethod(lambda a, b: min(a, b))
+module.namespace['max'] = arithmetic_multimethod(lambda a, b: max(a, b))
+
 #binary_comparison('<', lambda a, b: a < b)
 #binary_comparison('>', lambda a, b: a > b)
 #binary_comparison('<=', lambda a, b: a <= b)
 #binary_comparison('>=', lambda a, b: a >= b)
+#binary_comparison('!=', lambda a, b: a != b)
+#binary_comparison('==', lambda a, b: a == b)
