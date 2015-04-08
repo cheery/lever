@@ -38,6 +38,13 @@ class List(Object):
         if name == 'length':
             return Integer(len(self.contents))
         return Object.getattr(self, name)
+    
+    def getitem(self, index):
+        if not isinstance(index, Integer):
+            raise Error("index not an integer")
+        if not 0 <= index.value < len(self.contents):
+            raise Error("index out of range")
+        return self.contents[index.value]
 
     def setitem(self, index, value):
         if not isinstance(index, Integer):

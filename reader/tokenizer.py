@@ -47,6 +47,11 @@ def next_token(stream, table):
         return Literal(start, stream.position, name, string)
     elif stream.is_digit():
         string = stream.advance()
+        if string == '0' and stream.filled and stream.current == 'x':
+            string += stream.advance()
+            while stream.is_hex():
+                string += stream.advance()
+            return Literal(start, stream.position, 'hex', string)
         while stream.is_digit():
             string += stream.advance()
         if stream.filled and stream.current == '.':

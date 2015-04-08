@@ -152,7 +152,7 @@ def expression_bare(ts, rbp):
     return left
 
 def terminal(ts):
-    if match_some(ts.first, ['symbol', 'string', 'int', 'float']):
+    if match_some(ts.first, ['symbol', 'string', 'int', 'hex', 'float']):
         return ts.advance()
     elif match(ts.first, 'lp'):
         lp = ts.advance()

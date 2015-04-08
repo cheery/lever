@@ -1,16 +1,15 @@
 (print "testing bare functionality of the language")
 
-# Didn't implement chained expressions yet,
-# that's why {<} 1 n and not 1 < n
-# (If you wonder that..)
+(if true and false or true)
+    (print true)
 
 factorial = (func n)
-    (if ({<} 1 n))
+    (if 1 < n)
         (return n * (factorial n-1))
     (else)
         (return 1)
 
 i = 1
-(while ({<} i 25))
+(while i < 25)
     (print (factorial i))
     i += 1

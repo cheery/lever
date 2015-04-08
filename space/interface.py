@@ -42,11 +42,22 @@ class Object:
     def eq(self, other):
         return self is other
 
+    @classmethod
+    def instantiator(cls, fn):
+        cls.interface.instantiate = fn
+        return fn
+
 class Interface(Object):
     # Should add possibility to freeze the interface?
     def __init__(self, parent, name):
         self.parent = parent
         self.name = name
+        self.instantiate = None
+
+    def call(self, argv):
+        if self.instantiate is None:
+            raise Error("Cannot instantiate " + self.name)
+        return self.instantiate(argv)
 
     def repr(self):
         return self.name

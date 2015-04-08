@@ -257,7 +257,7 @@ def interpret(prog, frame):
         elif isinstance(op, GetAttr):
             tmp[op.i] = tmp[op.value.i].getattr(op.name)
         elif isinstance(op, GetItem):
-            tmp[op.i] = tmp[op.value.i].getitem(op.index.i)
+            tmp[op.i] = tmp[op.value.i].getitem(tmp[op.index.i])
         elif isinstance(op, SetAttr):
             tmp[op.i] = tmp[op.obj.i].setattr(op.name, tmp[op.value.i])
         elif isinstance(op, SetItem):
@@ -336,8 +336,7 @@ def while_macro(env, exp):
     if len(exp.exps) != 2:
         raise space.Error("no translation for " + exp.name + " with length != 2")
     loop = env.new_label()
-    cond = Cond(translate(env, exp.exps[1]))
-    env.add(cond)
+    cond = env.add(Cond(translate(env, exp.exps[1])))
     cond.then = env.block = env.new_block()
     cond.exit = env.new_block()
     val = translate_flow(env, env.capture(exp))
@@ -346,11 +345,58 @@ def while_macro(env, exp):
     env.block = cond.exit
     return cond
 
+def and_macro(env, exp):
+    if len(exp.exps) != 3:
+        raise space.Error("no translation for " + exp.name + " with length != 2")
+    val = translate(env, exp.exps[1])
+    cond = env.add(Cond(val))
+    cond.then = env.block = env.new_block()
+    cond.exit = env.new_block()
+    env.add(Merge(val, translate(env, exp.exps[2])))
+    env.add(Jump(cond.exit))
+    env.block = cond.exit
+    return val
+
+def or_macro(env, exp):
+    if len(exp.exps) != 3:
+        raise space.Error("no translation for " + exp.name + " with length != 2")
+    val = translate(env, exp.exps[1])
+    cond = env.add(Cond(val))
+    cond.exit = env.block = env.new_block()
+    cond.then = env.new_block()
+    env.add(Merge(val, translate(env, exp.exps[2])))
+    env.add(Jump(cond.then))
+    env.block = cond.then
+    return val
+
+def syntax_chain(env, exp):
+    if len(exp.exps) < 3:
+        raise space.Error("no translation for " + exp.name + " with length != 2")
+    and_ = Variable('and')
+    if len(exp.exps) > 3:
+        env.add(and_)
+    lhs = translate(env, exp.exps[0])
+    op = translate(env, exp.exps[1])
+    rhs = translate(env, exp.exps[2])
+    res = env.add(Call(op, [lhs, rhs]))
+    i = 3
+    while i < len(exp.exps):
+        lhs = rhs
+        op = translate(env, exp.exps[i])
+        rhs = translate(env, exp.exps[i+1])
+        res = env.add(Call(and_, [
+            res,
+            env.add(Call(op, [lhs, rhs]))]))
+        i += 2
+    return res
+
 macros = {
     'func': func_macro,
     'if': if_macro,
     'return': return_macro,
     'while': while_macro,
+    'and': and_macro,
+    'or': or_macro,
 }
 chain_macros = ['else']
 
@@ -406,6 +452,8 @@ def translate(env, exp):
             return env.add(Constant(space.String(exp.value)))
         elif exp.name == 'int':
             return env.add(Constant(space.Integer(int(exp.value))))
+        elif exp.name == 'hex':
+            return env.add(Constant(space.Integer(int(exp.value[2:], 16))))
         elif exp.name == 'symbol':
             return env.add(Variable(exp.value))
         raise space.Error("no translation for " + exp.name)
@@ -443,6 +491,8 @@ def translate(env, exp):
         assert isinstance(aug, reader.Literal)
         rhs = translate(env, rhs)
         return store_aug_value(env, aug, lhs, rhs)
+    elif exp.name == 'chain':
+        return syntax_chain(env, exp)
     raise space.Error("no translation for " + exp.name)
 
 def store_value(env, lhs, value, upscope):

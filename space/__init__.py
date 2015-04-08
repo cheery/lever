@@ -1,3 +1,4 @@
+from rpython.rlib.objectmodel import specialize
 from interface import Error, Object, null
 from builtin import Builtin
 from list import List
@@ -17,3 +18,11 @@ def is_false(flag):
 
 def boolean(cond):
     return true if cond else false
+
+@specialize.arg(1, 2)
+def argument(argv, index, cls):
+    if index < len(argv):
+        arg = argv[index]
+        if isinstance(arg, cls):
+            return arg
+    raise Error("expected " + cls.interface.name + " as argv[" + str(index) + "]")
