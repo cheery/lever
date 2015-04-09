@@ -25,7 +25,10 @@ class Object:
         raise Error("cannot setitem " + self.repr())
 
     def getattr(self, index):
-        raise Error(index + " not in " + self.repr())
+        try:
+            return BoundMethod(self, index, self.interface.methods[index])
+        except KeyError as e:
+            raise Error(index + " not in " + self.repr())
 
     def setattr(self, index, value):
         raise Error("cannot set " + index + " in " + self.repr())
@@ -53,6 +56,7 @@ class Interface(Object):
         self.parent = parent
         self.name = name
         self.instantiate = None
+        self.methods = {}
 
     def call(self, argv):
         if self.instantiate is None:
@@ -70,3 +74,16 @@ null.interface = null
 null.parent = null
 
 Object.interface = Interface(null, "object")
+
+class BoundMethod(Object):
+    def __init__(self, obj, name, method):
+        self.obj = obj
+        self.name = name
+        self.method = method
+
+    def call(self, argv):
+        argv.insert(0, self.obj)
+        return self.method.call(argv)
+
+    def repr(self):
+        return self.obj.repr() + "." + self.name

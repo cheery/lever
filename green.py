@@ -24,33 +24,7 @@ class Greenlet(Object):
         self.parent = process.current
         self.callee = None
 
-    def switch(self, argv):
-        if not self.initialized:
-            self.argv += argv
-            self.initialized = True
-            self.callee = process.current
-            process.current = self
-            self.handle = process.stacklet.new(greenlet_init)
-            callee = process.stacklet.switch(self.handle)
-            process.current.callee.handle = callee
-        else:
-            if process.stacklet.is_empty_handle(self.handle):
-                raise Error("dead greenlet")
-            self.argv = argv
-            self.callee = process.current
-            process.current = self
-            callee = process.stacklet.switch(self.handle)
-            process.current.callee.handle = callee
-        if len(process.current.argv) == 0:
-            retval = null
-        else:
-            retval = process.current.argv[0]
-        process.current.argv = None
-        return retval
-
     def getattr(self, name):
-        if name == 'switch':
-            return GreenletSwitch(self)
         if name == 'parent':
             return self.parent or null
         return Object.getattr(self, name)
@@ -58,15 +32,31 @@ class Greenlet(Object):
     def repr(self):
         return "<greenlet " + str(self.handle) + ">"
 
-class GreenletSwitch(Object):
-    def __init__(self, greenlet):
-        self.greenlet = greenlet
-
-    def call(self, argv):
-        return self.greenlet.switch(argv)
-
-    def repr(self):
-        return self.greenlet.repr() + ".switch"
+def switch(argv):
+    self = argv.pop(0)
+    if not self.initialized:
+        self.argv += argv
+        self.initialized = True
+        self.callee = process.current
+        process.current = self
+        self.handle = process.stacklet.new(greenlet_init)
+        callee = process.stacklet.switch(self.handle)
+        process.current.callee.handle = callee
+    else:
+        if process.stacklet.is_empty_handle(self.handle):
+            raise Error("dead greenlet")
+        self.argv = argv
+        self.callee = process.current
+        process.current = self
+        callee = process.stacklet.switch(self.handle)
+        process.current.callee.handle = callee
+    if len(process.current.argv) == 0:
+        retval = null
+    else:
+        retval = process.current.argv[0]
+    process.current.argv = None
+    return retval
+Greenlet.interface.methods['switch'] = Builtin(switch)
 
 def greenlet_init(head, arg):
     # fill greenlet's handle.
