@@ -129,6 +129,10 @@ class Op:
     def args_str(self):
         return "..."
 
+class Assert(Op):
+    def __init__(self, value):
+        self.value = value
+
 class ValuedOp(Op):
     def repr(self):
         return str(self.i) + " = " + str(self.__class__.__name__) + " " + self.args_str()
@@ -242,6 +246,9 @@ def interpret(codeobj, prog, frame):
                 for arg in op.args:
                     argv.append(tmp[arg.i])
                 tmp[op.i] = callee.call(argv)
+            elif isinstance(op, Assert):
+                if space.is_false(tmp[op.value.i]):
+                    raise space.Error("Assertion error")
             elif isinstance(op, Cond):
                 pc = 0
                 if space.is_false(tmp[op.cond.i]):
@@ -302,6 +309,13 @@ def set_local(frame, name, value, upscope):
     else:
         frame.var[name] = value
         return value
+
+def assert_macro(env, exp):
+    if len(exp.exps) != 2:
+        raise space.Error("no translation for " + exp.name + " with length != 2")
+    val = translate(env, exp.exps[1])
+    env.add(Assert(val))
+    return val
 
 def func_macro(env, exp):
     argv = []
@@ -403,6 +417,7 @@ def syntax_chain(env, exp):
     return res
 
 macros = {
+    'assert': assert_macro,
     'func': func_macro,
     'if': if_macro,
     'return': return_macro,
