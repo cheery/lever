@@ -4,6 +4,7 @@ from rpython.rlib.objectmodel import compute_hash
 class Error(Exception):
     def __init__(self, message):
         self.message = message
+        self.stacktrace = []
 
 class Object:
     # The metaclass here takes care every object will get an interface.

@@ -20,7 +20,7 @@ def interactive():
             os.write(1, program.call([module]).repr())
             os.write(1, "\n")
         except space.Error as error:
-            os.write(2, error.__class__.__name__ + ": " + error.message + "\n")
+            print_stacktrace(error)
         os.write(1, prompt)
         source = os.read(0, 4096)
     if source == "":
@@ -43,9 +43,15 @@ def run_program(path):
         program = to_program(read(source))
         program.call([module])
     except space.Error as error:
-        os.write(2, error.__class__.__name__ + ": " + error.message + "\n")
+        print_stacktrace(error)
     os.close(fd)
     return 0
+
+def print_stacktrace(error):
+    out = "Traceback:\n"
+    for codeobj, pc in reversed(error.stacktrace):
+        out += "    " + codeobj.repr() + ": pc=" + str(pc) + "\n"
+    os.write(2, out + error.__class__.__name__ + ": " + error.message + "\n")
 
 def entry_point(argv):
     green.process.init(config)

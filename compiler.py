@@ -31,7 +31,7 @@ class Program(space.Object):
         module = argv[0]
         assert isinstance(module, space.Module)
         frame = ActivationRecord(module, None)
-        return interpret(self.body, frame)
+        return interpret(self, self.body, frame)
 
 class Closure(space.Object):
     def __init__(self, frame, func):
@@ -45,7 +45,7 @@ class Closure(space.Object):
         frame = ActivationRecord(self.frame.module, self.frame)
         for i in range(argc):
             frame.var[self.func.args[i]] = argv[i]
-        return interpret(self.func.body, frame)
+        return interpret(self, self.func.body, frame)
 
 class Block:
     def __init__(self, index, contents):
@@ -222,7 +222,7 @@ class Return(Op):
     def __init__(self, ref):
         self.ref = ref
 
-def interpret(prog, frame):
+def interpret(codeobj, prog, frame):
     block = prog.blocks[0]
     pc = 0
     tmp = []
@@ -232,53 +232,56 @@ def interpret(prog, frame):
         tmp[func.i] = Closure(frame, func)
     #for blk in prog.blocks:
     #    print blk.repr()
-    while pc < len(block):
-        op = block[pc]
-        pc += 1
-        if isinstance(op, Call):
-            callee = tmp[op.callee.i]
-            argv = []
-            for arg in op.args:
-                argv.append(tmp[arg.i])
-            tmp[op.i] = callee.call(argv)
-        elif isinstance(op, Cond):
-            pc = 0
-            if space.is_false(tmp[op.cond.i]):
+    try:
+        while pc < len(block):
+            op = block[pc]
+            pc += 1
+            if isinstance(op, Call):
+                callee = tmp[op.callee.i]
+                argv = []
+                for arg in op.args:
+                    argv.append(tmp[arg.i])
+                tmp[op.i] = callee.call(argv)
+            elif isinstance(op, Cond):
+                pc = 0
+                if space.is_false(tmp[op.cond.i]):
+                    block = op.exit
+                else:
+                    block = op.then
+            elif isinstance(op, Jump):
+                pc = 0
                 block = op.exit
+            elif isinstance(op, Constant):
+                tmp[op.i] = op.value
+            elif isinstance(op, Variable):
+                tmp[op.i] = lookup(frame, op.name)
+            elif isinstance(op, Merge):
+                tmp[op.dst.i] = tmp[op.src.i]
+            elif isinstance(op, Function):
+                pass
+            elif isinstance(op, MakeList):
+                contents = []
+                for val in op.values:
+                    contents.append(tmp[val.i])
+                tmp[op.i] = space.List(contents)
+            elif isinstance(op, GetAttr):
+                tmp[op.i] = tmp[op.value.i].getattr(op.name)
+            elif isinstance(op, GetItem):
+                tmp[op.i] = tmp[op.value.i].getitem(tmp[op.index.i])
+            elif isinstance(op, SetAttr):
+                tmp[op.i] = tmp[op.obj.i].setattr(op.name, tmp[op.value.i])
+            elif isinstance(op, SetItem):
+                tmp[op.i] = tmp[op.obj.i].setitem(tmp[op.index.i], tmp[op.value.i])
+            elif isinstance(op, SetLocal):
+                tmp[op.i] = set_local(frame, op.name, tmp[op.value.i], op.upscope)
+            elif isinstance(op, Return):
+                return tmp[op.ref.i]
             else:
-                block = op.then
-        elif isinstance(op, Jump):
-            pc = 0
-            block = op.exit
-        elif isinstance(op, Constant):
-            tmp[op.i] = op.value
-        elif isinstance(op, Variable):
-            tmp[op.i] = lookup(frame, op.name)
-        elif isinstance(op, Merge):
-            tmp[op.dst.i] = tmp[op.src.i]
-        elif isinstance(op, Function):
-            pass
-        elif isinstance(op, MakeList):
-            contents = []
-            for val in op.values:
-                contents.append(tmp[val.i])
-            tmp[op.i] = space.List(contents)
-        elif isinstance(op, GetAttr):
-            tmp[op.i] = tmp[op.value.i].getattr(op.name)
-        elif isinstance(op, GetItem):
-            tmp[op.i] = tmp[op.value.i].getitem(tmp[op.index.i])
-        elif isinstance(op, SetAttr):
-            tmp[op.i] = tmp[op.obj.i].setattr(op.name, tmp[op.value.i])
-        elif isinstance(op, SetItem):
-            tmp[op.i] = tmp[op.obj.i].setitem(tmp[op.index.i], tmp[op.value.i])
-        elif isinstance(op, SetLocal):
-            tmp[op.i] = set_local(frame, op.name, tmp[op.value.i], op.upscope)
-        elif isinstance(op, Return):
-            return tmp[op.ref.i]
-        else:
-            raise space.Error("spaced out")
-    print block.repr(), pc
-    raise space.Error("crappy compiler")
+                raise space.Error("spaced out")
+        raise space.Error("crappy compiler")
+    except space.Error as e:
+        e.stacktrace.append((codeobj, pc))
+        raise e
 
 def lookup(frame, name):
     if frame.parent is None:
