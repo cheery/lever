@@ -481,6 +481,8 @@ def translate(env, exp):
             return env.add(Constant(space.Integer(int(exp.value))))
         elif exp.name == 'hex':
             return env.add(Constant(space.Integer(int(exp.value[2:], 16))))
+        elif exp.name == 'float':
+            return env.add(Constant(space.Float(float(exp.value))))
         elif exp.name == 'symbol':
             return env.add(Variable(exp.value))
         raise space.Error("no translation for " + exp.name)

@@ -5,7 +5,7 @@ from dictionary import Dict
 from listobject import List
 from module import Module
 from multimethod import Multimethod
-from numbers import Integer, Boolean
+from numbers import Float, Integer, Boolean
 from string import String
 
 true = Boolean(True)
