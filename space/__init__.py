@@ -1,6 +1,6 @@
 from rpython.rlib.objectmodel import specialize
 from interface import Error, Object, null
-from builtin import Builtin
+from builtin import Builtin, signature
 from list import List
 from module import Module
 from multimethod import Multimethod
@@ -25,4 +25,4 @@ def argument(argv, index, cls):
         arg = argv[index]
         if isinstance(arg, cls):
             return arg
-    raise Error("expected " + cls.interface.name + " as argv[" + str(index) + "]")
+    raise Error("expected " + cls.interface.name + " as argv:" + str(index))

@@ -1,4 +1,4 @@
-from builtin import Builtin
+from builtin import Builtin, signature
 from interface import Error, Object
 from list import List
 from rpython.rlib.objectmodel import compute_hash, r_dict
@@ -42,4 +42,9 @@ class Multimethod(Object):
         def _impl_(fn):
             self.methods[vec] = Builtin(fn)
             return fn
+        return _impl_
+
+    def multimethod_s(self, *spec):
+        def _impl_(fn):
+            return self.multimethod(*spec)(signature(*spec)(fn))
         return _impl_

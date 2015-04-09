@@ -8,10 +8,9 @@ class Wrap(Object):
         self.ctype = ctype
 
 @Wrap.instantiator
-def _(argv):
-    cname = argument(argv, 0, String).string
-    ctype = argument(argv, 1, Object)
-    return Wrap(cname, ctype)
+@signature(String, Object)
+def _(cname, ctype):
+    return Wrap(cname.string, ctype)
 
 class Library(Object):
     def __init__(self, name, api, lib):
