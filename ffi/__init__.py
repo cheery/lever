@@ -1,6 +1,9 @@
-from space import *
 from rpython.rlib import rdynload, objectmodel
 from rpython.rtyper.lltypesystem import rffi, lltype
+from simple import Type
+from space import *
+import simple
+import systemv
 
 class Wrap(Object):
     def __init__(self, cname, ctype):
@@ -61,112 +64,74 @@ class Handle(Object):
         self.ctype = ctype
 
     def call(self, argv):
-        raise Error("can't cffi call yet")
-#        assert isinstance(self.tp, CFunc), "not a c function"
-#        return self.tp.ccall(self.pointer, argv)
-#
+        if isinstance(self.ctype, systemv.CFunc):
+            return self.ctype.ccall(self.pointer, argv)
+        raise Error("cannot call " + self.ctype.repr())
+
     def repr(self):
         return "<Handle " + self.name + ' from ' + self.library.name + '>'
 
 module = Module('ffi', {
-    'library': Library.interface,
+    'array': systemv.Array.interface,
+    'cfunc': systemv.CFunc.interface,
     'handle': Handle.interface,
+    'library': Library.interface,
+    'mem': systemv.Mem.interface,
+    'pointer': systemv.Pointer.interface,
+    'signed': simple.Signed.interface,
+    'struct': systemv.Struct.interface,
+    'union': systemv.Union.interface,
+    'unsigned': simple.Unsigned.interface,
+    'voidp': systemv.Pointer(null),
     'wrap': Wrap.interface,
 }, frozen=True)
+module.namespace.update(systemv.types)
 
 def builtin(fn):
     module.namespace[fn.__name__] = Builtin(fn)
     return fn
 
-#from object import Object, List, String, Symbol, Integer, BuiltinFunction, Module, true, false, null
-#from systemv import *
-#from api import *
-#
-#def pyl_cfunc(argv):
-#    assert len(argv) >= 2
-#    restype = argv.pop(0)
-#    assert isinstance(restype, Type) or restype is null
-#    for argtype in argv:
-#        assert isinstance(argtype, Type)
-#    return CFunc(restype, argv)
-#
-#def pyl_cdef(argv):
-#    assert len(argv) == 2
-#    handle, tp = argv
-#    assert isinstance(handle, Handle)
-#    assert isinstance(tp, Type)
-#    handle.tp = tp
-#    return handle
-#
-#def pyl_ptr(argv):
-#    assert len(argv) == 1
-#    to = argv[0]
-#    assert isinstance(to, Type)
-#    return Pointer(to)
-#
-#default_api_environment = {
-#    'char': Unsigned(1),
-#    'byte': Unsigned(1),
-#    'sbyte': Signed(1),
-#    'ubyte': Unsigned(1),
-#    'short': Unsigned(2),
-#    'ushort': Unsigned(2),
-#    'int': Signed(4),
-#    'uint': Unsigned(4),
-#    'long': Signed(Pointer.size),
-#    'ulong': Unsigned(Pointer.size),
-#    'lllong': Signed(16),
-#    'ullong': Unsigned(16),
-#    'i8': Signed(1),
-#    'i16': Signed(2),
-#    'i32': Signed(4),
-#    'i64': Signed(8),
-#}
-#
-#module = Module("ffi", {
-#    'cfunc': BuiltinFunction(pyl_cfunc, 'ffi.cfunc'),
-#    'cdef': BuiltinFunction(pyl_cdef, 'ffi.cdef'),
-#    'ptr': BuiltinFunction(pyl_ptr, 'ffi.ptr'),
-#    'voidp': Pointer(null),
-#    
-##    #'char': CPrimType(rffi.CHAR, 'char'),
-##    #'ccharp': CPrimPointer(rffi.CCHARP, 'ccharp'),
-##    #'ccharpp': CPrimPointer(rffi.CCHARPP, 'ccharpp'),
-##    'ulong': CPrimType(rffi.ULONG, 'ulong'),
-#}, frozen=True)
-#
-#module.namespace.update(default_api_environment)
+@builtin
+@signature(Object, Type)
+def cast(obj, ctype):
+    if isinstance(obj, Handle):
+        return Handle(obj.library, obj.name, obj.pointer, ctype)
+    if isinstance(obj, systemv.Mem):
+        return systemv.Mem(ctype, obj.pointer)
+    raise Error("Can cast memory locations only")
+
+# This didn't belong here to start with.. It will soon get
+# its own module
 #@ffi_builtin('api')
 #def ffi_api(argv):
 #    assert len(argv) >= 1
 #    source = argv.pop(0)
 #    return APISpec(source, default_api_environment)
-#
-#@ffi_builtin('sizeof')
-#def ffi_sizeof(argv):
-#    tp = argument(argv, 0, Type)
-#    if len(argv) >= 2:
-#        n = argument(argv, 1, Integer)
-#        return Integer(sizeof_a(tp, n.value))
-#    else:
-#        return Integer(sizeof(tp))
-#
-#@ffi_builtin('malloc')
-#def ffi_malloc(argv):
-#    tp = argument(argv, 0, Type)
-#    if len(argv) >= 2:
-#        n = argument(argv, 1, Integer)
-#        sz = sizeof_a(tp, n.value)
-#    else:
-#        sz = sizeof(tp)
-#    pointer = lltype.malloc(rffi.VOIDP.TO, sz, flavor='raw')
-#    return Memory(Pointer(tp), pointer)
-#
-#@ffi_builtin('free')
 
-#@builtin
-#def free(argv):
-#    mem = argument(argv, 0, Mem)
-#    lltype.free(mem.pointer, flavor='raw')
-#    mem.pointer = rffi.cast(rffi.VOIDP, 0)
-#    return null
+@builtin
+def sizeof(argv):
+    ctype = argument(argv, 0, Type)
+    if len(argv) >= 2:
+        n = argument(argv, 1, Integer)
+        size = simple.sizeof_a(ctype, n.value)
+    else:
+        size = simple.sizeof(ctype)
+    return Integer(size)
+
+@builtin
+def malloc(argv):
+    ctype = argument(argv, 0, Type)
+    if len(argv) >= 2:
+        n = argument(argv, 1, Integer)
+        size = simple.sizeof_a(ctype, n.value)
+    else:
+        size = simple.sizeof(ctype)
+    pointer = lltype.malloc(rffi.VOIDP.TO, size, flavor='raw')
+    return systemv.Mem(systemv.Pointer(ctype), pointer)
+
+@builtin
+def free(argv):
+    mem = argument(argv, 0, systemv.Mem)
+    lltype.free(mem.pointer, flavor='raw')
+    mem.pointer = rffi.cast(rffi.VOIDP, 0)
+    return null

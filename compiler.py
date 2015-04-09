@@ -177,6 +177,10 @@ class Constant(ValuedOp):
     def __init__(self, value):
         self.value = value
 
+class MakeList(ValuedOp):
+    def __init__(self, values):
+        self.values = values
+
 class GetAttr(ValuedOp):
     def __init__(self, value, name):
         self.value = value
@@ -254,6 +258,11 @@ def interpret(prog, frame):
             tmp[op.dst.i] = tmp[op.src.i]
         elif isinstance(op, Function):
             pass
+        elif isinstance(op, MakeList):
+            contents = []
+            for val in op.values:
+                contents.append(tmp[val.i])
+            tmp[op.i] = space.List(contents)
         elif isinstance(op, GetAttr):
             tmp[op.i] = tmp[op.value.i].getattr(op.name)
         elif isinstance(op, GetItem):
@@ -471,6 +480,8 @@ def translate(env, exp):
         callee = args.pop(0)
         args.extend(translate_map(env, exp.capture))
         return env.add(Call(callee, args))
+    elif exp.name == 'list':
+        return env.add(MakeList(translate_map(env, exp.exps)))
     elif exp.name == 'attr' and len(exp.exps) == 2:
         lhs, name = exp.exps
         lhs = translate(env, lhs)
