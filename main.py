@@ -5,8 +5,9 @@ import base
 import space
 import sys, os
 config = get_combined_translation_config(translating=True)
-#config.translation.continuation = True
+config.translation.continuation = True
 
+import green
 
 def interactive():
     module = space.Module('shell', {}, extends=base.module)
@@ -47,6 +48,7 @@ def run_program(path):
     return 0
 
 def entry_point(argv):
+    green.process.init(config)
     if len(argv) <= 1:
         return interactive()
     elif len(argv) == 2:
