@@ -184,3 +184,13 @@ eq.default = Builtin(eq_default)
 @eq.multimethod_s(Integer, Integer)
 def _(a, b):
     return boolean(a.value == b.value)
+
+module.namespace['-expr'] = neg = Multimethod(1)
+@neg.multimethod_s(Integer)
+def _(a):
+    return Integer(-a.value)
+
+module.namespace['+expr'] = pos = Multimethod(1)
+@pos.multimethod_s(Integer)
+def _(a):
+    return Integer(+a.value)

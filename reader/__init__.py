@@ -104,9 +104,10 @@ def expression_chain(ts):
 def expression_bare(ts, rbp):
     if on_prefix(ts):
         op = ts.advance()
-        op.name = 'symbol'
         exp = expression_bare(ts, prefixes[op.value])
-        left = Expr(op.start, exp.stop, 'prefix', [op, exp])
+        op.name = 'symbol'
+        op.value = op.value+'expr'
+        left = Expr(op.start, exp.stop, 'form', [op, exp])
     else:
         left = terminal(ts)
     while ts.filled:
@@ -146,7 +147,8 @@ def expression_bare(ts, rbp):
             op = ts.advance()
             op.name = 'symbol'
             lbp = postfixes.get(op.value, 0)
-            left = Expr(left.start, op.stop, 'postfix', [op, left])
+            op.value = 'expr'+op.value
+            left = Expr(left.start, op.stop, 'form', [op, left])
         else:
             break
     return left
