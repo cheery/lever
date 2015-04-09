@@ -7,6 +7,7 @@ from rpython.rlib import jit_libffi, clibffi, unroll
 # otherwise we can't call foreign libraries.
 types = {
     'char': Unsigned(rffi.sizeof(rffi.CHAR)),
+    'byte': Unsigned(rffi.sizeof(rffi.CHAR)),
     'sbyte': Signed(rffi.sizeof(rffi.SIGNEDCHAR)),
     'ubyte': Unsigned(rffi.sizeof(rffi.UCHAR)),
     'short': Signed(rffi.sizeof(rffi.SHORT)),

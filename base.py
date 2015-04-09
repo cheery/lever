@@ -1,7 +1,7 @@
 from space import *
-import os
-
+import api
 import ffi
+import os
 
 # The base environment
 
@@ -18,6 +18,7 @@ module = Module('base', {
     'false': false,
 
     # Doesn't belong here.
+    'api': api.module,
     'ffi': ffi.module,
 }, frozen=True)
 
@@ -133,6 +134,7 @@ def arithmetic_multimethod(operation):
 module.namespace['+'] = arithmetic_multimethod(lambda a, b: a + b)
 module.namespace['-'] = arithmetic_multimethod(lambda a, b: a - b)
 module.namespace['*'] = arithmetic_multimethod(lambda a, b: a * b)
+module.namespace['/'] = arithmetic_multimethod(lambda a, b: a / b)
 module.namespace['|'] = arithmetic_multimethod(lambda a, b: a | b)
 module.namespace['&'] = arithmetic_multimethod(lambda a, b: a & b)
 module.namespace['^'] = arithmetic_multimethod(lambda a, b: a ^ b)
@@ -167,7 +169,7 @@ module.namespace['!='] = ne = Multimethod(2)
 @signature(Object, Object)
 def ne_default(a, b):
     return boolean(a != b)
-ne.default = ne_default
+ne.default = Builtin(ne_default)
 
 @ne.multimethod_s(Integer, Integer)
 def _(a, b):
@@ -177,10 +179,8 @@ module.namespace['=='] = eq = Multimethod(2)
 @signature(Object, Object)
 def eq_default(a, b):
     return boolean(a == b)
-eq.default = eq_default
-module.namespace['!='] = Builtin(cmp_le, '!=')
+eq.default = Builtin(eq_default)
 
 @eq.multimethod_s(Integer, Integer)
 def _(a, b):
     return boolean(a.value == b.value)
-module.namespace['=='] = Builtin(cmp_ge, '==')

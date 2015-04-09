@@ -1,0 +1,459 @@
+{
+  "functions": {
+    "display_dispatch_queue": {
+      "argtypes": [
+        "display*", 
+        "event_queue*"
+      ], 
+      "restype": "int", 
+      "name": "wl_display_dispatch_queue"
+    }, 
+    "display_roundtrip": {
+      "argtypes": [
+        "display*"
+      ], 
+      "restype": "int", 
+      "name": "wl_display_roundtrip"
+    }, 
+    "event_queue_destroy": {
+      "argtypes": [
+        "event_queue*"
+      ], 
+      "restype": "void", 
+      "name": "wl_event_queue_destroy"
+    }, 
+    "display_prepare_read": {
+      "argtypes": [
+        "display*"
+      ], 
+      "restype": "int", 
+      "name": "wl_display_prepare_read"
+    }, 
+    "array_release": {
+      "argtypes": [
+        "array*"
+      ], 
+      "restype": "void", 
+      "name": "wl_array_release"
+    }, 
+    "display_prepare_read_queue": {
+      "argtypes": [
+        "display*", 
+        "event_queue*"
+      ], 
+      "restype": "int", 
+      "name": "wl_display_prepare_read_queue"
+    }, 
+    "list_remove": {
+      "argtypes": [
+        "list*"
+      ], 
+      "restype": "void", 
+      "name": "wl_list_remove"
+    }, 
+    "list_length": {
+      "argtypes": [
+        "list*"
+      ], 
+      "restype": "int", 
+      "name": "wl_list_length"
+    }, 
+    "proxy_add_listener": {
+      "argtypes": [
+        "proxy*", 
+        "implementation*", 
+        "void*"
+      ], 
+      "restype": "int", 
+      "name": "wl_proxy_add_listener"
+    }, 
+    "proxy_marshal_array": {
+      "argtypes": [
+        "proxy*", 
+        "uint32", 
+        "argument*"
+      ], 
+      "restype": "void", 
+      "name": "wl_proxy_marshal_array"
+    }, 
+    "display_dispatch_pending": {
+      "argtypes": [
+        "display*"
+      ], 
+      "restype": "int", 
+      "name": "wl_display_dispatch_pending"
+    }, 
+    "proxy_destroy": {
+      "argtypes": [
+        "proxy*"
+      ], 
+      "restype": "void", 
+      "name": "wl_proxy_destroy"
+    }, 
+    "display_dispatch": {
+      "argtypes": [
+        "display*"
+      ], 
+      "restype": "int", 
+      "name": "wl_display_dispatch"
+    }, 
+    "display_connect_to_fd": {
+      "argtypes": [
+        "int"
+      ], 
+      "restype": "display*", 
+      "name": "wl_display_connect_to_fd"
+    }, 
+    "proxy_get_class": {
+      "argtypes": [
+        "proxy*"
+      ], 
+      "restype": "char*", 
+      "name": "wl_proxy_get_class"
+    }, 
+    "proxy_set_user_data": {
+      "argtypes": [
+        "proxy*", 
+        "void*"
+      ], 
+      "restype": "void", 
+      "name": "wl_proxy_set_user_data"
+    }, 
+    "display_create_queue": {
+      "argtypes": [
+        "display*"
+      ], 
+      "restype": "event_queue*", 
+      "name": "wl_display_create_queue"
+    }, 
+    "log_func": {
+      "argtypes": [
+        "char*", 
+        "va_list"
+      ], 
+      "restype": "function", 
+      "name": "void"
+    }, 
+    "display_disconnect": {
+      "argtypes": [
+        "display*"
+      ], 
+      "restype": "void", 
+      "name": "wl_display_disconnect"
+    }, 
+    "display_connect": {
+      "argtypes": [
+        "char*"
+      ], 
+      "restype": "display*", 
+      "name": "wl_display_connect"
+    }, 
+    "array_add": {
+      "argtypes": [
+        "array*", 
+        "size"
+      ], 
+      "restype": "void*", 
+      "name": "wl_array_add"
+    }, 
+    "dispatcher_func": {
+      "argtypes": [
+        "void*", 
+        "void*", 
+        "uint32", 
+        "message*", 
+        "argument*"
+      ], 
+      "restype": "function", 
+      "name": "int"
+    }, 
+    "proxy_get_listener": {
+      "argtypes": [
+        "proxy*"
+      ], 
+      "restype": "void*", 
+      "name": "wl_proxy_get_listener"
+    }, 
+    "array_init": {
+      "argtypes": [
+        "array*"
+      ], 
+      "restype": "void", 
+      "name": "wl_array_init"
+    }, 
+    "display_flush": {
+      "argtypes": [
+        "display*"
+      ], 
+      "restype": "int", 
+      "name": "wl_display_flush"
+    }, 
+    "proxy_get_id": {
+      "argtypes": [
+        "proxy*"
+      ], 
+      "restype": "uint32", 
+      "name": "wl_proxy_get_id"
+    }, 
+    "proxy_add_dispatcher": {
+      "argtypes": [
+        "proxy*", 
+        "dispatcher_func", 
+        "void*", 
+        "void*"
+      ], 
+      "restype": "int", 
+      "name": "wl_proxy_add_dispatcher"
+    }, 
+    "display_get_fd": {
+      "argtypes": [
+        "display*"
+      ], 
+      "restype": "int", 
+      "name": "wl_display_get_fd"
+    }, 
+    "proxy_marshal_array_constructor": {
+      "argtypes": [
+        "proxy*", 
+        "uint32", 
+        "argument*", 
+        "interface*"
+      ], 
+      "restype": "proxy*", 
+      "name": "wl_proxy_marshal_array_constructor"
+    }, 
+    "display_cancel_read": {
+      "argtypes": [
+        "display*"
+      ], 
+      "restype": "void", 
+      "name": "wl_display_cancel_read"
+    }, 
+    "log_set_handler_client": {
+      "argtypes": [
+        "log_func"
+      ], 
+      "restype": "void", 
+      "name": "wl_log_set_handler_client"
+    }, 
+    "list_insert": {
+      "argtypes": [
+        "list*", 
+        "list*"
+      ], 
+      "restype": "void", 
+      "name": "wl_list_insert"
+    }, 
+    "proxy_create": {
+      "argtypes": [
+        "proxy*", 
+        "interface*"
+      ], 
+      "restype": "proxy*", 
+      "name": "wl_proxy_create"
+    }, 
+    "proxy_set_queue": {
+      "argtypes": [
+        "proxy*", 
+        "event_queue*"
+      ], 
+      "restype": "void", 
+      "name": "wl_proxy_set_queue"
+    }, 
+    "display_dispatch_queue_pending": {
+      "argtypes": [
+        "display*", 
+        "event_queue*"
+      ], 
+      "restype": "int", 
+      "name": "wl_display_dispatch_queue_pending"
+    }, 
+    "display_read_events": {
+      "argtypes": [
+        "display*"
+      ], 
+      "restype": "int", 
+      "name": "wl_display_read_events"
+    }, 
+    "array_copy": {
+      "argtypes": [
+        "array*", 
+        "array*"
+      ], 
+      "restype": "int", 
+      "name": "wl_array_copy"
+    }, 
+    "proxy_get_user_data": {
+      "argtypes": [
+        "proxy*"
+      ], 
+      "restype": "void*", 
+      "name": "wl_proxy_get_user_data"
+    }, 
+    "list_init": {
+      "argtypes": [
+        "list*"
+      ], 
+      "restype": "void", 
+      "name": "wl_list_init"
+    }, 
+    "list_insert_list": {
+      "argtypes": [
+        "list*", 
+        "list*"
+      ], 
+      "restype": "void", 
+      "name": "wl_list_insert_list"
+    }, 
+    "list_empty": {
+      "argtypes": [
+        "list*"
+      ], 
+      "restype": "int", 
+      "name": "wl_list_empty"
+    }, 
+    "display_get_error": {
+      "argtypes": [
+        "display*"
+      ], 
+      "restype": "int", 
+      "name": "wl_display_get_error"
+    }
+  }, 
+  "types": {
+    "event_queue": {
+      "type": "opaque"
+    }, 
+    "implementation": {
+      "type": "cfunc", 
+      "restype": "void", 
+      "argtypes": []
+    }, 
+    "array": {
+      "fields": [
+        [
+          "size", 
+          "size"
+        ], 
+        [
+          "alloc", 
+          "size"
+        ], 
+        [
+          "data", 
+          "void*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "list": {
+      "fields": [
+        [
+          "prev", 
+          "list*"
+        ], 
+        [
+          "next", 
+          "list*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "argument": {
+      "fields": [
+        [
+          "i", 
+          "int32"
+        ], 
+        [
+          "u", 
+          "uint32"
+        ], 
+        [
+          "f", 
+          "fixed"
+        ], 
+        [
+          "s", 
+          "char*"
+        ], 
+        [
+          "o", 
+          "object*"
+        ], 
+        [
+          "n", 
+          "uint32"
+        ], 
+        [
+          "a", 
+          "array"
+        ], 
+        [
+          "h", 
+          "int32"
+        ]
+      ], 
+      "type": "union"
+    }, 
+    "VERSION": "1.4.0", 
+    "proxy": {
+      "type": "opaque"
+    }, 
+    "interface": {
+      "fields": [
+        [
+          "name", 
+          "char*"
+        ], 
+        [
+          "version", 
+          "int"
+        ], 
+        [
+          "method_count", 
+          "int"
+        ], 
+        [
+          "methods", 
+          "message*"
+        ], 
+        [
+          "event_count", 
+          "int"
+        ], 
+        [
+          "events", 
+          "message*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "message": {
+      "fields": [
+        [
+          "name", 
+          "char*"
+        ], 
+        [
+          "signature", 
+          "char*"
+        ], 
+        [
+          "types", 
+          "interface**"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "fixed": "int32", 
+    "display": {
+      "type": "opaque"
+    }
+  }, 
+  "constants": {
+    "VERSION_MICRO": 0, 
+    "VERSION_MINOR": 4, 
+    "VERSION_MAJOR": 1
+  }
+}

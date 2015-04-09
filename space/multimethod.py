@@ -1,6 +1,6 @@
 from builtin import Builtin, signature
 from interface import Error, Object
-from list import List
+from listobject import List
 from rpython.rlib.objectmodel import compute_hash, r_dict
 
 def eq_fn(this, other):

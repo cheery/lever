@@ -1,0 +1,713 @@
+{
+  "functions": {
+    "WaitEvent": {
+      "argtypes": [
+        "Event*"
+      ], 
+      "restype": "int", 
+      "name": "SDL_WaitEvent"
+    }, 
+    "Quit": {
+      "argtypes": [], 
+      "restype": "void", 
+      "name": "SDL_Quit"
+    }, 
+    "PollEvent": {
+      "argtypes": [
+        "Event*"
+      ], 
+      "restype": "int", 
+      "name": "SDL_PollEvent"
+    }, 
+    "PushEvent": {
+      "argtypes": [
+        "Event*"
+      ], 
+      "restype": "int", 
+      "name": "SDL_PushEvent"
+    }, 
+    "Delay": {
+      "argtypes": [
+        "uint"
+      ], 
+      "restype": "void", 
+      "name": "SDL_Delay"
+    }, 
+    "Init": {
+      "argtypes": [
+        "long"
+      ], 
+      "restype": "long", 
+      "name": "SDL_Init"
+    }, 
+    "EventState": {
+      "argtypes": [
+        "byte", 
+        "int"
+      ], 
+      "restype": "byte", 
+      "name": "SDL_EventState"
+    }, 
+    "WM_SetCaption": {
+      "argtypes": [
+        "cstring", 
+        "cstring"
+      ], 
+      "restype": "void", 
+      "name": "WM_SetCaption"
+    }, 
+    "SetEventFilter": {
+      "argtypes": [
+        "EventFilter"
+      ], 
+      "restype": "void", 
+      "name": "SDL_SetEventFilter"
+    }, 
+    "SetVideoMode": {
+      "argtypes": [
+        "int", 
+        "int", 
+        "int", 
+        "int"
+      ], 
+      "restype": "Surface*", 
+      "name": "SDL_SetVideoMode"
+    }, 
+    "MapRGBA": {
+      "argtypes": [
+        "PixelFormat*", 
+        "byte", 
+        "byte", 
+        "byte", 
+        "byte"
+      ], 
+      "restype": "uint", 
+      "name": "SDL_MapRGBA"
+    }, 
+    "GetError": {
+      "argtypes": [], 
+      "restype": "cstring", 
+      "name": "SDL_GetError"
+    }, 
+    "PumpEvents": {
+      "argtypes": [], 
+      "restype": "void", 
+      "name": "SDL_PumpEvents"
+    }, 
+    "Flip": {
+      "argtypes": [
+        "Surface*"
+      ], 
+      "restype": "int", 
+      "name": "SDL_Flip"
+    }, 
+    "PeepEvents": {
+      "argtypes": [
+        "Event*", 
+        "int", 
+        "long", 
+        "uint"
+      ], 
+      "restype": "int", 
+      "name": "SDL_PeepEvents"
+    }, 
+    "GetTicks": {
+      "argtypes": [], 
+      "restype": "uint", 
+      "name": "SDL_GetTicks"
+    }, 
+    "EnableUNICODE": {
+      "argtypes": [
+        "int"
+      ], 
+      "restype": "int", 
+      "name": "SDL_EnableUNICODE"
+    }, 
+    "GL_SwapBuffers": {
+      "argtypes": [], 
+      "restype": "void", 
+      "name": "SDL_GL_SwapBuffers"
+    }, 
+    "GL_SetAttribute": {
+      "argtypes": [
+        "long", 
+        "int"
+      ], 
+      "restype": "int", 
+      "name": "SDL_GL_SetAttribute"
+    }, 
+    "GL_GetAttribute": {
+      "argtypes": [
+        "long", 
+        "int*"
+      ], 
+      "restype": "int", 
+      "name": "SDL_GL_GetAttribute"
+    }, 
+    "FillRect": {
+      "argtypes": [
+        "Surface*", 
+        "Rect*", 
+        "uint"
+      ], 
+      "restype": "int", 
+      "name": "SDL_FillRect"
+    }, 
+    "ShowCursor": {
+      "argtypes": [
+        "int"
+      ], 
+      "restype": "int", 
+      "name": "SDL_ShowCursor"
+    }, 
+    "MapRGB": {
+      "argtypes": [
+        "PixelFormat*", 
+        "byte", 
+        "byte", 
+        "byte"
+      ], 
+      "restype": "uint", 
+      "name": "SDL_MapRGB"
+    }
+  }, 
+  "types": {
+    "KeyboardEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ], 
+        [
+          "which", 
+          "byte"
+        ], 
+        [
+          "state", 
+          "byte"
+        ], 
+        [
+          "keysym", 
+          "keysym"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Palette": {
+      "fields": [
+        [
+          "ncolors", 
+          "int"
+        ], 
+        [
+          "colors", 
+          "Color*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "QuitEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "ActiveEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ], 
+        [
+          "gain", 
+          "byte"
+        ], 
+        [
+          "state", 
+          "byte"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "PixelFormat": {
+      "type": "opaque"
+    }, 
+    "JoyButtonEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ], 
+        [
+          "which", 
+          "byte"
+        ], 
+        [
+          "button", 
+          "byte"
+        ], 
+        [
+          "state", 
+          "byte"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "MouseButtonEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ], 
+        [
+          "which", 
+          "byte"
+        ], 
+        [
+          "state", 
+          "byte"
+        ], 
+        [
+          "x", 
+          "ushort"
+        ], 
+        [
+          "y", 
+          "ushort"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Rect": {
+      "fields": [
+        [
+          "x", 
+          "short"
+        ], 
+        [
+          "y", 
+          "short"
+        ], 
+        [
+          "w", 
+          "ushort"
+        ], 
+        [
+          "h", 
+          "ushort"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "SysWMEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ], 
+        [
+          "msg", 
+          "SysVMmsg*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "MouseMotionEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ], 
+        [
+          "which", 
+          "byte"
+        ], 
+        [
+          "state", 
+          "byte"
+        ], 
+        [
+          "x", 
+          "ushort"
+        ], 
+        [
+          "y", 
+          "ushort"
+        ], 
+        [
+          "xrel", 
+          "short"
+        ], 
+        [
+          "yrel", 
+          "short"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "JoyBallEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ], 
+        [
+          "which", 
+          "byte"
+        ], 
+        [
+          "ball", 
+          "byte"
+        ], 
+        [
+          "xrel", 
+          "short"
+        ], 
+        [
+          "yrel", 
+          "short"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "EventFilter": {
+      "type": "cfunc", 
+      "restype": "int", 
+      "argtypes": [
+        "Event*"
+      ]
+    }, 
+    "BlitMap": {
+      "type": "opaque"
+    }, 
+    "SysVMmsg": {
+      "type": "opaque"
+    }, 
+    "ResizeEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ], 
+        [
+          "w", 
+          "int"
+        ], 
+        [
+          "h", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "JoyHatEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ], 
+        [
+          "which", 
+          "byte"
+        ], 
+        [
+          "hat", 
+          "byte"
+        ], 
+        [
+          "value", 
+          "byte"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "JoyAxisEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ], 
+        [
+          "which", 
+          "byte"
+        ], 
+        [
+          "axis", 
+          "byte"
+        ], 
+        [
+          "value", 
+          "short"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Color": {
+      "fields": [
+        [
+          "r", 
+          "byte"
+        ], 
+        [
+          "g", 
+          "byte"
+        ], 
+        [
+          "b", 
+          "byte"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Surface": {
+      "fields": [
+        [
+          "flags", 
+          "uint"
+        ], 
+        [
+          "format", 
+          "PixelFormat*"
+        ], 
+        [
+          "w", 
+          "int"
+        ], 
+        [
+          "h", 
+          "int"
+        ], 
+        [
+          "pitch", 
+          "ushort"
+        ], 
+        [
+          "pixels", 
+          "void*"
+        ], 
+        [
+          "offset", 
+          "int"
+        ], 
+        [
+          "hwdata", 
+          "void*"
+        ], 
+        [
+          "clip_rect", 
+          "Rect"
+        ], 
+        [
+          "unused1", 
+          "uint"
+        ], 
+        [
+          "locked", 
+          "uint"
+        ], 
+        [
+          "map", 
+          "BlitMap*"
+        ], 
+        [
+          "format_version", 
+          "uint"
+        ], 
+        [
+          "refcount", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "UserEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ], 
+        [
+          "code", 
+          "int"
+        ], 
+        [
+          "data1", 
+          "void*"
+        ], 
+        [
+          "data2", 
+          "void*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "keysym": {
+      "fields": [
+        [
+          "scancode", 
+          "byte"
+        ], 
+        [
+          "sym", 
+          "int"
+        ], 
+        [
+          "mod", 
+          "int"
+        ], 
+        [
+          "unicode", 
+          "ushort"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Event": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ], 
+        [
+          "active", 
+          "ActiveEvent"
+        ], 
+        [
+          "key", 
+          "KeyboardEvent"
+        ], 
+        [
+          "motion", 
+          "MouseMotionEvent"
+        ], 
+        [
+          "button", 
+          "MouseButtonEvent"
+        ], 
+        [
+          "jaxis", 
+          "JoyAxisEvent"
+        ], 
+        [
+          "jball", 
+          "JoyBallEvent"
+        ], 
+        [
+          "jhat", 
+          "JoyHatEvent"
+        ], 
+        [
+          "jbutton", 
+          "JoyButtonEvent"
+        ], 
+        [
+          "resize", 
+          "ResizeEvent"
+        ], 
+        [
+          "expose", 
+          "ExposeEvent"
+        ], 
+        [
+          "quit", 
+          "QuitEvent"
+        ], 
+        [
+          "user", 
+          "UserEvent"
+        ], 
+        [
+          "syswm", 
+          "SysWMEvent"
+        ]
+      ], 
+      "type": "union"
+    }, 
+    "ExposeEvent": {
+      "fields": [
+        [
+          "type", 
+          "byte"
+        ]
+      ], 
+      "type": "struct"
+    }
+  }, 
+  "constants": {
+    "GL_STEREO": 12, 
+    "ENABLE": 1, 
+    "INIT_CDROM": 256, 
+    "PEEKEVENT": 1, 
+    "KEYUP": 3, 
+    "NUMEVENTS": 32, 
+    "FULLSCREEN": 2147483648, 
+    "RELEASED": 0, 
+    "INIT_JOYSTICK": 512, 
+    "ADDEVENT": 0, 
+    "HWSURFACE": 1, 
+    "JOYAXISMOTION": 7, 
+    "GETEVENT": 2, 
+    "ANYFORMAT": 268435456, 
+    "GL_DEPTH_SIZE": 6, 
+    "GL_GREEN_SIZE": 1, 
+    "NOFRAME": 32, 
+    "EVENT_RESERVED2": 18, 
+    "EVENT_RESERVED3": 19, 
+    "EVENT_RESERVED6": 22, 
+    "EVENT_RESERVED7": 23, 
+    "EVENT_RESERVED4": 20, 
+    "EVENT_RESERVED5": 21, 
+    "SDL_INIT_EVENTTHREAD": 16777216, 
+    "OPENGL": 2, 
+    "KEYDOWN": 2, 
+    "GL_MULTISAMPLESAMPLES": 14, 
+    "GL_BLUE_SIZE": 2, 
+    "INIT_EVERYTHING": 65535, 
+    "DISABLE": 0, 
+    "HWPALETTE": 536870912, 
+    "OPENGLBLIT": 10, 
+    "ACTIVEEVENT": 1, 
+    "SWSURFACE": 0, 
+    "VIDEOEXPOSE": 17, 
+    "MOUSEBUTTONUP": 6, 
+    "GL_BUFFER_SIZE": 4, 
+    "VIDEORESIZE": 16, 
+    "GL_ACCUM_ALPHA_SIZE": 11, 
+    "INIT_VIDEO": 32, 
+    "QUIT": 12, 
+    "MOUSEMOTION": 4, 
+    "JOYBUTTONUP": 11, 
+    "ALLEVENTS": 4294967295, 
+    "GL_ACCUM_GREEN_SIZE": 9, 
+    "GL_SWAP_CONTROL": 16, 
+    "EVENT_RESERVEDB": 15, 
+    "USEREVENT": 24, 
+    "EVENT_RESERVEDA": 14, 
+    "PRESSED": 1, 
+    "GL_ACCELERATED_VISUAL": 15, 
+    "GL_RED_SIZE": 0, 
+    "SYSWMEVENT": 13, 
+    "INIT_TIMER": 1, 
+    "GL_MULTISAMPLEBUFFERS": 13, 
+    "SDL_INIT_NOPARACHUTE": 1048576, 
+    "JOYHATMOTION": 9, 
+    "RESIZABLE": 16, 
+    "GL_ALPHA_SIZE": 3, 
+    "MOUSEBUTTONDOWN": 5, 
+    "DOUBLEBUF": 1073741824, 
+    "GL_ACCUM_RED_SIZE": 8, 
+    "JOYBUTTONDOWN": 10, 
+    "IGNORE": 0, 
+    "GL_DOUBLEBUFFER": 5, 
+    "GL_STENCIL_SIZE": 7, 
+    "ASYNCBLIT": 4, 
+    "NOEVENT": 0, 
+    "QUERY": -1, 
+    "JOYBALLMOTION": 8, 
+    "INIT_AUDIO": 16, 
+    "GL_ACCUM_BLUE_SIZE": 10
+  }
+}

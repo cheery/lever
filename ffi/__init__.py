@@ -2,6 +2,7 @@ from rpython.rlib import rdynload, objectmodel
 from rpython.rtyper.lltypesystem import rffi, lltype
 from simple import Type
 from space import *
+from systemv import Mem, Pointer, CFunc, Struct, Union, Array
 import simple
 import systemv
 
@@ -9,6 +10,9 @@ class Wrap(Object):
     def __init__(self, cname, ctype):
         self.cname = cname
         self.ctype = ctype
+
+    def repr(self):
+        return "<wrap " + self.cname + " " + self.ctype.repr() + ">"
 
 @Wrap.instantiator
 @signature(String, Object)
@@ -64,7 +68,7 @@ class Handle(Object):
         self.ctype = ctype
 
     def call(self, argv):
-        if isinstance(self.ctype, systemv.CFunc):
+        if isinstance(self.ctype, CFunc):
             return self.ctype.ccall(self.pointer, argv)
         raise Error("cannot call " + self.ctype.repr())
 
@@ -73,10 +77,10 @@ class Handle(Object):
 
 module = Module('ffi', {
     'array': systemv.Array.interface,
-    'cfunc': systemv.CFunc.interface,
+    'cfunc': CFunc.interface,
     'handle': Handle.interface,
     'library': Library.interface,
-    'mem': systemv.Mem.interface,
+    'mem': Mem.interface,
     'pointer': systemv.Pointer.interface,
     'signed': simple.Signed.interface,
     'struct': systemv.Struct.interface,
@@ -96,17 +100,9 @@ def builtin(fn):
 def cast(obj, ctype):
     if isinstance(obj, Handle):
         return Handle(obj.library, obj.name, obj.pointer, ctype)
-    if isinstance(obj, systemv.Mem):
-        return systemv.Mem(ctype, obj.pointer)
+    if isinstance(obj, Mem):
+        return Mem(ctype, obj.pointer)
     raise Error("Can cast memory locations only")
-
-# This didn't belong here to start with.. It will soon get
-# its own module
-#@ffi_builtin('api')
-#def ffi_api(argv):
-#    assert len(argv) >= 1
-#    source = argv.pop(0)
-#    return APISpec(source, default_api_environment)
 
 @builtin
 def sizeof(argv):
@@ -127,11 +123,11 @@ def malloc(argv):
     else:
         size = simple.sizeof(ctype)
     pointer = lltype.malloc(rffi.VOIDP.TO, size, flavor='raw')
-    return systemv.Mem(systemv.Pointer(ctype), pointer)
+    return Mem(systemv.Pointer(ctype), pointer)
 
 @builtin
 def free(argv):
-    mem = argument(argv, 0, systemv.Mem)
+    mem = argument(argv, 0, Mem)
     lltype.free(mem.pointer, flavor='raw')
     mem.pointer = rffi.cast(rffi.VOIDP, 0)
     return null

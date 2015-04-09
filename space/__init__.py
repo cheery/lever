@@ -1,7 +1,8 @@
 from rpython.rlib.objectmodel import specialize
 from interface import Error, Object, null
 from builtin import Builtin, signature
-from list import List
+from dictionary import Dict
+from listobject import List
 from module import Module
 from multimethod import Multimethod
 from numbers import Integer, Boolean
