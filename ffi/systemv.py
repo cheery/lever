@@ -6,30 +6,30 @@ from rpython.rlib import jit_libffi, clibffi, unroll
 # Architecture dependent values. These must be right or
 # otherwise we can't call foreign libraries.
 types = {
-    'char': Unsigned(rffi.sizeof(rffi.CHAR)),
-    'byte': Unsigned(rffi.sizeof(rffi.CHAR)),
-    'sbyte': Signed(rffi.sizeof(rffi.SIGNEDCHAR)),
-    'ubyte': Unsigned(rffi.sizeof(rffi.UCHAR)),
-    'short': Signed(rffi.sizeof(rffi.SHORT)),
-    'ushort': Unsigned(rffi.sizeof(rffi.USHORT)),
-    'int': Signed(rffi.sizeof(rffi.INT)),
-    'uint': Unsigned(rffi.sizeof(rffi.UINT)),
-    'long': Signed(rffi.sizeof(rffi.LONG)),
-    'ulong': Unsigned(rffi.sizeof(rffi.ULONG)),
-    'longlong': Signed(rffi.sizeof(rffi.LONGLONG)),
-    'ulonglong': Unsigned(rffi.sizeof(rffi.ULONGLONG)),
-    'i8': Signed(1),
-    'i16': Signed(2),
-    'i32': Signed(4),
-    'i64': Signed(8),
-    'u8': Unsigned(1),
-    'u16': Unsigned(2),
-    'u32': Unsigned(4),
-    'u64': Unsigned(8),
+    u'char': Unsigned(rffi.sizeof(rffi.CHAR)),
+    u'byte': Unsigned(rffi.sizeof(rffi.CHAR)),
+    u'sbyte': Signed(rffi.sizeof(rffi.SIGNEDCHAR)),
+    u'ubyte': Unsigned(rffi.sizeof(rffi.UCHAR)),
+    u'short': Signed(rffi.sizeof(rffi.SHORT)),
+    u'ushort': Unsigned(rffi.sizeof(rffi.USHORT)),
+    u'int': Signed(rffi.sizeof(rffi.INT)),
+    u'uint': Unsigned(rffi.sizeof(rffi.UINT)),
+    u'long': Signed(rffi.sizeof(rffi.LONG)),
+    u'ulong': Unsigned(rffi.sizeof(rffi.ULONG)),
+    u'longlong': Signed(rffi.sizeof(rffi.LONGLONG)),
+    u'ulonglong': Unsigned(rffi.sizeof(rffi.ULONGLONG)),
+    u'i8': Signed(1),
+    u'i16': Signed(2),
+    u'i32': Signed(4),
+    u'i64': Signed(8),
+    u'u8': Unsigned(1),
+    u'u16': Unsigned(2),
+    u'u32': Unsigned(4),
+    u'u64': Unsigned(8),
 }
-#'double': rffi.sizeof(rffi.DOUBLE),
-#'float': rffi.sizeof(rffi.FLOAT),
-#'longdouble': rffi.sizeof(rffi.LONGDOUBLE),
+#u'double': rffi.sizeof(rffi.DOUBLE),
+#u'float': rffi.sizeof(rffi.FLOAT),
+#u'longdouble': rffi.sizeof(rffi.LONGDOUBLE),
 
 # Memory location in our own heap. Compare to 'handle'
 # that is a record in a shared library.
@@ -51,8 +51,8 @@ class Mem(Object):
                 elif isinstance(ctype, Signed) or isinstance(ctype, Unsigned) or isinstance(ctype, Pointer):
                     return ctype.load(pointer)
                 else:
-                    raise Error("no load supported for " + ctype.repr())
-        raise Error("cannot attribute access other mem than structs or unions")
+                    raise Error(u"no load supported for " + ctype.repr())
+        raise Error(u"cannot attribute access other mem than structs or unions")
 
     def setattr(self, name, value):
         ctype = self.ctype
@@ -64,20 +64,19 @@ class Mem(Object):
                 if isinstance(ctype, Signed) or isinstance(ctype, Unsigned):
                     return ctype.store(pointer, value)
                 else:
-                    raise Exception("no store supported for " + ctype.repr())
-        raise Error("cannot attribute access other mem than structs or unions")
+                    raise Exception(u"no store supported for " + ctype.repr())
+        raise Error(u"cannot attribute access other mem than structs or unions")
 
     def call(self, argv):
         if isinstance(self.ctype, CFunc):
             return self.ctype.ccall(self.pointer, argv)
-        raise Error("cannot call " + self.ctype.repr())
+        raise Error(u"cannot call " + self.ctype.repr())
 
     def repr(self):
         name = self.ctype.repr()
         if self.ctype is null:
-            name = ''
-        return "<" + hex(rffi.cast(rffi.LONG, self.pointer)) + " " + name + ">"
-
+            name = u''
+        return u"<%x %s>" % (rffi.cast(rffi.LONG, self.pointer), name)
 
 class Pointer(Type):
     size = rffi.sizeof(rffi.VOIDP)
@@ -98,12 +97,12 @@ class Pointer(Type):
             # It could be worthwhile to typecheck the ctype here.
             pointer = value.pointer
         else:
-            raise Error("cannot pointer store " + value.repr())
+            raise Error(u"cannot pointer store " + value.repr())
         ptr = rffi.cast(rffi.VOIDPP, offset)
         ptr[0] = pointer
 
     def repr(self):
-        return "<pointer "+self.to.repr()+">"
+        return u"<pointer %s>" % self.to.repr()
 
 @Pointer.instantiator
 @signature(Type)
@@ -155,7 +154,7 @@ class CFunc(Type):
     def ccall(self, pointer, argv):
         argc = len(argv)
         if argc != len(self.argtypes):
-            raise Error("ffi call expects " + str(argc) + " arguments")
+            raise Error(u"ffi call expects %d arguments" % argc)
         if self.notready:
             self.prepare_cif()
             self.notready = False
@@ -186,25 +185,25 @@ class CFunc(Type):
             # It could be worthwhile to typecheck the ctype here.
             pnt = rffi.cast(rffi.VOIDPP, offset)
             pnt[0] = value.pointer
-        raise Exception("cannot cfunc store " + value.repr())
+        raise Exception(u"cannot cfunc store " + value.repr())
 
     def repr(self):
-        string = '<cfunc ' + self.restype.repr()
+        string = u'<cfunc ' + self.restype.repr()
         for argtype in self.argtypes:
-            string += ' ' + argtype.repr()
-        return string + '>'
+            string += u' ' + argtype.repr()
+        return string + u'>'
 
 @CFunc.instantiator
 @signature(Object, List)
 def _(restype, argtypes_list):
     if restype is not null and not isinstance(restype, Type):
-        raise Error("expected type or null as restype, not " + restype.repr())
+        raise Error(u"expected type or null as restype, not " + restype.repr())
     argtypes = []
     for argtype in argtypes_list.contents:
         if isinstance(restype, Type):
             argtypes.append(argtype)
         else:
-            raise Error("expected type as argtype, not " + argtype.repr())
+            raise Error(u"expected type as argtype, not " + argtype.repr())
     return CFunc(restype, argtypes)
 
 class Struct(Type):
@@ -219,14 +218,14 @@ class Struct(Type):
 
     def declare(self, fields):
         if self.fields is not None:
-            raise Error("struct can be declared only once")
+            raise Error(u"struct can be declared only once")
         self.fields = fields
         self.align = 1
 
         offset = 0
         for name, ctype in fields:
             if self.parameter is not None:
-                raise Error("parametric field in middle of a structure")
+                raise Error(u"parametric field in middle of a structure")
             if ctype.parameter:
                 self.parameter = ctype.parameter
             offset = align(offset, ctype.align)
@@ -238,11 +237,11 @@ class Struct(Type):
  
     def repr(self):
         if self.fields is None:
-            return '<opaque>'
+            return u'<opaque>'
         names = []
         for name, ctype in self.fields:
-            names.append('.' + name)
-        return '<struct ' + ' '.join(names) + '>'
+            names.append(u'.' + name)
+        return u'<struct ' + u' '.join(names) + u'>'
 
 @Struct.instantiator
 @signature(Object)
@@ -254,7 +253,7 @@ def _(fields_list):
         name = field.getitem(Integer(0))
         ctype = field.getitem(Integer(1))
         if not (isinstance(name, String) and isinstance(ctype, Type)):
-            raise Error("expected declaration format: [name, ctype]")
+            raise Error(u"expected declaration format: [name, ctype]")
         fields.append((name.string, ctype))
     return Struct(fields)
 
@@ -269,14 +268,14 @@ class Union(Type):
 
     def declare(self, fields):
         if self.fields is not None:
-            raise Error("union can be declared only once")
+            raise Error(u"union can be declared only once")
         self.fields = fields
         self.align = 1
 
         offset = 0
         for name, ctype in fields:
             if ctype.parameter is not None:
-                raise Error("parametric field in an union")
+                raise Error(u"parametric field in an union")
             self.align = max(self.align, ctype.align)
             self.size = max(self.size, sizeof(ctype))
             self.namespace[name] = (0, ctype)
@@ -284,8 +283,8 @@ class Union(Type):
     def repr(self):
         names = []
         for name, ctype in self.fields:
-            names.append('.' + name)
-        return '<union ' + ' '.join(names) + '>'
+            names.append(u'.' + name)
+        return u'<union ' + u' '.join(names) + u'>'
 
 @Union.instantiator
 @signature(List)
@@ -297,7 +296,7 @@ def _(fields_list):
         name = field.getitem(Integer(0))
         ctype = field.getitem(Integer(1))
         if not (isinstance(name, String) and isinstance(ctype, Type)):
-            raise Error("expected declaration format: [name, ctype]")
+            raise Error(u"expected declaration format: [name, ctype]")
         fields.append((name.string, ctype))
     return Union(fields)
 
@@ -305,7 +304,7 @@ class Array(Type):
     def __init__(self, ctype, length=0):
         self.ctype = ctype
         if ctype.parameter is not None:
-            raise Error("parametric field in an array")
+            raise Error(u"parametric field in an array")
         if length == 0:
             self.parameter = self
             self.size = 0
@@ -314,7 +313,7 @@ class Array(Type):
         self.align = ctype.align
 
     def repr(self):
-        return '<array ' + self.ctype.repr() + '>'
+        return u'<array ' + self.ctype.repr() + u'>'
 
 @Array.instantiator
 def _(argv):

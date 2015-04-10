@@ -2,8 +2,6 @@ import base
 import reader
 import space
 
-# specialize.argtypes
-
 class ProgramBody:
     def __init__(self, blocks, functions):
         self.blocks = blocks
@@ -27,7 +25,7 @@ class Program(space.Object):
 
     def call(self, argv):
         if len(argv) != 1:
-            raise space.Error("program expects module as an argument")
+            raise space.Error(u"program expects module as an argument")
         module = argv[0]
         assert isinstance(module, space.Module)
         frame = ActivationRecord(module, None)
@@ -41,7 +39,7 @@ class Closure(space.Object):
     def call(self, argv):
         argc = len(self.func.args)
         if len(argv) < argc:
-            raise space.Error("closure requires " + str(argc) + " arguments")
+            raise space.Error(u"closure requires %d arguments" % argc)
         frame = ActivationRecord(self.frame.module, self.frame)
         for i in range(argc):
             frame.var[self.func.args[i]] = argv[i]
@@ -65,15 +63,15 @@ class Block:
         assert isinstance(op, Op)
         self.contents.append(op)
 
-    def label(self):
-        return "b" + str(self.index)
-
-    def repr(self):
-        out = "b" + str(self.index) + ":"
-        for op in self:
-            out += '\n    '
-            out += op.repr()
-        return out
+#    def label(self):
+#        return "b" + str(self.index)
+#
+#    def repr(self):
+#        out = "b" + str(self.index) + ":"
+#        for op in self:
+#            out += '\n    '
+#            out += op.repr()
+#        return out
 
 class Scope:
     def __init__(self, parent=None):
@@ -108,7 +106,7 @@ class Scope:
 
     def capture(self, exp):
         if len(self.capture_catch) == 0:
-            raise space.Error(exp.start.str() + ": expecting capture")
+            raise space.Error(u"%s: expecting capture" % exp.start.repr())
         cap = self.capture_catch
         self.capture_catch = []
         return cap
@@ -123,19 +121,20 @@ class Scope:
 
 class Op:
     i = 0
-    def repr(self):
-        return str(self.__class__.__name__) + " " + self.args_str()
-
-    def args_str(self):
-        return "..."
+#    def repr(self):
+#        return str(self.__class__.__name__) + " " + self.args_str()
+#
+#    def args_str(self):
+#        return "..."
 
 class Assert(Op):
     def __init__(self, value):
         self.value = value
 
 class ValuedOp(Op):
-    def repr(self):
-        return str(self.i) + " = " + str(self.__class__.__name__) + " " + self.args_str()
+    pass
+#    def repr(self):
+#        return str(self.i) + " = " + str(self.__class__.__name__) + " " + self.args_str()
 
 class Function(ValuedOp):
     def __init__(self, args):
@@ -146,36 +145,36 @@ class Call(ValuedOp):
     def __init__(self, callee, args):
         self.callee = callee
         self.args = args
-
-    def args_str(self):
-        out = str(self.callee.i)
-        for a in self.args:
-            out += ", " + str(a.i)
-        return out
+#
+#    def args_str(self):
+#        out = str(self.callee.i)
+#        for a in self.args:
+#            out += ", " + str(a.i)
+#        return out
 
 class Cond(ValuedOp):
     def __init__(self, cond):
         self.cond = cond
         self.then = None
         self.exit = None
-
-    def args_str(self):
-        return str(self.cond.i) + ", " + self.then.label() + ", " + self.exit.label()
+#
+#    def args_str(self):
+#        return str(self.cond.i) + ", " + self.then.label() + ", " + self.exit.label()
 
 class Merge(Op):
     def __init__(self, dst, src):
         self.dst = dst
         self.src = src
-
-    def args_str(self):
-        return str(self.dst.i) + ", " + str(self.src.i)
+#
+#    def args_str(self):
+#        return str(self.dst.i) + ", " + str(self.src.i)
 
 class Jump(ValuedOp):
     def __init__(self, exit):
         self.exit = exit
-
-    def args_str(self):
-        return self.exit.label()
+#
+#    def args_str(self):
+#        return self.exit.label()
 
 class Constant(ValuedOp):
     def __init__(self, value):
@@ -199,8 +198,8 @@ class Variable(ValuedOp):
     def __init__(self, name):
         self.name = name
 
-    def args_str(self):
-        return self.name
+#    def args_str(self):
+#        return self.name
 
 class SetAttr(ValuedOp):
     def __init__(self, obj, name, value):
@@ -216,7 +215,7 @@ class SetItem(ValuedOp):
 
 class SetLocal(ValuedOp):
     def __init__(self, name, value, upscope):
-        assert isinstance(name, str)
+        assert isinstance(name, unicode)
         assert isinstance(value, ValuedOp)
         self.name = name
         self.value = value
@@ -248,7 +247,7 @@ def interpret(codeobj, prog, frame):
                 tmp[op.i] = callee.call(argv)
             elif isinstance(op, Assert):
                 if space.is_false(tmp[op.value.i]):
-                    raise space.Error("Assertion error")
+                    raise space.Error(u"Assertion error")
             elif isinstance(op, Cond):
                 pc = 0
                 if space.is_false(tmp[op.cond.i]):
@@ -284,8 +283,8 @@ def interpret(codeobj, prog, frame):
             elif isinstance(op, Return):
                 return tmp[op.ref.i]
             else:
-                raise space.Error("spaced out")
-        raise space.Error("crappy compiler")
+                raise space.Error(u"spaced out")
+        raise space.Error(u"crappy compiler")
     except space.Error as e:
         e.stacktrace.append((codeobj, pc))
         raise e
@@ -312,7 +311,7 @@ def set_local(frame, name, value, upscope):
 
 def assert_macro(env, exp):
     if len(exp.exps) != 2:
-        raise space.Error("no translation for " + exp.name + " with length != 2")
+        raise space.Error(u"no translation for %s with length != 2" % exp.name)
     val = translate(env, exp.exps[1])
     env.add(Assert(val))
     return val
@@ -321,24 +320,24 @@ def func_macro(env, exp):
     argv = []
     for i in range(1, len(exp.exps)):
         arg = exp.exps[i]
-        if isinstance(arg, reader.Literal) and arg.name == 'symbol':
+        if isinstance(arg, reader.Literal) and arg.name == u'symbol':
             argv.append(arg.value)
         else:
-            raise space.Error(arg.start.str() + ": expected symbol inside func")
+            raise space.Error(u"%s: expected symbol inside func" % arg.start.repr())
     body = env.capture(exp)
     return env.new_function(argv, body)
 
 def if_macro(env, exp):
     if len(exp.exps) != 2:
-        raise space.Error("no translation for " + exp.name + " with length != 2")
+        raise space.Error(u"no translation for %s with length != 2" % exp.name)
     chain = env.pull_chain()
     cond = Cond(translate(env, exp.exps[1]))
     env.add(cond)
     cond.then = env.block = env.new_block()
     if len(chain) > 0:
         first = chain[0]
-        if len(chain) > 1 and macro_name(first.exps[0]) != 'else' and len(first.exps) != 1:
-            raise space.Error(exp.start.str() + ": non-else longer chains not supported")
+        if len(chain) > 1 and macro_name(first.exps[0]) != u'else' and len(first.exps) != 1:
+            raise space.Error(u"%s: non-else longer chains not supported" % exp.start.repr())
         cond.exit = env.block = env.new_block()
         exit = env.new_block()
         val = translate_flow(env, first.capture)
@@ -355,12 +354,12 @@ def if_macro(env, exp):
 
 def return_macro(env, exp):
     if len(exp.exps) != 2:
-        raise space.Error("no translation for " + exp.name + " with length != 2")
+        raise space.Error(u"no translation for %s with length != 2" % exp.name)
     return env.add(Return(translate(env, exp.exps[1])))
 
 def while_macro(env, exp):
     if len(exp.exps) != 2:
-        raise space.Error("no translation for " + exp.name + " with length != 2")
+        raise space.Error(u"no translation for %s with length != 2" % exp.name)
     loop = env.new_label()
     cond = env.add(Cond(translate(env, exp.exps[1])))
     cond.then = env.block = env.new_block()
@@ -373,7 +372,7 @@ def while_macro(env, exp):
 
 def and_macro(env, exp):
     if len(exp.exps) != 3:
-        raise space.Error("no translation for " + exp.name + " with length != 2")
+        raise space.Error(u"no translation for %s with length != 3" % exp.name)
     val = translate(env, exp.exps[1])
     cond = env.add(Cond(val))
     cond.then = env.block = env.new_block()
@@ -385,7 +384,7 @@ def and_macro(env, exp):
 
 def or_macro(env, exp):
     if len(exp.exps) != 3:
-        raise space.Error("no translation for " + exp.name + " with length != 2")
+        raise space.Error(u"no translation for %s with length != 3" % exp.name)
     val = translate(env, exp.exps[1])
     cond = env.add(Cond(val))
     cond.exit = env.block = env.new_block()
@@ -397,8 +396,8 @@ def or_macro(env, exp):
 
 def syntax_chain(env, exp):
     if len(exp.exps) < 3:
-        raise space.Error("no translation for " + exp.name + " with length != 2")
-    and_ = Variable('and')
+        raise space.Error(u"no translation for %s with length < 3" % exp.name)
+    and_ = Variable(u'and')
     if len(exp.exps) > 3:
         env.add(and_)
     lhs = translate(env, exp.exps[0])
@@ -417,23 +416,23 @@ def syntax_chain(env, exp):
     return res
 
 macros = {
-    'assert': assert_macro,
-    'func': func_macro,
-    'if': if_macro,
-    'return': return_macro,
-    'while': while_macro,
-    'and': and_macro,
-    'or': or_macro,
+    u'assert': assert_macro,
+    u'func': func_macro,
+    u'if': if_macro,
+    u'return': return_macro,
+    u'while': while_macro,
+    u'and': and_macro,
+    u'or': or_macro,
 }
-chain_macros = ['else']
+chain_macros = [u'else']
 
 def macro_name(exp):
     if isinstance(exp, reader.Expr):
-        if exp.name == 'form' and len(exp.exps) > 0:
+        if exp.name == u'form' and len(exp.exps) > 0:
             first = exp.exps[0]
-            if isinstance(first, reader.Literal) and first.name == 'symbol':
+            if isinstance(first, reader.Literal) and first.name == u'symbol':
                 return first.value
-    return ""
+    return u""
 
 def translate_flow(env, exps):
     val = None
@@ -469,99 +468,101 @@ def translate_chain(env, chain):
     env.chain = chain
     val = translate(env, exp)
     if len(env.chain) > 0:
-        raise space.Error(exp.start.str() + ": chain without receiver")
+        raise space.Error(u"%s: chain without receiver" % exp.start.repr())
     env.chain = chain_above
     return val
 
 def translate(env, exp):
     if isinstance(exp, reader.Literal):
-        if exp.name == 'string':
-            return env.add(Constant(space.String(exp.value)))
-        elif exp.name == 'int':
-            return env.add(Constant(space.Integer(int(exp.value))))
-        elif exp.name == 'hex':
-            return env.add(Constant(space.Integer(int(exp.value[2:], 16))))
-        elif exp.name == 'float':
-            return env.add(Constant(space.Float(float(exp.value))))
-        elif exp.name == 'symbol':
+        if exp.name == u'string':
+            return env.add(Constant(space.from_ustring(exp.value)))
+        elif exp.name == u'int':
+            return env.add(Constant(space.Integer(int(exp.value.encode('utf-8')))))
+        elif exp.name == u'hex':
+            return env.add(Constant(space.Integer(int(exp.value[2:].encode('utf-8'), 16))))
+        elif exp.name == u'float':
+            return env.add(Constant(space.Float(float(exp.value.encode('utf-8')))))
+        elif exp.name == u'symbol':
             return env.add(Variable(exp.value))
-        raise space.Error("no translation for " + exp.name)
-    assert isinstance(exp, reader.Expr)
-    if exp.name == 'form' and len(exp.exps) > 0:
+        raise space.Error(u"no translation for " + exp.name)
+    assert isinstance(exp, reader.Expr), exp.__class__.__name__
+    if exp.name == u'form' and len(exp.exps) > 0:
         if macro_name(exp) in macros:
             if len(exp.capture) > 0:
                 env.capture_catch = exp.capture
             res = macros[macro_name(exp)](env, exp)
             if len(exp.capture) > 0 and len(env.capture_catch) > 0:
-                raise space.Error(exp.start.str() + ": capture without receiver")
+                raise space.Error(u"%s: capture without receiver" % exp.start.repr())
             return res
         # callattr goes here, if it'll be needed
         args = translate_map(env, exp.exps)
         callee = args.pop(0)
         args.extend(translate_map(env, exp.capture))
         return env.add(Call(callee, args))
-    elif exp.name == 'list':
+    elif exp.name == u'list':
         return env.add(MakeList(translate_map(env, exp.exps)))
-    elif exp.name == 'attr' and len(exp.exps) == 2:
+    elif exp.name == u'attr' and len(exp.exps) == 2:
         lhs, name = exp.exps
         lhs = translate(env, lhs)
-        assert isinstance(name, reader.Literal)
+        if not isinstance(name, reader.Literal):
+            raise space.Error(u"%s: bad attribute expr" % exp.repr())
         return env.add(GetAttr(lhs, name.value))
         sym.value
-    elif exp.name == 'index' and len(exp.exps) == 2:
+    elif exp.name == u'index' and len(exp.exps) == 2:
         lhs, rhs = exp.exps
         lhs = translate(env, lhs)
         rhs = translate(env, rhs)
         return env.add(GetItem(lhs, rhs))
-    elif exp.name == 'let' or exp.name == 'set':
+    elif exp.name == u'let' or exp.name == u'set':
         lhs, rhs = exp.exps
         rhs = translate(env, rhs)
-        return store_value(env, lhs, rhs, exp.name == 'set')
-    elif exp.name == 'aug' and len(exp.exps) == 3:
+        return store_value(env, lhs, rhs, exp.name == u'set')
+    elif exp.name == u'aug' and len(exp.exps) == 3:
         aug, lhs, rhs = exp.exps
-        assert isinstance(aug, reader.Literal)
+        if not isinstance(aug, reader.Literal):
+            raise space.Error(u"%s: bad augmented expr" % exp.repr())
         rhs = translate(env, rhs)
         return store_aug_value(env, aug, lhs, rhs)
-    elif exp.name == 'chain':
+    elif exp.name == u'chain':
         return syntax_chain(env, exp)
-    raise space.Error("no translation for " + exp.name)
+    raise space.Error(u"no translation for " + exp.name)
 
 def store_value(env, lhs, value, upscope):
-    if isinstance(lhs, reader.Literal) and lhs.name == 'symbol':
+    if isinstance(lhs, reader.Literal) and lhs.name == u'symbol':
         return env.add(SetLocal(lhs.value, value, upscope))
-    elif isinstance(lhs, reader.Expr) and lhs.name == 'attr' and  len(lhs.exps) == 2:
+    elif isinstance(lhs, reader.Expr) and lhs.name == u'attr' and  len(lhs.exps) == 2:
         obj, name = lhs.exps
         obj = translate(env, obj)
         assert isinstance(name, reader.Literal)
         return env.add(SetAttr(obj, name.value, value))
-    elif isinstance(lhs, reader.Expr) and lhs.name == 'index' and  len(lhs.exps) == 2:
+    elif isinstance(lhs, reader.Expr) and lhs.name == u'index' and  len(lhs.exps) == 2:
         obj, index = lhs.exps
         obj = translate(env, obj)
         index = translate(env, index)
         return env.add(SetItem(obj, index, value))
     else:
-        raise space.Error("no translation for " + lhs.name)
+        raise space.Error(u"no translation for " + lhs.name)
 
 def store_aug_value(env, aug, lhs, value):
     aug = env.add(Variable(aug.value))
-    if isinstance(lhs, reader.Literal) and lhs.name == 'symbol':
+    if isinstance(lhs, reader.Literal) and lhs.name == u'symbol':
         name = lhs.value
         value = env.add(Call(aug, [env.add(Variable(name)), value]))
         return env.add(SetLocal(name, value, True))
-    elif isinstance(lhs, reader.Expr) and lhs.name == 'attr' and  len(lhs.exps) == 2:
+    elif isinstance(lhs, reader.Expr) and lhs.name == u'attr' and  len(lhs.exps) == 2:
         obj, name = lhs.exps
         assert isinstance(name, reader.Literal)
         obj = translate(env, obj)
         value = env.add(Call(aug, [env.add(GetAttr(obj, name.value)), value]))
         return env.add(SetAttr(obj, name.value, value))
-    elif isinstance(lhs, reader.Expr) and lhs.name == 'index' and  len(lhs.exps) == 2:
+    elif isinstance(lhs, reader.Expr) and lhs.name == u'index' and  len(lhs.exps) == 2:
         obj, index = lhs.exps
         obj = translate(env, obj)
         index = translate(env, index)
         value = env.add(Call(aug, [env.add(GetItem(obj, index)), value]))
         return env.add(SetItem(obj, index, value))
     else:
-        raise space.Error("no translation for " + lhs.name)
+        raise space.Error(u"no translation for " + lhs.name)
 
 def build_closures(parent):
     for i in range(len(parent.functions)):

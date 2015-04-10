@@ -17,7 +17,7 @@ def align(x, a):
 def sizeof(tp):
     assert isinstance(tp, Type)
     if tp.size == 0 or tp.align == 0:
-        raise Error("cannot determine size of opaque type")
+        raise Error(u"cannot determine size of opaque type")
     return tp.size
 
 # This is something rpython's allocator is doing, and
@@ -26,7 +26,7 @@ def sizeof(tp):
 def sizeof_a(tp, n):
     assert isinstance(tp, Type)
     if tp.size == 0 or tp.align == 0:
-        raise Error("cannot determine size of opaque type")
+        raise Error(u"cannot determine size of opaque type")
     if tp.parameter is not None:
         return tp.size + sizeof(tp.parameter)*n
     else:
@@ -57,7 +57,7 @@ class Signed(Type):
 
     def store(self, offset, value):
         if not isinstance(value, Integer):
-            raise Exception("cannot transform to primtype")
+            raise Error(u"cannot transform to primtype")
         for rtype in signed_types:
             if self.size == rffi.sizeof(rtype):
                 pnt = rffi.cast(rffi.CArrayPtr(rtype), offset)
@@ -67,7 +67,7 @@ class Signed(Type):
             assert False, "undefined ffi type"
 
     def repr(self):
-        return "<signed " + str(self.size) + ">"
+        return u"<signed %d>" % self.size
 
 class Unsigned(Type):
     def __init__(self, size=8):
@@ -91,7 +91,7 @@ class Unsigned(Type):
 
     def store(self, offset, value):
         if not isinstance(value, Integer):
-            raise Exception("cannot transform to primtype")
+            raise Error(u"cannot transform to primtype")
         for rtype in unsigned_types:
             if self.size == rffi.sizeof(rtype):
                 pnt = rffi.cast(rffi.CArrayPtr(rtype), offset)
@@ -101,7 +101,7 @@ class Unsigned(Type):
             assert False, "undefined ffi type"
 
     def repr(self):
-        return "<unsigned " + str(self.size) + ">"
+        return u"<unsigned %d>" % self.size
 
 # We don't have float object yet.
 #class Float(Type):

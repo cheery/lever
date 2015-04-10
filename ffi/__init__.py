@@ -12,7 +12,7 @@ class Wrap(Object):
         self.ctype = ctype
 
     def repr(self):
-        return "<wrap " + self.cname + " " + self.ctype.repr() + ">"
+        return u"<wrap %s %s>" % (self.cname, self.ctype.repr())
 
 @Wrap.instantiator
 @signature(String, Object)
@@ -29,33 +29,33 @@ class Library(Object):
     def getattr(self, name):
         if name in self.namespace:
             return self.namespace[name]
-        cname = name
+        cname = name.encode('utf-8')
         ctype = null
         if self.api is not null:
             c = self.api.getitem(String(name))
             if isinstance(c, Wrap):
-                cname = c.cname
+                cname = c.cname.encode('utf-8')
                 ctype = c.ctype
             else:
                 return c
         try:
             pointer = rdynload.dlsym(self.lib, cname)
         except KeyError, e:
-            raise Error("Not in the library: " + name)
+            raise Error(u"Not in the library: " + name)
         self.namespace[name] = handle = Handle(self, name, pointer, ctype)
         return handle
 
 @Library.instantiator
 def _(argv):
     if len(argv) < 1:
-        raise Error("library requires at least a path name")
+        raise Error(u"library requires at least a path name")
     name = argument(argv, 0, String)
     apispec = argv[1] if len(argv) > 1 else null
-    path = rffi.str2charp(name.string)
+    path = rffi.str2charp(as_cstring(name))
     try:
         lib = rdynload.dlopen(path)
     except rdynload.DLOpenError, e:
-        raise Error("Unable to load library: " + e.msg)
+        raise Error(u"Unable to load library: " + e.msg.decode('utf-8'))
     finally:
         lltype.free(path, flavor='raw')
     return Library(name.string, apispec, lib)
@@ -70,29 +70,29 @@ class Handle(Object):
     def call(self, argv):
         if isinstance(self.ctype, CFunc):
             return self.ctype.ccall(self.pointer, argv)
-        raise Error("cannot call " + self.ctype.repr())
+        raise Error(u"cannot call " + self.ctype.repr())
 
     def repr(self):
-        return "<Handle " + self.name + ' from ' + self.library.name + '>'
+        return u"<handle %s from %s" % (self.name, self.library.name)
 
-module = Module('ffi', {
-    'array': systemv.Array.interface,
-    'cfunc': CFunc.interface,
-    'handle': Handle.interface,
-    'library': Library.interface,
-    'mem': Mem.interface,
-    'pointer': systemv.Pointer.interface,
-    'signed': simple.Signed.interface,
-    'struct': systemv.Struct.interface,
-    'union': systemv.Union.interface,
-    'unsigned': simple.Unsigned.interface,
-    'voidp': systemv.Pointer(null),
-    'wrap': Wrap.interface,
+module = Module(u'ffi', {
+    u'array': systemv.Array.interface,
+    u'cfunc': CFunc.interface,
+    u'handle': Handle.interface,
+    u'library': Library.interface,
+    u'mem': Mem.interface,
+    u'pointer': systemv.Pointer.interface,
+    u'signed': simple.Signed.interface,
+    u'struct': systemv.Struct.interface,
+    u'union': systemv.Union.interface,
+    u'unsigned': simple.Unsigned.interface,
+    u'voidp': systemv.Pointer(null),
+    u'wrap': Wrap.interface,
 }, frozen=True)
 module.namespace.update(systemv.types)
 
 def builtin(fn):
-    module.namespace[fn.__name__] = Builtin(fn)
+    module.namespace[fn.__name__.decode('utf-8')] = Builtin(fn)
     return fn
 
 @builtin
@@ -102,7 +102,7 @@ def cast(obj, ctype):
         return Handle(obj.library, obj.name, obj.pointer, ctype)
     if isinstance(obj, Mem):
         return Mem(ctype, obj.pointer)
-    raise Error("Can cast memory locations only")
+    raise Error(u"Can cast memory locations only")
 
 @builtin
 def sizeof(argv):

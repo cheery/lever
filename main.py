@@ -9,59 +9,76 @@ config.translation.continuation = True
 
 import green
 
+STDIN = 0
+STDOUT = 1
+STDERR = 2
+
 def interactive():
-    module = space.Module('shell', {}, extends=base.module)
-    prompt = "pyl> "
-    os.write(1, prompt)
-    source = os.read(0, 4096)
-    while source != "":
+    module = space.Module(u'shell', {}, extends=base.module)
+    prompt = u"pyl> "
+    write(STDOUT, prompt)
+    source = os.read(0, 4096).decode('utf-8')
+    while source != u"":
         try:
             program = to_program(read(source))
-            os.write(1, program.call([module]).repr())
-            os.write(1, "\n")
+            write(STDOUT, program.call([module]).repr() + u"\n")
         except space.Error as error:
-            print_stacktrace(error)
-        os.write(1, prompt)
-        source = os.read(0, 4096)
-    if source == "":
-        os.write(1, "\n")
+            print_traceback(error)
+        write(STDOUT, prompt)
+        source = os.read(0, 4096).decode('utf-8')
+    if source == u"":
+        write(STDOUT, u"\n")
     return 0
 
-def run_program(path):
-    module = space.Module('main', {}, extends=base.module)
+def batch(path):
+    module = space.Module(u'main', {}, extends=base.module)
     try:
-        fd = os.open(path, os.O_RDONLY, 0777)
-        source = ""
-        buf = os.read(fd, 4096)
-        while buf != "":
-            source += buf
-            buf = os.read(fd, 4096)
-    except OSError, e:
-        os.write(2, str(e))
+        source = read_file(path)
+    except OSError, error:
+        os.write(2, str(error))
         return 1
     try:
         program = to_program(read(source))
         program.call([module])
     except space.Error as error:
-        print_stacktrace(error)
-    os.close(fd)
+        print_traceback(error)
+        return 1
     return 0
-
-def print_stacktrace(error):
-    out = "Traceback:\n"
-    for codeobj, pc in reversed(error.stacktrace):
-        out += "    " + codeobj.repr() + ": pc=" + str(pc) + "\n"
-    os.write(2, out + error.__class__.__name__ + ": " + error.message + "\n")
 
 def entry_point(argv):
     green.process.init(config)
     if len(argv) <= 1:
         return interactive()
-    elif len(argv) == 2:
-        return run_program(argv[1])
-    else:
-        os.write(1, "?")
-        return 1
+    for arg in argv[1:]:
+        status = batch(arg)
+        if status != 0:
+            return status
+    return 0
+
+def print_traceback(error):
+    out = u""
+    if len(error.stacktrace) > 0:
+        out = u"Traceback:\n"
+    for codeobj, pc in reversed(error.stacktrace):
+        out += u"    " + codeobj.repr() + u": pc=%d\n" % pc
+    out += error.__class__.__name__.decode('utf-8')
+    write(STDERR, out + u": " + error.message + u"\n")
+
+def read_file(path):
+    fd = os.open(path, os.O_RDONLY, 0777)
+    try:
+        data = ""
+        frame = os.read(fd, 4096)
+        while frame != "":
+            data += frame
+            frame = os.read(fd, 4096)
+    finally:
+        os.close(fd)
+    return data.decode('utf-8')
+
+def write(fd, message):
+    assert isinstance(message, unicode)
+    os.write(fd, message.encode('utf-8'))
 
 def target(*args):
     return entry_point, None

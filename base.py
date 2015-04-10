@@ -5,42 +5,41 @@ import os
 
 # The base environment
 
-module = Module('base', {
-    'module': Module.interface,
-    'object': Object.interface,
-    'list': List.interface,
-    'multimethod': Multimethod.interface,
-    'int': Integer.interface,
-    'bool': Boolean.interface,
-    'str': String.interface,
-    'null': null,
-    'true': true,
-    'false': false,
+module = Module(u'base', {
+    u'module': Module.interface,
+    u'object': Object.interface,
+    u'list': List.interface,
+    u'multimethod': Multimethod.interface,
+    u'int': Integer.interface,
+    u'bool': Boolean.interface,
+    u'str': String.interface,
+    u'null': null,
+    u'true': true,
+    u'false': false,
 
     # Doesn't belong here.
-    'api': api.module,
-    'ffi': ffi.module,
+    u'api': api.module,
+    u'ffi': ffi.module,
 }, frozen=True)
 
 def builtin(fn):
-    name = fn.__name__.rstrip('_')
+    name = fn.__name__.rstrip('_').decode('utf-8')
     module.namespace[name] = Builtin(fn, name)
     return fn
 
 @builtin
-def interface(argv):
-    if len(argv) != 1:
-        raise Error("interface expects 1 argument, got " + str(len(argv)))
-    return argv[0].interface
-
-#def pyl_apply(argv):
-#    N = len(argv) - 1
-#    assert N >= 1
-#    args = argv[1:N]
-#    varg = argv[N]
-#    assert isinstance(varg, List)
-#    return argv[0].invoke(args + varg.items)
-
+@signature(Object)
+def interface(obj):
+    return obj.interface
+  
+#  #def pyl_apply(argv):
+#  #    N = len(argv) - 1
+#  #    assert N >= 1
+#  #    args = argv[1:N]
+#  #    varg = argv[N]
+#  #    assert isinstance(varg, List)
+#  #    return argv[0].invoke(args + varg.items)
+  
 @builtin
 @signature(Object, Object)
 def getitem(obj, index):
@@ -60,7 +59,7 @@ def getattr(obj, index):
 @signature(Object, String, Object)
 def setattr(obj, index, value):
     return obj.setattr(index.string, value)
-
+  
 #def pyl_callattr(argv):
 #    assert len(argv) >= 2
 #    name = argv[1]
@@ -69,17 +68,18 @@ def setattr(obj, index, value):
 
 @builtin
 def print_(argv):
-    space = ''
+    space = u''
+    out = u""
     for arg in argv:
         if isinstance(arg, String):
             string = arg.string
         else:
             string = arg.repr()
-        os.write(1, space + string)
-        space = ' '
-    os.write(1, '\n')
+        out += space + string
+        space = u' '
+    os.write(1, (out + u'\n').encode('utf-8'))
     return null
-
+  
 #@global_builtin('read-file')
 #def pyl_read_file(argv):
 #    assert len(argv) >= 1
@@ -105,7 +105,7 @@ def or_(a, b):
 def not_(a):
     return boolean(is_false(a))
 
-module.namespace['coerce'] = coerce = Multimethod(2)
+module.namespace[u'coerce'] = coerce = Multimethod(2)
 @coerce.multimethod_s(Boolean, Boolean)
 def _(a, b):
     return List([Integer(int(a.flag)), Integer(int(b.flag))])
@@ -131,41 +131,41 @@ def arithmetic_multimethod(operation):
         return Integer(operation(a.value, b.value))
     return method
 
-module.namespace['+'] = arithmetic_multimethod(lambda a, b: a + b)
-module.namespace['-'] = arithmetic_multimethod(lambda a, b: a - b)
-module.namespace['*'] = arithmetic_multimethod(lambda a, b: a * b)
-module.namespace['/'] = arithmetic_multimethod(lambda a, b: a / b)
-module.namespace['|'] = arithmetic_multimethod(lambda a, b: a | b)
-module.namespace['&'] = arithmetic_multimethod(lambda a, b: a & b)
-module.namespace['^'] = arithmetic_multimethod(lambda a, b: a ^ b)
-module.namespace['<<'] = arithmetic_multimethod(lambda a, b: a << b)
-module.namespace['>>'] = arithmetic_multimethod(lambda a, b: a >> b)
-module.namespace['min'] = arithmetic_multimethod(lambda a, b: min(a, b))
-module.namespace['max'] = arithmetic_multimethod(lambda a, b: max(a, b))
+module.namespace[u'+'] = arithmetic_multimethod(lambda a, b: a + b)
+module.namespace[u'-'] = arithmetic_multimethod(lambda a, b: a - b)
+module.namespace[u'*'] = arithmetic_multimethod(lambda a, b: a * b)
+module.namespace[u'/'] = arithmetic_multimethod(lambda a, b: a / b)
+module.namespace[u'|'] = arithmetic_multimethod(lambda a, b: a | b)
+module.namespace[u'&'] = arithmetic_multimethod(lambda a, b: a & b)
+module.namespace[u'^'] = arithmetic_multimethod(lambda a, b: a ^ b)
+module.namespace[u'<<'] = arithmetic_multimethod(lambda a, b: a << b)
+module.namespace[u'>>'] = arithmetic_multimethod(lambda a, b: a >> b)
+module.namespace[u'min'] = arithmetic_multimethod(lambda a, b: min(a, b))
+module.namespace[u'max'] = arithmetic_multimethod(lambda a, b: max(a, b))
 
 # Not actual implementations of these functions
 # All of these will be multimethods
 @signature(Integer, Integer)
 def cmp_lt(a, b):
     return boolean(a.value < b.value)
-module.namespace['<'] = Builtin(cmp_lt, '<')
+module.namespace[u'<'] = Builtin(cmp_lt, u'<')
 
 @signature(Integer, Integer)
 def cmp_gt(a, b):
     return boolean(a.value > b.value)
-module.namespace['>'] = Builtin(cmp_gt, '>')
+module.namespace[u'>'] = Builtin(cmp_gt, u'>')
 
 @signature(Integer, Integer)
 def cmp_le(a, b):
     return boolean(a.value <= b.value)
-module.namespace['<='] = Builtin(cmp_le, '<=')
+module.namespace[u'<='] = Builtin(cmp_le, u'<=')
 
 @signature(Integer, Integer)
 def cmp_ge(a, b):
     return boolean(a.value >= b.value)
-module.namespace['>='] = Builtin(cmp_ge, '>=')
+module.namespace[u'>='] = Builtin(cmp_ge, u'>=')
 
-module.namespace['!='] = ne = Multimethod(2)
+module.namespace[u'!='] = ne = Multimethod(2)
 @signature(Object, Object)
 def ne_default(a, b):
     return boolean(a != b)
@@ -175,7 +175,7 @@ ne.default = Builtin(ne_default)
 def _(a, b):
     return boolean(a.value != b.value)
 
-module.namespace['=='] = eq = Multimethod(2)
+module.namespace[u'=='] = eq = Multimethod(2)
 @signature(Object, Object)
 def eq_default(a, b):
     return boolean(a == b)
@@ -185,12 +185,12 @@ eq.default = Builtin(eq_default)
 def _(a, b):
     return boolean(a.value == b.value)
 
-module.namespace['-expr'] = neg = Multimethod(1)
+module.namespace[u'-expr'] = neg = Multimethod(1)
 @neg.multimethod_s(Integer)
 def _(a):
     return Integer(-a.value)
 
-module.namespace['+expr'] = pos = Multimethod(1)
+module.namespace[u'+expr'] = pos = Multimethod(1)
 @pos.multimethod_s(Integer)
 def _(a):
     return Integer(+a.value)

@@ -14,31 +14,31 @@ class Object:
             if name not in ('Object', 'Interface') and 'interface' not in dict:
                 cls.interface = Interface(
                     parent = cls.__bases__[0].interface,
-                    name = re.sub("(.)([A-Z]+)", r"\1_\2", name).lower())
+                    name = re.sub("(.)([A-Z]+)", r"\1_\2", name).lower().decode('utf-8'))
 
     def call(self, argv):
-        raise Error("cannot call " + self.repr())
+        raise Error(u"cannot call " + self.repr())
 
     def getitem(self, index):
-        raise Error("cannot getitem " + self.repr())
+        raise Error(u"cannot getitem " + self.repr())
 
     def setitem(self, index, value):
-        raise Error("cannot setitem " + self.repr())
+        raise Error(u"cannot setitem " + self.repr())
 
     def getattr(self, index):
         try:
             return BoundMethod(self, index, self.interface.methods[index])
         except KeyError as e:
-            raise Error(index + " not in " + self.repr())
+            raise Error(u"%s not in %s" % (index, self.repr()))
 
     def setattr(self, index, value):
-        raise Error("cannot set " + index + " in " + self.repr())
+        raise Error(u"cannot set %s in %s" % (index, self.repr()))
 
     def callattr(self, name, argv):
         return self.getattr(name).call(argv)
 
     def repr(self):
-        return "<" + self.interface.name + ">"
+        return u"<%s>" % self.interface.name
 
     def hash(self):
         return compute_hash(self)
@@ -54,6 +54,7 @@ class Object:
 class Interface(Object):
     # Should add possibility to freeze the interface?
     def __init__(self, parent, name):
+        assert isinstance(name, unicode)
         self.parent = parent
         self.name = name
         self.instantiate = None
@@ -61,20 +62,20 @@ class Interface(Object):
 
     def call(self, argv):
         if self.instantiate is None:
-            raise Error("Cannot instantiate " + self.name)
+            raise Error(u"Cannot instantiate " + self.name)
         return self.instantiate(argv)
 
     def repr(self):
         return self.name
 
-Interface.interface = Interface(None, "interface")
+Interface.interface = Interface(None, u"interface")
 Interface.interface.parent = Interface.interface
 
-null = Interface(None, "null")
+null = Interface(None, u"null")
 null.interface = null
 null.parent = null
 
-Object.interface = Interface(null, "object")
+Object.interface = Interface(null, u"object")
 
 class BoundMethod(Object):
     def __init__(self, obj, name, method):
@@ -87,4 +88,4 @@ class BoundMethod(Object):
         return self.method.call(argv)
 
     def repr(self):
-        return self.obj.repr() + "." + self.name
+        return u"%s.%s" % (self.obj.repr(), self.name)

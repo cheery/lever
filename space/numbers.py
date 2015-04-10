@@ -6,7 +6,7 @@ class Float(Object):
         self.number = number
 
     def repr(self):
-        return str(self.number)
+        return u"%f" % self.number
 
     def hash(self):
         return compute_hash(self.number)
@@ -19,7 +19,7 @@ class Integer(Object):
         self.value = value
 
     def repr(self):
-        return str(self.value)
+        return u"%d" % self.value
 
     def hash(self):
         return compute_hash(self.value)
@@ -33,8 +33,8 @@ class Boolean(Object):
 
     def repr(self):
         if self.flag:
-            return "true"
+            return u"true"
         else:
-            return "false"
+            return u"false"
 
 Boolean.interface.parent = Integer.interface

@@ -34,8 +34,8 @@ def next_token(stream, table):
         stream.advance()
     if not stream.filled:
         return None
-    if stream.current == '#':
-        while stream.filled and stream.current != '\n':
+    if stream.current == u'#':
+        while stream.filled and stream.current != u'\n':
             stream.advance()
         return next_token(stream, table)
     start = stream.position
@@ -43,34 +43,34 @@ def next_token(stream, table):
         string = stream.advance()
         while stream.is_sym() or stream.is_digit():
             string += stream.advance()
-        name = table.get(string, 'symbol')
+        name = table.get(string, u'symbol')
         return Literal(start, stream.position, name, string)
     elif stream.is_digit():
         string = stream.advance()
-        if string == '0' and stream.filled and stream.current == 'x':
+        if string == u'0' and stream.filled and stream.current == u'x':
             string += stream.advance()
             while stream.is_hex():
                 string += stream.advance()
-            return Literal(start, stream.position, 'hex', string)
+            return Literal(start, stream.position, u'hex', string)
         while stream.is_digit():
             string += stream.advance()
-        if stream.filled and stream.current == '.':
+        if stream.filled and stream.current == u'.':
             string += stream.advance()
             while stream.is_digit():
                 string += stream.advance()
-            return Literal(start, stream.position, 'float', string)
-        return Literal(start, stream.position, 'int', string)
-    elif stream.current in ('"', "'"):
+            return Literal(start, stream.position, u'float', string)
+        return Literal(start, stream.position, u'int', string)
+    elif stream.current in (u'"', u"'"):
         terminal = stream.advance()
-        string = ""
+        string = u""
         while stream.filled and stream.current != terminal:
-            if stream.current == '\\':
+            if stream.current == u'\\':
                 stream.advance()
             string += stream.advance()
         if not stream.filled:
-            raise space.Error(str(start.lno) + ": Broken string literal")
+            raise space.Error(u"%s: Broken string literal" % start.repr())
         assert terminal == stream.advance()
-        return Literal(start, stream.position, 'string', string)
+        return Literal(start, stream.position, u'string', string)
     elif stream.current in table:
         string = stream.advance()
         while stream.filled and string + stream.current in table:
@@ -79,4 +79,4 @@ def next_token(stream, table):
         return Literal(start, stream.position, name, string)
     else:
         string = stream.advance()
-        return Literal(start, stream.position, 'symbol', string)
+        return Literal(start, stream.position, u'symbol', string)

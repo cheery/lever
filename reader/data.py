@@ -7,17 +7,14 @@ class Position(object):
         self.col = col
         self.lno = lno
 
-    def __repr__(self):
-        return "{0.lno}:{0.col}".format(self)
-    
+    def repr(self):
+        return u"%d:%d" % (self.lno, self.col)
+
     def eq(self, other):
         return self.col == other.col and self.lno == other.lno
 
     def ne(self, other):
         return self.col != other.col or self.lno != other.lno
-
-    def str(self):
-        return str(self.lno) + ":" + str(self.col)
 
 class Node(object):
     dcf = None # Stands for 'default capturing form'
@@ -29,8 +26,12 @@ class Literal(Node):
         self.name = name
         self.value = value
 
-    def __repr__(self):
-        return "{0.start} {0.stop} {0.name} {0.value!r}".format(self)
+    def repr(self):
+        return u"%s %s %s %s" % (
+            self.start.repr(),
+            self.stop.repr(),
+            self.name,
+            self.value)
 
 class Expr(Node):
     capture = [] # The capture block
@@ -43,8 +44,21 @@ class Expr(Node):
             if exp.dcf is not None:
                 self.dcf = exp.dcf
 
-    def __repr__(self):
-        a = ''.join('\n  ' + repr(exp).replace('\n', '\n  ') for exp in self.exps)
-        if self.capture:
-            a += '\n  capture' + ''.join('\n  ' + repr(exp).replace('\n', '\n  ') for exp in self.capture)
-        return "{0.start} {0.stop} {0.name} {1}".format(self, a)
+    def repr(self):
+        t = u"%s %s %s" % (self.start.repr(), self.stop.repr(), self.name)
+        for exp in self.exps:
+            t += u"\n  " + indent(exp.repr())
+        if len(self.capture) > 0:
+            t += u"\n  capture"
+        for exp in self.capture:
+            t += u"\n  " + indent(exp.repr())
+        return t
+
+def indent(s):
+    o = u""
+    for c in s:
+        if c == u'\n':
+            o += u'\n  '
+        else:
+            o += c
+    return o

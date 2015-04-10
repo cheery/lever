@@ -4,13 +4,13 @@ from interface import Error, Object
 class Builtin(Object):
     def __init__(self, func, name=None):
         self.func = func
-        self.name = name if name is not None else func.__name__
+        self.name = name if name is not None else func.__name__.decode('utf-8')
 
     def call(self, argv):
         return self.func(argv)
     
     def repr(self):
-        return "<builtin " + self.name + ">"
+        return u"<builtin %s>" % self.name
 
 # Complete signature would include
 # optional and variadic arguments too.
@@ -23,13 +23,13 @@ def signature(*argt):
         def fancy_frame(argv):
             args = ()
             if len(argv) < argc:
-                raise Error("expected " + str(argc) + " arguments")
+                raise Error(u"expected %d arguments" % argc)
             for i in argi:
                 arg = argv[i]
                 if isinstance(arg, argt[i]):
                     args += (arg,)
                 else:
-                    raise Error("expected " + argt[i].interface.name + "as arg:" + str(i))
+                    raise Error(u"expected %s as arg: %d" % (argt[i].interface.name, i))
             return func(*args)
         fancy_frame.__name__ = func.__name__
         return fancy_frame

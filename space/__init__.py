@@ -26,4 +26,17 @@ def argument(argv, index, cls):
         arg = argv[index]
         if isinstance(arg, cls):
             return arg
-    raise Error("expected " + cls.interface.name + " as argv:" + str(index))
+    raise Error(u"expected %s as argv: %d" % (cls.interface.name, index))
+
+def as_cstring(value):
+    if isinstance(value, String):
+        return value.string.encode('utf-8')
+    raise Error(u"expected string and got " + value.repr())
+
+def from_cstring(value):
+    assert isinstance(value, str)
+    return String(value.decode('utf-8'))
+
+def from_ustring(value):
+    assert isinstance(value, unicode)
+    return String(value)

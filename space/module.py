@@ -23,9 +23,9 @@ class Module(Object):
 
     def setattr(self, name, value):
         if self.frozen:
-            raise Error("module " + self.name + " is frozen")
+            raise Error(u"module %s is frozen" % self.name)
         self.namespace[name] = value
         return value
 
     def repr(self):
-        return "<module " + self.name + ">"
+        return u"<module %s>" % self.name

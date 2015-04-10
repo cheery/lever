@@ -1,6 +1,4 @@
-"""
-    The character stream.
-"""
+from rpython.rlib.unicodedata import unicodedb_6_2_0 as unicodedb
 from data import Position
 
 class CStream(object):
@@ -14,7 +12,7 @@ class CStream(object):
         c = self.current
         self.index += 1
         self.col += 1
-        if c == '\n':
+        if c == u'\n':
             self.lno += 1
             self.col = 0
         return c
@@ -34,20 +32,20 @@ class CStream(object):
     def is_sym(self):
         if self.filled:
             ch = self.current
-            return ch.isalpha() or ch == '_'
+            return unicodedb.isalpha(ord(ch)) or ch == '_'
         return False
 
     def is_digit(self):
         if self.filled:
-            return self.current.isdigit()
+            return self.current in u'0123456789'
         return False
 
     def is_hex(self):
         if self.filled:
-            return self.current in '0123456789abcdefABCDEF'
+            return self.current in u'0123456789abcdefABCDEF'
         return False
 
     def is_space(self):
         if self.filled:
-            return self.current.isspace()
+            return unicodedb.isspace(ord(self.current))
         return False

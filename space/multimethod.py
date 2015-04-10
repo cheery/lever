@@ -23,7 +23,7 @@ class Multimethod(Object):
 
     def invoke_method(self, argv, suppress_default):
         if len(argv) < self.arity:
-            raise Error("expected at least " + str(self.arity) + " arguments, got " + str(len(argv)))
+            raise Error(u"expected at least %d arguments, got %d" % (self.arity, len(argv))) 
         vec = []
         for i in range(self.arity):
             vec.append(argv[i].interface)
@@ -33,7 +33,7 @@ class Multimethod(Object):
                 names = []
                 for i in range(self.arity):
                     names.append(vec[i].name)
-                raise Error("no method for ["+' '.join(names)+"]")
+                raise Error(u"no method for ["+u' '.join(names)+u"]")
             return self.default.call(argv)
         return method.call(argv)
 

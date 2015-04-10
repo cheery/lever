@@ -35,22 +35,22 @@ class List(Object):
         return True
 
     def getattr(self, name):
-        if name == 'length':
+        if name == u'length':
             return Integer(len(self.contents))
         return Object.getattr(self, name)
     
     def getitem(self, index):
         if not isinstance(index, Integer):
-            raise Error("index not an integer")
+            raise Error(u"index not an integer")
         if not 0 <= index.value < len(self.contents):
-            raise Error("index out of range")
+            raise Error(u"index out of range")
         return self.contents[index.value]
 
     def setitem(self, index, value):
         if not isinstance(index, Integer):
-            raise Error("index not an integer")
+            raise Error(u"index not an integer")
         if not 0 <= index.value < len(self.contents):
-            raise Error("index out of range")
+            raise Error(u"index out of range")
         self.contents[index.value] = value
         return value
 
@@ -58,4 +58,4 @@ class List(Object):
         out = []
         for item in self.contents:
             out.append(item.repr())
-        return '[' + ' '.join(out) + ']'
+        return u'[' + u' '.join(out) + u']'

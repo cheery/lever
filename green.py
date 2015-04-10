@@ -25,12 +25,12 @@ class Greenlet(Object):
         self.callee = None
 
     def getattr(self, name):
-        if name == 'parent':
+        if name == u'parent':
             return self.parent or null
         return Object.getattr(self, name)
 
     def repr(self):
-        return "<greenlet " + str(self.handle) + ">"
+        return u"<greenlet>"
 
 def switch(argv):
     self = argv.pop(0)
@@ -44,7 +44,7 @@ def switch(argv):
         process.current.callee.handle = callee
     else:
         if process.stacklet.is_empty_handle(self.handle):
-            raise Error("dead greenlet")
+            raise Error(u"dead greenlet")
         self.argv = argv
         self.callee = process.current
         process.current = self
@@ -56,7 +56,7 @@ def switch(argv):
         retval = process.current.argv[0]
     process.current.argv = None
     return retval
-Greenlet.interface.methods['switch'] = Builtin(switch)
+Greenlet.interface.methods[u'switch'] = Builtin(switch)
 
 def greenlet_init(head, arg):
     # fill greenlet's handle.
