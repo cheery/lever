@@ -6,6 +6,7 @@ import os
 # The base environment
 
 module = Module(u'base', {
+    u'dict': Dict.interface,
     u'module': Module.interface,
     u'object': Object.interface,
     u'list': List.interface,

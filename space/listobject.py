@@ -1,3 +1,4 @@
+from builtin import signature
 from interface import Error, Object
 from rpython.rlib.rarithmetic import intmask
 from numbers import Integer
@@ -54,8 +55,33 @@ class List(Object):
         self.contents[index.value] = value
         return value
 
+    def iter(self):
+        return ListIterator(iter(self.contents))
+
     def repr(self):
         out = []
         for item in self.contents:
             out.append(item.repr())
         return u'[' + u' '.join(out) + u']'
+
+class ListIterator(Object):
+    def __init__(self, iterator):
+        self.iterator = iterator
+
+@ListIterator.builtin_method
+@signature(ListIterator)
+def next(self):
+    return self.iterator.next()
+
+@List.instantiator
+def instantiate(argv):
+    list_ = List([])
+    if len(argv) > 0:
+        other = argv[0]
+        it = other.iter()
+        try:
+            while True:
+                list_.contents.append(it.callattr(u"next", []))
+        except StopIteration as stop:
+            pass
+    return list_

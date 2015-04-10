@@ -54,6 +54,12 @@ class Object:
         cls.interface.instantiate = fn
         return fn
 
+    @classmethod
+    def builtin_method(cls, fn):
+        from builtin import Builtin
+        builtin = Builtin(fn)
+        cls.interface.methods[builtin.name] = builtin
+
 class Interface(Object):
     # Should add possibility to freeze the interface?
     def __init__(self, parent, name):

@@ -29,7 +29,7 @@ class Program(space.Object):
         module = argv[0]
         assert isinstance(module, space.Module)
         frame = ActivationRecord(module, None)
-        return interpret(self, self.body, frame)
+        return interpret(self.body, frame)
 
 class Closure(space.Object):
     def __init__(self, frame, func):
@@ -43,7 +43,7 @@ class Closure(space.Object):
         frame = ActivationRecord(self.frame.module, self.frame)
         for i in range(argc):
             frame.var[self.func.args[i]] = argv[i]
-        return interpret(self, self.func.body, frame)
+        return interpret(self.func.body, frame)
 
 class Block:
     def __init__(self, index, contents):
@@ -178,6 +178,21 @@ class Merge(Op):
 class Jump(ValuedOp):
     def __init__(self, exit):
         self.exit = exit
+
+class Iter(ValuedOp):
+    def __init__(self, value):
+        self.value = value
+
+class Next(ValuedOp):
+    def __init__(self, it):
+        self.it = it
+
+class SetBreak(ValuedOp):
+    def __init__(self, block):
+        self.block = block
+
+class JumpBreak(Op):
+    pass
 #
 #    def args_str(self):
 #        return self.exit.label()
@@ -231,9 +246,8 @@ class Return(Op):
     def __init__(self, ref):
         self.ref = ref
 
-def interpret(codeobj, prog, frame):
+def interpret(prog, frame):
     block = prog.blocks[0]
-    pc = 0
     tmp = []
     for i in range(prog.tmpc):
         tmp.append(space.null)
@@ -241,6 +255,11 @@ def interpret(codeobj, prog, frame):
         tmp[func.i] = Closure(frame, func)
     #for blk in prog.blocks:
     #    print blk.repr()
+    return interpret_body(block, tmp, frame)
+
+def interpret_body(block, tmp, frame):
+    loop_break = None
+    pc = 0
     try:
         while pc < len(block):
             op = block[pc]
@@ -263,6 +282,17 @@ def interpret(codeobj, prog, frame):
             elif isinstance(op, Jump):
                 pc = 0
                 block = op.exit
+            elif isinstance(op, JumpBreak):
+                if loop_break is not None:
+                    pc = 0
+                    block = loop_break
+                    loop_break = None
+            elif isinstance(op, Next):
+                tmp[op.i] = tmp[op.it.i].callattr(u'next', [])
+            elif isinstance(op, SetBreak):
+                loop_break = op.block
+            elif isinstance(op, Iter):
+                tmp[op.i] = tmp[op.value.i].iter()
             elif isinstance(op, Constant):
                 tmp[op.i] = op.value
             elif isinstance(op, Variable):
@@ -295,6 +325,15 @@ def interpret(codeobj, prog, frame):
         op = block[pc-1]
         e.stacktrace.append((frame, op.start, op.stop))
         raise e
+    except StopIteration as stopiter:
+        if loop_break is not None:
+            return interpret_body(loop_break, tmp, frame)
+        op = block[pc-1]
+        error = space.Error(u"stop iteration")
+        error.stacktrace.append((frame, op.start, op.stop))
+        raise error
+
+
 
 def lookup(frame, name):
     if frame.parent is None:
@@ -422,9 +461,35 @@ def syntax_chain(env, exp):
         i += 2
     return res
 
+def for_macro(env, exp):
+    if len(exp.exps) != 3:
+        raise space.Error(u"no translation for %s with length != 2" % exp.name)
+    var = exp.exps[1]
+    if not isinstance(var, reader.Literal):
+        raise space.Error(u"%s: format: for variable exp" % exp.start.repr())
+    it = env.add(Iter(translate(env, exp.exps[2])))
+    loop = env.new_block()
+    exit = env.new_block()
+    cond = env.add(SetBreak(exit))
+    env.add(Jump(loop))
+    env.block = loop
+    env.add(SetLocal(var.value, env.add(Next(it)), False))
+    val = translate_flow(env, env.capture(exp))
+    env.add(Merge(cond, val))
+    env.add(Jump(loop))
+    env.block = exit
+    return cond
+
+def break_macro(env, exp):
+    if len(exp.exps) != 1:
+        raise space.Error(u"%s: format: break" % exp.start.repr())
+    return env.add(JumpBreak())
+
 macros = {
+    u'break': break_macro,
     u'assert': assert_macro,
     u'func': func_macro,
+    u'for': for_macro,
     u'if': if_macro,
     u'return': return_macro,
     u'while': while_macro,
