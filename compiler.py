@@ -461,6 +461,7 @@ def syntax_chain(env, exp):
         i += 2
     return res
 
+# This loop implementation fails in nested loops.
 def for_macro(env, exp):
     if len(exp.exps) != 3:
         raise space.Error(u"no translation for %s with length != 2" % exp.name)
