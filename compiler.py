@@ -81,6 +81,8 @@ class Scope:
         self.functions = []
         self.bodies = []
         self.chain = []
+        self.start = None
+        self.stop = None
 
     def new_block(self):
         block = Block(len(self.blocks), [])
@@ -102,6 +104,8 @@ class Scope:
 
     def add(self, op):
         self.block.append(op)
+        op.start = self.start
+        op.stop = self.stop
         return op
 
     def capture(self, exp):
@@ -121,6 +125,8 @@ class Scope:
 
 class Op:
     i = 0
+    start = None
+    stop = None
 #    def repr(self):
 #        return str(self.__class__.__name__) + " " + self.args_str()
 #
@@ -286,7 +292,8 @@ def interpret(codeobj, prog, frame):
                 raise space.Error(u"spaced out")
         raise space.Error(u"crappy compiler")
     except space.Error as e:
-        e.stacktrace.append((codeobj, pc))
+        op = block[pc-1]
+        e.stacktrace.append((frame, op.start, op.stop))
         raise e
 
 def lookup(frame, name):
@@ -473,6 +480,13 @@ def translate_chain(env, chain):
     return val
 
 def translate(env, exp):
+    start, stop = env.start, env.stop
+    env.start, env.stop = exp.start, exp.stop
+    res = translate_(env, exp)
+    env.start, env.stop = start, stop
+    return res
+
+def translate_(env, exp):
     if isinstance(exp, reader.Literal):
         if exp.name == u'string':
             return env.add(Constant(space.from_ustring(exp.value)))

@@ -59,8 +59,9 @@ def print_traceback(error):
     out = u""
     if len(error.stacktrace) > 0:
         out = u"Traceback:\n"
-    for codeobj, pc in reversed(error.stacktrace):
-        out += u"    " + codeobj.repr() + u": pc=%d\n" % pc
+    for frame, start, stop in reversed(error.stacktrace):
+        out += u"    %s: %s %s\n" % (
+            frame.module.name, start.repr(), stop.repr())
     out += error.__class__.__name__.decode('utf-8')
     write(STDERR, out + u": " + error.message + u"\n")
 

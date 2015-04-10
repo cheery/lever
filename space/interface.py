@@ -25,6 +25,9 @@ class Object:
     def setitem(self, index, value):
         raise Error(u"cannot setitem " + self.repr())
 
+    def iter(self):
+        raise Error(u"cannot iterate " + self.repr())
+
     def getattr(self, index):
         try:
             return BoundMethod(self, index, self.interface.methods[index])

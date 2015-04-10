@@ -31,6 +31,11 @@ def builtin(fn):
 @signature(Object)
 def interface(obj):
     return obj.interface
+
+@builtin
+@signature(Object)
+def iter(obj):
+    return obj.iter()
   
 #  #def pyl_apply(argv):
 #  #    N = len(argv) - 1
