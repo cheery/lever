@@ -3,9 +3,10 @@ import reader
 import space
 
 class ProgramBody:
-    def __init__(self, blocks, functions):
+    def __init__(self, blocks, functions, is_generator):
         self.blocks = blocks
         self.functions = functions
+        self.is_generator = is_generator
         self.tmpc = 0
         for block in blocks:
             for op in block:
@@ -45,6 +46,41 @@ class Closure(space.Object):
             frame.var[self.func.args[i]] = argv[i]
         return interpret(self.func.body, frame)
 
+class Generator(space.Object):
+    def __init__(self, block, tmp, frame, loop_break, op_i):
+        self.block = block
+        self.tmp = tmp
+        self.frame = frame
+        self.loop_break = loop_break
+        self.op_i = op_i
+
+    def iter(self):
+        return self
+
+@Generator.builtin_method
+def next(argv):
+    self = argv[0]
+    assert isinstance(self, Generator)
+    if len(argv) > 1:
+        self.tmp[self.op_i] = argv[1]
+    else:
+        self.tmp[self.op_i] = space.null
+    try:
+        interpret_body(self.block, self.tmp, self.frame, self.loop_break)
+        raise StopIteration()
+    except YieldIteration as yi:
+        self.block = yi.block
+        self.loop_break = yi.loop_break
+        self.op_i = yi.op_i
+        return yi.value
+
+class YieldIteration(Exception):
+    def __init__(self, block, loop_break, op_i, value):
+        self.block = block
+        self.loop_break = loop_break
+        self.op_i = op_i
+        self.value = value
+
 class Block:
     def __init__(self, index, contents):
         self.index = index
@@ -83,6 +119,7 @@ class Scope:
         self.chain = []
         self.start = None
         self.stop = None
+        self.is_generator = False
 
     def new_block(self):
         block = Block(len(self.blocks), [])
@@ -121,7 +158,7 @@ class Scope:
         return chain
 
     def close(self):
-        return ProgramBody(self.blocks, self.functions)
+        return ProgramBody(self.blocks, self.functions, self.is_generator)
 
 class Op:
     i = 0
@@ -222,6 +259,11 @@ class Variable(ValuedOp):
 #    def args_str(self):
 #        return self.name
 
+class Yield(ValuedOp):
+    def __init__(self, value, block):
+        self.value = value
+        self.block = block
+
 class SetAttr(ValuedOp):
     def __init__(self, obj, name, value):
         self.obj = obj
@@ -255,10 +297,11 @@ def interpret(prog, frame):
         tmp[func.i] = Closure(frame, func)
     #for blk in prog.blocks:
     #    print blk.repr()
-    return interpret_body(block, tmp, frame)
+    if prog.is_generator:
+        return Generator(block, tmp, frame, None, 0)
+    return interpret_body(block, tmp, frame, None)
 
-def interpret_body(block, tmp, frame):
-    loop_break = None
+def interpret_body(block, tmp, frame, loop_break):
     pc = 0
     try:
         while pc < len(block):
@@ -289,6 +332,8 @@ def interpret_body(block, tmp, frame):
                     loop_break = None
             elif isinstance(op, Next):
                 tmp[op.i] = tmp[op.it.i].callattr(u'next', [])
+            elif isinstance(op, Yield):
+                raise YieldIteration(op.block, loop_break, op.i, tmp[op.value.i])
             elif isinstance(op, SetBreak):
                 loop_break = op.block
             elif isinstance(op, Iter):
@@ -327,7 +372,7 @@ def interpret_body(block, tmp, frame):
         raise e
     except StopIteration as stopiter:
         if loop_break is not None:
-            return interpret_body(loop_break, tmp, frame)
+            return interpret_body(loop_break, tmp, frame, None)
         op = block[pc-1]
         error = space.Error(u"stop iteration")
         error.stacktrace.append((frame, op.start, op.stop))
@@ -486,6 +531,15 @@ def break_macro(env, exp):
         raise space.Error(u"%s: format: break" % exp.start.repr())
     return env.add(JumpBreak())
 
+def yield_macro(env, exp):
+    if len(exp.exps) != 2:
+        raise space.Error(u"%s: format: yield expr" % exp.start.repr())
+    env.is_generator = True
+    val = translate(env, exp.exps[1])
+    yield_ = env.add(Yield(val, env.new_block()))
+    env.block = yield_.block
+    return yield_
+
 macros = {
     u'break': break_macro,
     u'assert': assert_macro,
@@ -496,6 +550,7 @@ macros = {
     u'while': while_macro,
     u'and': and_macro,
     u'or': or_macro,
+    u'yield': yield_macro,
 }
 chain_macros = [u'else']
 
