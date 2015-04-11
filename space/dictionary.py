@@ -20,7 +20,10 @@ class Dict(Object):
         return False
 
     def getitem(self, index):
-        return self.data[index]
+        try:
+            return self.data[index]
+        except KeyError as error:
+            raise Error(u"key %s not in %s" % (index.repr(), self.repr()))
 
     def setitem(self, index, value):
         self.data[index] = value

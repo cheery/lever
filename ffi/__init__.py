@@ -73,7 +73,7 @@ class Handle(Object):
         raise Error(u"cannot call " + self.ctype.repr())
 
     def repr(self):
-        return u"<handle %s from %s" % (self.name, self.library.name)
+        return u"<handle %s from %s>" % (self.name, self.library.name)
 
 module = Module(u'ffi', {
     u'array': systemv.Array.interface,

@@ -3,12 +3,12 @@ import ffi
 import json, os
 
 class Api(Object):
-    def __init__(self, constants, functions, types):
+    def __init__(self, constants, types, variables):
         self.cache = {}
         self.typecache = {}
         self.constants = constants
-        self.functions = functions
         self.types = types
+        self.variables = variables
 
     def getitem(self, name):
         if not isinstance(name, String):
@@ -22,9 +22,15 @@ class Api(Object):
     def lookup(self, name):
         if self.constants.contains(name):
             return self.constants.getitem(name)
-        if self.functions.contains(name):
-            decl = self.functions.getitem(name)
-            return self.wrap_cfunc(decl)
+        if self.variables.contains(name):
+            decl = self.variables.getitem(name)
+            cname = decl.getitem(String(u"name"))
+            if not isinstance(cname, String):
+                raise Error(u"incorrect name record")
+            if not isinstance(name, String):
+                raise Error(u"incorrect name record")
+            ctype = decl.getitem(String(u"type"))
+            return ffi.Wrap(cname.string, self.build_ctype(name.string, ctype))
         return self.lookup_type(name)
 
     def lookup_type(self, name):
@@ -41,10 +47,22 @@ class Api(Object):
                 return ffi.systemv.types[name.string]
             if name.string == u'void':
                 return null
-        raise Error(name.repr() + u" not in API")
+            raise Error(name.repr() + u" not in API")
+        else:
+            return self.build_ctype(u"<unnamed>", name)
 
     def build_ctype(self, name, decl):
         which = decl.getitem(String(u"type"))
+        if isinstance(which, String) and which.string == u"cfunc":
+            restype = decl.getitem(String(u'restype'))
+            argtypes_list = decl.getitem(String(u'argtypes'))
+            if not isinstance(argtypes_list, List):
+                raise Error(u"incorrect function record")
+            restype = self.lookup_type(restype)
+            argtypes = []
+            for argtype in argtypes_list.contents:
+                argtypes.append(self.lookup_type(argtype))
+            return ffi.CFunc(restype, argtypes)
         if isinstance(which, String) and which.string == u"union":
             fields = decl.getitem(String(u"fields"))
             return ffi.Union(self.parse_fields(name, fields))
@@ -67,21 +85,6 @@ class Api(Object):
             fields.append((field_name.string, ctype))
         return fields
 
-    def wrap_cfunc(self, decl):
-        cname = decl.getitem(String(u'name'))
-        restype = decl.getitem(String(u'restype'))
-        argtypes_list = decl.getitem(String(u'argtypes'))
-        if not isinstance(cname, String):
-            raise Error(u"incorrect function record")
-        if not isinstance(argtypes_list, List):
-            raise Error(u"incorrect function record")
-        restype = self.lookup_type(restype)
-        argtypes = []
-        for argtype in argtypes_list.contents:
-            argtypes.append(self.lookup_type(argtype))
-        ctype = ffi.CFunc(restype, argtypes)
-        return ffi.Wrap(cname.string, ctype)
-
 def wrap_json(obj):
     if isinstance(obj, dict):
         dict_ = Dict()
@@ -96,6 +99,8 @@ def wrap_json(obj):
         return from_ustring(obj)
     elif isinstance(obj, int):
         return Integer(obj)
+    elif obj is None:
+        return null
     else:
         assert False, repr(obj)
 
@@ -130,6 +135,6 @@ def open_api(json_path):
     apispec = preloaded[json_path]
     api = Api(
         apispec.getitem(String(u"constants")),
-        apispec.getitem(String(u"functions")),
-        apispec.getitem(String(u"types")))
+        apispec.getitem(String(u"types")),
+        apispec.getitem(String(u"variables")))
     return api
