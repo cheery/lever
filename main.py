@@ -1,17 +1,13 @@
 from compiler import to_program
 from reader import read, Literal, Expr
 from rpython.config.translationoption import get_combined_translation_config
+from util import STDIN, STDOUT, STDERR, read_file, write
 import base
+import green
 import space
 import sys, os
 config = get_combined_translation_config(translating=True)
 config.translation.continuation = True
-
-import green
-
-STDIN = 0
-STDOUT = 1
-STDERR = 2
 
 def interactive():
     module = space.Module(u'shell', {}, extends=base.module)
@@ -64,22 +60,6 @@ def print_traceback(error):
             frame.module.name, start.repr(), stop.repr())
     out += error.__class__.__name__.decode('utf-8')
     write(STDERR, out + u": " + error.message + u"\n")
-
-def read_file(path):
-    fd = os.open(path, os.O_RDONLY, 0777)
-    try:
-        data = ""
-        frame = os.read(fd, 4096)
-        while frame != "":
-            data += frame
-            frame = os.read(fd, 4096)
-    finally:
-        os.close(fd)
-    return data.decode('utf-8')
-
-def write(fd, message):
-    assert isinstance(message, unicode)
-    os.write(fd, message.encode('utf-8'))
 
 def target(*args):
     return entry_point, None

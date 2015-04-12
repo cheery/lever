@@ -104,14 +104,6 @@ def wrap_json(obj):
     else:
         assert False, repr(obj)
 
-preloaded = {}
-
-directory = u'headers'
-for header in os.listdir(directory):
-    header = header.decode('utf-8')
-    with open(os.path.join(directory, header)) as fd:
-        preloaded[header] = wrap_json(json.load(fd))
-
 module = Module(u'api', {
 }, frozen=True)
 
@@ -130,9 +122,8 @@ def open(path):
     return ffi.Library.interface.call([String(so_path), open_api(json_path)])
 
 def open_api(json_path):
-    if json_path not in preloaded:
-        raise Error(json_path + u": not found in preloaded headers")
-    apispec = preloaded[json_path]
+    path = (u"headers/"+json_path).encode('utf-8')
+    apispec = json.read_file(path)
     api = Api(
         apispec.getitem(String(u"constants")),
         apispec.getitem(String(u"types")),

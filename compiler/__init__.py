@@ -120,6 +120,7 @@ class Scope:
         self.start = None
         self.stop = None
         self.is_generator = False
+        self.loop_stack = []
 
     def new_block(self):
         block = Block(len(self.blocks), [])
@@ -220,6 +221,8 @@ class Iter(ValuedOp):
     def __init__(self, value):
         self.value = value
 
+# It could be that the 'next' should be like 'iter', and that this
+# operation should supply contents of SetBreak instead.
 class Next(ValuedOp):
     def __init__(self, it):
         self.it = it
@@ -228,9 +231,6 @@ class SetBreak(ValuedOp):
     def __init__(self, block):
         self.block = block
 
-class JumpBreak(Op):
-    pass
-#
 #    def args_str(self):
 #        return self.exit.label()
 
@@ -325,11 +325,6 @@ def interpret_body(block, tmp, frame, loop_break):
             elif isinstance(op, Jump):
                 pc = 0
                 block = op.exit
-            elif isinstance(op, JumpBreak):
-                if loop_break is not None:
-                    pc = 0
-                    block = loop_break
-                    loop_break = None
             elif isinstance(op, Next):
                 tmp[op.i] = tmp[op.it.i].callattr(u'next', [])
             elif isinstance(op, Yield):
@@ -451,6 +446,9 @@ def return_macro(env, exp):
 def while_macro(env, exp):
     if len(exp.exps) != 2:
         raise space.Error(u"no translation for %s with length != 2" % exp.name)
+    current_loop = (loop, exit, _) = (env.new_label(), env.new_block(), False)
+    env.loop_stack.append(current_loop)
+
     loop = env.new_label()
     cond = env.add(Cond(translate(env, exp.exps[1])))
     cond.then = env.block = env.new_block()
@@ -459,6 +457,7 @@ def while_macro(env, exp):
     env.add(Merge(cond, val))
     env.add(Jump(loop))
     env.block = cond.exit
+    loop_exit(env)
     return cond
 
 def and_macro(env, exp):
@@ -506,7 +505,6 @@ def syntax_chain(env, exp):
         i += 2
     return res
 
-# This loop implementation fails in nested loops.
 def for_macro(env, exp):
     if len(exp.exps) != 3:
         raise space.Error(u"no translation for %s with length != 2" % exp.name)
@@ -514,9 +512,11 @@ def for_macro(env, exp):
     if not isinstance(var, reader.Literal):
         raise space.Error(u"%s: format: for variable exp" % exp.start.repr())
     it = env.add(Iter(translate(env, exp.exps[2])))
-    loop = env.new_block()
-    exit = env.new_block()
+
+    current_loop = (loop, exit, _) = (env.new_block(), env.new_block(), True)
+    env.loop_stack.append(current_loop)
     cond = env.add(SetBreak(exit))
+
     env.add(Jump(loop))
     env.block = loop
     env.add(SetLocal(var.value, env.add(Next(it)), False))
@@ -524,12 +524,28 @@ def for_macro(env, exp):
     env.add(Merge(cond, val))
     env.add(Jump(loop))
     env.block = exit
+
+    loop_exit(env)
     return cond
+
+def loop_exit(env):
+    _, exit, _ = env.loop_stack.pop(-1)
+    if len(env.loop_stack) > 0 and env.loop_stack[-1][2]:
+        env.add(SetBreak(env.loop_stack[-1][1]))
 
 def break_macro(env, exp):
     if len(exp.exps) != 1:
         raise space.Error(u"%s: format: break" % exp.start.repr())
-    return env.add(JumpBreak())
+    if len(env.loop_stack) == 0:
+        raise space.Error(u"%s: not inside a loop" % exp.start.repr())
+    return env.add(Jump(env.loop_stack[-1][1]))
+
+def continue_macro(env, exp):
+    if len(exp.exps) != 1:
+        raise space.Error(u"%s: format: continue" % exp.start.repr())
+    if len(env.loop_stack) == 0:
+        raise space.Error(u"%s: not inside a loop" % exp.start.repr())
+    return env.add(Jump(env.loop_stack[-1][0]))
 
 def yield_macro(env, exp):
     if len(exp.exps) != 2:
@@ -542,6 +558,7 @@ def yield_macro(env, exp):
 
 macros = {
     u'break': break_macro,
+    u'continue': continue_macro,
     u'assert': assert_macro,
     u'func': func_macro,
     u'for': for_macro,
