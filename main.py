@@ -2,6 +2,7 @@ from compiler import to_program
 from reader import read, Literal, Expr
 from rpython.config.translationoption import get_combined_translation_config
 from util import STDIN, STDOUT, STDERR, read_file, write
+import api
 import base
 import green
 import space
@@ -43,6 +44,7 @@ def batch(path):
 
 def entry_point(argv):
     green.process.init(config)
+    api.init(argv)
     if len(argv) <= 1:
         return interactive()
     for arg in argv[1:]:

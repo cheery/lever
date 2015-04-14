@@ -2,6 +2,31 @@ from space import *
 import ffi
 import json, os
 
+class ApiConfig:
+    def __init__(self):
+        self.headers_dir = 'headers'
+
+conf = ApiConfig()
+
+def init(argv):
+    try:
+        app_path = os.readlink(argv[0])
+    except OSError as error:
+        app_path = argv[0]
+    app_dir = dirname(app_path)
+    conf.headers_dir = os.path.join(app_dir, 'headers')
+
+def dirname(p):
+    """Returns the directory component of a pathname, adjusted for rpython"""
+    i = p.rfind('/')
+    if i > 0:
+        return p[:i]
+    else:
+        return p[:1]
+
+def get_header(path):
+    return os.path.join(conf.headers_dir, path.encode('utf-8'))
+
 class Api(Object):
     def __init__(self, constants, types, variables):
         self.cache = {}
@@ -122,7 +147,7 @@ def open(path):
     return ffi.Library.interface.call([String(so_path), open_api(json_path)])
 
 def open_api(json_path):
-    path = (u"headers/"+json_path).encode('utf-8')
+    path = get_header(json_path)
     apispec = json.read_file(path)
     api = Api(
         apispec.getitem(String(u"constants")),
