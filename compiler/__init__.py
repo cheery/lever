@@ -556,6 +556,20 @@ def yield_macro(env, exp):
     env.block = yield_.block
     return yield_
 
+def from_macro(env, exp):
+    if len(exp.exps) == 2:
+        exp.exps.extend(env.capture(exp))
+    if len(exp.exps) <= 2:
+        raise space.Error(u"%s: format: from expr symbol..." % exp.start.repr())
+    val = translate(env, exp.exps[1])
+    for attr in exp.exps[2:]:
+        if isinstance(attr, reader.Literal) and attr.name == u'symbol':
+            var = env.add(GetAttr(val, attr.value))
+            env.add(SetLocal(attr.value, var, False))
+        else:
+            raise space.Error(u"%s: expected symbol" % attr.start.repr())
+    return val
+
 macros = {
     u'break': break_macro,
     u'continue': continue_macro,
@@ -568,6 +582,7 @@ macros = {
     u'and': and_macro,
     u'or': or_macro,
     u'yield': yield_macro,
+    u'from': from_macro,
 }
 chain_macros = [u'else']
 

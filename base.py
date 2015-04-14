@@ -3,8 +3,12 @@ import api
 import ffi
 import os
 
-# The base environment
+builtin_modules = {
+    u'api': api.module,
+    u'ffi': ffi.module,
+}
 
+# The base environment
 module = Module(u'base', {
     u'dict': Dict.interface,
     u'module': Module.interface,
@@ -17,10 +21,6 @@ module = Module(u'base', {
     u'null': null,
     u'true': true,
     u'false': false,
-
-    # Doesn't belong here.
-    u'api': api.module,
-    u'ffi': ffi.module,
 }, frozen=True)
 
 def builtin(fn):
@@ -32,6 +32,13 @@ def builtin(fn):
 @signature(Object)
 def interface(obj):
     return obj.interface
+
+@builtin
+@signature(String)
+def import_(name):
+    if name.string in builtin_modules:
+        return builtin_modules[name.string]
+    raise Error(u"no such module: %s" % name.repr())
 
 @builtin
 @signature(Object)
