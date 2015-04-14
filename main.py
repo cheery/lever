@@ -32,7 +32,7 @@ def batch(path):
     try:
         source = read_file(path)
     except OSError, error:
-        os.write(2, str(error))
+        os.write(2, "[Errno %d]: %s\n" % (error.errno, path) )
         return 1
     try:
         program = to_program(read(source))

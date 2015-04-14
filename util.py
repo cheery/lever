@@ -7,6 +7,7 @@ STDERR = 2
 frame_size = 4096*1024
 
 def read_file(path):
+    assert isinstance(path, str)
     fd = os.open(path, os.O_RDONLY, 0777)
     try:
         data = ""

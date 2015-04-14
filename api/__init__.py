@@ -9,11 +9,9 @@ class ApiConfig:
 conf = ApiConfig()
 
 def init(argv):
-    try:
-        app_path = os.readlink(argv[0])
-    except OSError as error:
-        app_path = argv[0]
-    app_dir = dirname(app_path)
+    app_dir = os.environ.get('PYLLISP_PATH')
+    if app_dir is None:
+        app_dir = ''
     conf.headers_dir = os.path.join(app_dir, 'headers')
 
 def dirname(p):
@@ -21,8 +19,10 @@ def dirname(p):
     i = p.rfind('/')
     if i > 0:
         return p[:i]
-    else:
+    elif i == 0:
         return p[:1]
+    else:
+        return ""
 
 def get_header(path):
     return os.path.join(conf.headers_dir, path.encode('utf-8'))
@@ -148,7 +148,10 @@ def open(path):
 
 def open_api(json_path):
     path = get_header(json_path)
-    apispec = json.read_file(path)
+    try:
+        apispec = json.read_file(path)
+    except OSError as error:
+        raise Error(("[Errno %d]: %s\n" % (error.errno, path)).decode('utf-8'))
     api = Api(
         apispec.getitem(String(u"constants")),
         apispec.getitem(String(u"types")),
