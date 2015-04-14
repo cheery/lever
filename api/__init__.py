@@ -63,10 +63,13 @@ class Api(Object):
             if name.string in self.typecache:
                 return self.typecache[name.string]
             if name.string.endswith(u'*'):
-                return ffi.Pointer(self.lookup_type(String(name.string[:-1])))
+                ctype = ffi.Pointer(self.lookup_type(String(name.string[:-1])))
+                self.typecache[name.string] = ctype
+                return ctype
             if self.types.contains(name):
                 decl = self.types.getitem(name)
                 ctype = self.build_ctype(name.string, decl)
+                self.typecache[name.string] = ctype
                 return ctype
             if name.string in ffi.systemv.types:
                 return ffi.systemv.types[name.string]
@@ -90,12 +93,12 @@ class Api(Object):
             return ffi.CFunc(restype, argtypes)
         if isinstance(which, String) and which.string == u"union":
             fields = decl.getitem(String(u"fields"))
-            return ffi.Union(self.parse_fields(name, fields))
+            return ffi.Union(self.parse_fields(name, fields), name)
         if isinstance(which, String) and which.string == u"struct":
             fields = decl.getitem(String(u"fields"))
-            return ffi.Struct(self.parse_fields(name, fields))
+            return ffi.Struct(self.parse_fields(name, fields), name)
         if isinstance(which, String) and which.string == u"opaque":
-            return ffi.Struct(None)
+            return ffi.Struct(None, name)
         raise Error(name + u": no ctype builder for " + which.repr())
 
     def parse_fields(self, name, fields_list):

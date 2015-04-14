@@ -57,7 +57,7 @@ class Signed(Type):
 
     def store(self, offset, value):
         if not isinstance(value, Integer):
-            raise Error(u"cannot transform to primtype")
+            raise Error(u"cannot transform to primtype %s" % value.repr())
         for rtype in signed_types:
             if self.size == rffi.sizeof(rtype):
                 pnt = rffi.cast(rffi.CArrayPtr(rtype), offset)
@@ -65,6 +65,14 @@ class Signed(Type):
                 break
         else:
             assert False, "undefined ffi type"
+        return value
+
+    def typecheck(self, other):
+        if isinstance(other, Signed) and self.size == other.size:
+            return True
+        if isinstance(other, Unsigned) and self.size == other.size:
+            return True
+        return False
 
     def repr(self):
         return u"<signed %d>" % self.size
@@ -91,7 +99,7 @@ class Unsigned(Type):
 
     def store(self, offset, value):
         if not isinstance(value, Integer):
-            raise Error(u"cannot transform to primtype")
+            raise Error(u"cannot transform to primtype %s" % value.repr())
         for rtype in unsigned_types:
             if self.size == rffi.sizeof(rtype):
                 pnt = rffi.cast(rffi.CArrayPtr(rtype), offset)
@@ -99,9 +107,17 @@ class Unsigned(Type):
                 break
         else:
             assert False, "undefined ffi type"
+        return value
 
     def repr(self):
         return u"<unsigned %d>" % self.size
+
+    def typecheck(self, other):
+        if isinstance(other, Signed) and self.size == other.size:
+            return True
+        if isinstance(other, Unsigned) and self.size == other.size:
+            return True
+        return False
 
 # We don't have float object yet.
 #class Float(Type):

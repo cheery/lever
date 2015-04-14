@@ -1,5 +1,5 @@
 from simple import *
-from space import Error, Object, List, String, null, signature, argument
+from space import Error, Object, List, String, null, signature, argument, as_cstring
 from rpython.rtyper.lltypesystem import rffi, lltype
 from rpython.rlib import jit_libffi, clibffi, unroll
 
@@ -52,6 +52,11 @@ class Mem(Object):
                     return ctype.load(pointer)
                 else:
                     raise Error(u"no load supported for " + ctype.repr())
+            elif name == u"str" and ctype.size == 1:
+                s = rffi.charp2str(rffi.cast(rffi.CCHARP, self.pointer))
+                return String(s.decode('utf-8'))
+            elif name == u"to":
+                return ctype.load(self.pointer)
         raise Error(u"cannot attribute access other mem than structs or unions")
 
     def setattr(self, name, value):
@@ -65,7 +70,31 @@ class Mem(Object):
                     return ctype.store(pointer, value)
                 else:
                     raise Exception(u"no store supported for " + ctype.repr())
+            elif name == u"to":
+                return ctype.store(self.pointer, value)
         raise Error(u"cannot attribute access other mem than structs or unions")
+
+    def getitem(self, index):
+        if not isinstance(index, Integer):
+            raise Error(u"index must be an integer")
+        index = index.value
+        ctype = self.ctype
+        if isinstance(ctype, Pointer):
+            ctype = ctype.to
+            pointer = rffi.ptradd(self.pointer, ctype.size*index)
+            return ctype.load(pointer)
+        raise Error(u"cannot item access other mem than pointers or arrays")
+
+    def setitem(self, index, value):
+        if not isinstance(index, Integer):
+            raise Error(u"index must be an integer")
+        index = index.value
+        ctype = self.ctype
+        if isinstance(ctype, Pointer):
+            ctype = ctype.to
+            pointer = rffi.ptradd(self.pointer, ctype.size*index)
+            return ctype.store(pointer, value)
+        raise Error(u"cannot item access other mem than pointers or arrays")
 
     def call(self, argv):
         if isinstance(self.ctype, CFunc):
@@ -88,18 +117,44 @@ class Pointer(Type):
         return clibffi.ffi_type_pointer
 
     def load(self, offset):
-        return Mem(self, rffi.cast(rffi.VOIDPP, offset)[0])
+        pointer = rffi.cast(rffi.VOIDPP, offset)[0]
+        if pointer == lltype.nullptr(rffi.VOIDP.TO):
+            return null
+        return Mem(self, pointer)
 
     def store(self, offset, value):
         if value is null:
             pointer = lltype.nullptr(rffi.VOIDP.TO)
         elif isinstance(value, Mem):
             # It could be worthwhile to typecheck the ctype here.
+            if not self.typecheck(value.ctype):
+                raise Error(u"incompatible pointer store: %s = %s" % (self.repr(), value.ctype.repr()))
             pointer = value.pointer
         else:
-            raise Error(u"cannot pointer store " + value.repr())
+            raise Error(u"cannot pointer store %s to %s" % (value.repr(), self.repr()))
         ptr = rffi.cast(rffi.VOIDPP, offset)
         ptr[0] = pointer
+        return value
+
+    def store_string(self, offset, pointer):
+        if self.to.size == 1:
+            ptr = rffi.cast(rffi.VOIDPP, offset)
+            ptr[0] = pointer
+        else:
+            raise Error(u"cannot pointer store string to %s" % self.repr())
+
+    def typecheck(self, other):
+        if other is null:
+            return True
+        if isinstance(other, Pointer):
+            if isinstance(self.to, Type):
+                return self.to.typecheck(other.to)
+            return True
+        if isinstance(other, Array):
+            if isinstance(self.to, Type):
+                return self.to.typecheck(other.ctype)
+            return True
+        return False
 
     def repr(self):
         return u"<pointer %s>" % self.to.repr()
@@ -159,12 +214,24 @@ class CFunc(Type):
             self.prepare_cif()
             self.notready = False
         cif = self.cif
+        # String objects need to be converted and stored during the call.
+        # I assume it's not a good idea to just generated some and expect them to
+        # stick around.
+        # Would suspect it leaks without free?
+        sbuf = []
         # Exchange buffer is built for every call. Filled with arguments that are passed to the function.
         exc = lltype.malloc(rffi.VOIDP.TO, cif.exchange_size, flavor='raw')
         try:
             for i in range(argc):
                 offset = rffi.ptradd(exc, cif.exchange_args[i])
-                self.argtypes[i].store(offset, argv[i])
+                arg = argv[i]
+                arg_t = self.argtypes[i]
+                if isinstance(arg, String) and isinstance(arg_t, Pointer):
+                    arg = rffi.str2charp(as_cstring(arg))
+                    sbuf.append(arg)
+                    arg_t.store_string(offset, arg)
+                else:
+                    arg_t.store(offset, arg)
             jit_libffi.jit_ffi_call(cif, pointer, exc)
             val = null
             if isinstance(self.restype, Type):
@@ -185,7 +252,13 @@ class CFunc(Type):
             # It could be worthwhile to typecheck the ctype here.
             pnt = rffi.cast(rffi.VOIDPP, offset)
             pnt[0] = value.pointer
+            return value
         raise Exception(u"cannot cfunc store " + value.repr())
+
+    def typecheck(self, other):
+        if self is other:
+            return True
+        return False
 
     def repr(self):
         string = u'<cfunc ' + self.restype.repr()
@@ -207,12 +280,13 @@ def _(restype, argtypes_list):
     return CFunc(restype, argtypes)
 
 class Struct(Type):
-    def __init__(self, fields=None):
+    def __init__(self, fields=None, name=u''):
         self.align = 0
         self.fields = None
         self.namespace = {}
         self.offsets = []
         self.size = 0
+        self.name = name
         if fields is not None:
             self.declare(fields)
 
@@ -234,10 +308,15 @@ class Struct(Type):
             self.namespace[name] = (offset, ctype)
             offset += sizeof(ctype)
         self.size = align(offset, self.align)
+
+    def typecheck(self, other):
+        if self is other:
+            return True
+        return False
  
     def repr(self):
         if self.fields is None:
-            return u'<opaque>'
+            return u'<opaque %s>' % self.name
         names = []
         for name, ctype in self.fields:
             names.append(u'.' + name)
@@ -258,11 +337,12 @@ def _(fields_list):
     return Struct(fields)
 
 class Union(Type):
-    def __init__(self, fields):
+    def __init__(self, fields, name=u""):
         self.align = 0
         self.fields = None
         self.namespace = {}
         self.size = 0
+        self.name = name
         if fields is not None:
             self.declare(fields)
 
@@ -279,6 +359,11 @@ class Union(Type):
             self.align = max(self.align, ctype.align)
             self.size = max(self.size, sizeof(ctype))
             self.namespace[name] = (0, ctype)
+
+    def typecheck(self, other):
+        if self is other:
+            return True
+        return False
 
     def repr(self):
         names = []
@@ -311,6 +396,13 @@ class Array(Type):
         else:
             self.size = sizeof(ctype) * int(length)
         self.align = ctype.align
+
+    def typecheck(self, other):
+        if isinstance(other, Pointer):
+            return self.ctype.typecheck(other.to)
+        if isinstance(other, Array):
+            return self.ctype.typecheck(other.ctype)
+        return False
 
     def repr(self):
         return u'<array ' + self.ctype.repr() + u'>'
