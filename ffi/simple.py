@@ -1,6 +1,6 @@
 from rpython.rlib import jit_libffi, clibffi, unroll
 from rpython.rtyper.lltypesystem import rffi, lltype
-from space import Error, Object, Integer
+from space import Error, Object, Integer, Float
 # Simple, platform independent concepts are put up
 # here, so they won't take space elsewhere.
 
@@ -34,6 +34,7 @@ def sizeof_a(tp, n):
 
 signed_types = unroll.unrolling_iterable([rffi.LONG, rffi.INT, rffi.SHORT, rffi.CHAR])
 unsigned_types = unroll.unrolling_iterable([rffi.ULONG, rffi.UINT, rffi.USHORT, rffi.UCHAR])
+floating_types = unroll.unrolling_iterable([rffi.FLOAT, rffi.DOUBLE])
 
 class Signed(Type):
     def __init__(self, size=8):
@@ -119,9 +120,41 @@ class Unsigned(Type):
             return True
         return False
 
-# We don't have float object yet.
-#class Float(Type):
-#    def __init__(self, size=4):
-#        self.align = size
-#        self.size = size
+class Floating(Type):
+    def __init__(self, size=4):
+        self.align = size
+        self.size = size
 
+    def cast_to_ffitype(self):
+        for rtype in floating_types:
+            if self.size == rffi.sizeof(rtype):
+                return clibffi.cast_type_to_ffitype(rtype)
+        else:
+            assert False, "undefined ffi type"
+
+    def load(self, offset):
+        for rtype in floating_types:
+            if self.size == rffi.sizeof(rtype):
+                return Float(rffi.cast(rffi.DOUBLE, rffi.cast(rffi.CArrayPtr(rtype), offset)[0]))
+        else:
+            assert False, "undefined ffi type"
+
+    def store(self, offset, value):
+        if not isinstance(value, Float):
+            raise Error(u"cannot transform to flotype %s" % value.repr())
+        for rtype in floating_types:
+            if self.size == rffi.sizeof(rtype):
+                pnt = rffi.cast(rffi.CArrayPtr(rtype), offset)
+                pnt[0] = rffi.cast(rtype, value.number)
+                break
+        else:
+            assert False, "undefined ffi type"
+        return value
+
+    def repr(self):
+        return u"<floating %d>" % self.size
+
+    def typecheck(self, other):
+        if isinstance(other, Floating) and self.size == other.size:
+            return True
+        return False

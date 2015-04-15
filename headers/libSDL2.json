@@ -1,0 +1,8670 @@
+{
+  "constants": {
+    "ADDEVENT": 0, 
+    "ALPHA_OPAQUE": 255, 
+    "ALPHA_TRANSPARENT": 0, 
+    "APP_DIDENTERBACKGROUND": 260, 
+    "APP_DIDENTERFOREGROUND": 262, 
+    "APP_LOWMEMORY": 258, 
+    "APP_TERMINATING": 257, 
+    "APP_WILLENTERBACKGROUND": 259, 
+    "APP_WILLENTERFOREGROUND": 261, 
+    "ARRAYORDER_ABGR": 6, 
+    "ARRAYORDER_ARGB": 3, 
+    "ARRAYORDER_BGR": 4, 
+    "ARRAYORDER_BGRA": 5, 
+    "ARRAYORDER_NONE": 0, 
+    "ARRAYORDER_RGB": 1, 
+    "ARRAYORDER_RGBA": 2, 
+    "ASSEMBLY_ROUTINES": 1, 
+    "ASSERTION_ABORT": 2, 
+    "ASSERTION_ALWAYS_IGNORE": 4, 
+    "ASSERTION_BREAK": 1, 
+    "ASSERTION_IGNORE": 3, 
+    "ASSERTION_RETRY": 0, 
+    "ASSERT_LEVEL": 2, 
+    "AUDIO_ALLOW_ANY_CHANGE": 7, 
+    "AUDIO_ALLOW_CHANNELS_CHANGE": 4, 
+    "AUDIO_ALLOW_FORMAT_CHANGE": 2, 
+    "AUDIO_ALLOW_FREQUENCY_CHANGE": 1, 
+    "AUDIO_DRIVER_ALSA": 1, 
+    "AUDIO_DRIVER_DISK": 1, 
+    "AUDIO_DRIVER_DUMMY": 1, 
+    "AUDIO_DRIVER_OSS": 1, 
+    "AUDIO_DRIVER_PULSEAUDIO": 1, 
+    "AUDIO_MASK_BITSIZE": 255, 
+    "AUDIO_MASK_DATATYPE": 256, 
+    "AUDIO_MASK_ENDIAN": 4096, 
+    "AUDIO_MASK_SIGNED": 32768, 
+    "AUDIO_PAUSED": 2, 
+    "AUDIO_PLAYING": 1, 
+    "AUDIO_STOPPED": 0, 
+    "BIG_ENDIAN": 4321, 
+    "BITMAPORDER_1234": 2, 
+    "BITMAPORDER_4321": 1, 
+    "BITMAPORDER_NONE": 0, 
+    "BLENDMODE_ADD": 2, 
+    "BLENDMODE_BLEND": 1, 
+    "BLENDMODE_MOD": 4, 
+    "BLENDMODE_NONE": 0, 
+    "BUTTON_LEFT": 1, 
+    "BUTTON_MIDDLE": 2, 
+    "BUTTON_RIGHT": 3, 
+    "BUTTON_X1": 4, 
+    "BUTTON_X2": 5, 
+    "BYTEORDER": 1234, 
+    "CACHELINE_SIZE": 128, 
+    "CLIPBOARDUPDATE": 2304, 
+    "CONTROLLERAXISMOTION": 1616, 
+    "CONTROLLERBUTTONDOWN": 1617, 
+    "CONTROLLERBUTTONUP": 1618, 
+    "CONTROLLERDEVICEADDED": 1619, 
+    "CONTROLLERDEVICEREMAPPED": 1621, 
+    "CONTROLLERDEVICEREMOVED": 1620, 
+    "CONTROLLER_AXIS_INVALID": -1, 
+    "CONTROLLER_AXIS_LEFTX": 0, 
+    "CONTROLLER_AXIS_LEFTY": 1, 
+    "CONTROLLER_AXIS_MAX": 6, 
+    "CONTROLLER_AXIS_RIGHTX": 2, 
+    "CONTROLLER_AXIS_RIGHTY": 3, 
+    "CONTROLLER_AXIS_TRIGGERLEFT": 4, 
+    "CONTROLLER_AXIS_TRIGGERRIGHT": 5, 
+    "CONTROLLER_BINDTYPE_AXIS": 2, 
+    "CONTROLLER_BINDTYPE_BUTTON": 1, 
+    "CONTROLLER_BINDTYPE_HAT": 3, 
+    "CONTROLLER_BINDTYPE_NONE": 0, 
+    "CONTROLLER_BUTTON_A": 0, 
+    "CONTROLLER_BUTTON_B": 1, 
+    "CONTROLLER_BUTTON_BACK": 4, 
+    "CONTROLLER_BUTTON_DPAD_DOWN": 12, 
+    "CONTROLLER_BUTTON_DPAD_LEFT": 13, 
+    "CONTROLLER_BUTTON_DPAD_RIGHT": 14, 
+    "CONTROLLER_BUTTON_DPAD_UP": 11, 
+    "CONTROLLER_BUTTON_GUIDE": 5, 
+    "CONTROLLER_BUTTON_INVALID": -1, 
+    "CONTROLLER_BUTTON_LEFTSHOULDER": 9, 
+    "CONTROLLER_BUTTON_LEFTSTICK": 7, 
+    "CONTROLLER_BUTTON_MAX": 15, 
+    "CONTROLLER_BUTTON_RIGHTSHOULDER": 10, 
+    "CONTROLLER_BUTTON_RIGHTSTICK": 8, 
+    "CONTROLLER_BUTTON_START": 6, 
+    "CONTROLLER_BUTTON_X": 2, 
+    "CONTROLLER_BUTTON_Y": 3, 
+    "DISABLE": 0, 
+    "DOLLARGESTURE": 2048, 
+    "DOLLARRECORD": 2049, 
+    "DONTFREE": 4, 
+    "DROPFILE": 4096, 
+    "EFREAD": 1, 
+    "EFSEEK": 3, 
+    "EFWRITE": 2, 
+    "ENABLE": 1, 
+    "ENOMEM": 0, 
+    "FALSE": 0, 
+    "FINGERDOWN": 1792, 
+    "FINGERMOTION": 1794, 
+    "FINGERUP": 1793, 
+    "FIRSTEVENT": 0, 
+    "FLIP_HORIZONTAL": 1, 
+    "FLIP_NONE": 0, 
+    "FLIP_VERTICAL": 2, 
+    "GETEVENT": 2, 
+    "GL_ACCELERATED_VISUAL": 15, 
+    "GL_ACCUM_ALPHA_SIZE": 11, 
+    "GL_ACCUM_BLUE_SIZE": 10, 
+    "GL_ACCUM_GREEN_SIZE": 9, 
+    "GL_ACCUM_RED_SIZE": 8, 
+    "GL_ALPHA_SIZE": 3, 
+    "GL_BLUE_SIZE": 2, 
+    "GL_BUFFER_SIZE": 4, 
+    "GL_CONTEXT_DEBUG_FLAG": 1, 
+    "GL_CONTEXT_EGL": 19, 
+    "GL_CONTEXT_FLAGS": 20, 
+    "GL_CONTEXT_FORWARD_COMPATIBLE_FLAG": 2, 
+    "GL_CONTEXT_MAJOR_VERSION": 17, 
+    "GL_CONTEXT_MINOR_VERSION": 18, 
+    "GL_CONTEXT_PROFILE_COMPATIBILITY": 2, 
+    "GL_CONTEXT_PROFILE_CORE": 1, 
+    "GL_CONTEXT_PROFILE_ES": 4, 
+    "GL_CONTEXT_PROFILE_MASK": 21, 
+    "GL_CONTEXT_RESET_ISOLATION_FLAG": 8, 
+    "GL_CONTEXT_ROBUST_ACCESS_FLAG": 4, 
+    "GL_DEPTH_SIZE": 6, 
+    "GL_DOUBLEBUFFER": 5, 
+    "GL_GREEN_SIZE": 1, 
+    "GL_MULTISAMPLEBUFFERS": 13, 
+    "GL_MULTISAMPLESAMPLES": 14, 
+    "GL_RED_SIZE": 0, 
+    "GL_RETAINED_BACKING": 16, 
+    "GL_SHARE_WITH_CURRENT_CONTEXT": 22, 
+    "GL_STENCIL_SIZE": 7, 
+    "GL_STEREO": 12, 
+    "HAPTIC_AUTOCENTER": 8192, 
+    "HAPTIC_CARTESIAN": 1, 
+    "HAPTIC_CONSTANT": 1, 
+    "HAPTIC_CUSTOM": 2048, 
+    "HAPTIC_DAMPER": 256, 
+    "HAPTIC_FRICTION": 1024, 
+    "HAPTIC_GAIN": 4096, 
+    "HAPTIC_INERTIA": 512, 
+    "HAPTIC_INFINITY": 4294967295, 
+    "HAPTIC_LEFTRIGHT": 4, 
+    "HAPTIC_LINUX": 1, 
+    "HAPTIC_PAUSE": 32768, 
+    "HAPTIC_POLAR": 0, 
+    "HAPTIC_RAMP": 64, 
+    "HAPTIC_SAWTOOTHDOWN": 32, 
+    "HAPTIC_SAWTOOTHUP": 16, 
+    "HAPTIC_SINE": 2, 
+    "HAPTIC_SPHERICAL": 2, 
+    "HAPTIC_SPRING": 128, 
+    "HAPTIC_STATUS": 16384, 
+    "HAPTIC_TRIANGLE": 8, 
+    "HAT_CENTERED": 0, 
+    "HAT_DOWN": 4, 
+    "HAT_LEFT": 8, 
+    "HAT_LEFTDOWN": 12, 
+    "HAT_LEFTUP": 9, 
+    "HAT_RIGHT": 2, 
+    "HAT_RIGHTDOWN": 6, 
+    "HAT_RIGHTUP": 3, 
+    "HAT_UP": 1, 
+    "HINT_ALLOW_TOPMOST": "SDL_ALLOW_TOPMOST", 
+    "HINT_DEFAULT": 0, 
+    "HINT_FRAMEBUFFER_ACCELERATION": "SDL_FRAMEBUFFER_ACCELERATION", 
+    "HINT_GAMECONTROLLERCONFIG": "SDL_GAMECONTROLLERCONFIG", 
+    "HINT_GRAB_KEYBOARD": "SDL_GRAB_KEYBOARD", 
+    "HINT_IDLE_TIMER_DISABLED": "SDL_IOS_IDLE_TIMER_DISABLED", 
+    "HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS": "SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS", 
+    "HINT_NORMAL": 1, 
+    "HINT_ORIENTATIONS": "SDL_IOS_ORIENTATIONS", 
+    "HINT_OVERRIDE": 2, 
+    "HINT_RENDER_DRIVER": "SDL_RENDER_DRIVER", 
+    "HINT_RENDER_OPENGL_SHADERS": "SDL_RENDER_OPENGL_SHADERS", 
+    "HINT_RENDER_SCALE_QUALITY": "SDL_RENDER_SCALE_QUALITY", 
+    "HINT_RENDER_VSYNC": "SDL_RENDER_VSYNC", 
+    "HINT_TIMER_RESOLUTION": "SDL_TIMER_RESOLUTION", 
+    "HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS": "SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS", 
+    "HINT_VIDEO_X11_XINERAMA": "SDL_VIDEO_X11_XINERAMA", 
+    "HINT_VIDEO_X11_XRANDR": "SDL_VIDEO_X11_XRANDR", 
+    "HINT_VIDEO_X11_XVIDMODE": "SDL_VIDEO_X11_XVIDMODE", 
+    "HINT_XINPUT_ENABLED": "SDL_XINPUT_ENABLED", 
+    "ICONV_E2BIG": -2, 
+    "ICONV_EILSEQ": -3, 
+    "ICONV_EINVAL": -4, 
+    "ICONV_ERROR": -1, 
+    "IGNORE": 0, 
+    "INIT_AUDIO": 16, 
+    "INIT_EVENTS": 16384, 
+    "INIT_EVERYTHING": 29233, 
+    "INIT_GAMECONTROLLER": 8192, 
+    "INIT_HAPTIC": 4096, 
+    "INIT_JOYSTICK": 512, 
+    "INIT_NOPARACHUTE": 1048576, 
+    "INIT_TIMER": 1, 
+    "INIT_VIDEO": 32, 
+    "INPUT_LINUXEV": 1, 
+    "INPUT_TSLIB": 1, 
+    "JOYAXISMOTION": 1536, 
+    "JOYBALLMOTION": 1537, 
+    "JOYBUTTONDOWN": 1539, 
+    "JOYBUTTONUP": 1540, 
+    "JOYDEVICEADDED": 1541, 
+    "JOYDEVICEREMOVED": 1542, 
+    "JOYHATMOTION": 1538, 
+    "JOYSTICK_LINUX": 1, 
+    "KEYDOWN": 768, 
+    "KEYUP": 769, 
+    "LASTERROR": 5, 
+    "LASTEVENT": 65535, 
+    "LIL_ENDIAN": 1234, 
+    "LOADSO_DISABLED": 1, 
+    "LOADSO_DLOPEN": 1, 
+    "LOG_CATEGORY_APPLICATION": 0, 
+    "LOG_CATEGORY_ASSERT": 2, 
+    "LOG_CATEGORY_AUDIO": 4, 
+    "LOG_CATEGORY_CUSTOM": 19, 
+    "LOG_CATEGORY_ERROR": 1, 
+    "LOG_CATEGORY_INPUT": 7, 
+    "LOG_CATEGORY_RENDER": 6, 
+    "LOG_CATEGORY_RESERVED1": 9, 
+    "LOG_CATEGORY_RESERVED10": 18, 
+    "LOG_CATEGORY_RESERVED2": 10, 
+    "LOG_CATEGORY_RESERVED3": 11, 
+    "LOG_CATEGORY_RESERVED4": 12, 
+    "LOG_CATEGORY_RESERVED5": 13, 
+    "LOG_CATEGORY_RESERVED6": 14, 
+    "LOG_CATEGORY_RESERVED7": 15, 
+    "LOG_CATEGORY_RESERVED8": 16, 
+    "LOG_CATEGORY_RESERVED9": 17, 
+    "LOG_CATEGORY_SYSTEM": 3, 
+    "LOG_CATEGORY_TEST": 8, 
+    "LOG_CATEGORY_VIDEO": 5, 
+    "LOG_PRIORITY_CRITICAL": 6, 
+    "LOG_PRIORITY_DEBUG": 2, 
+    "LOG_PRIORITY_ERROR": 5, 
+    "LOG_PRIORITY_INFO": 3, 
+    "LOG_PRIORITY_VERBOSE": 1, 
+    "LOG_PRIORITY_WARN": 4, 
+    "MAJOR_VERSION": 2, 
+    "MAX_LOG_MESSAGE": 4096, 
+    "MESSAGEBOX_BUTTON_ESCAPEKEY_DEFAULT": 2, 
+    "MESSAGEBOX_BUTTON_RETURNKEY_DEFAULT": 1, 
+    "MESSAGEBOX_COLOR_BACKGROUND": 0, 
+    "MESSAGEBOX_COLOR_BUTTON_BACKGROUND": 3, 
+    "MESSAGEBOX_COLOR_BUTTON_BORDER": 2, 
+    "MESSAGEBOX_COLOR_BUTTON_SELECTED": 4, 
+    "MESSAGEBOX_COLOR_MAX": 5, 
+    "MESSAGEBOX_COLOR_TEXT": 1, 
+    "MESSAGEBOX_ERROR": 16, 
+    "MESSAGEBOX_INFORMATION": 64, 
+    "MESSAGEBOX_WARNING": 32, 
+    "MINOR_VERSION": 0, 
+    "MIX_MAXVOLUME": 128, 
+    "MOUSEBUTTONDOWN": 1025, 
+    "MOUSEBUTTONUP": 1026, 
+    "MOUSEMOTION": 1024, 
+    "MOUSEWHEEL": 1027, 
+    "MULTIGESTURE": 2050, 
+    "MUTEX_TIMEDOUT": 1, 
+    "NUM_LOG_PRIORITIES": 7, 
+    "NUM_SCANCODES": 512, 
+    "NUM_SYSTEM_CURSORS": 12, 
+    "PACKEDLAYOUT_1010102": 8, 
+    "PACKEDLAYOUT_1555": 3, 
+    "PACKEDLAYOUT_2101010": 7, 
+    "PACKEDLAYOUT_332": 1, 
+    "PACKEDLAYOUT_4444": 2, 
+    "PACKEDLAYOUT_5551": 4, 
+    "PACKEDLAYOUT_565": 5, 
+    "PACKEDLAYOUT_8888": 6, 
+    "PACKEDLAYOUT_NONE": 0, 
+    "PACKEDORDER_ABGR": 7, 
+    "PACKEDORDER_ARGB": 3, 
+    "PACKEDORDER_BGRA": 8, 
+    "PACKEDORDER_BGRX": 6, 
+    "PACKEDORDER_NONE": 0, 
+    "PACKEDORDER_RGBA": 4, 
+    "PACKEDORDER_RGBX": 2, 
+    "PACKEDORDER_XBGR": 5, 
+    "PACKEDORDER_XRGB": 1, 
+    "PATCHLEVEL": 0, 
+    "PEEKEVENT": 1, 
+    "PIXELFORMAT_ABGR1555": 359862274, 
+    "PIXELFORMAT_ABGR4444": 359796738, 
+    "PIXELFORMAT_ABGR8888": 376840196, 
+    "PIXELFORMAT_ARGB1555": 355667970, 
+    "PIXELFORMAT_ARGB2101010": 372711428, 
+    "PIXELFORMAT_ARGB4444": 355602434, 
+    "PIXELFORMAT_ARGB8888": 372645892, 
+    "PIXELFORMAT_BGR24": 390076419, 
+    "PIXELFORMAT_BGR555": 357764866, 
+    "PIXELFORMAT_BGR565": 357896194, 
+    "PIXELFORMAT_BGR888": 374740996, 
+    "PIXELFORMAT_BGRA4444": 360845314, 
+    "PIXELFORMAT_BGRA5551": 360976386, 
+    "PIXELFORMAT_BGRA8888": 377888772, 
+    "PIXELFORMAT_BGRX8888": 375789572, 
+    "PIXELFORMAT_INDEX1LSB": 286261504, 
+    "PIXELFORMAT_INDEX1MSB": 287310080, 
+    "PIXELFORMAT_INDEX4LSB": 303039488, 
+    "PIXELFORMAT_INDEX4MSB": 304088064, 
+    "PIXELFORMAT_INDEX8": 318769153, 
+    "PIXELFORMAT_IYUV": 1448433993, 
+    "PIXELFORMAT_RGB24": 386930691, 
+    "PIXELFORMAT_RGB332": 336660481, 
+    "PIXELFORMAT_RGB444": 353504258, 
+    "PIXELFORMAT_RGB555": 353570562, 
+    "PIXELFORMAT_RGB565": 353701890, 
+    "PIXELFORMAT_RGB888": 370546692, 
+    "PIXELFORMAT_RGBA4444": 356651010, 
+    "PIXELFORMAT_RGBA5551": 356782082, 
+    "PIXELFORMAT_RGBA8888": 373694468, 
+    "PIXELFORMAT_RGBX8888": 371595268, 
+    "PIXELFORMAT_UNKNOWN": 0, 
+    "PIXELFORMAT_UYVY": 1498831189, 
+    "PIXELFORMAT_YUY2": 844715353, 
+    "PIXELFORMAT_YV12": 842094169, 
+    "PIXELFORMAT_YVYU": 1431918169, 
+    "PIXELTYPE_ARRAYF16": 10, 
+    "PIXELTYPE_ARRAYF32": 11, 
+    "PIXELTYPE_ARRAYU16": 8, 
+    "PIXELTYPE_ARRAYU32": 9, 
+    "PIXELTYPE_ARRAYU8": 7, 
+    "PIXELTYPE_INDEX1": 1, 
+    "PIXELTYPE_INDEX4": 2, 
+    "PIXELTYPE_INDEX8": 3, 
+    "PIXELTYPE_PACKED16": 5, 
+    "PIXELTYPE_PACKED32": 6, 
+    "PIXELTYPE_PACKED8": 4, 
+    "PIXELTYPE_UNKNOWN": 0, 
+    "POWERSTATE_CHARGED": 4, 
+    "POWERSTATE_CHARGING": 3, 
+    "POWERSTATE_NO_BATTERY": 2, 
+    "POWERSTATE_ON_BATTERY": 1, 
+    "POWERSTATE_UNKNOWN": 0, 
+    "POWER_LINUX": 1, 
+    "PREALLOC": 1, 
+    "PRESSED": 1, 
+    "QUERY": -1, 
+    "QUIT": 256, 
+    "RELEASED": 0, 
+    "RENDERER_ACCELERATED": 2, 
+    "RENDERER_PRESENTVSYNC": 4, 
+    "RENDERER_SOFTWARE": 1, 
+    "RENDERER_TARGETTEXTURE": 8, 
+    "RLEACCEL": 2, 
+    "RWOPS_JNIFILE": 3, 
+    "RWOPS_MEMORY": 4, 
+    "RWOPS_MEMORY_RO": 5, 
+    "RWOPS_STDFILE": 2, 
+    "RWOPS_UNKNOWN": 0, 
+    "RWOPS_WINFILE": 1, 
+    "SCANCODE_0": 39, 
+    "SCANCODE_1": 30, 
+    "SCANCODE_2": 31, 
+    "SCANCODE_3": 32, 
+    "SCANCODE_4": 33, 
+    "SCANCODE_5": 34, 
+    "SCANCODE_6": 35, 
+    "SCANCODE_7": 36, 
+    "SCANCODE_8": 37, 
+    "SCANCODE_9": 38, 
+    "SCANCODE_A": 4, 
+    "SCANCODE_AC_BACK": 270, 
+    "SCANCODE_AC_BOOKMARKS": 274, 
+    "SCANCODE_AC_FORWARD": 271, 
+    "SCANCODE_AC_HOME": 269, 
+    "SCANCODE_AC_REFRESH": 273, 
+    "SCANCODE_AC_SEARCH": 268, 
+    "SCANCODE_AC_STOP": 272, 
+    "SCANCODE_AGAIN": 121, 
+    "SCANCODE_ALTERASE": 153, 
+    "SCANCODE_APOSTROPHE": 52, 
+    "SCANCODE_APP1": 283, 
+    "SCANCODE_APP2": 284, 
+    "SCANCODE_APPLICATION": 101, 
+    "SCANCODE_AUDIOMUTE": 262, 
+    "SCANCODE_AUDIONEXT": 258, 
+    "SCANCODE_AUDIOPLAY": 261, 
+    "SCANCODE_AUDIOPREV": 259, 
+    "SCANCODE_AUDIOSTOP": 260, 
+    "SCANCODE_B": 5, 
+    "SCANCODE_BACKSLASH": 49, 
+    "SCANCODE_BACKSPACE": 42, 
+    "SCANCODE_BRIGHTNESSDOWN": 275, 
+    "SCANCODE_BRIGHTNESSUP": 276, 
+    "SCANCODE_C": 6, 
+    "SCANCODE_CALCULATOR": 266, 
+    "SCANCODE_CANCEL": 155, 
+    "SCANCODE_CAPSLOCK": 57, 
+    "SCANCODE_CLEAR": 156, 
+    "SCANCODE_CLEARAGAIN": 162, 
+    "SCANCODE_COMMA": 54, 
+    "SCANCODE_COMPUTER": 267, 
+    "SCANCODE_COPY": 124, 
+    "SCANCODE_CRSEL": 163, 
+    "SCANCODE_CURRENCYSUBUNIT": 181, 
+    "SCANCODE_CURRENCYUNIT": 180, 
+    "SCANCODE_CUT": 123, 
+    "SCANCODE_D": 7, 
+    "SCANCODE_DECIMALSEPARATOR": 179, 
+    "SCANCODE_DELETE": 76, 
+    "SCANCODE_DISPLAYSWITCH": 277, 
+    "SCANCODE_DOWN": 81, 
+    "SCANCODE_E": 8, 
+    "SCANCODE_EJECT": 281, 
+    "SCANCODE_END": 77, 
+    "SCANCODE_EQUALS": 46, 
+    "SCANCODE_ESCAPE": 41, 
+    "SCANCODE_EXECUTE": 116, 
+    "SCANCODE_EXSEL": 164, 
+    "SCANCODE_F": 9, 
+    "SCANCODE_F1": 58, 
+    "SCANCODE_F10": 67, 
+    "SCANCODE_F11": 68, 
+    "SCANCODE_F12": 69, 
+    "SCANCODE_F13": 104, 
+    "SCANCODE_F14": 105, 
+    "SCANCODE_F15": 106, 
+    "SCANCODE_F16": 107, 
+    "SCANCODE_F17": 108, 
+    "SCANCODE_F18": 109, 
+    "SCANCODE_F19": 110, 
+    "SCANCODE_F2": 59, 
+    "SCANCODE_F20": 111, 
+    "SCANCODE_F21": 112, 
+    "SCANCODE_F22": 113, 
+    "SCANCODE_F23": 114, 
+    "SCANCODE_F24": 115, 
+    "SCANCODE_F3": 60, 
+    "SCANCODE_F4": 61, 
+    "SCANCODE_F5": 62, 
+    "SCANCODE_F6": 63, 
+    "SCANCODE_F7": 64, 
+    "SCANCODE_F8": 65, 
+    "SCANCODE_F9": 66, 
+    "SCANCODE_FIND": 126, 
+    "SCANCODE_G": 10, 
+    "SCANCODE_GRAVE": 53, 
+    "SCANCODE_H": 11, 
+    "SCANCODE_HELP": 117, 
+    "SCANCODE_HOME": 74, 
+    "SCANCODE_I": 12, 
+    "SCANCODE_INSERT": 73, 
+    "SCANCODE_INTERNATIONAL1": 135, 
+    "SCANCODE_INTERNATIONAL2": 136, 
+    "SCANCODE_INTERNATIONAL3": 137, 
+    "SCANCODE_INTERNATIONAL4": 138, 
+    "SCANCODE_INTERNATIONAL5": 139, 
+    "SCANCODE_INTERNATIONAL6": 140, 
+    "SCANCODE_INTERNATIONAL7": 141, 
+    "SCANCODE_INTERNATIONAL8": 142, 
+    "SCANCODE_INTERNATIONAL9": 143, 
+    "SCANCODE_J": 13, 
+    "SCANCODE_K": 14, 
+    "SCANCODE_KBDILLUMDOWN": 279, 
+    "SCANCODE_KBDILLUMTOGGLE": 278, 
+    "SCANCODE_KBDILLUMUP": 280, 
+    "SCANCODE_KP_0": 98, 
+    "SCANCODE_KP_00": 176, 
+    "SCANCODE_KP_000": 177, 
+    "SCANCODE_KP_1": 89, 
+    "SCANCODE_KP_2": 90, 
+    "SCANCODE_KP_3": 91, 
+    "SCANCODE_KP_4": 92, 
+    "SCANCODE_KP_5": 93, 
+    "SCANCODE_KP_6": 94, 
+    "SCANCODE_KP_7": 95, 
+    "SCANCODE_KP_8": 96, 
+    "SCANCODE_KP_9": 97, 
+    "SCANCODE_KP_A": 188, 
+    "SCANCODE_KP_AMPERSAND": 199, 
+    "SCANCODE_KP_AT": 206, 
+    "SCANCODE_KP_B": 189, 
+    "SCANCODE_KP_BACKSPACE": 187, 
+    "SCANCODE_KP_BINARY": 218, 
+    "SCANCODE_KP_C": 190, 
+    "SCANCODE_KP_CLEAR": 216, 
+    "SCANCODE_KP_CLEARENTRY": 217, 
+    "SCANCODE_KP_COLON": 203, 
+    "SCANCODE_KP_COMMA": 133, 
+    "SCANCODE_KP_D": 191, 
+    "SCANCODE_KP_DBLAMPERSAND": 200, 
+    "SCANCODE_KP_DBLVERTICALBAR": 202, 
+    "SCANCODE_KP_DECIMAL": 220, 
+    "SCANCODE_KP_DIVIDE": 84, 
+    "SCANCODE_KP_E": 192, 
+    "SCANCODE_KP_ENTER": 88, 
+    "SCANCODE_KP_EQUALS": 103, 
+    "SCANCODE_KP_EQUALSAS400": 134, 
+    "SCANCODE_KP_EXCLAM": 207, 
+    "SCANCODE_KP_F": 193, 
+    "SCANCODE_KP_GREATER": 198, 
+    "SCANCODE_KP_HASH": 204, 
+    "SCANCODE_KP_HEXADECIMAL": 221, 
+    "SCANCODE_KP_LEFTBRACE": 184, 
+    "SCANCODE_KP_LEFTPAREN": 182, 
+    "SCANCODE_KP_LESS": 197, 
+    "SCANCODE_KP_MEMADD": 211, 
+    "SCANCODE_KP_MEMCLEAR": 210, 
+    "SCANCODE_KP_MEMDIVIDE": 214, 
+    "SCANCODE_KP_MEMMULTIPLY": 213, 
+    "SCANCODE_KP_MEMRECALL": 209, 
+    "SCANCODE_KP_MEMSTORE": 208, 
+    "SCANCODE_KP_MEMSUBTRACT": 212, 
+    "SCANCODE_KP_MINUS": 86, 
+    "SCANCODE_KP_MULTIPLY": 85, 
+    "SCANCODE_KP_OCTAL": 219, 
+    "SCANCODE_KP_PERCENT": 196, 
+    "SCANCODE_KP_PERIOD": 99, 
+    "SCANCODE_KP_PLUS": 87, 
+    "SCANCODE_KP_PLUSMINUS": 215, 
+    "SCANCODE_KP_POWER": 195, 
+    "SCANCODE_KP_RIGHTBRACE": 185, 
+    "SCANCODE_KP_RIGHTPAREN": 183, 
+    "SCANCODE_KP_SPACE": 205, 
+    "SCANCODE_KP_TAB": 186, 
+    "SCANCODE_KP_VERTICALBAR": 201, 
+    "SCANCODE_KP_XOR": 194, 
+    "SCANCODE_L": 15, 
+    "SCANCODE_LALT": 226, 
+    "SCANCODE_LANG1": 144, 
+    "SCANCODE_LANG2": 145, 
+    "SCANCODE_LANG3": 146, 
+    "SCANCODE_LANG4": 147, 
+    "SCANCODE_LANG5": 148, 
+    "SCANCODE_LANG6": 149, 
+    "SCANCODE_LANG7": 150, 
+    "SCANCODE_LANG8": 151, 
+    "SCANCODE_LANG9": 152, 
+    "SCANCODE_LCTRL": 224, 
+    "SCANCODE_LEFT": 80, 
+    "SCANCODE_LEFTBRACKET": 47, 
+    "SCANCODE_LGUI": 227, 
+    "SCANCODE_LSHIFT": 225, 
+    "SCANCODE_M": 16, 
+    "SCANCODE_MAIL": 265, 
+    "SCANCODE_MEDIASELECT": 263, 
+    "SCANCODE_MENU": 118, 
+    "SCANCODE_MINUS": 45, 
+    "SCANCODE_MODE": 257, 
+    "SCANCODE_MUTE": 127, 
+    "SCANCODE_N": 17, 
+    "SCANCODE_NONUSBACKSLASH": 100, 
+    "SCANCODE_NONUSHASH": 50, 
+    "SCANCODE_NUMLOCKCLEAR": 83, 
+    "SCANCODE_O": 18, 
+    "SCANCODE_OPER": 161, 
+    "SCANCODE_OUT": 160, 
+    "SCANCODE_P": 19, 
+    "SCANCODE_PAGEDOWN": 78, 
+    "SCANCODE_PAGEUP": 75, 
+    "SCANCODE_PASTE": 125, 
+    "SCANCODE_PAUSE": 72, 
+    "SCANCODE_PERIOD": 55, 
+    "SCANCODE_POWER": 102, 
+    "SCANCODE_PRINTSCREEN": 70, 
+    "SCANCODE_PRIOR": 157, 
+    "SCANCODE_Q": 20, 
+    "SCANCODE_R": 21, 
+    "SCANCODE_RALT": 230, 
+    "SCANCODE_RCTRL": 228, 
+    "SCANCODE_RETURN": 40, 
+    "SCANCODE_RETURN2": 158, 
+    "SCANCODE_RGUI": 231, 
+    "SCANCODE_RIGHT": 79, 
+    "SCANCODE_RIGHTBRACKET": 48, 
+    "SCANCODE_RSHIFT": 229, 
+    "SCANCODE_S": 22, 
+    "SCANCODE_SCROLLLOCK": 71, 
+    "SCANCODE_SELECT": 119, 
+    "SCANCODE_SEMICOLON": 51, 
+    "SCANCODE_SEPARATOR": 159, 
+    "SCANCODE_SLASH": 56, 
+    "SCANCODE_SLEEP": 282, 
+    "SCANCODE_SPACE": 44, 
+    "SCANCODE_STOP": 120, 
+    "SCANCODE_SYSREQ": 154, 
+    "SCANCODE_T": 23, 
+    "SCANCODE_TAB": 43, 
+    "SCANCODE_THOUSANDSSEPARATOR": 178, 
+    "SCANCODE_U": 24, 
+    "SCANCODE_UNDO": 122, 
+    "SCANCODE_UNKNOWN": 0, 
+    "SCANCODE_UP": 82, 
+    "SCANCODE_V": 25, 
+    "SCANCODE_VOLUMEDOWN": 129, 
+    "SCANCODE_VOLUMEUP": 128, 
+    "SCANCODE_W": 26, 
+    "SCANCODE_WWW": 264, 
+    "SCANCODE_X": 27, 
+    "SCANCODE_Y": 28, 
+    "SCANCODE_Z": 29, 
+    "SWSURFACE": 0, 
+    "SYSTEM_CURSOR_ARROW": 0, 
+    "SYSTEM_CURSOR_CROSSHAIR": 3, 
+    "SYSTEM_CURSOR_HAND": 11, 
+    "SYSTEM_CURSOR_IBEAM": 1, 
+    "SYSTEM_CURSOR_NO": 10, 
+    "SYSTEM_CURSOR_SIZEALL": 9, 
+    "SYSTEM_CURSOR_SIZENESW": 6, 
+    "SYSTEM_CURSOR_SIZENS": 8, 
+    "SYSTEM_CURSOR_SIZENWSE": 5, 
+    "SYSTEM_CURSOR_SIZEWE": 7, 
+    "SYSTEM_CURSOR_WAIT": 2, 
+    "SYSTEM_CURSOR_WAITARROW": 4, 
+    "SYSWMEVENT": 513, 
+    "TEXTEDITING": 770, 
+    "TEXTEDITINGEVENT_TEXT_SIZE": 32, 
+    "TEXTINPUT": 771, 
+    "TEXTINPUTEVENT_TEXT_SIZE": 32, 
+    "TEXTUREACCESS_STATIC": 0, 
+    "TEXTUREACCESS_STREAMING": 1, 
+    "TEXTUREACCESS_TARGET": 2, 
+    "TEXTUREMODULATE_ALPHA": 2, 
+    "TEXTUREMODULATE_COLOR": 1, 
+    "TEXTUREMODULATE_NONE": 0, 
+    "THREAD_PRIORITY_HIGH": 2, 
+    "THREAD_PRIORITY_LOW": 0, 
+    "THREAD_PRIORITY_NORMAL": 1, 
+    "THREAD_PTHREAD": 1, 
+    "THREAD_PTHREAD_RECURSIVE_MUTEX": 1, 
+    "TIMER_UNIX": 1, 
+    "TOUCH_MOUSEID": -1, 
+    "TRUE": 1, 
+    "UNSUPPORTED": 4, 
+    "USEREVENT": 32768, 
+    "VIDEO_DRIVER_DUMMY": 1, 
+    "VIDEO_DRIVER_X11": 1, 
+    "VIDEO_DRIVER_X11_CONST_PARAM_XEXTADDDISPLAY": 1, 
+    "VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM": 1, 
+    "VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS": 1, 
+    "VIDEO_DRIVER_X11_XCURSOR": 1, 
+    "VIDEO_DRIVER_X11_XINERAMA": 1, 
+    "VIDEO_DRIVER_X11_XINPUT2": 1, 
+    "VIDEO_DRIVER_X11_XINPUT2_SUPPORTS_MULTITOUCH": 1, 
+    "VIDEO_DRIVER_X11_XRANDR": 1, 
+    "VIDEO_DRIVER_X11_XSCRNSAVER": 1, 
+    "VIDEO_DRIVER_X11_XSHAPE": 1, 
+    "VIDEO_DRIVER_X11_XVIDMODE": 1, 
+    "VIDEO_OPENGL": 1, 
+    "VIDEO_OPENGL_GLX": 1, 
+    "VIDEO_RENDER_OGL": 1, 
+    "WINDOWEVENT": 512, 
+    "WINDOWEVENT_CLOSE": 14, 
+    "WINDOWEVENT_ENTER": 10, 
+    "WINDOWEVENT_EXPOSED": 3, 
+    "WINDOWEVENT_FOCUS_GAINED": 12, 
+    "WINDOWEVENT_FOCUS_LOST": 13, 
+    "WINDOWEVENT_HIDDEN": 2, 
+    "WINDOWEVENT_LEAVE": 11, 
+    "WINDOWEVENT_MAXIMIZED": 8, 
+    "WINDOWEVENT_MINIMIZED": 7, 
+    "WINDOWEVENT_MOVED": 4, 
+    "WINDOWEVENT_NONE": 0, 
+    "WINDOWEVENT_RESIZED": 5, 
+    "WINDOWEVENT_RESTORED": 9, 
+    "WINDOWEVENT_SHOWN": 1, 
+    "WINDOWEVENT_SIZE_CHANGED": 6, 
+    "WINDOWPOS_CENTERED_MASK": 805240832, 
+    "WINDOWPOS_UNDEFINED_MASK": 536805376, 
+    "WINDOW_BORDERLESS": 16, 
+    "WINDOW_FOREIGN": 2048, 
+    "WINDOW_FULLSCREEN": 1, 
+    "WINDOW_FULLSCREEN_DESKTOP": 4097, 
+    "WINDOW_HIDDEN": 8, 
+    "WINDOW_INPUT_FOCUS": 512, 
+    "WINDOW_INPUT_GRABBED": 256, 
+    "WINDOW_MAXIMIZED": 128, 
+    "WINDOW_MINIMIZED": 64, 
+    "WINDOW_MOUSE_FOCUS": 1024, 
+    "WINDOW_OPENGL": 2, 
+    "WINDOW_RESIZABLE": 32, 
+    "WINDOW_SHOWN": 4
+  }, 
+  "types": {
+    "AssertionHandler": {
+      "to": {
+        "argtypes": [
+          "assert_data*", 
+          "void*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }, 
+      "type": "pointer"
+    }, 
+    "AudioCVT": {
+      "fields": [
+        [
+          "needed", 
+          "int"
+        ], 
+        [
+          "src_format", 
+          "ushort"
+        ], 
+        [
+          "dst_format", 
+          "ushort"
+        ], 
+        [
+          "rate_incr", 
+          "double"
+        ], 
+        [
+          "buf", 
+          "ubyte*"
+        ], 
+        [
+          "len", 
+          "int"
+        ], 
+        [
+          "len_cvt", 
+          "int"
+        ], 
+        [
+          "len_mult", 
+          "int"
+        ], 
+        [
+          "len_ratio", 
+          "double"
+        ], 
+        [
+          "filters", 
+          {
+            "ctype": "AudioFilter", 
+            "length": 10, 
+            "type": "array"
+          }
+        ], 
+        [
+          "filter_index", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "AudioCallback": {
+      "to": {
+        "argtypes": [
+          "void*", 
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }, 
+      "type": "pointer"
+    }, 
+    "AudioFilter": {
+      "to": {
+        "argtypes": [
+          "AudioCVT**", 
+          "ushort"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }, 
+      "type": "pointer"
+    }, 
+    "AudioSpec": {
+      "fields": [
+        [
+          "freq", 
+          "int"
+        ], 
+        [
+          "format", 
+          "ushort"
+        ], 
+        [
+          "channels", 
+          "ubyte"
+        ], 
+        [
+          "silence", 
+          "ubyte"
+        ], 
+        [
+          "samples", 
+          "ushort"
+        ], 
+        [
+          "padding", 
+          "ushort"
+        ], 
+        [
+          "size", 
+          "uint"
+        ], 
+        [
+          "callback", 
+          "AudioCallback"
+        ], 
+        [
+          "userdata", 
+          "void*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Color": {
+      "fields": [
+        [
+          "r", 
+          "ubyte"
+        ], 
+        [
+          "g", 
+          "ubyte"
+        ], 
+        [
+          "b", 
+          "ubyte"
+        ], 
+        [
+          "a", 
+          "ubyte"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "CommonEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "ControllerAxisEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "which", 
+          "i32"
+        ], 
+        [
+          "axis", 
+          "ubyte"
+        ], 
+        [
+          "padding1", 
+          "ubyte"
+        ], 
+        [
+          "padding2", 
+          "ubyte"
+        ], 
+        [
+          "padding3", 
+          "ubyte"
+        ], 
+        [
+          "value", 
+          "i16"
+        ], 
+        [
+          "padding4", 
+          "ushort"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "ControllerButtonEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "which", 
+          "i32"
+        ], 
+        [
+          "button", 
+          "ubyte"
+        ], 
+        [
+          "state", 
+          "ubyte"
+        ], 
+        [
+          "padding1", 
+          "ubyte"
+        ], 
+        [
+          "padding2", 
+          "ubyte"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "ControllerDeviceEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "which", 
+          "i32"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Cursor": {
+      "type": "opaque"
+    }, 
+    "DisplayMode": {
+      "fields": [
+        [
+          "format", 
+          "uint"
+        ], 
+        [
+          "w", 
+          "int"
+        ], 
+        [
+          "h", 
+          "int"
+        ], 
+        [
+          "refresh_rate", 
+          "int"
+        ], 
+        [
+          "driverdata", 
+          "void*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "DollarGestureEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "touchId", 
+          "i64"
+        ], 
+        [
+          "gestureId", 
+          "i64"
+        ], 
+        [
+          "numFingers", 
+          "uint"
+        ], 
+        [
+          "error", 
+          "float"
+        ], 
+        [
+          "x", 
+          "float"
+        ], 
+        [
+          "y", 
+          "float"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "DropEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "file", 
+          "ubyte*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Event": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "common", 
+          "CommonEvent"
+        ], 
+        [
+          "window", 
+          "WindowEvent"
+        ], 
+        [
+          "key", 
+          "KeyboardEvent"
+        ], 
+        [
+          "edit", 
+          "TextEditingEvent"
+        ], 
+        [
+          "text", 
+          "TextInputEvent"
+        ], 
+        [
+          "motion", 
+          "MouseMotionEvent"
+        ], 
+        [
+          "button", 
+          "MouseButtonEvent"
+        ], 
+        [
+          "wheel", 
+          "MouseWheelEvent"
+        ], 
+        [
+          "jaxis", 
+          "JoyAxisEvent"
+        ], 
+        [
+          "jball", 
+          "JoyBallEvent"
+        ], 
+        [
+          "jhat", 
+          "JoyHatEvent"
+        ], 
+        [
+          "jbutton", 
+          "JoyButtonEvent"
+        ], 
+        [
+          "jdevice", 
+          "JoyDeviceEvent"
+        ], 
+        [
+          "caxis", 
+          "ControllerAxisEvent"
+        ], 
+        [
+          "cbutton", 
+          "ControllerButtonEvent"
+        ], 
+        [
+          "cdevice", 
+          "ControllerDeviceEvent"
+        ], 
+        [
+          "quit", 
+          "QuitEvent"
+        ], 
+        [
+          "user", 
+          "UserEvent"
+        ], 
+        [
+          "syswm", 
+          "SysWMEvent"
+        ], 
+        [
+          "tfinger", 
+          "TouchFingerEvent"
+        ], 
+        [
+          "mgesture", 
+          "MultiGestureEvent"
+        ], 
+        [
+          "dgesture", 
+          "DollarGestureEvent"
+        ], 
+        [
+          "drop", 
+          "DropEvent"
+        ], 
+        [
+          "padding", 
+          {
+            "ctype": "ubyte", 
+            "length": 56, 
+            "type": "array"
+          }
+        ]
+      ], 
+      "type": "union"
+    }, 
+    "EventFilter": {
+      "to": {
+        "argtypes": [
+          "void*", 
+          "Event*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }, 
+      "type": "pointer"
+    }, 
+    "FILE": {
+      "type": "opaque"
+    }, 
+    "Finger": {
+      "fields": [
+        [
+          "id", 
+          "i64"
+        ], 
+        [
+          "x", 
+          "float"
+        ], 
+        [
+          "y", 
+          "float"
+        ], 
+        [
+          "pressure", 
+          "float"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "GameController": {
+      "type": "opaque"
+    }, 
+    "GameControllerButtonBind": {
+      "fields": [
+        [
+          "bindType", 
+          "int"
+        ], 
+        [
+          "value", 
+          {
+            "fields": [
+              [
+                "button", 
+                "int"
+              ], 
+              [
+                "axis", 
+                "int"
+              ], 
+              [
+                "hat", 
+                {
+                  "fields": [
+                    [
+                      "hat", 
+                      "int"
+                    ], 
+                    [
+                      "hat_mask", 
+                      "int"
+                    ]
+                  ], 
+                  "type": "struct"
+                }
+              ]
+            ], 
+            "type": "union"
+          }
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Haptic": {
+      "type": "opaque"
+    }, 
+    "HapticCondition": {
+      "fields": [
+        [
+          "type", 
+          "ushort"
+        ], 
+        [
+          "direction", 
+          "HapticDirection"
+        ], 
+        [
+          "length", 
+          "uint"
+        ], 
+        [
+          "delay", 
+          "ushort"
+        ], 
+        [
+          "button", 
+          "ushort"
+        ], 
+        [
+          "interval", 
+          "ushort"
+        ], 
+        [
+          "right_sat", 
+          {
+            "ctype": "ushort", 
+            "length": 3, 
+            "type": "array"
+          }
+        ], 
+        [
+          "left_sat", 
+          {
+            "ctype": "ushort", 
+            "length": 3, 
+            "type": "array"
+          }
+        ], 
+        [
+          "right_coeff", 
+          {
+            "ctype": "i16", 
+            "length": 3, 
+            "type": "array"
+          }
+        ], 
+        [
+          "left_coeff", 
+          {
+            "ctype": "i16", 
+            "length": 3, 
+            "type": "array"
+          }
+        ], 
+        [
+          "deadband", 
+          {
+            "ctype": "ushort", 
+            "length": 3, 
+            "type": "array"
+          }
+        ], 
+        [
+          "center", 
+          {
+            "ctype": "i16", 
+            "length": 3, 
+            "type": "array"
+          }
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "HapticConstant": {
+      "fields": [
+        [
+          "type", 
+          "ushort"
+        ], 
+        [
+          "direction", 
+          "HapticDirection"
+        ], 
+        [
+          "length", 
+          "uint"
+        ], 
+        [
+          "delay", 
+          "ushort"
+        ], 
+        [
+          "button", 
+          "ushort"
+        ], 
+        [
+          "interval", 
+          "ushort"
+        ], 
+        [
+          "level", 
+          "i16"
+        ], 
+        [
+          "attack_length", 
+          "ushort"
+        ], 
+        [
+          "attack_level", 
+          "ushort"
+        ], 
+        [
+          "fade_length", 
+          "ushort"
+        ], 
+        [
+          "fade_level", 
+          "ushort"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "HapticCustom": {
+      "fields": [
+        [
+          "type", 
+          "ushort"
+        ], 
+        [
+          "direction", 
+          "HapticDirection"
+        ], 
+        [
+          "length", 
+          "uint"
+        ], 
+        [
+          "delay", 
+          "ushort"
+        ], 
+        [
+          "button", 
+          "ushort"
+        ], 
+        [
+          "interval", 
+          "ushort"
+        ], 
+        [
+          "channels", 
+          "ubyte"
+        ], 
+        [
+          "period", 
+          "ushort"
+        ], 
+        [
+          "samples", 
+          "ushort"
+        ], 
+        [
+          "data", 
+          "ushort*"
+        ], 
+        [
+          "attack_length", 
+          "ushort"
+        ], 
+        [
+          "attack_level", 
+          "ushort"
+        ], 
+        [
+          "fade_length", 
+          "ushort"
+        ], 
+        [
+          "fade_level", 
+          "ushort"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "HapticDirection": {
+      "fields": [
+        [
+          "type", 
+          "ubyte"
+        ], 
+        [
+          "dir", 
+          {
+            "ctype": "i32", 
+            "length": 3, 
+            "type": "array"
+          }
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "HapticEffect": {
+      "fields": [
+        [
+          "type", 
+          "ushort"
+        ], 
+        [
+          "constant", 
+          "HapticConstant"
+        ], 
+        [
+          "periodic", 
+          "HapticPeriodic"
+        ], 
+        [
+          "condition", 
+          "HapticCondition"
+        ], 
+        [
+          "ramp", 
+          "HapticRamp"
+        ], 
+        [
+          "leftright", 
+          "HapticLeftRight"
+        ], 
+        [
+          "custom", 
+          "HapticCustom"
+        ]
+      ], 
+      "type": "union"
+    }, 
+    "HapticLeftRight": {
+      "fields": [
+        [
+          "type", 
+          "ushort"
+        ], 
+        [
+          "length", 
+          "uint"
+        ], 
+        [
+          "large_magnitude", 
+          "ushort"
+        ], 
+        [
+          "small_magnitude", 
+          "ushort"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "HapticPeriodic": {
+      "fields": [
+        [
+          "type", 
+          "ushort"
+        ], 
+        [
+          "direction", 
+          "HapticDirection"
+        ], 
+        [
+          "length", 
+          "uint"
+        ], 
+        [
+          "delay", 
+          "ushort"
+        ], 
+        [
+          "button", 
+          "ushort"
+        ], 
+        [
+          "interval", 
+          "ushort"
+        ], 
+        [
+          "period", 
+          "ushort"
+        ], 
+        [
+          "magnitude", 
+          "i16"
+        ], 
+        [
+          "offset", 
+          "i16"
+        ], 
+        [
+          "phase", 
+          "ushort"
+        ], 
+        [
+          "attack_length", 
+          "ushort"
+        ], 
+        [
+          "attack_level", 
+          "ushort"
+        ], 
+        [
+          "fade_length", 
+          "ushort"
+        ], 
+        [
+          "fade_level", 
+          "ushort"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "HapticRamp": {
+      "fields": [
+        [
+          "type", 
+          "ushort"
+        ], 
+        [
+          "direction", 
+          "HapticDirection"
+        ], 
+        [
+          "length", 
+          "uint"
+        ], 
+        [
+          "delay", 
+          "ushort"
+        ], 
+        [
+          "button", 
+          "ushort"
+        ], 
+        [
+          "interval", 
+          "ushort"
+        ], 
+        [
+          "start", 
+          "i16"
+        ], 
+        [
+          "end", 
+          "i16"
+        ], 
+        [
+          "attack_length", 
+          "ushort"
+        ], 
+        [
+          "attack_level", 
+          "ushort"
+        ], 
+        [
+          "fade_length", 
+          "ushort"
+        ], 
+        [
+          "fade_level", 
+          "ushort"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "HintCallback": {
+      "to": {
+        "argtypes": [
+          "void*", 
+          "ubyte*", 
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }, 
+      "type": "pointer"
+    }, 
+    "JoyAxisEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "which", 
+          "i32"
+        ], 
+        [
+          "axis", 
+          "ubyte"
+        ], 
+        [
+          "padding1", 
+          "ubyte"
+        ], 
+        [
+          "padding2", 
+          "ubyte"
+        ], 
+        [
+          "padding3", 
+          "ubyte"
+        ], 
+        [
+          "value", 
+          "i16"
+        ], 
+        [
+          "padding4", 
+          "ushort"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "JoyBallEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "which", 
+          "i32"
+        ], 
+        [
+          "ball", 
+          "ubyte"
+        ], 
+        [
+          "padding1", 
+          "ubyte"
+        ], 
+        [
+          "padding2", 
+          "ubyte"
+        ], 
+        [
+          "padding3", 
+          "ubyte"
+        ], 
+        [
+          "xrel", 
+          "i16"
+        ], 
+        [
+          "yrel", 
+          "i16"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "JoyButtonEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "which", 
+          "i32"
+        ], 
+        [
+          "button", 
+          "ubyte"
+        ], 
+        [
+          "state", 
+          "ubyte"
+        ], 
+        [
+          "padding1", 
+          "ubyte"
+        ], 
+        [
+          "padding2", 
+          "ubyte"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "JoyDeviceEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "which", 
+          "i32"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "JoyHatEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "which", 
+          "i32"
+        ], 
+        [
+          "hat", 
+          "ubyte"
+        ], 
+        [
+          "value", 
+          "ubyte"
+        ], 
+        [
+          "padding1", 
+          "ubyte"
+        ], 
+        [
+          "padding2", 
+          "ubyte"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Joystick": {
+      "type": "opaque"
+    }, 
+    "JoystickGUID": {
+      "fields": [
+        [
+          "data", 
+          {
+            "ctype": "ubyte", 
+            "length": 16, 
+            "type": "array"
+          }
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "KeyboardEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "windowID", 
+          "uint"
+        ], 
+        [
+          "state", 
+          "ubyte"
+        ], 
+        [
+          "repeat", 
+          "ubyte"
+        ], 
+        [
+          "padding2", 
+          "ubyte"
+        ], 
+        [
+          "padding3", 
+          "ubyte"
+        ], 
+        [
+          "keysym", 
+          "Keysym"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Keysym": {
+      "fields": [
+        [
+          "scancode", 
+          "int"
+        ], 
+        [
+          "sym", 
+          "i32"
+        ], 
+        [
+          "mod", 
+          "ushort"
+        ], 
+        [
+          "unused", 
+          "uint"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "LogOutputFunction": {
+      "to": {
+        "argtypes": [
+          "void*", 
+          "int", 
+          "int", 
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }, 
+      "type": "pointer"
+    }, 
+    "MessageBoxButtonData": {
+      "fields": [
+        [
+          "flags", 
+          "uint"
+        ], 
+        [
+          "buttonid", 
+          "int"
+        ], 
+        [
+          "text", 
+          "ubyte*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "MessageBoxColor": {
+      "fields": [
+        [
+          "r", 
+          "ubyte"
+        ], 
+        [
+          "g", 
+          "ubyte"
+        ], 
+        [
+          "b", 
+          "ubyte"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "MessageBoxColorScheme": {
+      "fields": [
+        [
+          "colors", 
+          {
+            "ctype": "MessageBoxColor", 
+            "length": 5, 
+            "type": "array"
+          }
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "MessageBoxData": {
+      "fields": [
+        [
+          "flags", 
+          "uint"
+        ], 
+        [
+          "window", 
+          "Window*"
+        ], 
+        [
+          "title", 
+          "ubyte*"
+        ], 
+        [
+          "message", 
+          "ubyte*"
+        ], 
+        [
+          "numbuttons", 
+          "int"
+        ], 
+        [
+          "buttons", 
+          "MessageBoxButtonData*"
+        ], 
+        [
+          "colorScheme", 
+          "MessageBoxColorScheme*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "MouseButtonEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "windowID", 
+          "uint"
+        ], 
+        [
+          "which", 
+          "uint"
+        ], 
+        [
+          "button", 
+          "ubyte"
+        ], 
+        [
+          "state", 
+          "ubyte"
+        ], 
+        [
+          "padding1", 
+          "ubyte"
+        ], 
+        [
+          "padding2", 
+          "ubyte"
+        ], 
+        [
+          "x", 
+          "i32"
+        ], 
+        [
+          "y", 
+          "i32"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "MouseMotionEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "windowID", 
+          "uint"
+        ], 
+        [
+          "which", 
+          "uint"
+        ], 
+        [
+          "state", 
+          "uint"
+        ], 
+        [
+          "x", 
+          "i32"
+        ], 
+        [
+          "y", 
+          "i32"
+        ], 
+        [
+          "xrel", 
+          "i32"
+        ], 
+        [
+          "yrel", 
+          "i32"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "MouseWheelEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "windowID", 
+          "uint"
+        ], 
+        [
+          "which", 
+          "uint"
+        ], 
+        [
+          "x", 
+          "i32"
+        ], 
+        [
+          "y", 
+          "i32"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "MultiGestureEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "touchId", 
+          "i64"
+        ], 
+        [
+          "dTheta", 
+          "float"
+        ], 
+        [
+          "dDist", 
+          "float"
+        ], 
+        [
+          "x", 
+          "float"
+        ], 
+        [
+          "y", 
+          "float"
+        ], 
+        [
+          "numFingers", 
+          "ushort"
+        ], 
+        [
+          "padding", 
+          "ushort"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Palette": {
+      "fields": [
+        [
+          "ncolors", 
+          "int"
+        ], 
+        [
+          "colors", 
+          "Color*"
+        ], 
+        [
+          "version", 
+          "uint"
+        ], 
+        [
+          "refcount", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "PixelFormat": {
+      "fields": [
+        [
+          "format", 
+          "uint"
+        ], 
+        [
+          "palette", 
+          "Palette*"
+        ], 
+        [
+          "BitsPerPixel", 
+          "ubyte"
+        ], 
+        [
+          "BytesPerPixel", 
+          "ubyte"
+        ], 
+        [
+          "padding", 
+          {
+            "ctype": "ubyte", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "Rmask", 
+          "uint"
+        ], 
+        [
+          "Gmask", 
+          "uint"
+        ], 
+        [
+          "Bmask", 
+          "uint"
+        ], 
+        [
+          "Amask", 
+          "uint"
+        ], 
+        [
+          "Rloss", 
+          "ubyte"
+        ], 
+        [
+          "Gloss", 
+          "ubyte"
+        ], 
+        [
+          "Bloss", 
+          "ubyte"
+        ], 
+        [
+          "Aloss", 
+          "ubyte"
+        ], 
+        [
+          "Rshift", 
+          "ubyte"
+        ], 
+        [
+          "Gshift", 
+          "ubyte"
+        ], 
+        [
+          "Bshift", 
+          "ubyte"
+        ], 
+        [
+          "Ashift", 
+          "ubyte"
+        ], 
+        [
+          "refcount", 
+          "int"
+        ], 
+        [
+          "next", 
+          "PixelFormat**"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Point": {
+      "fields": [
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "QuitEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "RWops": {
+      "fields": [
+        [
+          "size", 
+          {
+            "to": {
+              "argtypes": [
+                "RWops**"
+              ], 
+              "restype": "i64", 
+              "type": "cfunc", 
+              "vararg": false
+            }, 
+            "type": "pointer"
+          }
+        ], 
+        [
+          "seek", 
+          {
+            "to": {
+              "argtypes": [
+                "RWops**", 
+                "i64", 
+                "int"
+              ], 
+              "restype": "i64", 
+              "type": "cfunc", 
+              "vararg": false
+            }, 
+            "type": "pointer"
+          }
+        ], 
+        [
+          "read", 
+          {
+            "to": {
+              "argtypes": [
+                "RWops**", 
+                "void*", 
+                "size_t", 
+                "size_t"
+              ], 
+              "restype": "size_t", 
+              "type": "cfunc", 
+              "vararg": false
+            }, 
+            "type": "pointer"
+          }
+        ], 
+        [
+          "write", 
+          {
+            "to": {
+              "argtypes": [
+                "RWops**", 
+                "void*", 
+                "size_t", 
+                "size_t"
+              ], 
+              "restype": "size_t", 
+              "type": "cfunc", 
+              "vararg": false
+            }, 
+            "type": "pointer"
+          }
+        ], 
+        [
+          "close", 
+          {
+            "to": {
+              "argtypes": [
+                "RWops**"
+              ], 
+              "restype": "int", 
+              "type": "cfunc", 
+              "vararg": false
+            }, 
+            "type": "pointer"
+          }
+        ], 
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "hidden", 
+          {
+            "fields": [
+              [
+                "stdio", 
+                {
+                  "fields": [
+                    [
+                      "autoclose", 
+                      "int"
+                    ], 
+                    [
+                      "fp", 
+                      "FILE*"
+                    ]
+                  ], 
+                  "type": "struct"
+                }
+              ], 
+              [
+                "mem", 
+                {
+                  "fields": [
+                    [
+                      "base", 
+                      "ubyte*"
+                    ], 
+                    [
+                      "here", 
+                      "ubyte*"
+                    ], 
+                    [
+                      "stop", 
+                      "ubyte*"
+                    ]
+                  ], 
+                  "type": "struct"
+                }
+              ], 
+              [
+                "unknown", 
+                {
+                  "fields": [
+                    [
+                      "data1", 
+                      "void*"
+                    ], 
+                    [
+                      "data2", 
+                      "void*"
+                    ]
+                  ], 
+                  "type": "struct"
+                }
+              ]
+            ], 
+            "type": "union"
+          }
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Rect": {
+      "fields": [
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ], 
+        [
+          "w", 
+          "int"
+        ], 
+        [
+          "h", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Renderer": {
+      "type": "opaque"
+    }, 
+    "RendererInfo": {
+      "fields": [
+        [
+          "name", 
+          "ubyte*"
+        ], 
+        [
+          "flags", 
+          "uint"
+        ], 
+        [
+          "num_texture_formats", 
+          "uint"
+        ], 
+        [
+          "texture_formats", 
+          {
+            "ctype": "uint", 
+            "length": 16, 
+            "type": "array"
+          }
+        ], 
+        [
+          "max_texture_width", 
+          "int"
+        ], 
+        [
+          "max_texture_height", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Surface": {
+      "fields": [
+        [
+          "flags", 
+          "uint"
+        ], 
+        [
+          "format", 
+          "PixelFormat*"
+        ], 
+        [
+          "w", 
+          "int"
+        ], 
+        [
+          "h", 
+          "int"
+        ], 
+        [
+          "pitch", 
+          "int"
+        ], 
+        [
+          "pixels", 
+          "void*"
+        ], 
+        [
+          "userdata", 
+          "void*"
+        ], 
+        [
+          "locked", 
+          "int"
+        ], 
+        [
+          "lock_data", 
+          "void*"
+        ], 
+        [
+          "clip_rect", 
+          "Rect"
+        ], 
+        [
+          "map", 
+          {
+            "to": {
+              "to": {
+                "type": "opaque"
+              }, 
+              "type": "pointer"
+            }, 
+            "type": "pointer"
+          }
+        ], 
+        [
+          "refcount", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "SysWMEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "msg", 
+          "SysWMmsg*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "SysWMmsg": {
+      "type": "opaque"
+    }, 
+    "TextEditingEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "windowID", 
+          "uint"
+        ], 
+        [
+          "text", 
+          {
+            "ctype": "ubyte", 
+            "length": 32, 
+            "type": "array"
+          }
+        ], 
+        [
+          "start", 
+          "i32"
+        ], 
+        [
+          "length", 
+          "i32"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "TextInputEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "windowID", 
+          "uint"
+        ], 
+        [
+          "text", 
+          {
+            "ctype": "ubyte", 
+            "length": 32, 
+            "type": "array"
+          }
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Texture": {
+      "type": "opaque"
+    }, 
+    "Thread": {
+      "type": "opaque"
+    }, 
+    "ThreadFunction": {
+      "to": {
+        "argtypes": [
+          "void*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }, 
+      "type": "pointer"
+    }, 
+    "TimerCallback": {
+      "to": {
+        "argtypes": [
+          "uint", 
+          "void*"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }, 
+      "type": "pointer"
+    }, 
+    "TouchFingerEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "touchId", 
+          "i64"
+        ], 
+        [
+          "fingerId", 
+          "i64"
+        ], 
+        [
+          "x", 
+          "float"
+        ], 
+        [
+          "y", 
+          "float"
+        ], 
+        [
+          "dx", 
+          "float"
+        ], 
+        [
+          "dy", 
+          "float"
+        ], 
+        [
+          "pressure", 
+          "float"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "UserEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "windowID", 
+          "uint"
+        ], 
+        [
+          "code", 
+          "i32"
+        ], 
+        [
+          "data1", 
+          "void*"
+        ], 
+        [
+          "data2", 
+          "void*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Window": {
+      "type": "opaque"
+    }, 
+    "WindowEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "windowID", 
+          "uint"
+        ], 
+        [
+          "event", 
+          "ubyte"
+        ], 
+        [
+          "padding1", 
+          "ubyte"
+        ], 
+        [
+          "padding2", 
+          "ubyte"
+        ], 
+        [
+          "padding3", 
+          "ubyte"
+        ], 
+        [
+          "data1", 
+          "i32"
+        ], 
+        [
+          "data2", 
+          "i32"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "assert_data": {
+      "fields": [
+        [
+          "always_ignore", 
+          "int"
+        ], 
+        [
+          "trigger_count", 
+          "uint"
+        ], 
+        [
+          "condition", 
+          "ubyte*"
+        ], 
+        [
+          "filename", 
+          "ubyte*"
+        ], 
+        [
+          "linenum", 
+          "int"
+        ], 
+        [
+          "function", 
+          "ubyte*"
+        ], 
+        [
+          "next", 
+          "assert_data**"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "cond": {
+      "type": "opaque"
+    }, 
+    "iconv_t": {
+      "to": {
+        "type": "opaque"
+      }, 
+      "type": "pointer"
+    }, 
+    "mutex": {
+      "type": "opaque"
+    }, 
+    "sem": {
+      "type": "opaque"
+    }, 
+    "version": {
+      "fields": [
+        [
+          "major", 
+          "ubyte"
+        ], 
+        [
+          "minor", 
+          "ubyte"
+        ], 
+        [
+          "patch", 
+          "ubyte"
+        ]
+      ], 
+      "type": "struct"
+    }
+  }, 
+  "variables": {
+    "AddEventWatch": {
+      "name": "SDL_AddEventWatch", 
+      "type": {
+        "argtypes": [
+          "EventFilter", 
+          "void*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AddHintCallback": {
+      "name": "SDL_AddHintCallback", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "HintCallback", 
+          "void*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AddTimer": {
+      "name": "SDL_AddTimer", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "TimerCallback", 
+          "void*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AllocFormat": {
+      "name": "SDL_AllocFormat", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "PixelFormat*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AllocPalette": {
+      "name": "SDL_AllocPalette", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "Palette*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AllocRW": {
+      "name": "SDL_AllocRW", 
+      "type": {
+        "argtypes": [], 
+        "restype": "RWops*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AtomicLock": {
+      "name": "SDL_AtomicLock", 
+      "type": {
+        "argtypes": [
+          "int*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AtomicTryLock": {
+      "name": "SDL_AtomicTryLock", 
+      "type": {
+        "argtypes": [
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AtomicUnlock": {
+      "name": "SDL_AtomicUnlock", 
+      "type": {
+        "argtypes": [
+          "int*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AudioInit": {
+      "name": "SDL_AudioInit", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AudioQuit": {
+      "name": "SDL_AudioQuit", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "BuildAudioCVT": {
+      "name": "SDL_BuildAudioCVT", 
+      "type": {
+        "argtypes": [
+          "AudioCVT*", 
+          "ushort", 
+          "ubyte", 
+          "int", 
+          "ushort", 
+          "ubyte", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CalculateGammaRamp": {
+      "name": "SDL_CalculateGammaRamp", 
+      "type": {
+        "argtypes": [
+          "float", 
+          "ushort*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ClearError": {
+      "name": "SDL_ClearError", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ClearHints": {
+      "name": "SDL_ClearHints", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CloseAudio": {
+      "name": "SDL_CloseAudio", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CloseAudioDevice": {
+      "name": "SDL_CloseAudioDevice", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CondBroadcast": {
+      "name": "SDL_CondBroadcast", 
+      "type": {
+        "argtypes": [
+          "cond*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CondSignal": {
+      "name": "SDL_CondSignal", 
+      "type": {
+        "argtypes": [
+          "cond*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CondWait": {
+      "name": "SDL_CondWait", 
+      "type": {
+        "argtypes": [
+          "cond*", 
+          "mutex*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CondWaitTimeout": {
+      "name": "SDL_CondWaitTimeout", 
+      "type": {
+        "argtypes": [
+          "cond*", 
+          "mutex*", 
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ConvertAudio": {
+      "name": "SDL_ConvertAudio", 
+      "type": {
+        "argtypes": [
+          "AudioCVT*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ConvertPixels": {
+      "name": "SDL_ConvertPixels", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "int", 
+          "uint", 
+          "void*", 
+          "int", 
+          "uint", 
+          "void*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ConvertSurface": {
+      "name": "SDL_ConvertSurface", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "PixelFormat*", 
+          "uint"
+        ], 
+        "restype": "Surface*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ConvertSurfaceFormat": {
+      "name": "SDL_ConvertSurfaceFormat", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "uint", 
+          "uint"
+        ], 
+        "restype": "Surface*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateColorCursor": {
+      "name": "SDL_CreateColorCursor", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "int", 
+          "int"
+        ], 
+        "restype": "Cursor*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateCond": {
+      "name": "SDL_CreateCond", 
+      "type": {
+        "argtypes": [], 
+        "restype": "cond*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateCursor": {
+      "name": "SDL_CreateCursor", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*", 
+          "int", 
+          "int", 
+          "int", 
+          "int"
+        ], 
+        "restype": "Cursor*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateMutex": {
+      "name": "SDL_CreateMutex", 
+      "type": {
+        "argtypes": [], 
+        "restype": "mutex*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateRGBSurface": {
+      "name": "SDL_CreateRGBSurface", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "int", 
+          "int", 
+          "int", 
+          "uint", 
+          "uint", 
+          "uint", 
+          "uint"
+        ], 
+        "restype": "Surface*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateRGBSurfaceFrom": {
+      "name": "SDL_CreateRGBSurfaceFrom", 
+      "type": {
+        "argtypes": [
+          "void*", 
+          "int", 
+          "int", 
+          "int", 
+          "int", 
+          "uint", 
+          "uint", 
+          "uint", 
+          "uint"
+        ], 
+        "restype": "Surface*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateRenderer": {
+      "name": "SDL_CreateRenderer", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int", 
+          "uint"
+        ], 
+        "restype": "Renderer*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateSemaphore": {
+      "name": "SDL_CreateSemaphore", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "sem*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateSoftwareRenderer": {
+      "name": "SDL_CreateSoftwareRenderer", 
+      "type": {
+        "argtypes": [
+          "Surface*"
+        ], 
+        "restype": "Renderer*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateSystemCursor": {
+      "name": "SDL_CreateSystemCursor", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "Cursor*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateTexture": {
+      "name": "SDL_CreateTexture", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "uint", 
+          "int", 
+          "int", 
+          "int"
+        ], 
+        "restype": "Texture*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateTextureFromSurface": {
+      "name": "SDL_CreateTextureFromSurface", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Surface*"
+        ], 
+        "restype": "Texture*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateThread": {
+      "name": "SDL_CreateThread", 
+      "type": {
+        "argtypes": [
+          "ThreadFunction", 
+          "ubyte*", 
+          "void*"
+        ], 
+        "restype": "Thread*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateWindow": {
+      "name": "SDL_CreateWindow", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "int", 
+          "int", 
+          "int", 
+          "int", 
+          "uint"
+        ], 
+        "restype": "Window*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateWindowAndRenderer": {
+      "name": "SDL_CreateWindowAndRenderer", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "int", 
+          "uint", 
+          "Window**", 
+          "Renderer**"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateWindowFrom": {
+      "name": "SDL_CreateWindowFrom", 
+      "type": {
+        "argtypes": [
+          "void*"
+        ], 
+        "restype": "Window*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "DelEventWatch": {
+      "name": "SDL_DelEventWatch", 
+      "type": {
+        "argtypes": [
+          "EventFilter", 
+          "void*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "DelHintCallback": {
+      "name": "SDL_DelHintCallback", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "HintCallback", 
+          "void*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "Delay": {
+      "name": "SDL_Delay", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "DestroyCond": {
+      "name": "SDL_DestroyCond", 
+      "type": {
+        "argtypes": [
+          "cond*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "DestroyMutex": {
+      "name": "SDL_DestroyMutex", 
+      "type": {
+        "argtypes": [
+          "mutex*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "DestroyRenderer": {
+      "name": "SDL_DestroyRenderer", 
+      "type": {
+        "argtypes": [
+          "Renderer*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "DestroySemaphore": {
+      "name": "SDL_DestroySemaphore", 
+      "type": {
+        "argtypes": [
+          "sem*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "DestroyTexture": {
+      "name": "SDL_DestroyTexture", 
+      "type": {
+        "argtypes": [
+          "Texture*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "DestroyWindow": {
+      "name": "SDL_DestroyWindow", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "DisableScreenSaver": {
+      "name": "SDL_DisableScreenSaver", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "EnableScreenSaver": {
+      "name": "SDL_EnableScreenSaver", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "EnclosePoints": {
+      "name": "SDL_EnclosePoints", 
+      "type": {
+        "argtypes": [
+          "Point*", 
+          "int", 
+          "Rect*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "Error": {
+      "name": "SDL_Error", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "EventState": {
+      "name": "SDL_EventState", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "int"
+        ], 
+        "restype": "ubyte", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "FillRect": {
+      "name": "SDL_FillRect", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "Rect*", 
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "FillRects": {
+      "name": "SDL_FillRects", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "Rect*", 
+          "int", 
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "FilterEvents": {
+      "name": "SDL_FilterEvents", 
+      "type": {
+        "argtypes": [
+          "EventFilter", 
+          "void*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "FlushEvent": {
+      "name": "SDL_FlushEvent", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "FlushEvents": {
+      "name": "SDL_FlushEvents", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "uint"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "FreeCursor": {
+      "name": "SDL_FreeCursor", 
+      "type": {
+        "argtypes": [
+          "Cursor*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "FreeFormat": {
+      "name": "SDL_FreeFormat", 
+      "type": {
+        "argtypes": [
+          "PixelFormat*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "FreePalette": {
+      "name": "SDL_FreePalette", 
+      "type": {
+        "argtypes": [
+          "Palette*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "FreeRW": {
+      "name": "SDL_FreeRW", 
+      "type": {
+        "argtypes": [
+          "RWops*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "FreeSurface": {
+      "name": "SDL_FreeSurface", 
+      "type": {
+        "argtypes": [
+          "Surface*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "FreeWAV": {
+      "name": "SDL_FreeWAV", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_BindTexture": {
+      "name": "SDL_GL_BindTexture", 
+      "type": {
+        "argtypes": [
+          "Texture*", 
+          "float*", 
+          "float*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_CreateContext": {
+      "name": "SDL_GL_CreateContext", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_DeleteContext": {
+      "name": "SDL_GL_DeleteContext", 
+      "type": {
+        "argtypes": [
+          "void*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_ExtensionSupported": {
+      "name": "SDL_GL_ExtensionSupported", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_GetAttribute": {
+      "name": "SDL_GL_GetAttribute", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_GetCurrentContext": {
+      "name": "SDL_GL_GetCurrentContext", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_GetCurrentWindow": {
+      "name": "SDL_GL_GetCurrentWindow", 
+      "type": {
+        "argtypes": [], 
+        "restype": "Window*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_GetProcAddress": {
+      "name": "SDL_GL_GetProcAddress", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_GetSwapInterval": {
+      "name": "SDL_GL_GetSwapInterval", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_LoadLibrary": {
+      "name": "SDL_GL_LoadLibrary", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_MakeCurrent": {
+      "name": "SDL_GL_MakeCurrent", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "void*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_SetAttribute": {
+      "name": "SDL_GL_SetAttribute", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_SetSwapInterval": {
+      "name": "SDL_GL_SetSwapInterval", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_SwapWindow": {
+      "name": "SDL_GL_SwapWindow", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_UnbindTexture": {
+      "name": "SDL_GL_UnbindTexture", 
+      "type": {
+        "argtypes": [
+          "Texture*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_UnloadLibrary": {
+      "name": "SDL_GL_UnloadLibrary", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerAddMapping": {
+      "name": "SDL_GameControllerAddMapping", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerClose": {
+      "name": "SDL_GameControllerClose", 
+      "type": {
+        "argtypes": [
+          "GameController*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerEventState": {
+      "name": "SDL_GameControllerEventState", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerGetAttached": {
+      "name": "SDL_GameControllerGetAttached", 
+      "type": {
+        "argtypes": [
+          "GameController*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerGetAxis": {
+      "name": "SDL_GameControllerGetAxis", 
+      "type": {
+        "argtypes": [
+          "GameController*", 
+          "int"
+        ], 
+        "restype": "i16", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerGetAxisFromString": {
+      "name": "SDL_GameControllerGetAxisFromString", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerGetBindForAxis": {
+      "name": "SDL_GameControllerGetBindForAxis", 
+      "type": {
+        "argtypes": [
+          "GameController*", 
+          "int"
+        ], 
+        "restype": "GameControllerButtonBind", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerGetBindForButton": {
+      "name": "SDL_GameControllerGetBindForButton", 
+      "type": {
+        "argtypes": [
+          "GameController*", 
+          "int"
+        ], 
+        "restype": "GameControllerButtonBind", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerGetButton": {
+      "name": "SDL_GameControllerGetButton", 
+      "type": {
+        "argtypes": [
+          "GameController*", 
+          "int"
+        ], 
+        "restype": "ubyte", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerGetButtonFromString": {
+      "name": "SDL_GameControllerGetButtonFromString", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerGetJoystick": {
+      "name": "SDL_GameControllerGetJoystick", 
+      "type": {
+        "argtypes": [
+          "GameController*"
+        ], 
+        "restype": "Joystick*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerGetStringForAxis": {
+      "name": "SDL_GameControllerGetStringForAxis", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerGetStringForButton": {
+      "name": "SDL_GameControllerGetStringForButton", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerMapping": {
+      "name": "SDL_GameControllerMapping", 
+      "type": {
+        "argtypes": [
+          "GameController*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerMappingForGUID": {
+      "name": "SDL_GameControllerMappingForGUID", 
+      "type": {
+        "argtypes": [
+          "JoystickGUID"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerName": {
+      "name": "SDL_GameControllerName", 
+      "type": {
+        "argtypes": [
+          "GameController*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerNameForIndex": {
+      "name": "SDL_GameControllerNameForIndex", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerOpen": {
+      "name": "SDL_GameControllerOpen", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "GameController*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerUpdate": {
+      "name": "SDL_GameControllerUpdate", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetAssertionReport": {
+      "name": "SDL_GetAssertionReport", 
+      "type": {
+        "argtypes": [], 
+        "restype": "assert_data*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetAudioDeviceName": {
+      "name": "SDL_GetAudioDeviceName", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetAudioDeviceStatus": {
+      "name": "SDL_GetAudioDeviceStatus", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetAudioDriver": {
+      "name": "SDL_GetAudioDriver", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetAudioStatus": {
+      "name": "SDL_GetAudioStatus", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetCPUCacheLineSize": {
+      "name": "SDL_GetCPUCacheLineSize", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetCPUCount": {
+      "name": "SDL_GetCPUCount", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetClipRect": {
+      "name": "SDL_GetClipRect", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "Rect*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetClipboardText": {
+      "name": "SDL_GetClipboardText", 
+      "type": {
+        "argtypes": [], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetClosestDisplayMode": {
+      "name": "SDL_GetClosestDisplayMode", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "DisplayMode*", 
+          "DisplayMode*"
+        ], 
+        "restype": "DisplayMode*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetColorKey": {
+      "name": "SDL_GetColorKey", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "uint*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetCurrentAudioDriver": {
+      "name": "SDL_GetCurrentAudioDriver", 
+      "type": {
+        "argtypes": [], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetCurrentDisplayMode": {
+      "name": "SDL_GetCurrentDisplayMode", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "DisplayMode*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetCurrentVideoDriver": {
+      "name": "SDL_GetCurrentVideoDriver", 
+      "type": {
+        "argtypes": [], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetCursor": {
+      "name": "SDL_GetCursor", 
+      "type": {
+        "argtypes": [], 
+        "restype": "Cursor*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetDefaultCursor": {
+      "name": "SDL_GetDefaultCursor", 
+      "type": {
+        "argtypes": [], 
+        "restype": "Cursor*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetDesktopDisplayMode": {
+      "name": "SDL_GetDesktopDisplayMode", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "DisplayMode*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetDisplayBounds": {
+      "name": "SDL_GetDisplayBounds", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetDisplayMode": {
+      "name": "SDL_GetDisplayMode", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "int", 
+          "DisplayMode*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetDisplayName": {
+      "name": "SDL_GetDisplayName", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetError": {
+      "name": "SDL_GetError", 
+      "type": {
+        "argtypes": [], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetEventFilter": {
+      "name": "SDL_GetEventFilter", 
+      "type": {
+        "argtypes": [
+          "EventFilter*", 
+          "void**"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetHint": {
+      "name": "SDL_GetHint", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetKeyFromName": {
+      "name": "SDL_GetKeyFromName", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "i32", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetKeyFromScancode": {
+      "name": "SDL_GetKeyFromScancode", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "i32", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetKeyName": {
+      "name": "SDL_GetKeyName", 
+      "type": {
+        "argtypes": [
+          "i32"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetKeyboardFocus": {
+      "name": "SDL_GetKeyboardFocus", 
+      "type": {
+        "argtypes": [], 
+        "restype": "Window*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetKeyboardState": {
+      "name": "SDL_GetKeyboardState", 
+      "type": {
+        "argtypes": [
+          "int*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetModState": {
+      "name": "SDL_GetModState", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetMouseFocus": {
+      "name": "SDL_GetMouseFocus", 
+      "type": {
+        "argtypes": [], 
+        "restype": "Window*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetMouseState": {
+      "name": "SDL_GetMouseState", 
+      "type": {
+        "argtypes": [
+          "int*", 
+          "int*"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetNumAudioDevices": {
+      "name": "SDL_GetNumAudioDevices", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetNumAudioDrivers": {
+      "name": "SDL_GetNumAudioDrivers", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetNumDisplayModes": {
+      "name": "SDL_GetNumDisplayModes", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetNumRenderDrivers": {
+      "name": "SDL_GetNumRenderDrivers", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetNumTouchDevices": {
+      "name": "SDL_GetNumTouchDevices", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetNumTouchFingers": {
+      "name": "SDL_GetNumTouchFingers", 
+      "type": {
+        "argtypes": [
+          "i64"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetNumVideoDisplays": {
+      "name": "SDL_GetNumVideoDisplays", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetNumVideoDrivers": {
+      "name": "SDL_GetNumVideoDrivers", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetPerformanceCounter": {
+      "name": "SDL_GetPerformanceCounter", 
+      "type": {
+        "argtypes": [], 
+        "restype": "ulong", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetPerformanceFrequency": {
+      "name": "SDL_GetPerformanceFrequency", 
+      "type": {
+        "argtypes": [], 
+        "restype": "ulong", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetPixelFormatName": {
+      "name": "SDL_GetPixelFormatName", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetPlatform": {
+      "name": "SDL_GetPlatform", 
+      "type": {
+        "argtypes": [], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetPowerInfo": {
+      "name": "SDL_GetPowerInfo", 
+      "type": {
+        "argtypes": [
+          "int*", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRGB": {
+      "name": "SDL_GetRGB", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "PixelFormat*", 
+          "ubyte*", 
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRGBA": {
+      "name": "SDL_GetRGBA", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "PixelFormat*", 
+          "ubyte*", 
+          "ubyte*", 
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRelativeMouseMode": {
+      "name": "SDL_GetRelativeMouseMode", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRelativeMouseState": {
+      "name": "SDL_GetRelativeMouseState", 
+      "type": {
+        "argtypes": [
+          "int*", 
+          "int*"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRenderDrawBlendMode": {
+      "name": "SDL_GetRenderDrawBlendMode", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRenderDrawColor": {
+      "name": "SDL_GetRenderDrawColor", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "ubyte*", 
+          "ubyte*", 
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRenderDriverInfo": {
+      "name": "SDL_GetRenderDriverInfo", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "RendererInfo*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRenderTarget": {
+      "name": "SDL_GetRenderTarget", 
+      "type": {
+        "argtypes": [
+          "Renderer*"
+        ], 
+        "restype": "Texture*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRenderer": {
+      "name": "SDL_GetRenderer", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "Renderer*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRendererInfo": {
+      "name": "SDL_GetRendererInfo", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "RendererInfo*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRendererOutputSize": {
+      "name": "SDL_GetRendererOutputSize", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "int*", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRevision": {
+      "name": "SDL_GetRevision", 
+      "type": {
+        "argtypes": [], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetRevisionNumber": {
+      "name": "SDL_GetRevisionNumber", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetScancodeFromKey": {
+      "name": "SDL_GetScancodeFromKey", 
+      "type": {
+        "argtypes": [
+          "i32"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetScancodeFromName": {
+      "name": "SDL_GetScancodeFromName", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetScancodeName": {
+      "name": "SDL_GetScancodeName", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetSurfaceAlphaMod": {
+      "name": "SDL_GetSurfaceAlphaMod", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetSurfaceBlendMode": {
+      "name": "SDL_GetSurfaceBlendMode", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetSurfaceColorMod": {
+      "name": "SDL_GetSurfaceColorMod", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "ubyte*", 
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTextureAlphaMod": {
+      "name": "SDL_GetTextureAlphaMod", 
+      "type": {
+        "argtypes": [
+          "Texture*", 
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTextureBlendMode": {
+      "name": "SDL_GetTextureBlendMode", 
+      "type": {
+        "argtypes": [
+          "Texture*", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTextureColorMod": {
+      "name": "SDL_GetTextureColorMod", 
+      "type": {
+        "argtypes": [
+          "Texture*", 
+          "ubyte*", 
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetThreadID": {
+      "name": "SDL_GetThreadID", 
+      "type": {
+        "argtypes": [
+          "Thread*"
+        ], 
+        "restype": "ulong", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetThreadName": {
+      "name": "SDL_GetThreadName", 
+      "type": {
+        "argtypes": [
+          "Thread*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTicks": {
+      "name": "SDL_GetTicks", 
+      "type": {
+        "argtypes": [], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTouchDevice": {
+      "name": "SDL_GetTouchDevice", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "i64", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTouchFinger": {
+      "name": "SDL_GetTouchFinger", 
+      "type": {
+        "argtypes": [
+          "i64", 
+          "int"
+        ], 
+        "restype": "Finger*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetVersion": {
+      "name": "SDL_GetVersion", 
+      "type": {
+        "argtypes": [
+          "version*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetVideoDriver": {
+      "name": "SDL_GetVideoDriver", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowBrightness": {
+      "name": "SDL_GetWindowBrightness", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "float", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowData": {
+      "name": "SDL_GetWindowData", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "ubyte*"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowDisplayIndex": {
+      "name": "SDL_GetWindowDisplayIndex", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowDisplayMode": {
+      "name": "SDL_GetWindowDisplayMode", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "DisplayMode*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowFlags": {
+      "name": "SDL_GetWindowFlags", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowFromID": {
+      "name": "SDL_GetWindowFromID", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "Window*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowGammaRamp": {
+      "name": "SDL_GetWindowGammaRamp", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "ushort*", 
+          "ushort*", 
+          "ushort*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowGrab": {
+      "name": "SDL_GetWindowGrab", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowID": {
+      "name": "SDL_GetWindowID", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowMaximumSize": {
+      "name": "SDL_GetWindowMaximumSize", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int*", 
+          "int*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowMinimumSize": {
+      "name": "SDL_GetWindowMinimumSize", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int*", 
+          "int*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowPixelFormat": {
+      "name": "SDL_GetWindowPixelFormat", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowPosition": {
+      "name": "SDL_GetWindowPosition", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int*", 
+          "int*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowSize": {
+      "name": "SDL_GetWindowSize", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int*", 
+          "int*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowSurface": {
+      "name": "SDL_GetWindowSurface", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "Surface*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowTitle": {
+      "name": "SDL_GetWindowTitle", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticClose": {
+      "name": "SDL_HapticClose", 
+      "type": {
+        "argtypes": [
+          "Haptic*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticDestroyEffect": {
+      "name": "SDL_HapticDestroyEffect", 
+      "type": {
+        "argtypes": [
+          "Haptic*", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticEffectSupported": {
+      "name": "SDL_HapticEffectSupported", 
+      "type": {
+        "argtypes": [
+          "Haptic*", 
+          "HapticEffect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticGetEffectStatus": {
+      "name": "SDL_HapticGetEffectStatus", 
+      "type": {
+        "argtypes": [
+          "Haptic*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticIndex": {
+      "name": "SDL_HapticIndex", 
+      "type": {
+        "argtypes": [
+          "Haptic*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticName": {
+      "name": "SDL_HapticName", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticNewEffect": {
+      "name": "SDL_HapticNewEffect", 
+      "type": {
+        "argtypes": [
+          "Haptic*", 
+          "HapticEffect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticNumAxes": {
+      "name": "SDL_HapticNumAxes", 
+      "type": {
+        "argtypes": [
+          "Haptic*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticNumEffects": {
+      "name": "SDL_HapticNumEffects", 
+      "type": {
+        "argtypes": [
+          "Haptic*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticNumEffectsPlaying": {
+      "name": "SDL_HapticNumEffectsPlaying", 
+      "type": {
+        "argtypes": [
+          "Haptic*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticOpen": {
+      "name": "SDL_HapticOpen", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "Haptic*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticOpenFromJoystick": {
+      "name": "SDL_HapticOpenFromJoystick", 
+      "type": {
+        "argtypes": [
+          "Joystick*"
+        ], 
+        "restype": "Haptic*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticOpenFromMouse": {
+      "name": "SDL_HapticOpenFromMouse", 
+      "type": {
+        "argtypes": [], 
+        "restype": "Haptic*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticOpened": {
+      "name": "SDL_HapticOpened", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticPause": {
+      "name": "SDL_HapticPause", 
+      "type": {
+        "argtypes": [
+          "Haptic*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticQuery": {
+      "name": "SDL_HapticQuery", 
+      "type": {
+        "argtypes": [
+          "Haptic*"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticRumbleInit": {
+      "name": "SDL_HapticRumbleInit", 
+      "type": {
+        "argtypes": [
+          "Haptic*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticRumblePlay": {
+      "name": "SDL_HapticRumblePlay", 
+      "type": {
+        "argtypes": [
+          "Haptic*", 
+          "float", 
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticRumbleStop": {
+      "name": "SDL_HapticRumbleStop", 
+      "type": {
+        "argtypes": [
+          "Haptic*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticRumbleSupported": {
+      "name": "SDL_HapticRumbleSupported", 
+      "type": {
+        "argtypes": [
+          "Haptic*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticRunEffect": {
+      "name": "SDL_HapticRunEffect", 
+      "type": {
+        "argtypes": [
+          "Haptic*", 
+          "int", 
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticSetAutocenter": {
+      "name": "SDL_HapticSetAutocenter", 
+      "type": {
+        "argtypes": [
+          "Haptic*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticSetGain": {
+      "name": "SDL_HapticSetGain", 
+      "type": {
+        "argtypes": [
+          "Haptic*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticStopAll": {
+      "name": "SDL_HapticStopAll", 
+      "type": {
+        "argtypes": [
+          "Haptic*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticStopEffect": {
+      "name": "SDL_HapticStopEffect", 
+      "type": {
+        "argtypes": [
+          "Haptic*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticUnpause": {
+      "name": "SDL_HapticUnpause", 
+      "type": {
+        "argtypes": [
+          "Haptic*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HapticUpdateEffect": {
+      "name": "SDL_HapticUpdateEffect", 
+      "type": {
+        "argtypes": [
+          "Haptic*", 
+          "int", 
+          "HapticEffect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "Has3DNow": {
+      "name": "SDL_Has3DNow", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasAltiVec": {
+      "name": "SDL_HasAltiVec", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasClipboardText": {
+      "name": "SDL_HasClipboardText", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasEvent": {
+      "name": "SDL_HasEvent", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasEvents": {
+      "name": "SDL_HasEvents", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasIntersection": {
+      "name": "SDL_HasIntersection", 
+      "type": {
+        "argtypes": [
+          "Rect*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasMMX": {
+      "name": "SDL_HasMMX", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasRDTSC": {
+      "name": "SDL_HasRDTSC", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasSSE": {
+      "name": "SDL_HasSSE", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasSSE2": {
+      "name": "SDL_HasSSE2", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasSSE3": {
+      "name": "SDL_HasSSE3", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasSSE41": {
+      "name": "SDL_HasSSE41", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasSSE42": {
+      "name": "SDL_HasSSE42", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasScreenKeyboardSupport": {
+      "name": "SDL_HasScreenKeyboardSupport", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HideWindow": {
+      "name": "SDL_HideWindow", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "Init": {
+      "name": "SDL_Init", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "InitSubSystem": {
+      "name": "SDL_InitSubSystem", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "IntersectRect": {
+      "name": "SDL_IntersectRect", 
+      "type": {
+        "argtypes": [
+          "Rect*", 
+          "Rect*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "IntersectRectAndLine": {
+      "name": "SDL_IntersectRectAndLine", 
+      "type": {
+        "argtypes": [
+          "Rect*", 
+          "int*", 
+          "int*", 
+          "int*", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "IsGameController": {
+      "name": "SDL_IsGameController", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "IsScreenKeyboardShown": {
+      "name": "SDL_IsScreenKeyboardShown", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "IsScreenSaverEnabled": {
+      "name": "SDL_IsScreenSaverEnabled", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "IsTextInputActive": {
+      "name": "SDL_IsTextInputActive", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickClose": {
+      "name": "SDL_JoystickClose", 
+      "type": {
+        "argtypes": [
+          "Joystick*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickEventState": {
+      "name": "SDL_JoystickEventState", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickGetAttached": {
+      "name": "SDL_JoystickGetAttached", 
+      "type": {
+        "argtypes": [
+          "Joystick*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickGetAxis": {
+      "name": "SDL_JoystickGetAxis", 
+      "type": {
+        "argtypes": [
+          "Joystick*", 
+          "int"
+        ], 
+        "restype": "i16", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickGetBall": {
+      "name": "SDL_JoystickGetBall", 
+      "type": {
+        "argtypes": [
+          "Joystick*", 
+          "int", 
+          "int*", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickGetButton": {
+      "name": "SDL_JoystickGetButton", 
+      "type": {
+        "argtypes": [
+          "Joystick*", 
+          "int"
+        ], 
+        "restype": "ubyte", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickGetDeviceGUID": {
+      "name": "SDL_JoystickGetDeviceGUID", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "JoystickGUID", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickGetGUID": {
+      "name": "SDL_JoystickGetGUID", 
+      "type": {
+        "argtypes": [
+          "Joystick*"
+        ], 
+        "restype": "JoystickGUID", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickGetGUIDFromString": {
+      "name": "SDL_JoystickGetGUIDFromString", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "JoystickGUID", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickGetGUIDString": {
+      "name": "SDL_JoystickGetGUIDString", 
+      "type": {
+        "argtypes": [
+          "JoystickGUID", 
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickGetHat": {
+      "name": "SDL_JoystickGetHat", 
+      "type": {
+        "argtypes": [
+          "Joystick*", 
+          "int"
+        ], 
+        "restype": "ubyte", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickInstanceID": {
+      "name": "SDL_JoystickInstanceID", 
+      "type": {
+        "argtypes": [
+          "Joystick*"
+        ], 
+        "restype": "i32", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickIsHaptic": {
+      "name": "SDL_JoystickIsHaptic", 
+      "type": {
+        "argtypes": [
+          "Joystick*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickName": {
+      "name": "SDL_JoystickName", 
+      "type": {
+        "argtypes": [
+          "Joystick*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickNameForIndex": {
+      "name": "SDL_JoystickNameForIndex", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickNumAxes": {
+      "name": "SDL_JoystickNumAxes", 
+      "type": {
+        "argtypes": [
+          "Joystick*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickNumBalls": {
+      "name": "SDL_JoystickNumBalls", 
+      "type": {
+        "argtypes": [
+          "Joystick*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickNumButtons": {
+      "name": "SDL_JoystickNumButtons", 
+      "type": {
+        "argtypes": [
+          "Joystick*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickNumHats": {
+      "name": "SDL_JoystickNumHats", 
+      "type": {
+        "argtypes": [
+          "Joystick*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickOpen": {
+      "name": "SDL_JoystickOpen", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "Joystick*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickUpdate": {
+      "name": "SDL_JoystickUpdate", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LoadBMP_RW": {
+      "name": "SDL_LoadBMP_RW", 
+      "type": {
+        "argtypes": [
+          "RWops*", 
+          "int"
+        ], 
+        "restype": "Surface*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LoadDollarTemplates": {
+      "name": "SDL_LoadDollarTemplates", 
+      "type": {
+        "argtypes": [
+          "i64", 
+          "RWops*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LoadFunction": {
+      "name": "SDL_LoadFunction", 
+      "type": {
+        "argtypes": [
+          "void*", 
+          "ubyte*"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LoadObject": {
+      "name": "SDL_LoadObject", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LoadWAV_RW": {
+      "name": "SDL_LoadWAV_RW", 
+      "type": {
+        "argtypes": [
+          "RWops*", 
+          "int", 
+          "AudioSpec*", 
+          "ubyte**", 
+          "uint*"
+        ], 
+        "restype": "AudioSpec*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LockAudio": {
+      "name": "SDL_LockAudio", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LockAudioDevice": {
+      "name": "SDL_LockAudioDevice", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LockMutex": {
+      "name": "SDL_LockMutex", 
+      "type": {
+        "argtypes": [
+          "mutex*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LockSurface": {
+      "name": "SDL_LockSurface", 
+      "type": {
+        "argtypes": [
+          "Surface*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LockTexture": {
+      "name": "SDL_LockTexture", 
+      "type": {
+        "argtypes": [
+          "Texture*", 
+          "Rect*", 
+          "void**", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "Log": {
+      "name": "SDL_Log", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": true
+      }
+    }, 
+    "LogCritical": {
+      "name": "SDL_LogCritical", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": true
+      }
+    }, 
+    "LogDebug": {
+      "name": "SDL_LogDebug", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": true
+      }
+    }, 
+    "LogError": {
+      "name": "SDL_LogError", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": true
+      }
+    }, 
+    "LogGetOutputFunction": {
+      "name": "SDL_LogGetOutputFunction", 
+      "type": {
+        "argtypes": [
+          "LogOutputFunction*", 
+          "void**"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LogGetPriority": {
+      "name": "SDL_LogGetPriority", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LogInfo": {
+      "name": "SDL_LogInfo", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": true
+      }
+    }, 
+    "LogMessage": {
+      "name": "SDL_LogMessage", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "int", 
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": true
+      }
+    }, 
+    "LogMessageV": {
+      "name": "SDL_LogMessageV", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "int", 
+          "ubyte*", 
+          "va_list"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LogResetPriorities": {
+      "name": "SDL_LogResetPriorities", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LogSetAllPriority": {
+      "name": "SDL_LogSetAllPriority", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LogSetOutputFunction": {
+      "name": "SDL_LogSetOutputFunction", 
+      "type": {
+        "argtypes": [
+          "LogOutputFunction", 
+          "void*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LogSetPriority": {
+      "name": "SDL_LogSetPriority", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LogVerbose": {
+      "name": "SDL_LogVerbose", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": true
+      }
+    }, 
+    "LogWarn": {
+      "name": "SDL_LogWarn", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": true
+      }
+    }, 
+    "LowerBlit": {
+      "name": "SDL_LowerBlit", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "Rect*", 
+          "Surface*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "LowerBlitScaled": {
+      "name": "SDL_LowerBlitScaled", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "Rect*", 
+          "Surface*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "MapRGB": {
+      "name": "SDL_MapRGB", 
+      "type": {
+        "argtypes": [
+          "PixelFormat*", 
+          "ubyte", 
+          "ubyte", 
+          "ubyte"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "MapRGBA": {
+      "name": "SDL_MapRGBA", 
+      "type": {
+        "argtypes": [
+          "PixelFormat*", 
+          "ubyte", 
+          "ubyte", 
+          "ubyte", 
+          "ubyte"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "MasksToPixelFormatEnum": {
+      "name": "SDL_MasksToPixelFormatEnum", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "uint", 
+          "uint", 
+          "uint", 
+          "uint"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "MaximizeWindow": {
+      "name": "SDL_MaximizeWindow", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "MinimizeWindow": {
+      "name": "SDL_MinimizeWindow", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "MixAudio": {
+      "name": "SDL_MixAudio", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*", 
+          "uint", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "MixAudioFormat": {
+      "name": "SDL_MixAudioFormat", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*", 
+          "ushort", 
+          "uint", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "MouseIsHaptic": {
+      "name": "SDL_MouseIsHaptic", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "NumHaptics": {
+      "name": "SDL_NumHaptics", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "NumJoysticks": {
+      "name": "SDL_NumJoysticks", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "OpenAudio": {
+      "name": "SDL_OpenAudio", 
+      "type": {
+        "argtypes": [
+          "AudioSpec*", 
+          "AudioSpec*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "OpenAudioDevice": {
+      "name": "SDL_OpenAudioDevice", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "int", 
+          "AudioSpec*", 
+          "AudioSpec*", 
+          "int"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "PauseAudio": {
+      "name": "SDL_PauseAudio", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "PauseAudioDevice": {
+      "name": "SDL_PauseAudioDevice", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "PeepEvents": {
+      "name": "SDL_PeepEvents", 
+      "type": {
+        "argtypes": [
+          "Event*", 
+          "int", 
+          "int", 
+          "uint", 
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "PixelFormatEnumToMasks": {
+      "name": "SDL_PixelFormatEnumToMasks", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "int*", 
+          "uint*", 
+          "uint*", 
+          "uint*", 
+          "uint*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "PollEvent": {
+      "name": "SDL_PollEvent", 
+      "type": {
+        "argtypes": [
+          "Event*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "PumpEvents": {
+      "name": "SDL_PumpEvents", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "PushEvent": {
+      "name": "SDL_PushEvent", 
+      "type": {
+        "argtypes": [
+          "Event*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "QueryTexture": {
+      "name": "SDL_QueryTexture", 
+      "type": {
+        "argtypes": [
+          "Texture*", 
+          "uint*", 
+          "int*", 
+          "int*", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "Quit": {
+      "name": "SDL_Quit", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "QuitSubSystem": {
+      "name": "SDL_QuitSubSystem", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RWFromConstMem": {
+      "name": "SDL_RWFromConstMem", 
+      "type": {
+        "argtypes": [
+          "void*", 
+          "int"
+        ], 
+        "restype": "RWops*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RWFromFP": {
+      "name": "SDL_RWFromFP", 
+      "type": {
+        "argtypes": [
+          "FILE*", 
+          "int"
+        ], 
+        "restype": "RWops*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RWFromFile": {
+      "name": "SDL_RWFromFile", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "RWops*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RWFromMem": {
+      "name": "SDL_RWFromMem", 
+      "type": {
+        "argtypes": [
+          "void*", 
+          "int"
+        ], 
+        "restype": "RWops*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RaiseWindow": {
+      "name": "SDL_RaiseWindow", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ReadBE16": {
+      "name": "SDL_ReadBE16", 
+      "type": {
+        "argtypes": [
+          "RWops*"
+        ], 
+        "restype": "ushort", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ReadBE32": {
+      "name": "SDL_ReadBE32", 
+      "type": {
+        "argtypes": [
+          "RWops*"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ReadBE64": {
+      "name": "SDL_ReadBE64", 
+      "type": {
+        "argtypes": [
+          "RWops*"
+        ], 
+        "restype": "ulong", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ReadLE16": {
+      "name": "SDL_ReadLE16", 
+      "type": {
+        "argtypes": [
+          "RWops*"
+        ], 
+        "restype": "ushort", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ReadLE32": {
+      "name": "SDL_ReadLE32", 
+      "type": {
+        "argtypes": [
+          "RWops*"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ReadLE64": {
+      "name": "SDL_ReadLE64", 
+      "type": {
+        "argtypes": [
+          "RWops*"
+        ], 
+        "restype": "ulong", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ReadU8": {
+      "name": "SDL_ReadU8", 
+      "type": {
+        "argtypes": [
+          "RWops*"
+        ], 
+        "restype": "ubyte", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RecordGesture": {
+      "name": "SDL_RecordGesture", 
+      "type": {
+        "argtypes": [
+          "i64"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RegisterEvents": {
+      "name": "SDL_RegisterEvents", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RemoveTimer": {
+      "name": "SDL_RemoveTimer", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderClear": {
+      "name": "SDL_RenderClear", 
+      "type": {
+        "argtypes": [
+          "Renderer*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderCopy": {
+      "name": "SDL_RenderCopy", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Texture*", 
+          "Rect*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderCopyEx": {
+      "name": "SDL_RenderCopyEx", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Texture*", 
+          "Rect*", 
+          "Rect*", 
+          "double", 
+          "Point*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderDrawLine": {
+      "name": "SDL_RenderDrawLine", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "int", 
+          "int", 
+          "int", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderDrawLines": {
+      "name": "SDL_RenderDrawLines", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Point*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderDrawPoint": {
+      "name": "SDL_RenderDrawPoint", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "int", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderDrawPoints": {
+      "name": "SDL_RenderDrawPoints", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Point*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderDrawRect": {
+      "name": "SDL_RenderDrawRect", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderDrawRects": {
+      "name": "SDL_RenderDrawRects", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Rect*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderFillRect": {
+      "name": "SDL_RenderFillRect", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderFillRects": {
+      "name": "SDL_RenderFillRects", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Rect*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderGetClipRect": {
+      "name": "SDL_RenderGetClipRect", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Rect*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderGetLogicalSize": {
+      "name": "SDL_RenderGetLogicalSize", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "int*", 
+          "int*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderGetScale": {
+      "name": "SDL_RenderGetScale", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "float*", 
+          "float*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderGetViewport": {
+      "name": "SDL_RenderGetViewport", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Rect*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderPresent": {
+      "name": "SDL_RenderPresent", 
+      "type": {
+        "argtypes": [
+          "Renderer*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderReadPixels": {
+      "name": "SDL_RenderReadPixels", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Rect*", 
+          "uint", 
+          "void*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderSetClipRect": {
+      "name": "SDL_RenderSetClipRect", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderSetLogicalSize": {
+      "name": "SDL_RenderSetLogicalSize", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "int", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderSetScale": {
+      "name": "SDL_RenderSetScale", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "float", 
+          "float"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderSetViewport": {
+      "name": "SDL_RenderSetViewport", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RenderTargetSupported": {
+      "name": "SDL_RenderTargetSupported", 
+      "type": {
+        "argtypes": [
+          "Renderer*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ReportAssertion": {
+      "name": "SDL_ReportAssertion", 
+      "type": {
+        "argtypes": [
+          "assert_data*", 
+          "ubyte*", 
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ResetAssertionReport": {
+      "name": "SDL_ResetAssertionReport", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RestoreWindow": {
+      "name": "SDL_RestoreWindow", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SaveAllDollarTemplates": {
+      "name": "SDL_SaveAllDollarTemplates", 
+      "type": {
+        "argtypes": [
+          "RWops*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SaveBMP_RW": {
+      "name": "SDL_SaveBMP_RW", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "RWops*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SaveDollarTemplate": {
+      "name": "SDL_SaveDollarTemplate", 
+      "type": {
+        "argtypes": [
+          "i64", 
+          "RWops*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SemPost": {
+      "name": "SDL_SemPost", 
+      "type": {
+        "argtypes": [
+          "sem*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SemTryWait": {
+      "name": "SDL_SemTryWait", 
+      "type": {
+        "argtypes": [
+          "sem*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SemValue": {
+      "name": "SDL_SemValue", 
+      "type": {
+        "argtypes": [
+          "sem*"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SemWait": {
+      "name": "SDL_SemWait", 
+      "type": {
+        "argtypes": [
+          "sem*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SemWaitTimeout": {
+      "name": "SDL_SemWaitTimeout", 
+      "type": {
+        "argtypes": [
+          "sem*", 
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetAssertionHandler": {
+      "name": "SDL_SetAssertionHandler", 
+      "type": {
+        "argtypes": [
+          "AssertionHandler", 
+          "void*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetClipRect": {
+      "name": "SDL_SetClipRect", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetClipboardText": {
+      "name": "SDL_SetClipboardText", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetColorKey": {
+      "name": "SDL_SetColorKey", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "int", 
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetCursor": {
+      "name": "SDL_SetCursor", 
+      "type": {
+        "argtypes": [
+          "Cursor*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetError": {
+      "name": "SDL_SetError", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": true
+      }
+    }, 
+    "SetEventFilter": {
+      "name": "SDL_SetEventFilter", 
+      "type": {
+        "argtypes": [
+          "EventFilter", 
+          "void*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetHint": {
+      "name": "SDL_SetHint", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetHintWithPriority": {
+      "name": "SDL_SetHintWithPriority", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetMainReady": {
+      "name": "SDL_SetMainReady", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetModState": {
+      "name": "SDL_SetModState", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetPaletteColors": {
+      "name": "SDL_SetPaletteColors", 
+      "type": {
+        "argtypes": [
+          "Palette*", 
+          "Color*", 
+          "int", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetPixelFormatPalette": {
+      "name": "SDL_SetPixelFormatPalette", 
+      "type": {
+        "argtypes": [
+          "PixelFormat*", 
+          "Palette*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetRelativeMouseMode": {
+      "name": "SDL_SetRelativeMouseMode", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetRenderDrawBlendMode": {
+      "name": "SDL_SetRenderDrawBlendMode", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetRenderDrawColor": {
+      "name": "SDL_SetRenderDrawColor", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "ubyte", 
+          "ubyte", 
+          "ubyte", 
+          "ubyte"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetRenderTarget": {
+      "name": "SDL_SetRenderTarget", 
+      "type": {
+        "argtypes": [
+          "Renderer*", 
+          "Texture*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetSurfaceAlphaMod": {
+      "name": "SDL_SetSurfaceAlphaMod", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "ubyte"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetSurfaceBlendMode": {
+      "name": "SDL_SetSurfaceBlendMode", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetSurfaceColorMod": {
+      "name": "SDL_SetSurfaceColorMod", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "ubyte", 
+          "ubyte", 
+          "ubyte"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetSurfacePalette": {
+      "name": "SDL_SetSurfacePalette", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "Palette*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetSurfaceRLE": {
+      "name": "SDL_SetSurfaceRLE", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetTextInputRect": {
+      "name": "SDL_SetTextInputRect", 
+      "type": {
+        "argtypes": [
+          "Rect*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetTextureAlphaMod": {
+      "name": "SDL_SetTextureAlphaMod", 
+      "type": {
+        "argtypes": [
+          "Texture*", 
+          "ubyte"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetTextureBlendMode": {
+      "name": "SDL_SetTextureBlendMode", 
+      "type": {
+        "argtypes": [
+          "Texture*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetTextureColorMod": {
+      "name": "SDL_SetTextureColorMod", 
+      "type": {
+        "argtypes": [
+          "Texture*", 
+          "ubyte", 
+          "ubyte", 
+          "ubyte"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetThreadPriority": {
+      "name": "SDL_SetThreadPriority", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowBordered": {
+      "name": "SDL_SetWindowBordered", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowBrightness": {
+      "name": "SDL_SetWindowBrightness", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "float"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowData": {
+      "name": "SDL_SetWindowData", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "ubyte*", 
+          "void*"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowDisplayMode": {
+      "name": "SDL_SetWindowDisplayMode", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "DisplayMode*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowFullscreen": {
+      "name": "SDL_SetWindowFullscreen", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowGammaRamp": {
+      "name": "SDL_SetWindowGammaRamp", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "ushort*", 
+          "ushort*", 
+          "ushort*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowGrab": {
+      "name": "SDL_SetWindowGrab", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowIcon": {
+      "name": "SDL_SetWindowIcon", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "Surface*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowMaximumSize": {
+      "name": "SDL_SetWindowMaximumSize", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowMinimumSize": {
+      "name": "SDL_SetWindowMinimumSize", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowPosition": {
+      "name": "SDL_SetWindowPosition", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowSize": {
+      "name": "SDL_SetWindowSize", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SetWindowTitle": {
+      "name": "SDL_SetWindowTitle", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "ubyte*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ShowCursor": {
+      "name": "SDL_ShowCursor", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ShowMessageBox": {
+      "name": "SDL_ShowMessageBox", 
+      "type": {
+        "argtypes": [
+          "MessageBoxData*", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ShowSimpleMessageBox": {
+      "name": "SDL_ShowSimpleMessageBox", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "ubyte*", 
+          "ubyte*", 
+          "Window*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ShowWindow": {
+      "name": "SDL_ShowWindow", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SoftStretch": {
+      "name": "SDL_SoftStretch", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "Rect*", 
+          "Surface*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "StartTextInput": {
+      "name": "SDL_StartTextInput", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "StopTextInput": {
+      "name": "SDL_StopTextInput", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "TLSCreate": {
+      "name": "SDL_TLSCreate", 
+      "type": {
+        "argtypes": [], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "TLSGet": {
+      "name": "SDL_TLSGet", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "TLSSet": {
+      "name": "SDL_TLSSet", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "void*", 
+          {
+            "to": {
+              "argtypes": [
+                "void*"
+              ], 
+              "restype": "void", 
+              "type": "cfunc", 
+              "vararg": false
+            }, 
+            "type": "pointer"
+          }
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ThreadID": {
+      "name": "SDL_ThreadID", 
+      "type": {
+        "argtypes": [], 
+        "restype": "ulong", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "TryLockMutex": {
+      "name": "SDL_TryLockMutex", 
+      "type": {
+        "argtypes": [
+          "mutex*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "UnionRect": {
+      "name": "SDL_UnionRect", 
+      "type": {
+        "argtypes": [
+          "Rect*", 
+          "Rect*", 
+          "Rect*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "UnloadObject": {
+      "name": "SDL_UnloadObject", 
+      "type": {
+        "argtypes": [
+          "void*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "UnlockAudio": {
+      "name": "SDL_UnlockAudio", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "UnlockAudioDevice": {
+      "name": "SDL_UnlockAudioDevice", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "UnlockMutex": {
+      "name": "SDL_UnlockMutex", 
+      "type": {
+        "argtypes": [
+          "mutex*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "UnlockSurface": {
+      "name": "SDL_UnlockSurface", 
+      "type": {
+        "argtypes": [
+          "Surface*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "UnlockTexture": {
+      "name": "SDL_UnlockTexture", 
+      "type": {
+        "argtypes": [
+          "Texture*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "UpdateTexture": {
+      "name": "SDL_UpdateTexture", 
+      "type": {
+        "argtypes": [
+          "Texture*", 
+          "Rect*", 
+          "void*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "UpdateWindowSurface": {
+      "name": "SDL_UpdateWindowSurface", 
+      "type": {
+        "argtypes": [
+          "Window*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "UpdateWindowSurfaceRects": {
+      "name": "SDL_UpdateWindowSurfaceRects", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "Rect*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "UpperBlit": {
+      "name": "SDL_UpperBlit", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "Rect*", 
+          "Surface*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "UpperBlitScaled": {
+      "name": "SDL_UpperBlitScaled", 
+      "type": {
+        "argtypes": [
+          "Surface*", 
+          "Rect*", 
+          "Surface*", 
+          "Rect*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "VideoInit": {
+      "name": "SDL_VideoInit", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "VideoQuit": {
+      "name": "SDL_VideoQuit", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WaitEvent": {
+      "name": "SDL_WaitEvent", 
+      "type": {
+        "argtypes": [
+          "Event*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WaitEventTimeout": {
+      "name": "SDL_WaitEventTimeout", 
+      "type": {
+        "argtypes": [
+          "Event*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WaitThread": {
+      "name": "SDL_WaitThread", 
+      "type": {
+        "argtypes": [
+          "Thread*", 
+          "int*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WarpMouseInWindow": {
+      "name": "SDL_WarpMouseInWindow", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int", 
+          "int"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WasInit": {
+      "name": "SDL_WasInit", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WriteBE16": {
+      "name": "SDL_WriteBE16", 
+      "type": {
+        "argtypes": [
+          "RWops*", 
+          "ushort"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WriteBE32": {
+      "name": "SDL_WriteBE32", 
+      "type": {
+        "argtypes": [
+          "RWops*", 
+          "uint"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WriteBE64": {
+      "name": "SDL_WriteBE64", 
+      "type": {
+        "argtypes": [
+          "RWops*", 
+          "ulong"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WriteLE16": {
+      "name": "SDL_WriteLE16", 
+      "type": {
+        "argtypes": [
+          "RWops*", 
+          "ushort"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WriteLE32": {
+      "name": "SDL_WriteLE32", 
+      "type": {
+        "argtypes": [
+          "RWops*", 
+          "uint"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WriteLE64": {
+      "name": "SDL_WriteLE64", 
+      "type": {
+        "argtypes": [
+          "RWops*", 
+          "ulong"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WriteU8": {
+      "name": "SDL_WriteU8", 
+      "type": {
+        "argtypes": [
+          "RWops*", 
+          "ubyte"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "abs": {
+      "name": "SDL_abs", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "atan": {
+      "name": "SDL_atan", 
+      "type": {
+        "argtypes": [
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "atan2": {
+      "name": "SDL_atan2", 
+      "type": {
+        "argtypes": [
+          "double", 
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "atof": {
+      "name": "SDL_atof", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "atoi": {
+      "name": "SDL_atoi", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "calloc": {
+      "name": "SDL_calloc", 
+      "type": {
+        "argtypes": [
+          "size_t", 
+          "size_t"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ceil": {
+      "name": "SDL_ceil", 
+      "type": {
+        "argtypes": [
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "copysign": {
+      "name": "SDL_copysign", 
+      "type": {
+        "argtypes": [
+          "double", 
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "cos": {
+      "name": "SDL_cos", 
+      "type": {
+        "argtypes": [
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "cosf": {
+      "name": "SDL_cosf", 
+      "type": {
+        "argtypes": [
+          "float"
+        ], 
+        "restype": "float", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "fabs": {
+      "name": "SDL_fabs", 
+      "type": {
+        "argtypes": [
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "floor": {
+      "name": "SDL_floor", 
+      "type": {
+        "argtypes": [
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "free": {
+      "name": "SDL_free", 
+      "type": {
+        "argtypes": [
+          "void*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "getenv": {
+      "name": "SDL_getenv", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "iconv": {
+      "name": "SDL_iconv", 
+      "type": {
+        "argtypes": [
+          "iconv_t", 
+          "ubyte**", 
+          "size_t*", 
+          "ubyte**", 
+          "size_t*"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "iconv_close": {
+      "name": "SDL_iconv_close", 
+      "type": {
+        "argtypes": [
+          "iconv_t"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "iconv_open": {
+      "name": "SDL_iconv_open", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "iconv_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "iconv_string": {
+      "name": "SDL_iconv_string", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*", 
+          "ubyte*", 
+          "size_t"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "isdigit": {
+      "name": "SDL_isdigit", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "isspace": {
+      "name": "SDL_isspace", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "itoa": {
+      "name": "SDL_itoa", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "lltoa": {
+      "name": "SDL_lltoa", 
+      "type": {
+        "argtypes": [
+          "i64", 
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "log": {
+      "name": "SDL_log", 
+      "type": {
+        "argtypes": [
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ltoa": {
+      "name": "SDL_ltoa", 
+      "type": {
+        "argtypes": [
+          "long", 
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "main": {
+      "name": "SDL_main", 
+      "type": {
+        "argtypes": [
+          "int", 
+          {
+            "ctype": "ubyte*", 
+            "length": null, 
+            "type": "array"
+          }
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "malloc": {
+      "name": "SDL_malloc", 
+      "type": {
+        "argtypes": [
+          "size_t"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "memcmp": {
+      "name": "SDL_memcmp", 
+      "type": {
+        "argtypes": [
+          "void*", 
+          "void*", 
+          "size_t"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "memcpy": {
+      "name": "SDL_memcpy", 
+      "type": {
+        "argtypes": [
+          "void*", 
+          "void*", 
+          "size_t"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "memmove": {
+      "name": "SDL_memmove", 
+      "type": {
+        "argtypes": [
+          "void*", 
+          "void*", 
+          "size_t"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "memset": {
+      "name": "SDL_memset", 
+      "type": {
+        "argtypes": [
+          "void*", 
+          "int", 
+          "size_t"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "pow": {
+      "name": "SDL_pow", 
+      "type": {
+        "argtypes": [
+          "double", 
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "qsort": {
+      "name": "SDL_qsort", 
+      "type": {
+        "argtypes": [
+          "void*", 
+          "size_t", 
+          "size_t", 
+          {
+            "to": {
+              "argtypes": [
+                "void*", 
+                "void*"
+              ], 
+              "restype": "int", 
+              "type": "cfunc", 
+              "vararg": false
+            }, 
+            "type": "pointer"
+          }
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "realloc": {
+      "name": "SDL_realloc", 
+      "type": {
+        "argtypes": [
+          "void*", 
+          "size_t"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "scalbn": {
+      "name": "SDL_scalbn", 
+      "type": {
+        "argtypes": [
+          "double", 
+          "int"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "setenv": {
+      "name": "SDL_setenv", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "sin": {
+      "name": "SDL_sin", 
+      "type": {
+        "argtypes": [
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "sinf": {
+      "name": "SDL_sinf", 
+      "type": {
+        "argtypes": [
+          "float"
+        ], 
+        "restype": "float", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "snprintf": {
+      "name": "SDL_snprintf", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "size_t", 
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": true
+      }
+    }, 
+    "sqrt": {
+      "name": "SDL_sqrt", 
+      "type": {
+        "argtypes": [
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "sscanf": {
+      "name": "SDL_sscanf", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": true
+      }
+    }, 
+    "strcasecmp": {
+      "name": "SDL_strcasecmp", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strchr": {
+      "name": "SDL_strchr", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strcmp": {
+      "name": "SDL_strcmp", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strdup": {
+      "name": "SDL_strdup", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strlcat": {
+      "name": "SDL_strlcat", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*", 
+          "size_t"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strlcpy": {
+      "name": "SDL_strlcpy", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*", 
+          "size_t"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strlen": {
+      "name": "SDL_strlen", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strlwr": {
+      "name": "SDL_strlwr", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strncasecmp": {
+      "name": "SDL_strncasecmp", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*", 
+          "size_t"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strncmp": {
+      "name": "SDL_strncmp", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*", 
+          "size_t"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strrchr": {
+      "name": "SDL_strrchr", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strrev": {
+      "name": "SDL_strrev", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strstr": {
+      "name": "SDL_strstr", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strtod": {
+      "name": "SDL_strtod", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte**"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strtol": {
+      "name": "SDL_strtol", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte**", 
+          "int"
+        ], 
+        "restype": "long", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strtoll": {
+      "name": "SDL_strtoll", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte**", 
+          "int"
+        ], 
+        "restype": "i64", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strtoul": {
+      "name": "SDL_strtoul", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte**", 
+          "int"
+        ], 
+        "restype": "ulong", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strtoull": {
+      "name": "SDL_strtoull", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte**", 
+          "int"
+        ], 
+        "restype": "ulong", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "strupr": {
+      "name": "SDL_strupr", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "tolower": {
+      "name": "SDL_tolower", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "toupper": {
+      "name": "SDL_toupper", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "uitoa": {
+      "name": "SDL_uitoa", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ulltoa": {
+      "name": "SDL_ulltoa", 
+      "type": {
+        "argtypes": [
+          "ulong", 
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ultoa": {
+      "name": "SDL_ultoa", 
+      "type": {
+        "argtypes": [
+          "ulong", 
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "utf8strlcpy": {
+      "name": "SDL_utf8strlcpy", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*", 
+          "size_t"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "vsnprintf": {
+      "name": "SDL_vsnprintf", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "size_t", 
+          "ubyte*", 
+          "va_list"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "wcslcat": {
+      "name": "SDL_wcslcat", 
+      "type": {
+        "argtypes": [
+          "int*", 
+          "int*", 
+          "size_t"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "wcslcpy": {
+      "name": "SDL_wcslcpy", 
+      "type": {
+        "argtypes": [
+          "int*", 
+          "int*", 
+          "size_t"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "wcslen": {
+      "name": "SDL_wcslen", 
+      "type": {
+        "argtypes": [
+          "int*"
+        ], 
+        "restype": "size_t", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }
+  }
+}

@@ -118,12 +118,25 @@ def sizeof(argv):
 def malloc(argv):
     ctype = argument(argv, 0, Type)
     if len(argv) >= 2:
-        n = argument(argv, 1, Integer)
-        size = simple.sizeof_a(ctype, n.value)
+        n = argument(argv, 1, Integer).value
+        size = simple.sizeof_a(ctype, n)
     else:
+        n = 1
         size = simple.sizeof(ctype)
     pointer = lltype.malloc(rffi.VOIDP.TO, size, flavor='raw')
-    return Mem(systemv.Pointer(ctype), pointer)
+    return Mem(systemv.Pointer(ctype), pointer, n)
+
+@builtin
+def automem(argv):
+    ctype = argument(argv, 0, Type)
+    if len(argv) >= 2:
+        n = argument(argv, 1, Integer).value
+        size = simple.sizeof_a(ctype, n)
+    else:
+        n = 1
+        size = simple.sizeof(ctype)
+    pointer = lltype.malloc(rffi.VOIDP.TO, size, flavor='raw')
+    return systemv.AutoMem(systemv.Pointer(ctype), pointer, n)
 
 @builtin
 def free(argv):

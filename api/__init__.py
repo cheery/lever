@@ -34,6 +34,7 @@ class Api(Object):
         self.constants = constants
         self.types = types
         self.variables = variables
+        self.cycle_catch = {}
 
     def getitem(self, name):
         if not isinstance(name, String):
@@ -92,13 +93,33 @@ class Api(Object):
                 argtypes.append(self.lookup_type(argtype))
             return ffi.CFunc(restype, argtypes)
         if isinstance(which, String) and which.string == u"union":
+            if decl in self.cycle_catch:
+                return self.cycle_catch[decl]
             fields = decl.getitem(String(u"fields"))
-            return ffi.Union(self.parse_fields(name, fields), name)
+            self.cycle_catch[decl] = ctype = ffi.Union(None, name)
+            ctype.declare(self.parse_fields(name, fields))
+            return ctype
         if isinstance(which, String) and which.string == u"struct":
+            if decl in self.cycle_catch:
+                return self.cycle_catch[decl]
             fields = decl.getitem(String(u"fields"))
-            return ffi.Struct(self.parse_fields(name, fields), name)
+            self.cycle_catch[decl] = ctype = ffi.Struct(None, name)
+            ctype.declare(self.parse_fields(name, fields))
+            return ctype
         if isinstance(which, String) and which.string == u"opaque":
             return ffi.Struct(None, name)
+        if isinstance(which, String) and which.string == u"array":
+            ctype = self.lookup_type(decl.getitem(String(u'ctype')))
+            length = decl.getitem(String(u"length"))
+            if length is null:
+                return ffi.Array(ctype)
+            elif isinstance(length, Integer):
+                return ffi.Array(ctype, length.value)
+            else:
+                raise Error(name + u": incorrect length value: %s" % length.repr())
+        if isinstance(which, String) and which.string == u"pointer":
+            to = self.lookup_type(decl.getitem(String(u'to')))
+            return ffi.Pointer(to)
         raise Error(name + u": no ctype builder for " + which.repr())
 
     def parse_fields(self, name, fields_list):
@@ -112,6 +133,27 @@ class Api(Object):
             ctype = self.lookup_type(field.getitem(Integer(1)))
             fields.append((field_name.string, ctype))
         return fields
+
+class FuncLibrary(Object):
+    def __init__(self, api, func):
+        self.func = func
+        self.api = api
+        self.namespace = {}
+
+    def getattr(self, name):
+        if name in self.namespace:
+            return self.namespace[name]
+        c = self.api.getitem(String(name))
+        if isinstance(c, ffi.Wrap):
+            cname = c.cname
+            ctype = c.ctype
+        else:
+            return c
+        res = self.func.call([String(cname)])
+        if isinstance(res, ffi.Mem):
+            return ffi.Mem(ctype, res.pointer, 1)
+        else:
+            raise Error(u"expected memory object, not %s" % res.repr())
 
 def wrap_json(obj):
     if isinstance(obj, dict):
@@ -140,13 +182,16 @@ def builtin(fn):
     return fn
 
 @builtin
-@signature(String)
-def open(path):
-    path = path.string
-    if path.endswith(u".so"):
+def open(argv):
+    if len(argv) < 1:
+        raise Error(u"expected at least 1 argument for api.open")
+    path = argument(argv, 0, String).string
+    if path.endswith(u".so") or path.endswith(u".json"):
         path = path.rsplit(u'.', 1)[0]
     json_path = path + u".json"
     so_path = path + u".so"
+    if len(argv) >= 2:
+        return FuncLibrary(open_api(json_path), argv[1])
     return ffi.Library.interface.call([String(so_path), open_api(json_path)])
 
 def open_api(json_path):

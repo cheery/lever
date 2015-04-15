@@ -1,7 +1,7 @@
 from simple import *
 from space import Error, Object, List, String, null, signature, argument, as_cstring
 from rpython.rtyper.lltypesystem import rffi, lltype
-from rpython.rlib import jit_libffi, clibffi, unroll
+from rpython.rlib import jit_libffi, clibffi, unroll, rgc
 
 # Architecture dependent values. These must be right or
 # otherwise we can't call foreign libraries.
@@ -18,6 +18,7 @@ types = {
     u'ulong': Unsigned(rffi.sizeof(rffi.ULONG)),
     u'longlong': Signed(rffi.sizeof(rffi.LONGLONG)),
     u'ulonglong': Unsigned(rffi.sizeof(rffi.ULONGLONG)),
+    u'size_t': Unsigned(rffi.sizeof(rffi.SIZE_T)),
     u'i8': Signed(1),
     u'i16': Signed(2),
     u'i32': Signed(4),
@@ -26,17 +27,18 @@ types = {
     u'u16': Unsigned(2),
     u'u32': Unsigned(4),
     u'u64': Unsigned(8),
+    u'float': Floating(rffi.sizeof(rffi.FLOAT)),
+    u'double': Floating(rffi.sizeof(rffi.DOUBLE)),
 }
-#u'double': rffi.sizeof(rffi.DOUBLE),
-#u'float': rffi.sizeof(rffi.FLOAT),
 #u'longdouble': rffi.sizeof(rffi.LONGDOUBLE),
 
 # Memory location in our own heap. Compare to 'handle'
 # that is a record in a shared library.
 class Mem(Object):
-    def __init__(self, ctype, pointer):
+    def __init__(self, ctype, pointer, length=0):
         self.ctype = ctype
         self.pointer = pointer
+        self.length = length
 
     def getattr(self, name):
         ctype = self.ctype
@@ -106,6 +108,12 @@ class Mem(Object):
         if self.ctype is null:
             name = u''
         return u"<%x %s>" % (rffi.cast(rffi.LONG, self.pointer), name)
+
+# GC-allocated variation of the above.
+class AutoMem(Mem):
+    @rgc.must_be_light_finalizer
+    def __del__(self):
+        lltype.free(self.pointer, flavor='raw')
 
 class Pointer(Type):
     size = rffi.sizeof(rffi.VOIDP)
@@ -217,7 +225,6 @@ class CFunc(Type):
         # String objects need to be converted and stored during the call.
         # I assume it's not a good idea to just generated some and expect them to
         # stick around.
-        # Would suspect it leaks without free?
         sbuf = []
         # Exchange buffer is built for every call. Filled with arguments that are passed to the function.
         exc = lltype.malloc(rffi.VOIDP.TO, cif.exchange_size, flavor='raw')
@@ -239,6 +246,8 @@ class CFunc(Type):
                 val = self.restype.load(offset)
         finally:
             lltype.free(exc, flavor='raw')
+            for sb in sbuf:
+                lltype.free(sb, flavor='raw')
         return val
 
     def cast_to_ffitype(self):

@@ -1,0 +1,31 @@
+# The simplest possible opengl sample.
+# Draws a colorful screen.
+
+api = (import "api")
+(from (import "ffi") automem)
+sdl = (api.open "libSDL2.so")
+gl = (api.open "libGL.json" sdl.GL_GetProcAddress)
+
+(assert (sdl.Init sdl.INIT_VIDEO) == 0)
+
+(sdl.GL_SetAttribute sdl.GL_DOUBLEBUFFER 1)
+win = (sdl.CreateWindow "Hello" 100 100 640 480)
+    sdl.WINDOW_OPENGL | sdl.WINDOW_SHOWN
+(assert win)
+
+ctx = (sdl.GL_CreateContext win)
+(assert ctx)
+
+event = (automem sdl.Event)
+
+running = true
+(while running)
+    (while (sdl.PollEvent event) != 0)
+        (if event.type == sdl.QUIT) running = false
+    (gl.clearColor 0.5 0.5 0.2 1.0)
+    (gl.clear gl.COLOR_BUFFER_BIT)
+    (sdl.GL_SwapWindow win)
+
+(sdl.GL_DeleteContext ctx)
+(sdl.DestroyWindow win)
+(sdl.Quit)
