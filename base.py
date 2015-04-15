@@ -2,10 +2,12 @@ from space import *
 import api
 import ffi
 import os
+import filesystem
 
 builtin_modules = {
     u'api': api.module,
     u'ffi': ffi.module,
+    u'fs': filesystem.module,
 }
 
 # The base environment
