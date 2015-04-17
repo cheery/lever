@@ -2,6 +2,7 @@ from rpython.rlib import unroll
 from interface import Error, Object
 
 class Builtin(Object):
+    _immutable_fields_ = ['func']
     def __init__(self, func, name=None):
         self.func = func
         self.name = name if name is not None else func.__name__.decode('utf-8')

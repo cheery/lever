@@ -7,6 +7,7 @@ class Error(Exception):
         self.stacktrace = []
 
 class Object:
+    _immutable_fields_ = ['interface']
     # The metaclass here takes care every object will get an interface.
     # So programmer doesn't need to do that.
     class __metaclass__(type):
@@ -61,6 +62,7 @@ class Object:
         cls.interface.methods[builtin.name] = builtin
 
 class Interface(Object):
+    _immutable_fields_ = ['instantiate?', 'methods']
     # Should add possibility to freeze the interface?
     def __init__(self, parent, name):
         assert isinstance(name, unicode)
