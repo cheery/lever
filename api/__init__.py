@@ -178,7 +178,7 @@ module = Module(u'api', {
 }, frozen=True)
 
 def builtin(fn):
-    module.namespace[fn.__name__.decode('utf-8')] = Builtin(fn)
+    module.setattr_force(fn.__name__.decode('utf-8'), Builtin(fn))
     return fn
 
 @builtin

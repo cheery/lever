@@ -2,6 +2,7 @@ from builtin import Builtin, signature
 from interface import Error, Object
 from listobject import List
 from rpython.rlib.objectmodel import compute_hash, r_dict
+from rpython.rlib import jit
 
 def eq_fn(this, other):
     return this.eq(other)
@@ -10,6 +11,7 @@ def hash_fn(this):
     return this.hash()
 
 class Multimethod(Object):
+    _immutable_fields_ = ['arity', 'methods']
     def __init__(self, arity, default=None):
         self.arity = arity
         self.methods = r_dict(eq_fn, hash_fn, force_non_null=True)
@@ -21,13 +23,36 @@ class Multimethod(Object):
     def call_suppressed(self, argv):
         return self.invoke_method(argv, suppress_default=True)
 
+    @jit.elidable
+    def get_method(self, *interfaces):
+        return self.methods.get(List(list(interfaces)), None)
+
+    @jit.unroll_safe
     def invoke_method(self, argv, suppress_default):
         if len(argv) < self.arity:
             raise Error(u"expected at least %d arguments, got %d" % (self.arity, len(argv))) 
         vec = []
         for i in range(self.arity):
             vec.append(argv[i].interface)
-        method = self.methods.get(List(vec), None)
+        if self.arity == 1:
+            method = self.get_method(jit.promote(vec[0]))
+        elif self.arity == 2:
+            method = self.get_method(
+                jit.promote(vec[0]),
+                jit.promote(vec[1]))
+        elif self.arity == 3:
+            method = self.get_method(
+                jit.promote(vec[0]),
+                jit.promote(vec[1]),
+                jit.promote(vec[2]))
+        elif self.arity == 4:
+            method = self.get_method(
+                jit.promote(vec[0]),
+                jit.promote(vec[1]),
+                jit.promote(vec[2]),
+                jit.promote(vec[3]))
+        else:
+            method = self.methods.get(List(vec), None)
         if method is None:
             if self.default is None or suppress_default:
                 names = []

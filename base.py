@@ -27,7 +27,7 @@ module = Module(u'base', {
 
 def builtin(fn):
     name = fn.__name__.rstrip('_').decode('utf-8')
-    module.namespace[name] = Builtin(fn, name)
+    module.setattr_force(name, Builtin(fn, name))
     return fn
 
 @builtin
@@ -120,7 +120,7 @@ def or_(a, b):
 def not_(a):
     return boolean(is_false(a))
 
-module.namespace[u'coerce'] = coerce = Multimethod(2)
+coerce = module.setattr_force(u'coerce', Multimethod(2))
 @coerce.multimethod_s(Boolean, Boolean)
 def _(a, b):
     return List([Integer(int(a.flag)), Integer(int(b.flag))])
@@ -146,42 +146,42 @@ def arithmetic_multimethod(operation):
         return Integer(operation(a.value, b.value))
     return method
 
-module.namespace[u'+'] = arithmetic_multimethod(lambda a, b: a + b)
-module.namespace[u'-'] = arithmetic_multimethod(lambda a, b: a - b)
-module.namespace[u'*'] = arithmetic_multimethod(lambda a, b: a * b)
-module.namespace[u'/'] = arithmetic_multimethod(lambda a, b: a / b)
-module.namespace[u'|'] = arithmetic_multimethod(lambda a, b: a | b)
-module.namespace[u'%'] = arithmetic_multimethod(lambda a, b: a % b)
-module.namespace[u'&'] = arithmetic_multimethod(lambda a, b: a & b)
-module.namespace[u'^'] = arithmetic_multimethod(lambda a, b: a ^ b)
-module.namespace[u'<<'] = arithmetic_multimethod(lambda a, b: a << b)
-module.namespace[u'>>'] = arithmetic_multimethod(lambda a, b: a >> b)
-module.namespace[u'min'] = arithmetic_multimethod(lambda a, b: min(a, b))
-module.namespace[u'max'] = arithmetic_multimethod(lambda a, b: max(a, b))
+module.setattr_force(u'+', arithmetic_multimethod(lambda a, b: a + b))
+module.setattr_force(u'-', arithmetic_multimethod(lambda a, b: a - b))
+module.setattr_force(u'*', arithmetic_multimethod(lambda a, b: a * b))
+module.setattr_force(u'/', arithmetic_multimethod(lambda a, b: a / b))
+module.setattr_force(u'|', arithmetic_multimethod(lambda a, b: a | b))
+module.setattr_force(u'%', arithmetic_multimethod(lambda a, b: a % b))
+module.setattr_force(u'&', arithmetic_multimethod(lambda a, b: a & b))
+module.setattr_force(u'^', arithmetic_multimethod(lambda a, b: a ^ b))
+module.setattr_force(u'<<', arithmetic_multimethod(lambda a, b: a << b))
+module.setattr_force(u'>>', arithmetic_multimethod(lambda a, b: a >> b))
+module.setattr_force(u'min', arithmetic_multimethod(lambda a, b: min(a, b)))
+module.setattr_force(u'max', arithmetic_multimethod(lambda a, b: max(a, b)))
 
 # Not actual implementations of these functions
 # All of these will be multimethods
 @signature(Integer, Integer)
 def cmp_lt(a, b):
     return boolean(a.value < b.value)
-module.namespace[u'<'] = Builtin(cmp_lt, u'<')
+module.setattr_force(u'<', Builtin(cmp_lt, u'<'))
 
 @signature(Integer, Integer)
 def cmp_gt(a, b):
     return boolean(a.value > b.value)
-module.namespace[u'>'] = Builtin(cmp_gt, u'>')
+module.setattr_force(u'>', Builtin(cmp_gt, u'>'))
 
 @signature(Integer, Integer)
 def cmp_le(a, b):
     return boolean(a.value <= b.value)
-module.namespace[u'<='] = Builtin(cmp_le, u'<=')
+module.setattr_force(u'<=', Builtin(cmp_le, u'<='))
 
 @signature(Integer, Integer)
 def cmp_ge(a, b):
     return boolean(a.value >= b.value)
-module.namespace[u'>='] = Builtin(cmp_ge, u'>=')
+module.setattr_force(u'>=', Builtin(cmp_ge, u'>='))
 
-module.namespace[u'!='] = ne = Multimethod(2)
+ne = module.setattr_force(u'!=', Multimethod(2))
 @signature(Object, Object)
 def ne_default(a, b):
     return boolean(a != b)
@@ -191,7 +191,7 @@ ne.default = Builtin(ne_default)
 def _(a, b):
     return boolean(a.value != b.value)
 
-module.namespace[u'=='] = eq = Multimethod(2)
+eq = module.setattr_force(u'==', Multimethod(2))
 @signature(Object, Object)
 def eq_default(a, b):
     return boolean(a == b)
@@ -201,12 +201,12 @@ eq.default = Builtin(eq_default)
 def _(a, b):
     return boolean(a.value == b.value)
 
-module.namespace[u'-expr'] = neg = Multimethod(1)
+neg = module.setattr_force(u'-expr', Multimethod(1))
 @neg.multimethod_s(Integer)
 def _(a):
     return Integer(-a.value)
 
-module.namespace[u'+expr'] = pos = Multimethod(1)
+pos = module.setattr_force(u'+expr', Multimethod(1))
 @pos.multimethod_s(Integer)
 def _(a):
     return Integer(+a.value)

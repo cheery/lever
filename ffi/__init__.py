@@ -89,10 +89,12 @@ module = Module(u'ffi', {
     u'voidp': systemv.Pointer(null),
     u'wrap': Wrap.interface,
 }, frozen=True)
-module.namespace.update(systemv.types)
+
+for name in systemv.types:
+    module.setattr_force(name, systemv.types[name])
 
 def builtin(fn):
-    module.namespace[fn.__name__.decode('utf-8')] = Builtin(fn)
+    module.setattr_force(fn.__name__.decode('utf-8'), Builtin(fn))
     return fn
 
 @builtin

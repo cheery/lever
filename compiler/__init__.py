@@ -1,3 +1,4 @@
+from rpython.rlib.jit import JitDriver
 import base
 import reader
 import space
@@ -9,12 +10,14 @@ class ProgramBody:
         self.is_generator = is_generator
         self.tmpc = 0
         for block in blocks:
+            block.freeze()
             for op in block:
                 if isinstance(op, ValuedOp):
                     op.i = self.tmpc
                     self.tmpc += 1
 
 class ActivationRecord:
+    _immutable_fields_ = ['module', 'parent']
     def __init__(self, module, parent):
         self.var = {}
         self.module = module
@@ -82,9 +85,12 @@ class YieldIteration(Exception):
         self.value = value
 
 class Block:
+    _immutable_fields_ = ['index', 'contents[*]']
+
     def __init__(self, index, contents):
         self.index = index
-        self.contents = contents
+        self.contents = None
+        self.contents_mut = []
 
     def __iter__(self):
         return iter(self.contents)
@@ -97,7 +103,11 @@ class Block:
 
     def append(self, op):
         assert isinstance(op, Op)
-        self.contents.append(op)
+        self.contents_mut.append(op)
+
+    def freeze(self):
+        self.contents = self.contents_mut[:]
+        self.contents_mut = None
 
 #    def label(self):
 #        return "b" + str(self.index)
@@ -134,7 +144,7 @@ class Scope:
         return self.add(func)
 
     def new_label(self):
-        if len(self.block.contents) > 0:
+        if len(self.block.contents_mut) > 0:
             exit = self.new_block()
             self.add(Jump(exit))
             self.block = exit
@@ -162,6 +172,7 @@ class Scope:
         return ProgramBody(self.blocks, self.functions, self.is_generator)
 
 class Op:
+    _immutable_fields_ = ['i', 'start', 'stop', 'then', 'exit', 'value', 'body', 'args[*]', 'values[*]', 'cond', 'dst', 'src', 'it', 'block', 'upscope', 'ref']
     i = 0
     start = None
     stop = None
@@ -172,6 +183,7 @@ class Op:
 #        return "..."
 
 class Assert(Op):
+    _immutable_fields_ = ['i', 'start', 'stop', 'value']
     def __init__(self, value):
         self.value = value
 
@@ -181,14 +193,16 @@ class ValuedOp(Op):
 #        return str(self.i) + " = " + str(self.__class__.__name__) + " " + self.args_str()
 
 class Function(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'args', 'body']
     def __init__(self, args):
         self.args = args
         self.body = None
 
 class Call(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'callee', 'args[*]']
     def __init__(self, callee, args):
         self.callee = callee
-        self.args = args
+        self.args = args[:]
 #
 #    def args_str(self):
 #        out = str(self.callee.i)
@@ -197,6 +211,7 @@ class Call(ValuedOp):
 #        return out
 
 class Cond(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'cond', 'then', 'exit']
     def __init__(self, cond):
         self.cond = cond
         self.then = None
@@ -206,6 +221,7 @@ class Cond(ValuedOp):
 #        return str(self.cond.i) + ", " + self.then.label() + ", " + self.exit.label()
 
 class Merge(Op):
+    _immutable_fields_ = ['i', 'start', 'stop', 'dst', 'src']
     def __init__(self, dst, src):
         self.dst = dst
         self.src = src
@@ -214,20 +230,24 @@ class Merge(Op):
 #        return str(self.dst.i) + ", " + str(self.src.i)
 
 class Jump(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'exit']
     def __init__(self, exit):
         self.exit = exit
 
 class Iter(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'value']
     def __init__(self, value):
         self.value = value
 
 # It could be that the 'next' should be like 'iter', and that this
 # operation should supply contents of SetBreak instead.
 class Next(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'it']
     def __init__(self, it):
         self.it = it
 
 class SetBreak(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'block']
     def __init__(self, block):
         self.block = block
 
@@ -235,24 +255,29 @@ class SetBreak(ValuedOp):
 #        return self.exit.label()
 
 class Constant(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'value']
     def __init__(self, value):
         self.value = value
 
 class MakeList(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'values[*]']
     def __init__(self, values):
-        self.values = values
+        self.values = values[:]
 
 class GetAttr(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'value', 'name']
     def __init__(self, value, name):
         self.value = value
         self.name = name
 
 class GetItem(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'value', 'index']
     def __init__(self, value, index):
         self.value = value
         self.index = index
 
 class Variable(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'name']
     def __init__(self, name):
         self.name = name
 
@@ -260,23 +285,27 @@ class Variable(ValuedOp):
 #        return self.name
 
 class Yield(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'value', 'block']
     def __init__(self, value, block):
         self.value = value
         self.block = block
 
 class SetAttr(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'name', 'value']
     def __init__(self, obj, name, value):
         self.obj = obj
         self.name = name
         self.value = value
 
 class SetItem(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'index', 'value']
     def __init__(self, obj, index, value):
         self.obj = obj
         self.index = index
         self.value = value
 
 class SetLocal(ValuedOp):
+    _immutable_fields_ = ['i', 'start', 'stop', 'value', 'upscope']
     def __init__(self, name, value, upscope):
         assert isinstance(name, unicode)
         assert isinstance(value, ValuedOp)
@@ -285,6 +314,7 @@ class SetLocal(ValuedOp):
         self.upscope = upscope
 
 class Return(Op):
+    _immutable_fields_ = ['i', 'start', 'stop', 'ref']
     def __init__(self, ref):
         self.ref = ref
 
@@ -301,10 +331,21 @@ def interpret(prog, frame):
         return Generator(block, tmp, frame, None, 0)
     return interpret_body(block, tmp, frame, None)
 
+def get_printable_location(pc, block, loop_break, frame_module):
+    if loop_break is None:
+        return "pc=%d block=%d frame_module=%s" % (pc, block.index, frame_module.repr().encode('utf-8'))
+    return "pc=%d block=%d loop_break=%d frame_module=%s" % (pc, block.index, loop_break.index, frame_module.repr().encode('utf-8'))
+
+
+jitdriver = JitDriver(
+    greens=['pc', 'block', 'loop_break', 'frame.module'],
+    reds=['frame', 'tmp'],
+    get_printable_location=get_printable_location)
 def interpret_body(block, tmp, frame, loop_break):
     pc = 0
     try:
         while pc < len(block):
+            jitdriver.jit_merge_point(pc=pc, block=block, loop_break=loop_break, frame=frame, tmp=tmp)
             op = block[pc]
             pc += 1
             if isinstance(op, Call):

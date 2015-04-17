@@ -66,5 +66,9 @@ def print_traceback(error):
 def target(*args):
     return entry_point, None
 
+def jitpolicy(driver):
+    from rpython.jit.codewriter.policy import JitPolicy
+    return JitPolicy()
+
 if __name__=='__main__':
     sys.exit(entry_point(sys.argv))

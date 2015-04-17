@@ -6,7 +6,7 @@ module = Module(u'fs', {}, frozen=True)
 
 def builtin(fn):
     name = fn.__name__.rstrip('_').decode('utf-8')
-    module.namespace[name] = Builtin(fn, name)
+    module.setattr_force(name, Builtin(fn, name))
     return fn
 
 @builtin
