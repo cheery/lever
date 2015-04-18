@@ -11,6 +11,7 @@ def hash_fn(this):
     return this.hash()
 
 class Dict(Object):
+    _immutable_fields_ = ['data']
     def __init__(self):
         self.data = r_dict(eq_fn, hash_fn, force_non_null=True)
 
@@ -48,6 +49,7 @@ def values(self):
     return ValueIterator(self.data.itervalues())
 
 class KeyIterator(Object):
+    _immutable_fields_ = ['iterator']
     def __init__(self, iterator):
         self.iterator = iterator
 
@@ -57,6 +59,7 @@ def next(self):
     return self.iterator.next()
 
 class ItemIterator(Object):
+    _immutable_fields_ = ['iterator']
     def __init__(self, iterator):
         self.iterator = iterator
 
@@ -67,6 +70,7 @@ def next(self):
     return List([key, value])
 
 class ValueIterator(Object):
+    _immutable_fields_ = ['iterator']
     def __init__(self, iterator):
         self.iterator = iterator
 

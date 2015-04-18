@@ -4,6 +4,7 @@ from rpython.rlib.rarithmetic import intmask
 from numbers import Integer
 
 class List(Object):
+    _immutable_fields_ = ['contents']
     def __init__(self, contents):
         self.contents = contents
 
@@ -65,6 +66,7 @@ class List(Object):
         return u'[' + u' '.join(out) + u']'
 
 class ListIterator(Object):
+    _immutable_fields_ = ['iterator']
     def __init__(self, iterator):
         self.iterator = iterator
 

@@ -2,6 +2,7 @@ from interface import Object
 from rpython.rlib.objectmodel import compute_hash
 
 class String(Object):
+    _immutable_fields_ = ['string[*]']
     def __init__(self, string):
         #assert isinstance(string, unicode)
         self.string = string

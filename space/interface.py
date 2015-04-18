@@ -7,7 +7,7 @@ class Error(Exception):
         self.stacktrace = []
 
 class Object:
-    _immutable_fields_ = ['interface']
+    _immutable_fields_ = ['interface', 'flag', 'number', 'value', 'contents', 'data', 'string[*]', 'iterator', 'arity', 'methods', 'default']
     # The metaclass here takes care every object will get an interface.
     # So programmer doesn't need to do that.
     class __metaclass__(type):

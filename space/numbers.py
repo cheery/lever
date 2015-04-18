@@ -2,6 +2,7 @@ from interface import Object
 from rpython.rlib.objectmodel import compute_hash
 
 class Float(Object):
+    _immutable_fields_ = ['number']
     def __init__(self, number):
         self.number = number
 
@@ -15,6 +16,7 @@ class Float(Object):
         return self.number == other.number
 
 class Integer(Object):
+    _immutable_fields_ = ['value']
     def __init__(self, value):
         self.value = value
 
@@ -28,6 +30,7 @@ class Integer(Object):
         return self.value == other.value
 
 class Boolean(Object):
+    _immutable_fields_ = ['flag']
     def __init__(self, flag):
         self.flag = flag
 

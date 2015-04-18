@@ -24,6 +24,7 @@ class ActivationRecord:
         self.parent = parent
 
 class Program(space.Object):
+    _immutable_fields_ = ['body']
     def __init__(self, body):
         self.body = body
 
@@ -36,6 +37,7 @@ class Program(space.Object):
         return interpret(self.body, frame)
 
 class Closure(space.Object):
+    _immutable_fields_ = ['frame', 'func']
     def __init__(self, frame, func):
         self.frame = frame
         self.func = func
@@ -50,6 +52,7 @@ class Closure(space.Object):
         return interpret(self.func.body, frame)
 
 class Generator(space.Object):
+    _immutable_fields_ = ['tmp', 'frame']
     def __init__(self, block, tmp, frame, loop_break, op_i):
         self.block = block
         self.tmp = tmp
@@ -78,6 +81,7 @@ def next(argv):
         return yi.value
 
 class YieldIteration(Exception):
+    _immutable_fields_ = ['block', 'loop_break', 'op_i', 'value']
     def __init__(self, block, loop_break, op_i, value):
         self.block = block
         self.loop_break = loop_break
@@ -172,7 +176,7 @@ class Scope:
         return ProgramBody(self.blocks, self.functions, self.is_generator)
 
 class Op:
-    _immutable_fields_ = ['i', 'start', 'stop', 'then', 'exit', 'value', 'body', 'args[*]', 'values[*]', 'cond', 'dst', 'src', 'it', 'block', 'upscope', 'ref']
+    _immutable_fields_ = ['i', 'start', 'stop', 'then', 'exit', 'value', 'body', 'args[*]', 'values[*]', 'name', 'cond', 'dst', 'src', 'it', 'block', 'upscope', 'ref']
     i = 0
     start = None
     stop = None
@@ -305,7 +309,7 @@ class SetItem(ValuedOp):
         self.value = value
 
 class SetLocal(ValuedOp):
-    _immutable_fields_ = ['i', 'start', 'stop', 'value', 'upscope']
+    _immutable_fields_ = ['i', 'start', 'stop', 'name', 'value', 'upscope']
     def __init__(self, name, value, upscope):
         assert isinstance(name, unicode)
         assert isinstance(value, ValuedOp)
@@ -317,6 +321,19 @@ class Return(Op):
     _immutable_fields_ = ['i', 'start', 'stop', 'ref']
     def __init__(self, ref):
         self.ref = ref
+
+class Frame:
+    #_virtualizable_ = ['tmp[*]'] XXX
+    def __init__(self, tmp):
+        self.tmp = tmp
+
+    def store(self, index, value):
+        assert index >= 0
+        self.tmp[index] = value
+    
+    def load(self, index):
+        assert index >= 0
+        return self.tmp[index]
 
 def interpret(prog, frame):
     block = prog.blocks[0]
@@ -331,88 +348,96 @@ def interpret(prog, frame):
         return Generator(block, tmp, frame, None, 0)
     return interpret_body(block, tmp, frame, None)
 
-def get_printable_location(pc, block, loop_break, frame_module):
+def get_printable_location(pc, block, loop_break, cl_frame_module):
     if loop_break is None:
-        return "pc=%d block=%d frame_module=%s" % (pc, block.index, frame_module.repr().encode('utf-8'))
-    return "pc=%d block=%d loop_break=%d frame_module=%s" % (pc, block.index, loop_break.index, frame_module.repr().encode('utf-8'))
-
+        return "pc=%d block=%d cl_frame_module=%s" % (pc, block.index, cl_frame_module.repr().encode('utf-8'))
+    return "pc=%d block=%d loop_break=%d cl_frame_module=%s" % (pc, block.index, loop_break.index, cl_frame_module.repr().encode('utf-8'))
 
 jitdriver = JitDriver(
-    greens=['pc', 'block', 'loop_break', 'frame.module'],
-    reds=['frame', 'tmp'],
+    greens=['pc', 'block', 'loop_break', 'cl_frame.module'],
+    reds=['cl_frame', 'frame'],
+    #virtualizables = ['frame'], XXX
     get_printable_location=get_printable_location)
-def interpret_body(block, tmp, frame, loop_break):
+def interpret_body(block, t, cl_frame, loop_break):
+    frame = Frame([x for x in t])
     pc = 0
     try:
         while pc < len(block):
-            jitdriver.jit_merge_point(pc=pc, block=block, loop_break=loop_break, frame=frame, tmp=tmp)
-            op = block[pc]
-            pc += 1
-            if isinstance(op, Call):
-                callee = tmp[op.callee.i]
-                argv = []
-                for arg in op.args:
-                    argv.append(tmp[arg.i])
-                tmp[op.i] = callee.call(argv)
-            elif isinstance(op, Assert):
-                if space.is_false(tmp[op.value.i]):
-                    raise space.Error(u"Assertion error")
-            elif isinstance(op, Cond):
-                pc = 0
-                if space.is_false(tmp[op.cond.i]):
+            try:
+                jitdriver.jit_merge_point(
+                    pc=pc, block=block, loop_break=loop_break,
+                    cl_frame=cl_frame, frame=frame)
+                op = block[pc]
+                pc += 1
+                if isinstance(op, Call):
+                    callee = frame.load(op.callee.i)
+                    argv = []
+                    for arg in op.args:
+                        argv.append(frame.load(arg.i))
+                    frame.store(op.i, callee.call(argv))
+                elif isinstance(op, Assert):
+                    if space.is_false(frame.load(op.value.i)):
+                        raise space.Error(u"Assertion error")
+                elif isinstance(op, Cond):
+                    pc = 0
+                    if space.is_false(frame.load(op.cond.i)):
+                        block = op.exit
+                    else:
+                        block = op.then
+                elif isinstance(op, Jump):
+                    pc = 0
                     block = op.exit
+                elif isinstance(op, Next):
+                    frame.store(op.i, frame.load(op.it.i).callattr(u'next', []))
+                elif isinstance(op, Yield):
+                    raise YieldIteration(op.block, loop_break, op.i, frame.load(op.value.i))
+                elif isinstance(op, SetBreak):
+                    loop_break = op.block
+                elif isinstance(op, Iter):
+                    frame.store(op.i, frame.load(op.value.i).iter())
+                elif isinstance(op, Constant):
+                    frame.store(op.i, op.value)
+                elif isinstance(op, Variable):
+                    frame.store(op.i, lookup(cl_frame, op.name))
+                elif isinstance(op, Merge):
+                    frame.store(op.dst.i, frame.load(op.src.i))
+                elif isinstance(op, Function):
+                    pass
+                elif isinstance(op, MakeList):
+                    contents = []
+                    for val in op.values:
+                        contents.append(frame.load(val.i))
+                    frame.store(op.i, space.List(contents))
+                elif isinstance(op, GetAttr):
+                    frame.store(op.i, frame.load(op.value.i).getattr(op.name))
+                elif isinstance(op, GetItem):
+                    frame.store(op.i, frame.load(op.value.i).getitem(frame.load(op.index.i)))
+                elif isinstance(op, SetAttr):
+                    frame.store(op.i, frame.load(op.obj.i).setattr(op.name, frame.load(op.value.i)))
+                elif isinstance(op, SetItem):
+                    frame.store(op.i, frame.load(op.obj.i).setitem(
+                        frame.load(op.index.i),
+                        frame.load(op.value.i)))
+                elif isinstance(op, SetLocal):
+                    frame.store(op.i, set_local(cl_frame, op.name, frame.load(op.value.i), op.upscope))
+                elif isinstance(op, Return):
+                    return frame.load(op.ref.i)
                 else:
-                    block = op.then
-            elif isinstance(op, Jump):
-                pc = 0
-                block = op.exit
-            elif isinstance(op, Next):
-                tmp[op.i] = tmp[op.it.i].callattr(u'next', [])
-            elif isinstance(op, Yield):
-                raise YieldIteration(op.block, loop_break, op.i, tmp[op.value.i])
-            elif isinstance(op, SetBreak):
-                loop_break = op.block
-            elif isinstance(op, Iter):
-                tmp[op.i] = tmp[op.value.i].iter()
-            elif isinstance(op, Constant):
-                tmp[op.i] = op.value
-            elif isinstance(op, Variable):
-                tmp[op.i] = lookup(frame, op.name)
-            elif isinstance(op, Merge):
-                tmp[op.dst.i] = tmp[op.src.i]
-            elif isinstance(op, Function):
-                pass
-            elif isinstance(op, MakeList):
-                contents = []
-                for val in op.values:
-                    contents.append(tmp[val.i])
-                tmp[op.i] = space.List(contents)
-            elif isinstance(op, GetAttr):
-                tmp[op.i] = tmp[op.value.i].getattr(op.name)
-            elif isinstance(op, GetItem):
-                tmp[op.i] = tmp[op.value.i].getitem(tmp[op.index.i])
-            elif isinstance(op, SetAttr):
-                tmp[op.i] = tmp[op.obj.i].setattr(op.name, tmp[op.value.i])
-            elif isinstance(op, SetItem):
-                tmp[op.i] = tmp[op.obj.i].setitem(tmp[op.index.i], tmp[op.value.i])
-            elif isinstance(op, SetLocal):
-                tmp[op.i] = set_local(frame, op.name, tmp[op.value.i], op.upscope)
-            elif isinstance(op, Return):
-                return tmp[op.ref.i]
-            else:
-                raise space.Error(u"spaced out")
+                    raise space.Error(u"spaced out")
+            except StopIteration as stopiter:
+                if loop_break is not None:
+                    block = loop_break
+                    loop_break = None
+                    continue
+                op = block[pc-1]
+                error = space.Error(u"stop iteration")
+                error.stacktrace.append((cl_frame, op.start, op.stop))
+                raise error
         raise space.Error(u"crappy compiler")
     except space.Error as e:
         op = block[pc-1]
-        e.stacktrace.append((frame, op.start, op.stop))
+        e.stacktrace.append((cl_frame, op.start, op.stop))
         raise e
-    except StopIteration as stopiter:
-        if loop_break is not None:
-            return interpret_body(loop_break, tmp, frame, None)
-        op = block[pc-1]
-        error = space.Error(u"stop iteration")
-        error.stacktrace.append((frame, op.start, op.stop))
-        raise error
 
 
 
