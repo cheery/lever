@@ -1,21 +1,138 @@
-from rpython.rlib.objectmodel import always_inline
 from rpython.rlib import jit
+from rpython.rlib.listsort import make_timsort_class
+from rpython.rlib.objectmodel import always_inline, specialize
 import base
 import reader
 import space
 
 class ProgramBody:
     def __init__(self, blocks, functions, is_generator):
-        self.blocks = blocks
+        self.blocks = reverse_postorder(blocks[0])
         self.functions = functions
         self.is_generator = is_generator
         self.tmpc = 0
-        for block in blocks:
-            block.freeze()
-            for op in block:
-                if isinstance(op, ValuedOp):
-                    op.i = self.tmpc
-                    self.tmpc += 1
+        allocate_tmp(self)
+
+@specialize.argtype(0)
+def reversed(seq):
+    for i in range(len(seq), 0, -1):
+        yield seq[i-1]
+
+# Since the frame is virtualizable now, it copies everything
+# from tmp to juggle them.
+# Instead of using separate index for every temporary value,
+# we can do some live range analysis and reuse the indices.
+# for items that quarranteely aren't simultaneously live.
+def allocate_tmp(body):
+    index = 0
+    base = 0
+    for block in body.blocks:
+        block.base = base
+        block.index = index
+        block.depends = {}
+        index += 1
+        base += len(block)
+    done = False
+    while not done:
+        done = True
+        for block in reversed(body.blocks):
+            N = len(block.depends)
+            for succ in block.succ:
+                block.depends.update(succ.depends)
+            for op in reversed(block):
+                if op in block.depends:
+                    block.depends.pop(op)
+                for use in op.uses():
+                    block.depends[use] = None
+            M = len(block.depends)
+            if N < M:
+                done = False
+    live_ranges = {}
+    for block in body.blocks:
+        for op in block.depends:
+            plot_range(live_ranges, op, block.base)
+        for succ in block.succ:
+            assert succ.index >= 0
+            for op in succ.depends:
+                plot_range(live_ranges, op, block.base + len(block))
+        i = 0
+        for op in block:
+            plot_range(live_ranges, op, block.base+i)
+            for use in op.uses():
+                plot_range(live_ranges, use, block.base+i+1)
+            i += 1
+    starts = []
+    stops = []
+    avail = []
+    for op, (start, stop) in live_ranges.iteritems():
+        starts.append((start, stop, op))
+    sort_starts(starts).sort()
+    for current, stop, op in starts:
+        assert current <= stop
+        if len(avail) > 0:
+            op.i = avail.pop()
+        else:
+            op.i = body.tmpc
+            body.tmpc += 1
+        stops.append((stop, op))
+        sort_ends(stops).sort()
+        while len(stops) > 0 and stops[0][0] < current:
+            _, exp = stops.pop(0)
+            assert exp.i not in avail
+            avail.append(exp.i)
+
+sort_starts = make_timsort_class(lt=lambda x, y: x[0] < y[0])
+sort_ends = make_timsort_class(lt=lambda x, y: x[0] < y[0])
+
+#    This is just here in case my register alloc func messes up
+#    But I will require better tools for debugging my dumps.
+#    if True:
+#        tab = {}
+#        def opval_repr(op):
+#            return "%s:r%d" % (tab[op], op.i)
+#        for block in body.blocks:
+#            i = block.base
+#            for op in block:
+#                tab[op] = i
+#                i += 1
+#        for block in body.blocks:
+#            i = block.base
+#            for op in block:
+#                if op.start:
+#                    print ("%s:" % op.start.repr()).ljust(8),
+#                else:
+#                    print "".ljust(8)
+#                if isinstance(op, Constant):
+#                    print "%4i: r%d = const %s" % (i, op.i, op.value.repr())
+#                elif isinstance(op, Variable):
+#                    print "%4i: r%d = var %s" % (i, op.i, op.name)
+#                elif isinstance(op, SetLocal):
+#                    print "%4i: r%d = var %s <- %s" % (i, op.i, op.name, opval_repr(op.value))
+#                else:
+#                    print "%4i: r%d = %s (%s)" % (i, op.i, op.__class__.__name__, ' '.join(map(opval_repr, op.uses())))
+#                i += 1
+#        print "TMPC %d" % body.tmpc
+
+def plot_range(ranges, key, pos): 
+    if key not in ranges:
+        ranges[key] = (pos, pos)
+    else:
+        start, stop = ranges[key]
+        ranges[key] = (min(start, pos), max(stop, pos))
+
+def reverse_postorder(entry):
+    seq = postorder_visit([], entry)
+    seq.reverse()
+    return seq
+
+def postorder_visit(sequence, block):
+    if block.visited:
+        return
+    block.visited = True
+    for succ in block.succ:
+        postorder_visit(sequence, succ)
+    sequence.append(block)
+    return sequence
 
 class ActivationRecord:
     _immutable_fields_ = ['module', 'parent']
@@ -90,12 +207,14 @@ class YieldIteration(Exception):
         self.value = value
 
 class Block:
-    _immutable_fields_ = ['index', 'contents[*]']
+    _immutable_fields_ = ['index', 'contents[*]', 'succ']
 
-    def __init__(self, index, contents):
+    def __init__(self, index, contents, succ):
         self.index = index
         self.contents = None
         self.contents_mut = []
+        self.succ = succ
+        self.visited = False
 
     def __iter__(self):
         return iter(self.contents)
@@ -138,7 +257,7 @@ class Scope:
         self.loop_stack = []
 
     def new_block(self):
-        block = Block(len(self.blocks), [])
+        block = Block(-1, [], [])
         self.blocks.append(block)
         return block
 
@@ -174,6 +293,17 @@ class Scope:
         return chain
 
     def close(self):
+        for block in self.blocks:
+            block.freeze()
+            for op in block:
+                if isinstance(op, Cond):
+                    block.succ.extend([op.then, op.exit])
+                if isinstance(op, Jump):
+                    block.succ.extend([op.exit])
+                if isinstance(op, SetBreak):
+                    block.succ.extend([op.block])
+                if isinstance(op, Yield):
+                    block.succ.extend([op.block])
         return ProgramBody(self.blocks, self.functions, self.is_generator)
 
 class Op:
@@ -186,11 +316,16 @@ class Op:
 #
 #    def args_str(self):
 #        return "..."
+    def uses(self):
+        return []
 
 class Assert(Op):
     _immutable_fields_ = ['i', 'start', 'stop', 'value']
     def __init__(self, value):
         self.value = value
+
+    def uses(self):
+        return [self.value]
 
 class ValuedOp(Op):
     pass
@@ -208,6 +343,9 @@ class Call(ValuedOp):
     def __init__(self, callee, args):
         self.callee = callee
         self.args = args[:]
+
+    def uses(self):
+        return [self.callee] + self.args
 #
 #    def args_str(self):
 #        out = str(self.callee.i)
@@ -221,6 +359,9 @@ class Cond(ValuedOp):
         self.cond = cond
         self.then = None
         self.exit = None
+
+    def uses(self):
+        return [self.cond]
 #
 #    def args_str(self):
 #        return str(self.cond.i) + ", " + self.then.label() + ", " + self.exit.label()
@@ -230,6 +371,9 @@ class Merge(Op):
     def __init__(self, dst, src):
         self.dst = dst
         self.src = src
+
+    def uses(self):
+        return [self.dst, self.src]
 #
 #    def args_str(self):
 #        return str(self.dst.i) + ", " + str(self.src.i)
@@ -244,12 +388,18 @@ class Iter(ValuedOp):
     def __init__(self, value):
         self.value = value
 
+    def uses(self):
+        return [self.value]
+
 # It could be that the 'next' should be like 'iter', and that this
 # operation should supply contents of SetBreak instead.
 class Next(ValuedOp):
     _immutable_fields_ = ['i', 'start', 'stop', 'it']
     def __init__(self, it):
         self.it = it
+
+    def uses(self):
+        return [self.it]
 
 class SetBreak(ValuedOp):
     _immutable_fields_ = ['i', 'start', 'stop', 'block']
@@ -269,17 +419,26 @@ class MakeList(ValuedOp):
     def __init__(self, values):
         self.values = values[:]
 
+    def uses(self):
+        return self.values
+
 class GetAttr(ValuedOp):
     _immutable_fields_ = ['i', 'start', 'stop', 'value', 'name']
     def __init__(self, value, name):
         self.value = value
         self.name = name
 
+    def uses(self):
+        return [self.value]
+
 class GetItem(ValuedOp):
     _immutable_fields_ = ['i', 'start', 'stop', 'value', 'index']
     def __init__(self, value, index):
         self.value = value
         self.index = index
+
+    def uses(self):
+        return [self.value, self.index]
 
 class Variable(ValuedOp):
     _immutable_fields_ = ['i', 'start', 'stop', 'name']
@@ -295,6 +454,9 @@ class Yield(ValuedOp):
         self.value = value
         self.block = block
 
+    def uses(self):
+        return [self.value]
+
 class SetAttr(ValuedOp):
     _immutable_fields_ = ['i', 'start', 'stop', 'name', 'value']
     def __init__(self, obj, name, value):
@@ -302,12 +464,18 @@ class SetAttr(ValuedOp):
         self.name = name
         self.value = value
 
+    def uses(self):
+        return [self.obj, self.value]
+
 class SetItem(ValuedOp):
     _immutable_fields_ = ['i', 'start', 'stop', 'index', 'value']
     def __init__(self, obj, index, value):
         self.obj = obj
         self.index = index
         self.value = value
+
+    def uses(self):
+        return [self.obj, self.index, self.value]
 
 class SetLocal(ValuedOp):
     _immutable_fields_ = ['i', 'start', 'stop', 'name', 'value', 'upscope']
@@ -318,10 +486,16 @@ class SetLocal(ValuedOp):
         self.value = value
         self.upscope = upscope
 
+    def uses(self):
+        return [self.value]
+
 class Return(Op):
     _immutable_fields_ = ['i', 'start', 'stop', 'ref']
     def __init__(self, ref):
         self.ref = ref
+
+    def uses(self):
+        return [self.ref]
 
 class Frame:
     _virtualizable_ = ['tmp[*]'] # XXX
@@ -344,8 +518,6 @@ def interpret(prog, frame):
     tmp = []
     for i in range(prog.tmpc):
         tmp.append(space.null)
-    for func in prog.functions:
-        tmp[func.i] = Closure(frame, func)
     #for blk in prog.blocks:
     #    print blk.repr()
     if prog.is_generator:
@@ -412,7 +584,7 @@ def interpret_body(block, t, cl_frame, loop_break):
                 elif isinstance(op, Merge):
                     frame.store(op.dst.i, frame.load(op.src.i))
                 elif isinstance(op, Function):
-                    pass
+                    frame.store(op.i, Closure(cl_frame, op))
                 elif isinstance(op, MakeList):
                     contents = []
                     for val in op.values:
