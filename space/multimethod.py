@@ -33,31 +33,31 @@ class Multimethod(Object):
         if len(argv) < self.arity:
             raise Error(u"expected at least %d arguments, got %d" % (self.arity, len(argv))) 
         if self.arity == 1:
-            method = self.get_method(jit.promote(argv[0].interface))
+            method = self.get_method(jit.promote(argv[0].__class__.interface))
         elif self.arity == 2:
             method = self.get_method(
-                jit.promote(argv[0].interface),
-                jit.promote(argv[1].interface))
+                jit.promote(argv[0].__class__.interface),
+                jit.promote(argv[1].__class__.interface))
         elif self.arity == 3:
             method = self.get_method(
-                jit.promote(argv[0].interface),
-                jit.promote(argv[1].interface),
-                jit.promote(argv[2].interface))
+                jit.promote(argv[0].__class__.interface),
+                jit.promote(argv[1].__class__.interface),
+                jit.promote(argv[2].__class__.interface))
         elif self.arity == 4:
             method = self.get_method(
-                jit.promote(argv[0].interface),
-                jit.promote(argv[1].interface),
-                jit.promote(argv[2].interface),
-                jit.promote(argv[3].interface))
+                jit.promote(argv[0].__class__.interface),
+                jit.promote(argv[1].__class__.interface),
+                jit.promote(argv[2].__class__.interface),
+                jit.promote(argv[3].__class__.interface))
         else:
             vec = []
             for i in range(self.arity):
-                vec.append(argv[i].interface)
+                vec.append(argv[i].__class__.interface)
             method = self.methods.get(List(vec), None)
         if method is None:
             vec = []
             for i in range(self.arity):
-                vec.append(argv[i].interface)
+                vec.append(argv[i].__class__.interface)
             if self.default is None or suppress_default:
                 names = []
                 for i in range(self.arity):

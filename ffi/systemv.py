@@ -54,11 +54,12 @@ class Mem(Object):
                     return ctype.load(pointer)
                 else:
                     raise Error(u"no load supported for " + ctype.repr())
-            elif name == u"str" and ctype.size == 1:
-                s = rffi.charp2str(rffi.cast(rffi.CCHARP, self.pointer))
-                return String(s.decode('utf-8'))
-            elif name == u"to":
-                return ctype.load(self.pointer)
+            elif isinstance(ctype, Type):
+                if name == u"str" and ctype.size == 1:
+                    s = rffi.charp2str(rffi.cast(rffi.CCHARP, self.pointer))
+                    return String(s.decode('utf-8'))
+                elif name == u"to":
+                    return ctype.load(self.pointer)
         raise Error(u"cannot attribute access other mem than structs or unions")
 
     def setattr(self, name, value):
@@ -83,8 +84,9 @@ class Mem(Object):
         ctype = self.ctype
         if isinstance(ctype, Pointer):
             ctype = ctype.to
-            pointer = rffi.ptradd(self.pointer, ctype.size*index)
-            return ctype.load(pointer)
+            if isinstance(ctype, Type):
+                pointer = rffi.ptradd(self.pointer, ctype.size*index)
+                return ctype.load(pointer)
         raise Error(u"cannot item access other mem than pointers or arrays")
 
     def setitem(self, index, value):
@@ -94,8 +96,9 @@ class Mem(Object):
         ctype = self.ctype
         if isinstance(ctype, Pointer):
             ctype = ctype.to
-            pointer = rffi.ptradd(self.pointer, ctype.size*index)
-            return ctype.store(pointer, value)
+            if isinstance(ctype, Type):
+                pointer = rffi.ptradd(self.pointer, ctype.size*index)
+                return ctype.store(pointer, value)
         raise Error(u"cannot item access other mem than pointers or arrays")
 
     def call(self, argv):
@@ -145,7 +148,8 @@ class Pointer(Type):
         return value
 
     def store_string(self, offset, pointer):
-        if self.to.size == 1:
+        to = self.to
+        if isinstance(to, Type) and to.size == 1:
             ptr = rffi.cast(rffi.VOIDPP, offset)
             ptr[0] = pointer
         else:
@@ -199,16 +203,20 @@ class CFunc(Type):
         exchange_size = argc * rffi.sizeof(rffi.VOIDPP)
         for i in range(argc):
             argtype = self.argtypes[i]
+            assert isinstance(argtype, Type)
             exchange_size = align(exchange_size, argtype.align)
             cif.exchange_args[i] = exchange_size
             exchange_size += sizeof(argtype)
         cif.exchange_result = exchange_size
         cif.exchange_result_libffi = exchange_size
-        if self.restype is null:
+        restype = self.restype
+        if restype is null:
             exchange_size += 0
-        elif self.restype:
-            exchange_size = align(exchange_size, self.restype.align)
-            exchange_size += sizeof(self.restype)
+        elif isinstance(restype, Type):
+            exchange_size = align(exchange_size, restype.align)
+            exchange_size += sizeof(restype)
+        else:
+            assert False
         cif.exchange_size = align(exchange_size, 8)
 
         jit_libffi.jit_ffi_prep_cif(cif)
@@ -307,6 +315,7 @@ class Struct(Type):
 
         offset = 0
         for name, ctype in fields:
+            assert isinstance(ctype, Type)
             if self.parameter is not None:
                 raise Error(u"parametric field in middle of a structure")
             if ctype.parameter:
@@ -336,6 +345,8 @@ class Struct(Type):
 def _(fields_list):
     if fields_list is null:
         return Struct(None)
+    if not isinstance(fields_list, List):
+        raise Error(u"expected a list")
     fields = []
     for field in fields_list.contents:
         name = field.getitem(Integer(0))
@@ -363,6 +374,7 @@ class Union(Type):
 
         offset = 0
         for name, ctype in fields:
+            assert isinstance(ctype, Type)
             if ctype.parameter is not None:
                 raise Error(u"parametric field in an union")
             self.align = max(self.align, ctype.align)
@@ -396,6 +408,7 @@ def _(fields_list):
 
 class Array(Type):
     def __init__(self, ctype, length=0):
+        assert isinstance(ctype, Type)
         self.ctype = ctype
         if ctype.parameter is not None:
             raise Error(u"parametric field in an array")

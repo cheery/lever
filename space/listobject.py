@@ -5,6 +5,7 @@ from numbers import Integer
 
 class List(Object):
     _immutable_fields_ = ['contents']
+    __slots__ = ['contents']
     def __init__(self, contents):
         self.contents = contents
 

@@ -3,6 +3,7 @@ from rpython.rlib.objectmodel import compute_hash
 
 class String(Object):
     _immutable_fields_ = ['string[*]']
+    __slots__ = ['string']
     def __init__(self, string):
         #assert isinstance(string, unicode)
         self.string = string
@@ -15,4 +16,6 @@ class String(Object):
         return compute_hash(self.string)
 
     def eq(self, other):
-        return self.string == other.string
+        if isinstance(other, String):
+            return self.string == other.string
+        return False

@@ -12,6 +12,7 @@ def hash_fn(this):
 
 class Dict(Object):
     _immutable_fields_ = ['data']
+    __slots__ = ['data']
     def __init__(self):
         self.data = r_dict(eq_fn, hash_fn, force_non_null=True)
 

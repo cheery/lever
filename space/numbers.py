@@ -3,6 +3,7 @@ from rpython.rlib.objectmodel import compute_hash
 
 class Float(Object):
     _immutable_fields_ = ['number']
+    __slots__ = ['number']
     def __init__(self, number):
         self.number = number
 
@@ -13,10 +14,13 @@ class Float(Object):
         return compute_hash(self.number)
 
     def eq(self, other):
-        return self.number == other.number
+        if isinstance(other, Float):
+            return self.number == other.number
+        return False
 
 class Integer(Object):
     _immutable_fields_ = ['value']
+    __slots__ = ['value']
     def __init__(self, value):
         self.value = value
 
@@ -27,10 +31,13 @@ class Integer(Object):
         return compute_hash(self.value)
 
     def eq(self, other):
-        return self.value == other.value
+        if isinstance(other, Integer):
+            return self.value == other.value
+        return False
 
 class Boolean(Object):
     _immutable_fields_ = ['flag']
+    __slots__ = ['flag']
     def __init__(self, flag):
         self.flag = flag
 

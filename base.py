@@ -33,7 +33,7 @@ def builtin(fn):
 @builtin
 @signature(Object)
 def interface(obj):
-    return obj.interface
+    return obj.__class__.interface
 
 @builtin
 @signature(String)

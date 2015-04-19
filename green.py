@@ -34,6 +34,7 @@ class Greenlet(Object):
 
 def switch(argv):
     self = argv.pop(0)
+    assert isinstance(self, Greenlet)
     if not self.initialized:
         self.argv += argv
         self.initialized = True
