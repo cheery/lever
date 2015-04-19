@@ -9,6 +9,7 @@ class Error(Exception):
 class Object:
     _immutable_fields_ = ['interface', 'flag', 'number', 'value', 'contents', 'data', 'string[*]', 'iterator', 'arity', 'methods', 'default']
     __slots__ = []
+    __attrs__ = []
     # The metaclass here takes care every object will get an interface.
     # So programmer doesn't need to do that.
     class __metaclass__(type):

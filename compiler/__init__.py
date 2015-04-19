@@ -1,4 +1,5 @@
-from rpython.rlib.jit import JitDriver
+from rpython.rlib.objectmodel import always_inline
+from rpython.rlib import jit
 import base
 import reader
 import space
@@ -323,14 +324,17 @@ class Return(Op):
         self.ref = ref
 
 class Frame:
-    #_virtualizable_ = ['tmp[*]'] XXX
+    _virtualizable_ = ['tmp[*]'] # XXX
     def __init__(self, tmp):
+        self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self.tmp = tmp
 
+    @always_inline
     def store(self, index, value):
         assert index >= 0
         self.tmp[index] = value
     
+    @always_inline
     def load(self, index):
         assert index >= 0
         return self.tmp[index]
@@ -353,13 +357,18 @@ def get_printable_location(pc, block, loop_break, cl_frame_module):
         return "pc=%d block=%d cl_frame_module=%s" % (pc, block.index, cl_frame_module.repr().encode('utf-8'))
     return "pc=%d block=%d loop_break=%d cl_frame_module=%s" % (pc, block.index, loop_break.index, cl_frame_module.repr().encode('utf-8'))
 
-jitdriver = JitDriver(
-    greens=['pc', 'block', 'loop_break', 'cl_frame.module'],
+def get_printable_location(pc, block, loop_break):
+    if loop_break is None:
+        return "pc=%d block=%d" % (pc, block.index)
+    return "pc=%d block=%d loop_break=%d" % (pc, block.index, loop_break.index)
+
+jitdriver = jit.JitDriver(
+    greens=['pc', 'block', 'loop_break'],#, 'cl_frame.module'],
     reds=['cl_frame', 'frame'],
-    #virtualizables = ['frame'], XXX
+    virtualizables = ['frame'], # XXX
     get_printable_location=get_printable_location)
 def interpret_body(block, t, cl_frame, loop_break):
-    frame = Frame([x for x in t])
+    frame = Frame(t)
     pc = 0
     try:
         while pc < len(block):
@@ -367,6 +376,7 @@ def interpret_body(block, t, cl_frame, loop_break):
                 jitdriver.jit_merge_point(
                     pc=pc, block=block, loop_break=loop_break,
                     cl_frame=cl_frame, frame=frame)
+                module = jit.promote(cl_frame.module)
                 op = block[pc]
                 pc += 1
                 if isinstance(op, Call):
@@ -398,7 +408,7 @@ def interpret_body(block, t, cl_frame, loop_break):
                 elif isinstance(op, Constant):
                     frame.store(op.i, op.value)
                 elif isinstance(op, Variable):
-                    frame.store(op.i, lookup(cl_frame, op.name))
+                    frame.store(op.i, lookup(module, cl_frame, op.name))
                 elif isinstance(op, Merge):
                     frame.store(op.dst.i, frame.load(op.src.i))
                 elif isinstance(op, Function):
@@ -419,7 +429,7 @@ def interpret_body(block, t, cl_frame, loop_break):
                         frame.load(op.index.i),
                         frame.load(op.value.i)))
                 elif isinstance(op, SetLocal):
-                    frame.store(op.i, set_local(cl_frame, op.name, frame.load(op.value.i), op.upscope))
+                    frame.store(op.i, set_local(module, cl_frame, op.name, frame.load(op.value.i), op.upscope))
                 elif isinstance(op, Return):
                     return frame.load(op.ref.i)
                 else:
@@ -441,22 +451,22 @@ def interpret_body(block, t, cl_frame, loop_break):
 
 
 
-def lookup(frame, name):
+def lookup(module, frame, name):
     if frame.parent is None:
-        return frame.module.getattr(name)
+        return module.getattr(name)
     if name in frame.var:
         return frame.var[name]
-    return lookup(frame.parent, name)
+    return lookup(module, frame.parent, name)
 
-def set_local(frame, name, value, upscope):
+def set_local(module, frame, name, value, upscope):
     if frame.parent is None:
-        return frame.module.setattr(name, value)
+        return module.setattr(name, value)
     elif upscope:
         if name in frame.var:
             frame.var[name] = value
             return value
         else:
-            return set_local(frame.parent, name, value, upscope)
+            return set_local(module, frame.parent, name, value, upscope)
     else:
         frame.var[name] = value
         return value
