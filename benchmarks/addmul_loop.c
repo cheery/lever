@@ -1,18 +1,16 @@
 #include <stdio.h>
 
 int main() {
-    long i, j, k;
+    long j=0, k=0;
     long res;
-    while(i < 5000000) {
-        while(j < 5000000) {
-            while(k < 5000000) {
-                res = i+j*k;
-                if (res < 0) printf("plop\n");
-                k+=1;
-            }
-            j+=1;
+    while(j < 500) {
+        k = 0;
+        while(k < 5000000) {
+            res = j*k;
+            if (res < 0) printf("plop\n");
+            k+=1;
         }
-        i+=1;
+        j+=1;
     }
     return 0;
 }

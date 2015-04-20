@@ -1,7 +1,17 @@
 from interface import Error, Object
-from rpython.rlib.jit import elidable
+from rpython.rlib import jit
 
 class Cell:
+    _attrs_ = []
+
+class MutableCell(Cell):
+    _attrs_ = ['slot']
+    def __init__(self, slot):
+        self.slot = slot
+
+class FrozenCell(Cell):
+    _attrs_ = ['slot']
+    _immutable_fields_ = ['slot']
     def __init__(self, slot):
         self.slot = slot
 
@@ -13,13 +23,13 @@ class Module(Object):
         self.name = name
         self.cells = {}
         for name in namespace:
-            self.cells[name] = Cell(namespace[name])
+            self.setattr_force(name, namespace[name])
 
     # This is likely not correct. It's likely the extends -slot values should be slowly copied over.
     # Alternatively the whole extends -concept could be dumb, and I should dump it.
-    @elidable
-    def lookup(self, name):
-        if self.extends is None:
+    @jit.elidable
+    def lookup(self, name, assign=False):
+        if assign or self.extends is None:
             return self.cells[name]
         try:
             return self.cells[name]
@@ -28,7 +38,13 @@ class Module(Object):
 
     def getattr(self, name):
         try:
-            return self.lookup(name).slot
+            cell = jit.promote(self.lookup(name))
+            if isinstance(cell, FrozenCell):
+                return cell.slot
+            elif isinstance(cell, MutableCell):
+                return cell.slot
+            else:
+                assert False
         except KeyError:
             return Object.getattr(self, name)
 
@@ -38,10 +54,19 @@ class Module(Object):
         return self.setattr_force(name, value)
 
     def setattr_force(self, name, value):
-        if name not in self.cells:
-            self.cells[name] = Cell(value)
-        else:
-            self.cells[name].slot = value
+        try:
+            cell = jit.promote(self.lookup(name, assign=True))
+            if isinstance(cell, FrozenCell):
+                raise Error(u"cell %s is frozen" % name)
+            elif isinstance(cell, MutableCell):
+                cell.slot = value
+            else:
+                assert False
+        except KeyError:
+            if self.frozen:
+                self.cells[name] = FrozenCell(value)
+            else:
+                self.cells[name] = MutableCell(value)
         return value
 
     def repr(self):

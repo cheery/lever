@@ -528,35 +528,31 @@ def get_printable_location(pc, block, loop_break, cl_frame_module):
     if loop_break is None:
         return "pc=%d block=%d cl_frame_module=%s" % (pc, block.index, cl_frame_module.repr().encode('utf-8'))
     return "pc=%d block=%d loop_break=%d cl_frame_module=%s" % (pc, block.index, loop_break.index, cl_frame_module.repr().encode('utf-8'))
-
-def get_printable_location(pc, block, loop_break):
-    if loop_break is None:
-        return "pc=%d block=%d" % (pc, block.index)
-    return "pc=%d block=%d loop_break=%d" % (pc, block.index, loop_break.index)
+#
+#def get_printable_location(pc, block, loop_break):
+#    if loop_break is None:
+#        return "pc=%d block=%d" % (pc, block.index)
+#    return "pc=%d block=%d loop_break=%d" % (pc, block.index, loop_break.index)
 
 jitdriver = jit.JitDriver(
-    greens=['pc', 'block', 'loop_break'],#, 'cl_frame.module'],
+    greens=['pc', 'block', 'loop_break', 'module'],
     reds=['cl_frame', 'frame'],
     virtualizables = ['frame'], # XXX
     get_printable_location=get_printable_location)
 def interpret_body(block, t, cl_frame, loop_break):
     frame = Frame(t)
     pc = 0
+    module = jit.promote(cl_frame.module)
     try:
         while pc < len(block):
             try:
                 jitdriver.jit_merge_point(
-                    pc=pc, block=block, loop_break=loop_break,
+                    pc=pc, block=block, loop_break=loop_break, module=module,
                     cl_frame=cl_frame, frame=frame)
-                module = jit.promote(cl_frame.module)
                 op = block[pc]
                 pc += 1
                 if isinstance(op, Call):
-                    callee = frame.load(op.callee.i)
-                    argv = []
-                    for arg in op.args:
-                        argv.append(frame.load(arg.i))
-                    frame.store(op.i, callee.call(argv))
+                    do_call(frame, op)
                 elif isinstance(op, Assert):
                     if space.is_false(frame.load(op.value.i)):
                         raise space.Error(u"Assertion error")
@@ -622,6 +618,13 @@ def interpret_body(block, t, cl_frame, loop_break):
         raise e
 
 
+@jit.unroll_safe
+def do_call(frame, op):
+    callee = frame.load(op.callee.i)
+    argv = []
+    for arg in op.args:
+        argv.append(frame.load(arg.i))
+    frame.store(op.i, callee.call(argv))
 
 def lookup(module, frame, name):
     if frame.parent is None:
