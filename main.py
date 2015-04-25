@@ -43,14 +43,31 @@ def batch(path):
     return 0
 
 def entry_point(argv):
+    E = 10 # Debugging assist
     green.process.init(config)
     api.init(argv)
     if len(argv) <= 1:
         return interactive()
     for arg in argv[1:]:
-        status = batch(arg)
-        if status != 0:
-            return status
+        if arg == '-E0':
+            E = 0
+        elif arg == '-E1':
+            E = 1
+        elif arg == '-E2':
+            E = 2
+        elif E == 0:
+            # At this option, we're just parsing the input.
+            try:
+                source = read_file(arg)
+            except OSError, error:
+                os.write(2, "[Errno %d]: %s\n" % (error.errno, arg) )
+                return 1
+            for exp in read(source):
+                write(STDOUT, exp.repr() + u"\n")
+        else:
+            status = batch(arg)
+            if status != 0:
+                return status
     return 0
 
 def print_traceback(error):

@@ -5549,7 +5549,6 @@
             "name": "glAreProgramsResidentNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int", 
                     "uint*", 
                     "ubyte*"
@@ -5562,7 +5561,6 @@
             "name": "glAreTexturesResident", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int", 
                     "uint*", 
                     "ubyte*"
@@ -5575,7 +5573,6 @@
             "name": "glAreTexturesResidentEXT", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int", 
                     "uint*", 
                     "ubyte*"
@@ -6130,7 +6127,6 @@
             "name": "glBindLightParameterEXT", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int", 
                     "int"
                 ], 
@@ -6142,7 +6138,6 @@
             "name": "glBindMaterialParameterEXT", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int", 
                     "int"
                 ], 
@@ -6166,7 +6161,6 @@
             "name": "glBindParameterEXT", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int"
                 ], 
                 "restype": "uint", 
@@ -6275,7 +6269,6 @@
             "name": "glBindTexGenParameterEXT", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int", 
                     "int", 
                     "int"
@@ -6321,7 +6314,6 @@
             "name": "glBindTextureUnitParameterEXT", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int", 
                     "int"
                 ], 
@@ -6572,7 +6564,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7114,6 +7107,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -7126,6 +7120,7 @@
                 "argtypes": [
                     "int", 
                     "intARB", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -7163,6 +7158,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -7175,7 +7171,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7187,7 +7184,8 @@
                 "argtypes": [
                     "int", 
                     "intARB", 
-                    "intARB"
+                    "intARB", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7208,7 +7206,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7218,7 +7217,6 @@
             "name": "glCheckFramebufferStatus", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "int"
                 ], 
                 "restype": "int", 
@@ -7229,7 +7227,6 @@
             "name": "glCheckFramebufferStatusEXT", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "int"
                 ], 
                 "restype": "int", 
@@ -7240,7 +7237,6 @@
             "name": "glCheckFramebufferStatusOES", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "int"
                 ], 
                 "restype": "int", 
@@ -7251,7 +7247,6 @@
             "name": "glCheckNamedFramebufferStatus", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "int"
                 ], 
@@ -7263,7 +7258,6 @@
             "name": "glCheckNamedFramebufferStatusEXT", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "int"
                 ], 
@@ -7336,7 +7330,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7351,7 +7346,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7548,7 +7544,8 @@
                     "uint", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7561,7 +7558,8 @@
                     "uint", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7576,7 +7574,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7591,7 +7590,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7666,7 +7666,8 @@
                     "uint", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7685,7 +7686,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7735,7 +7737,6 @@
             "name": "glClientWaitSync", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "sync", 
                     "int", 
                     "u64"
@@ -7748,7 +7749,6 @@
             "name": "glClientWaitSyncAPPLE", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "sync", 
                     "int", 
                     "u64"
@@ -8603,7 +8603,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8616,7 +8617,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8629,6 +8631,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void**", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -8640,7 +8643,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8654,7 +8658,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8668,7 +8673,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8682,7 +8688,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8696,7 +8703,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8758,7 +8766,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8897,7 +8906,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8914,7 +8924,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8932,7 +8943,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8948,7 +8960,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8966,7 +8979,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -8986,7 +9000,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9001,7 +9016,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9016,7 +9032,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9032,7 +9049,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9048,7 +9066,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9065,7 +9084,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9082,7 +9102,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9099,7 +9120,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9114,7 +9136,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9129,7 +9152,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9146,7 +9170,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9163,7 +9188,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9182,7 +9208,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9201,7 +9228,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9220,7 +9248,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9236,7 +9265,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9253,7 +9283,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9271,7 +9302,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9286,7 +9318,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9302,7 +9335,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9319,7 +9353,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9337,7 +9372,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9356,7 +9392,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9376,7 +9413,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9390,7 +9428,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9404,7 +9443,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9419,7 +9459,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -9434,7 +9475,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -10242,6 +10284,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void*", 
                     "uint", 
                     "int", 
                     "int", 
@@ -10268,6 +10311,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void*", 
                     "uint", 
                     "int", 
                     "int", 
@@ -10365,9 +10409,7 @@
         "createProgram": {
             "name": "glCreateProgram", 
             "type": {
-                "argtypes": [
-                    "uint"
-                ], 
+                "argtypes": [], 
                 "restype": "uint", 
                 "type": "cfunc"
             }
@@ -10375,9 +10417,7 @@
         "createProgramObjectARB": {
             "name": "glCreateProgramObjectARB", 
             "type": {
-                "argtypes": [
-                    "uint"
-                ], 
+                "argtypes": [], 
                 "restype": "uint", 
                 "type": "cfunc"
             }
@@ -10431,7 +10471,6 @@
             "name": "glCreateShader", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int"
                 ], 
                 "restype": "uint", 
@@ -10442,7 +10481,6 @@
             "name": "glCreateShaderObjectARB", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int"
                 ], 
                 "restype": "uint", 
@@ -10453,7 +10491,6 @@
             "name": "glCreateShaderProgramEXT", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int", 
                     "char*"
                 ], 
@@ -10465,7 +10502,6 @@
             "name": "glCreateShaderProgramv", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int", 
                     "int", 
                     "char**"
@@ -10478,7 +10514,6 @@
             "name": "glCreateShaderProgramvEXT", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int", 
                     "int", 
                     "char**"
@@ -10491,7 +10526,6 @@
             "name": "glCreateSyncFromCLeventARB", 
             "type": {
                 "argtypes": [
-                    "sync", 
                     "void*", 
                     "void*", 
                     "int"
@@ -10590,7 +10624,8 @@
             "name": "glDebugMessageCallback", 
             "type": {
                 "argtypes": [
-                    "DEBUGPROC"
+                    "DEBUGPROC", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -10600,7 +10635,8 @@
             "name": "glDebugMessageCallbackAMD", 
             "type": {
                 "argtypes": [
-                    "DEBUGPROCAMD"
+                    "DEBUGPROCAMD", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -10610,7 +10646,8 @@
             "name": "glDebugMessageCallbackARB", 
             "type": {
                 "argtypes": [
-                    "DEBUGPROCARB"
+                    "DEBUGPROCARB", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -10620,7 +10657,8 @@
             "name": "glDebugMessageCallbackKHR", 
             "type": {
                 "argtypes": [
-                    "DEBUGPROCKHR"
+                    "DEBUGPROCKHR", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -11635,7 +11673,8 @@
             "name": "glDrawArraysIndirect", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -11826,7 +11865,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -11839,6 +11879,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -11850,7 +11891,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -11863,6 +11905,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -11876,6 +11919,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -11889,6 +11933,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -11902,6 +11947,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void*", 
                     "int", 
                     "uint"
                 ], 
@@ -11916,6 +11962,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void*", 
                     "int", 
                     "int"
                 ], 
@@ -11930,6 +11977,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void*", 
                     "int", 
                     "int", 
                     "uint"
@@ -11945,6 +11993,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -11958,6 +12007,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -11984,7 +12034,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -12025,7 +12076,8 @@
                     "uint", 
                     "uint", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -12040,6 +12092,7 @@
                     "uint", 
                     "int", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -12054,7 +12107,8 @@
                     "uint", 
                     "uint", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -12281,7 +12335,8 @@
             "name": "glEdgeFlagPointer", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -12325,7 +12380,8 @@
             "name": "glElementPointerAPPLE", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -12335,7 +12391,8 @@
             "name": "glElementPointerATI", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -12866,7 +12923,8 @@
             "name": "glExtGetBufferPointervQCOM", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -12972,7 +13030,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -12994,7 +13053,6 @@
             "name": "glExtIsProgramBinaryQCOM", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -13053,7 +13111,6 @@
             "name": "glFenceSync", 
             "type": {
                 "argtypes": [
-                    "sync", 
                     "int", 
                     "int"
                 ], 
@@ -13065,7 +13122,6 @@
             "name": "glFenceSyncAPPLE", 
             "type": {
                 "argtypes": [
-                    "sync", 
                     "int", 
                     "int"
                 ], 
@@ -13098,7 +13154,6 @@
             "name": "glFinishAsyncSGIX", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint*"
                 ], 
                 "restype": "int", 
@@ -13244,7 +13299,8 @@
             "name": "glFlushVertexArrayRangeAPPLE", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -13274,7 +13330,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -13285,7 +13342,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -13297,6 +13355,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void**", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -14132,7 +14191,6 @@
             "name": "glGenAsyncMarkersSGIX", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int"
                 ], 
                 "restype": "uint", 
@@ -14187,7 +14245,6 @@
             "name": "glGenFragmentShadersATI", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "uint"
                 ], 
                 "restype": "uint", 
@@ -14231,7 +14288,6 @@
             "name": "glGenLists", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int"
                 ], 
                 "restype": "uint", 
@@ -14265,7 +14321,6 @@
             "name": "glGenPathsNV", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int"
                 ], 
                 "restype": "uint", 
@@ -14408,7 +14463,6 @@
             "name": "glGenSymbolsEXT", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int", 
                     "int", 
                     "int", 
@@ -14499,7 +14553,6 @@
             "name": "glGenVertexShadersEXT", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "uint"
                 ], 
                 "restype": "uint", 
@@ -14814,7 +14867,6 @@
             "name": "glGetAttribLocation", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "char*"
                 ], 
@@ -14826,7 +14878,6 @@
             "name": "glGetAttribLocationARB", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "char*"
                 ], 
@@ -14922,7 +14973,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -14933,7 +14985,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -14944,7 +14997,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -14956,7 +15010,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -14968,7 +15023,8 @@
                 "argtypes": [
                     "int", 
                     "intARB", 
-                    "intARB"
+                    "intARB", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15035,7 +15091,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15047,7 +15104,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15131,7 +15189,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15209,7 +15268,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15220,7 +15280,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15231,7 +15292,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15243,7 +15305,8 @@
                 "argtypes": [
                     "uint", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15255,7 +15318,8 @@
                 "argtypes": [
                     "uint", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15273,7 +15337,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15285,7 +15350,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15297,7 +15363,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15379,7 +15446,6 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "uint", 
                     "int", 
                     "int*", 
                     "int*", 
@@ -15397,7 +15463,6 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "uint", 
                     "int", 
                     "int*", 
                     "uint*", 
@@ -15413,7 +15478,6 @@
             "name": "glGetDebugMessageLogARB", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "uint", 
                     "int", 
                     "int*", 
@@ -15431,7 +15495,6 @@
             "name": "glGetDebugMessageLogKHR", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "uint", 
                     "int", 
                     "int*", 
@@ -15531,9 +15594,7 @@
         "getError": {
             "name": "glGetError", 
             "type": {
-                "argtypes": [
-                    "int"
-                ], 
+                "argtypes": [], 
                 "restype": "int", 
                 "type": "cfunc"
             }
@@ -15667,7 +15728,6 @@
             "name": "glGetFragDataIndex", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "char*"
                 ], 
@@ -15679,7 +15739,6 @@
             "name": "glGetFragDataLocation", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "char*"
                 ], 
@@ -15691,7 +15750,6 @@
             "name": "glGetFragDataLocationEXT", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "char*"
                 ], 
@@ -15813,9 +15871,7 @@
         "getGraphicsResetStatus": {
             "name": "glGetGraphicsResetStatus", 
             "type": {
-                "argtypes": [
-                    "int"
-                ], 
+                "argtypes": [], 
                 "restype": "int", 
                 "type": "cfunc"
             }
@@ -15823,9 +15879,7 @@
         "getGraphicsResetStatusARB": {
             "name": "glGetGraphicsResetStatusARB", 
             "type": {
-                "argtypes": [
-                    "int"
-                ], 
+                "argtypes": [], 
                 "restype": "int", 
                 "type": "cfunc"
             }
@@ -15833,9 +15887,7 @@
         "getGraphicsResetStatusEXT": {
             "name": "glGetGraphicsResetStatusEXT", 
             "type": {
-                "argtypes": [
-                    "int"
-                ], 
+                "argtypes": [], 
                 "restype": "int", 
                 "type": "cfunc"
             }
@@ -15843,9 +15895,7 @@
         "getGraphicsResetStatusKHR": {
             "name": "glGetGraphicsResetStatusKHR", 
             "type": {
-                "argtypes": [
-                    "int"
-                ], 
+                "argtypes": [], 
                 "restype": "int", 
                 "type": "cfunc"
             }
@@ -15854,7 +15904,6 @@
             "name": "glGetHandleARB", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int"
                 ], 
                 "restype": "uint", 
@@ -15868,7 +15917,8 @@
                     "int", 
                     "ubyte", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15881,7 +15931,8 @@
                     "int", 
                     "ubyte", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -15951,7 +16002,6 @@
             "name": "glGetImageHandleARB", 
             "type": {
                 "argtypes": [
-                    "u64", 
                     "uint", 
                     "int", 
                     "ubyte", 
@@ -15966,7 +16016,6 @@
             "name": "glGetImageHandleNV", 
             "type": {
                 "argtypes": [
-                    "u64", 
                     "uint", 
                     "int", 
                     "ubyte", 
@@ -16017,9 +16066,7 @@
         "getInstrumentsSGIX": {
             "name": "glGetInstrumentsSGIX", 
             "type": {
-                "argtypes": [
-                    "int"
-                ], 
+                "argtypes": [], 
                 "restype": "int", 
                 "type": "cfunc"
             }
@@ -16362,7 +16409,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "ubyte"
+                    "ubyte", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -16507,7 +16555,8 @@
                     "int", 
                     "ubyte", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -16520,7 +16569,8 @@
                     "int", 
                     "ubyte", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -16647,7 +16697,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -16810,7 +16861,8 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -16821,7 +16873,8 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -16833,7 +16886,8 @@
                 "argtypes": [
                     "uint", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -16845,7 +16899,8 @@
                 "argtypes": [
                     "uint", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -16959,7 +17014,8 @@
                 "argtypes": [
                     "uint", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -17147,6 +17203,7 @@
             "name": "glGetObjectPtrLabel", 
             "type": {
                 "argtypes": [
+                    "void*", 
                     "int", 
                     "int*", 
                     "char*"
@@ -17159,6 +17216,7 @@
             "name": "glGetObjectPtrLabelKHR", 
             "type": {
                 "argtypes": [
+                    "void*", 
                     "int", 
                     "int*", 
                     "char*"
@@ -17252,7 +17310,6 @@
             "name": "glGetPathLengthNV", 
             "type": {
                 "argtypes": [
-                    "float", 
                     "uint", 
                     "int", 
                     "int"
@@ -17282,6 +17339,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void*", 
                     "uint", 
                     "int", 
                     "float*"
@@ -17321,6 +17379,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void*", 
                     "uint", 
                     "float", 
                     "float", 
@@ -17395,7 +17454,8 @@
                 "argtypes": [
                     "uint", 
                     "uint", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -17591,7 +17651,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "uint"
+                    "uint", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -17602,7 +17663,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "uint"
+                    "uint", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -17612,7 +17674,8 @@
             "name": "glGetPointerv", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -17622,7 +17685,8 @@
             "name": "glGetPointervEXT", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -17632,7 +17696,8 @@
             "name": "glGetPointervKHR", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -17655,7 +17720,8 @@
                     "uint", 
                     "int", 
                     "int*", 
-                    "int*"
+                    "int*", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -17668,7 +17734,8 @@
                     "uint", 
                     "int", 
                     "int*", 
-                    "int*"
+                    "int*", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -17903,7 +17970,6 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "uint", 
                     "int", 
                     "char*"
                 ], 
@@ -17915,7 +17981,6 @@
             "name": "glGetProgramResourceLocation", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "int", 
                     "char*"
@@ -17928,7 +17993,6 @@
             "name": "glGetProgramResourceLocationIndex", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "int", 
                     "char*"
@@ -18004,7 +18068,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -18405,7 +18470,10 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*", 
+                    "void*", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -18417,7 +18485,10 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*", 
+                    "void*", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -18502,7 +18573,6 @@
             "name": "glGetString", 
             "type": {
                 "argtypes": [
-                    "ubyte*", 
                     "int"
                 ], 
                 "restype": "ubyte*", 
@@ -18513,7 +18583,6 @@
             "name": "glGetStringi", 
             "type": {
                 "argtypes": [
-                    "ubyte*", 
                     "int", 
                     "uint"
                 ], 
@@ -18526,7 +18595,6 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "uint", 
                     "int", 
                     "char*"
                 ], 
@@ -18538,7 +18606,6 @@
             "name": "glGetSubroutineUniformLocation", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "int", 
                     "char*"
@@ -18736,7 +18803,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -18834,7 +18902,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -18892,7 +18961,6 @@
             "name": "glGetTextureHandleARB", 
             "type": {
                 "argtypes": [
-                    "u64", 
                     "uint"
                 ], 
                 "restype": "u64", 
@@ -18903,7 +18971,6 @@
             "name": "glGetTextureHandleNV", 
             "type": {
                 "argtypes": [
-                    "u64", 
                     "uint"
                 ], 
                 "restype": "u64", 
@@ -18918,7 +18985,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -18932,7 +19000,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -19096,7 +19165,6 @@
             "name": "glGetTextureSamplerHandleARB", 
             "type": {
                 "argtypes": [
-                    "u64", 
                     "uint", 
                     "uint"
                 ], 
@@ -19108,7 +19176,6 @@
             "name": "glGetTextureSamplerHandleNV", 
             "type": {
                 "argtypes": [
-                    "u64", 
                     "uint", 
                     "uint"
                 ], 
@@ -19130,7 +19197,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -19249,7 +19317,6 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "uint", 
                     "char*"
                 ], 
                 "restype": "uint", 
@@ -19260,7 +19327,6 @@
             "name": "glGetUniformBufferSizeEXT", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "int"
                 ], 
@@ -19285,7 +19351,6 @@
             "name": "glGetUniformLocation", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "char*"
                 ], 
@@ -19297,7 +19362,6 @@
             "name": "glGetUniformLocationARB", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "char*"
                 ], 
@@ -19309,7 +19373,6 @@
             "name": "glGetUniformOffsetEXT", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "int"
                 ], 
@@ -19502,7 +19565,8 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -19512,7 +19576,6 @@
             "name": "glGetVaryingLocationNV", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "char*"
                 ], 
@@ -19577,7 +19640,8 @@
                 "argtypes": [
                     "uint", 
                     "uint", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -19588,7 +19652,8 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -19743,7 +19808,8 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -19754,7 +19820,8 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -19765,7 +19832,8 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -19985,7 +20053,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -19998,7 +20067,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20010,7 +20080,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20022,7 +20093,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20035,7 +20107,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20048,7 +20121,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20062,7 +20136,8 @@
                     "ubyte", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20076,7 +20151,8 @@
                     "ubyte", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20168,7 +20244,8 @@
                     "ubyte", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20182,7 +20259,8 @@
                     "ubyte", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20290,7 +20368,10 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "void*", 
+                    "int", 
+                    "void*", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20304,7 +20385,10 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "void*", 
+                    "int", 
+                    "void*", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20318,7 +20402,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20332,7 +20417,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20639,7 +20725,8 @@
             "name": "glIglooInterfaceSGIX", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20697,7 +20784,6 @@
             "name": "glImportSyncEXT", 
             "type": {
                 "argtypes": [
-                    "sync", 
                     "int", 
                     "int", 
                     "int"
@@ -20754,7 +20840,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20766,7 +20853,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -20778,6 +20866,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void**", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -20951,7 +21040,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -21080,7 +21170,6 @@
             "name": "glIsAsyncMarkerSGIX", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21091,7 +21180,6 @@
             "name": "glIsBuffer", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21102,7 +21190,6 @@
             "name": "glIsBufferARB", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21113,7 +21200,6 @@
             "name": "glIsBufferResidentNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int"
                 ], 
                 "restype": "ubyte", 
@@ -21124,7 +21210,6 @@
             "name": "glIsEnabled", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int"
                 ], 
                 "restype": "ubyte", 
@@ -21135,7 +21220,6 @@
             "name": "glIsEnabledIndexedEXT", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int", 
                     "uint"
                 ], 
@@ -21147,7 +21231,6 @@
             "name": "glIsEnabledi", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int", 
                     "uint"
                 ], 
@@ -21159,7 +21242,6 @@
             "name": "glIsEnablediEXT", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int", 
                     "uint"
                 ], 
@@ -21171,7 +21253,6 @@
             "name": "glIsFenceAPPLE", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21182,7 +21263,6 @@
             "name": "glIsFenceNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21193,7 +21273,6 @@
             "name": "glIsFramebuffer", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21204,7 +21283,6 @@
             "name": "glIsFramebufferEXT", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21215,7 +21293,6 @@
             "name": "glIsFramebufferOES", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21226,7 +21303,6 @@
             "name": "glIsImageHandleResidentARB", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "u64"
                 ], 
                 "restype": "ubyte", 
@@ -21237,7 +21313,6 @@
             "name": "glIsImageHandleResidentNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "u64"
                 ], 
                 "restype": "ubyte", 
@@ -21248,7 +21323,6 @@
             "name": "glIsList", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21259,7 +21333,6 @@
             "name": "glIsNameAMD", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int", 
                     "uint"
                 ], 
@@ -21271,7 +21344,6 @@
             "name": "glIsNamedBufferResidentNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21282,7 +21354,6 @@
             "name": "glIsNamedStringARB", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int", 
                     "char*"
                 ], 
@@ -21294,7 +21365,6 @@
             "name": "glIsObjectBufferATI", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21305,7 +21375,6 @@
             "name": "glIsOcclusionQueryNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21316,7 +21385,6 @@
             "name": "glIsPathNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21327,7 +21395,6 @@
             "name": "glIsPointInFillPathNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint", 
                     "uint", 
                     "float", 
@@ -21341,7 +21408,6 @@
             "name": "glIsPointInStrokePathNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint", 
                     "float", 
                     "float"
@@ -21354,7 +21420,6 @@
             "name": "glIsProgram", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21365,7 +21430,6 @@
             "name": "glIsProgramARB", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21376,7 +21440,6 @@
             "name": "glIsProgramNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21387,7 +21450,6 @@
             "name": "glIsProgramPipeline", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21398,7 +21460,6 @@
             "name": "glIsProgramPipelineEXT", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21409,7 +21470,6 @@
             "name": "glIsQuery", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21420,7 +21480,6 @@
             "name": "glIsQueryARB", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21431,7 +21490,6 @@
             "name": "glIsQueryEXT", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21442,7 +21500,6 @@
             "name": "glIsRenderbuffer", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21453,7 +21510,6 @@
             "name": "glIsRenderbufferEXT", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21464,7 +21520,6 @@
             "name": "glIsRenderbufferOES", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21475,7 +21530,6 @@
             "name": "glIsSampler", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21486,7 +21540,6 @@
             "name": "glIsShader", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21497,7 +21550,6 @@
             "name": "glIsSync", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "sync"
                 ], 
                 "restype": "ubyte", 
@@ -21508,7 +21560,6 @@
             "name": "glIsSyncAPPLE", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "sync"
                 ], 
                 "restype": "ubyte", 
@@ -21519,7 +21570,6 @@
             "name": "glIsTexture", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21530,7 +21580,6 @@
             "name": "glIsTextureEXT", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21541,7 +21590,6 @@
             "name": "glIsTextureHandleResidentARB", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "u64"
                 ], 
                 "restype": "ubyte", 
@@ -21552,7 +21600,6 @@
             "name": "glIsTextureHandleResidentNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "u64"
                 ], 
                 "restype": "ubyte", 
@@ -21563,7 +21610,6 @@
             "name": "glIsTransformFeedback", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21574,7 +21620,6 @@
             "name": "glIsTransformFeedbackNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21585,7 +21630,6 @@
             "name": "glIsVariantEnabledEXT", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint", 
                     "int"
                 ], 
@@ -21597,7 +21641,6 @@
             "name": "glIsVertexArray", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21608,7 +21651,6 @@
             "name": "glIsVertexArrayAPPLE", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21619,7 +21661,6 @@
             "name": "glIsVertexArrayOES", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -21630,7 +21671,6 @@
             "name": "glIsVertexAttribEnabledAPPLE", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint", 
                     "int"
                 ], 
@@ -22421,7 +22461,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "ubyte"
+                    "ubyte", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -22793,7 +22834,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -22805,7 +22847,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -23339,6 +23382,7 @@
             "type": {
                 "argtypes": [
                     "int", 
+                    "void*", 
                     "int", 
                     "int"
                 ], 
@@ -23351,6 +23395,7 @@
             "type": {
                 "argtypes": [
                     "int", 
+                    "void*", 
                     "int", 
                     "int"
                 ], 
@@ -23363,6 +23408,7 @@
             "type": {
                 "argtypes": [
                     "int", 
+                    "void*", 
                     "int", 
                     "int", 
                     "int", 
@@ -23377,6 +23423,7 @@
             "type": {
                 "argtypes": [
                     "int", 
+                    "void*", 
                     "int", 
                     "int", 
                     "int"
@@ -23419,6 +23466,7 @@
                     "int", 
                     "int*", 
                     "int", 
+                    "void**", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -23432,6 +23480,7 @@
                     "int", 
                     "int*", 
                     "int", 
+                    "void**", 
                     "int", 
                     "int*"
                 ], 
@@ -23446,6 +23495,7 @@
                     "int", 
                     "int*", 
                     "int", 
+                    "void**", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -23458,6 +23508,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void*", 
                     "int", 
                     "int"
                 ], 
@@ -23471,6 +23522,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void*", 
                     "int", 
                     "int"
                 ], 
@@ -23484,6 +23536,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void*", 
                     "int", 
                     "int", 
                     "int", 
@@ -23499,6 +23552,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void*", 
                     "int", 
                     "int", 
                     "int"
@@ -23558,6 +23612,7 @@
                     "int*", 
                     "int*", 
                     "int", 
+                    "void**", 
                     "int", 
                     "int"
                 ], 
@@ -24729,7 +24784,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -24876,7 +24932,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -24894,7 +24951,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -24913,7 +24971,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -25019,7 +25078,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -25037,7 +25097,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -25057,7 +25118,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -25069,6 +25131,7 @@
                 "argtypes": [
                     "uint", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -25081,6 +25144,7 @@
                 "argtypes": [
                     "uint", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -25119,6 +25183,7 @@
                 "argtypes": [
                     "uint", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -25131,6 +25196,7 @@
                 "argtypes": [
                     "uint", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -25143,7 +25209,8 @@
                 "argtypes": [
                     "uint", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -25155,7 +25222,8 @@
                 "argtypes": [
                     "uint", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -25548,7 +25616,8 @@
                     "uint", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -25652,8 +25721,8 @@
             "name": "glNewObjectBufferATI", 
             "type": {
                 "argtypes": [
-                    "uint", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "uint", 
@@ -25890,7 +25959,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -25902,7 +25972,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -25914,6 +25985,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void**", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -25924,7 +25996,8 @@
             "name": "glNormalPointervINTEL", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -26080,6 +26153,7 @@
             "name": "glObjectPtrLabel", 
             "type": {
                 "argtypes": [
+                    "void*", 
                     "int", 
                     "char*"
                 ], 
@@ -26091,6 +26165,7 @@
             "name": "glObjectPtrLabelKHR", 
             "type": {
                 "argtypes": [
+                    "void*", 
                     "int", 
                     "char*"
                 ], 
@@ -26103,7 +26178,6 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int", 
                     "uint", 
                     "int"
                 ], 
@@ -26115,7 +26189,6 @@
             "name": "glObjectUnpurgeableAPPLE", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "int", 
                     "uint", 
                     "int"
@@ -26307,7 +26380,8 @@
                     "int", 
                     "ubyte*", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -26319,7 +26393,8 @@
                 "argtypes": [
                     "uint", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -26361,9 +26436,9 @@
             "name": "glPathGlyphIndexArrayNV", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "int", 
+                    "void*", 
                     "int", 
                     "uint", 
                     "int", 
@@ -26379,11 +26454,11 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int", 
+                    "void*", 
                     "int", 
                     "uint", 
                     "float", 
-                    "uint"
+                    "uint*"
                 ], 
                 "restype": "int", 
                 "type": "cfunc"
@@ -26395,6 +26470,7 @@
                 "argtypes": [
                     "uint", 
                     "int", 
+                    "void*", 
                     "int", 
                     "uint", 
                     "int", 
@@ -26412,9 +26488,11 @@
                 "argtypes": [
                     "uint", 
                     "int", 
+                    "void*", 
                     "int", 
                     "int", 
                     "int", 
+                    "void*", 
                     "int", 
                     "uint", 
                     "float"
@@ -26427,10 +26505,10 @@
             "name": "glPathMemoryGlyphIndexArrayNV", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "int", 
                     "int", 
+                    "void*", 
                     "int", 
                     "uint", 
                     "int", 
@@ -26518,7 +26596,8 @@
                 "argtypes": [
                     "uint", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -26534,7 +26613,8 @@
                     "int", 
                     "ubyte*", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -26547,7 +26627,8 @@
                     "uint", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -26587,7 +26668,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -26835,7 +26917,6 @@
             "name": "glPointAlongPathNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint", 
                     "int", 
                     "int", 
@@ -27040,7 +27121,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -27070,7 +27152,6 @@
             "name": "glPollAsyncSGIX", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint*"
                 ], 
                 "restype": "int", 
@@ -27081,7 +27162,6 @@
             "name": "glPollInstrumentsSGIX", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "int*"
                 ], 
                 "restype": "int", 
@@ -27350,6 +27430,7 @@
                 "argtypes": [
                     "uint", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -27362,6 +27443,7 @@
                 "argtypes": [
                     "uint", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -27898,7 +27980,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -29697,7 +29780,6 @@
             "name": "glQueryMatrixxOES", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "fixed*", 
                     "int*"
                 ], 
@@ -30109,7 +30191,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -30125,7 +30208,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -30141,7 +30225,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -30157,7 +30242,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -30173,7 +30259,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -30321,7 +30408,6 @@
             "name": "glRenderMode", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "int"
                 ], 
                 "restype": "int", 
@@ -30471,7 +30557,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -31655,7 +31742,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -31667,7 +31755,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -31680,6 +31769,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void**", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -31720,7 +31810,9 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -31735,7 +31827,9 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -31778,7 +31872,8 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -31789,7 +31884,8 @@
             "type": {
                 "argtypes": [
                     "uint", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -31824,6 +31920,7 @@
                     "int", 
                     "uint*", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -32002,6 +32099,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void*", 
                     "uint", 
                     "int", 
                     "uint", 
@@ -32138,6 +32236,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void*", 
                     "uint", 
                     "int", 
                     "uint", 
@@ -32166,6 +32265,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void*", 
                     "uint", 
                     "int", 
                     "uint", 
@@ -32196,6 +32296,7 @@
                 "argtypes": [
                     "int", 
                     "int", 
+                    "void*", 
                     "uint", 
                     "int", 
                     "uint", 
@@ -32234,7 +32335,8 @@
             "name": "glStringMarkerGREMEDY", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -32399,7 +32501,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -32439,7 +32542,6 @@
             "name": "glTestFenceAPPLE", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -32450,7 +32552,6 @@
             "name": "glTestFenceNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -32461,7 +32562,6 @@
             "name": "glTestObjectAPPLE", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int", 
                     "uint"
                 ], 
@@ -33475,7 +33575,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -33488,7 +33589,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -33501,6 +33603,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void**", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -33512,7 +33615,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -33781,7 +33885,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -33798,7 +33903,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -33847,7 +33953,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -33865,7 +33972,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -33916,7 +34024,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -33935,7 +34044,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -34270,7 +34380,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -34285,7 +34396,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -34302,7 +34414,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -34319,7 +34432,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -34338,7 +34452,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -34357,7 +34472,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -34376,7 +34492,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -34397,7 +34514,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -34497,7 +34615,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -34515,7 +34634,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -34567,7 +34687,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -34812,7 +34933,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -35007,7 +35129,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -35023,7 +35146,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -35040,7 +35164,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -35058,7 +35183,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -35077,7 +35203,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -35097,7 +35224,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -36652,7 +36780,6 @@
             "name": "glUnmapBuffer", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int"
                 ], 
                 "restype": "ubyte", 
@@ -36663,7 +36790,6 @@
             "name": "glUnmapBufferARB", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int"
                 ], 
                 "restype": "ubyte", 
@@ -36674,7 +36800,6 @@
             "name": "glUnmapBufferOES", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "int"
                 ], 
                 "restype": "ubyte", 
@@ -36685,7 +36810,6 @@
             "name": "glUnmapNamedBuffer", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -36696,7 +36820,6 @@
             "name": "glUnmapNamedBufferEXT", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "uint"
                 ], 
                 "restype": "ubyte", 
@@ -36731,6 +36854,7 @@
                     "uint", 
                     "uint", 
                     "int", 
+                    "void*", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -36817,7 +36941,10 @@
         "vDPAUInitNV": {
             "name": "glVDPAUInitNV", 
             "type": {
-                "argtypes": [], 
+                "argtypes": [
+                    "void*", 
+                    "void*"
+                ], 
                 "restype": "void", 
                 "type": "cfunc"
             }
@@ -36826,7 +36953,6 @@
             "name": "glVDPAUIsSurfaceNV", 
             "type": {
                 "argtypes": [
-                    "ubyte", 
                     "vdpauSurfaceNV"
                 ], 
                 "restype": "ubyte", 
@@ -36848,7 +36974,7 @@
             "name": "glVDPAURegisterOutputSurfaceNV", 
             "type": {
                 "argtypes": [
-                    "vdpauSurfaceNV", 
+                    "void*", 
                     "int", 
                     "int", 
                     "uint*"
@@ -36861,7 +36987,7 @@
             "name": "glVDPAURegisterVideoSurfaceNV", 
             "type": {
                 "argtypes": [
-                    "vdpauSurfaceNV", 
+                    "void*", 
                     "int", 
                     "int", 
                     "uint*"
@@ -36962,7 +37088,8 @@
                 "argtypes": [
                     "uint", 
                     "int", 
-                    "uint"
+                    "uint", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -37708,7 +37835,8 @@
             "name": "glVertexArrayRangeAPPLE", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -37718,7 +37846,8 @@
             "name": "glVertexArrayRangeNV", 
             "type": {
                 "argtypes": [
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -39768,7 +39897,8 @@
                     "uint", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -39781,7 +39911,8 @@
                     "uint", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -40218,7 +40349,8 @@
                     "uint", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -40231,7 +40363,8 @@
                     "uint", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -40361,7 +40494,8 @@
                     "int", 
                     "int", 
                     "ubyte", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -40375,7 +40509,8 @@
                     "int", 
                     "int", 
                     "ubyte", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -40388,7 +40523,8 @@
                     "uint", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -40725,7 +40861,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -40738,7 +40875,8 @@
                     "int", 
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -40751,6 +40889,7 @@
                     "int", 
                     "int", 
                     "int", 
+                    "void**", 
                     "int"
                 ], 
                 "restype": "void", 
@@ -40762,7 +40901,8 @@
             "type": {
                 "argtypes": [
                     "int", 
-                    "int"
+                    "int", 
+                    "void**"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -41150,7 +41290,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -41200,7 +41341,6 @@
             "name": "glVideoCaptureNV", 
             "type": {
                 "argtypes": [
-                    "int", 
                     "uint", 
                     "uint*", 
                     "u64EXT*"
@@ -41341,7 +41481,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -41353,7 +41494,8 @@
                 "argtypes": [
                     "int", 
                     "int", 
-                    "int"
+                    "int", 
+                    "void*"
                 ], 
                 "restype": "void", 
                 "type": "cfunc"

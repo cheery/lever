@@ -9,7 +9,7 @@ if len(sys.argv) != 2:
     sys.exit(1)
 
 with open(sys.argv[1]) as fd:
-    soup = BeautifulSoup(fd.read())
+    soup = BeautifulSoup(fd.read(), 'xml')
 
 def in_gl_api(node):
     if node.has_attr('api') and node["api"] != 'gl':
@@ -29,6 +29,7 @@ def rename(name):
     name = re.sub('^GLsizei', 'GLint', name)
     name = re.sub('^GLenum', 'GLint', name)
     name = re.sub('^GLcharARB', 'GLchar', name)
+    name = re.sub('^GLintARB', 'GLint', name)
     name = re.sub('^GLclampf', 'GLfloat', name)
     name = re.sub('^GLclampd', 'GLdouble', name)
     name = re.sub('^GLclampx', 'GLint', name)
@@ -44,7 +45,7 @@ def rename(name):
         return re.sub('^GL', '', name)
     if name.startswith('gl'):
         return re.sub('^gl(.)', lambda m: m.group(1).lower(), name)
-    if name in ('void', 'void*'):
+    if name in ('void', 'void*', 'void**'):
         return name 
     if name == 'struct_cl_context*': # it's likely that these should be imported
         return 'void*'               # or just handled like this.
@@ -70,20 +71,17 @@ for proto in soup.find_all('proto'):
     cname = restype_chain.pop(-1).string.strip()
     restype = rename(''.join(n.string.strip() for n in restype_chain if n.string.strip() != 'const'))
     argtypes = []
-    for ptype in proto.parent.find_all('ptype'):
-        argtypes.append(ptype.string.strip())
-        for n in ptype.nextSiblingGenerator():
-            if get_tag(n) == 'name':
-                break
-            string = re.sub('const| ', '', n.string.strip())
-            if string == '*':
-                argtypes[-1] += '*'
-            elif string == '**':
-                argtypes[-1] += '**'
-            elif string == '':
-                continue
-            else:
-                raise Exception("what is {} after ptype?".format(string))
+    for param in proto.parent.find_all('param'):
+        pat1 = re.match(r"^(.+?)([a-zA-Z_0-9]+)\[[0-9]+\]$", param.text)
+        pat2 = re.match("^(.+?)([a-zA-Z_0-9]+)$", param.text)
+        if pat1:
+            ctype = pat1.group(1)
+            ptype = re.sub('const| ', '', ctype.strip()) + '*'
+        else:
+            assert pat2, param.text
+            ctype = pat2.group(1)
+            ptype = re.sub('const| ', '', ctype.strip())
+        argtypes.append(ptype)
     argtypes = map(rename, argtypes)
 
     name = rename(cname)
@@ -91,6 +89,8 @@ for proto in soup.find_all('proto'):
     variables[name] = {
         'name':cname,
         'type':{'type':'cfunc', 'restype':restype, 'argtypes':argtypes}}
+
+assert len(variables['bufferData']['type']['argtypes']) == 4
 
 print json.dumps(
     {'constants': constants, 'types':{}, 'variables':variables},

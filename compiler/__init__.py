@@ -671,21 +671,18 @@ def if_macro(env, exp):
     cond = Cond(translate(env, exp.exps[1]))
     env.add(cond)
     cond.then = env.block = env.new_block()
+    cond.exit = exit = env.new_block()
+    val = translate_flow(env, env.capture(exp))
+    env.add(Merge(cond, val))
+    env.add(Jump(exit))
     if len(chain) > 0:
         first = chain[0]
         if len(chain) > 1 and macro_name(first.exps[0]) != u'else' and len(first.exps) != 1:
             raise space.Error(u"%s: non-else longer chains not supported" % exp.start.repr())
-        cond.exit = env.block = env.new_block()
-        exit = env.new_block()
+        env.block, exit = exit, env.new_block()
         val = translate_flow(env, first.capture)
         env.add(Merge(cond, val))
         env.add(Jump(exit))
-        env.block = cond.then
-    else:
-        cond.exit = exit = env.new_block()
-    val = translate_flow(env, env.capture(exp))
-    env.add(Merge(cond, val))
-    env.add(Jump(exit))
     env.block = exit
     return cond
 
@@ -906,11 +903,13 @@ def translate_(env, exp):
     assert isinstance(exp, reader.Expr), exp.__class__.__name__
     if exp.name == u'form' and len(exp.exps) > 0:
         if macro_name(exp) in macros:
+            cc = env.capture_catch
             if len(exp.capture) > 0:
                 env.capture_catch = exp.capture
             res = macros[macro_name(exp)](env, exp)
             if len(exp.capture) > 0 and len(env.capture_catch) > 0:
                 raise space.Error(u"%s: capture without receiver" % exp.start.repr())
+            env.capture_catch = cc
             return res
         # callattr goes here, if it'll be needed
         args = translate_map(env, exp.exps)
