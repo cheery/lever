@@ -1,3 +1,48 @@
+"""
+# The grammarlang notated in itself:
+file =>
+    statement
+    concat(file statement): file newline statement
+
+statement =>
+    single_rule(symbol rule):    symbol arrow:"=>" rule
+    multiple_rule(symbol block): symbol arrow:"=>" indent block dedent
+    empty_list:                  special
+
+block =>
+    first: rule
+    append(block rule): block newline rule
+
+rule =>
+    implicit_pass_rule:
+        rhs
+    labelled_rule(symbol rhs):
+        symbol colon:":" rhs
+    labelled_mapped_rule(symbol arguments rhs): 
+        symbol lp:"(" arguments rp:")" colon:":" rhs
+
+rhs =>
+    empty_list:
+    items
+
+items =>
+    first: item
+    append: items item
+
+item =>
+    named_item(symbol item): symbol equals:"=" item
+    symbolic_item:           symbol
+    special
+    call(symbol arguments):  symbol lp:"(" arguments rp:")"
+
+arguments =>
+    empty_list:
+    append_arg_str: arguments symbol
+    append_arg_str: arguments string
+    append_arg_int: arguments int
+
+special => special(symbol string): symbol colon:":" string
+"""
 from parser import Parser, Rule
 import sys
 
@@ -35,8 +80,11 @@ grammar = [
     Rule('rule', ['symbol', 'lp', 'arguments', 'rp', 'colon', 'rhs'],
         'labelled_mapped_rule', [0, 2, 5]),
 
-    Rule('rhs', ['item'], 'first'),
-    Rule('rhs', ['rhs', 'item'], 'append'),
+    Rule('rhs', [],        'empty_list'),
+    Rule('rhs', ['items'], 'pass'),
+
+    Rule('items', ['item'],          'first'),
+    Rule('items', ['items', 'item'], 'append'),
     # Item definitions
     Rule('item', ['symbol', 'equals', 'item'], 'named_item', [0, 2]),
     Rule('item', ['symbol'], 'symbolic_item'),
@@ -126,16 +174,16 @@ class Env(object):
         self.symboltab = symboltab
         self.functions = functions
 
+parse = Parser(symboltab, grammar, 'file')
+
 def load(functions, path):
     env = Env({}, functions)
-    parse = Parser(symboltab, grammar, 'file')
     grammar = parse.from_file(globals(), env, path)
     assert len(grammar) > 0, "empty grammar"
     return Parser(env.symboltab, grammar, grammar[0].lhs)
 
 def load_from_string(functions, string):
     env = Env({}, functions)
-    parse = Parser(symboltab, grammar, 'file')
     grammar = parse(globals(), env, string)
     assert len(grammar) > 0, "empty grammar"
     return Parser(env.symboltab, grammar, grammar[0].lhs)
