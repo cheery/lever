@@ -25,6 +25,8 @@ class Literal(Node):
         self.stop = stop
         self.name = name
         self.value = value
+        self.lsp = False
+        self.rsp = False
 
     def repr(self):
         return u"%s %s %s %s" % (
@@ -32,6 +34,9 @@ class Literal(Node):
             self.stop.repr(),
             self.name,
             self.value)
+
+    def __repr__(self):
+        return "{0.name};{0.value!r}".format(self)
 
 class Expr(Node):
     capture = [] # The capture block

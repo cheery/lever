@@ -3,19 +3,26 @@
 """
 from stream import CStream
 from data import Literal
-import space
+
+class Error(Exception):
+    pass
 
 class L2(object):
     def __init__(self, stream, table):
         self.stream = stream
         self.table = table
         self.first = next_token(self.stream, self.table)
-        self.second = next_token(self.stream, self.table)
+        if self.first is not None:
+            self.first.lsp = True
+            self.first.rsp = self.stream.is_space()
     
     def advance(self):
+        lsp = self.stream.is_space()
         t = self.first
-        self.first = self.second
-        self.second = next_token(self.stream, self.table)
+        self.first = next_token(self.stream, self.table)
+        if self.first is not None:
+            self.first.lsp = lsp
+            self.first.rsp = self.stream.is_space()
         return t
 
     @property
@@ -68,7 +75,7 @@ def next_token(stream, table):
                 stream.advance()
             string += stream.advance()
         if not stream.filled:
-            raise space.Error(u"%s: Broken string literal" % start.repr())
+            raise Error(u"%s: Broken string literal" % start.repr())
         assert terminal == stream.advance()
         return Literal(start, stream.position, u'string', string)
     elif stream.current in table:
