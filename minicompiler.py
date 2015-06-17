@@ -1,27 +1,5 @@
-import bincode.common
-import bincode.encoder
-from collections import OrderedDict
+from bincode.encoder import StringTable, Function, dump_function
 from instruction_format import enc_code
-
-class Function(object):
-    def __init__(self, flags, argc, localc, blocks, functions):
-        self.flags = flags
-        self.argc = argc
-        self.localc = localc
-        self.blocks = blocks
-        self.functions = functions
-
-    def dump(self, stream):
-        stream.write_integer(self.flags)
-        stream.write_integer(self.argc)
-        stream.write_integer(self.localc)
-        stream.write_integer(len(self.blocks))
-        for block in self.blocks:
-            stream.write_integer(len(block))
-            stream.write(block)
-        stream.write_integer(len(self.functions))
-        for func in self.functions:
-            func.dump(stream)
 
 def main():
     stringtab = StringTable()
@@ -34,28 +12,6 @@ def main():
     ], [
         Function(0x0, 1, 2, [], []),
     ])
-    write_file('kernel.lic', function, stringtab)
-
-class StringTable(object):
-    def __init__(self):
-        self.strings = OrderedDict()
-
-    def get(self, string):
-        string_table = self.strings
-        if string in string_table:
-            return string_table[string]
-        string_table[string] = len(string_table)
-        return string_table[string]
-
-def write_file(pathname, entry, strtab):
-    stream = bincode.encoder.open_file(pathname)
-    stream.write(bincode.common.header)
-    entry.dump(stream)
-    # write string table
-    stream.write_integer(len(strtab.strings))
-    for string in strtab.strings:
-        stream.write_string(string)
-
-    stream.close()
+    dump_function('kernel.lic', function, stringtab)
 
 if __name__=='__main__': main()

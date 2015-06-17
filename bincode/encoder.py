@@ -1,6 +1,39 @@
 """
     This part of the code likely won't compile by RPython.
 """
+import common
+from collections import OrderedDict
+
+class Function(object):
+    def __init__(self, flags, argc, localc, blocks, functions):
+        self.flags = flags
+        self.argc = argc
+        self.localc = localc
+        self.blocks = blocks
+        self.functions = functions
+
+    def dump(self, stream):
+        stream.write_integer(self.flags)
+        stream.write_integer(self.argc)
+        stream.write_integer(self.localc)
+        stream.write_integer(len(self.blocks))
+        for block in self.blocks:
+            stream.write_integer(len(block))
+            stream.write(block)
+        stream.write_integer(len(self.functions))
+        for func in self.functions:
+            func.dump(stream)
+
+class StringTable(object):
+    def __init__(self):
+        self.strings = OrderedDict()
+
+    def get(self, string):
+        string_table = self.strings
+        if string in string_table:
+            return string_table[string]
+        string_table[string] = len(string_table)
+        return string_table[string]
 
 class WriteStream(object):
     def __init__(self, fd):
@@ -37,3 +70,13 @@ class WriteStream(object):
 
 def open_file(pathname):
     return WriteStream(open(pathname, 'w'))
+
+def dump_function(pathname, entry, strtab):
+    stream = open_file(pathname)
+    stream.write(common.header)
+    entry.dump(stream)
+    # write string table
+    stream.write_integer(len(strtab.strings))
+    for string in strtab.strings:
+        stream.write_string(string)
+    stream.close()
