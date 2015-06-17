@@ -111,48 +111,48 @@ grammar = [
     Rule('arguments', ['arguments', 'int'],    'append_arg_int'),
 ]
 
-def post_append(env, seq, item):
+def post_append(env, loc, seq, item):
     seq.append(item)
     return seq
 
-def post_concat(env, seq1, seq2):
+def post_concat(env, loc, seq1, seq2):
     seq1.extend(seq2)
     return seq1
 
-def post_empty_list(env):
+def post_empty_list(env, loc):
     return []
 
-def post_first(env, item):
+def post_first(env, loc, item):
     return [item]
 
-def post_single_rule(env, lhs, (rhs, attribute, mapping)):
+def post_single_rule(env, loc, lhs, (rhs, attribute, mapping)):
     return [Rule(lhs.value, rhs, attribute, mapping)]
 
-def post_multiple_rule(env, lhs, block):
+def post_multiple_rule(env, loc, lhs, block):
     seq = []
     for rhs, attribute, mapping in block:
         seq.append(Rule(lhs.value, rhs, attribute, mapping))
     return seq
 
-def post_implicit_pass_rule(env, items):
+def post_implicit_pass_rule(env, loc, items):
     attribute = 'pass' if len(items) == 1 else 'tuple'
     return [cell for name, cell in items], attribute, None
 
-def post_labelled_rule(env, label, items):
+def post_labelled_rule(env, loc, label, items):
     return [cell for name, cell in items], label.value, None
 
-def post_labelled_mapped_rule(env, label, mapping, items):
+def post_labelled_mapped_rule(env, loc, label, mapping, items):
     k = [name for name, cell in items]
     mapping = [k.index(name) for name in mapping]
     return [cell for name, cell in items], label.value, mapping
 
-def post_named_item(env, name, (_, cell)):
+def post_named_item(env, loc, name, (_, cell)):
     return name.value, cell
 
-def post_symbolic_item(env, symbol):
+def post_symbolic_item(env, loc, symbol):
     return symbol.value, symbol.value
 
-def post_special(env, name, keyword):
+def post_special(env, loc, name, keyword):
     symboltab = env.symboltab
     name = name.value
     keyword = keyword.value
@@ -163,31 +163,33 @@ def post_special(env, name, keyword):
         symboltab[keyword] = symboltab.get(keyword, 'symbol')
     return name, name
 
-def post_call(env, name, arguments):
+def post_call(env, loc, name, arguments):
     return env.functions[name.value](*arguments)
 
-def post_append_arg_item(env, seq, item):
+def post_append_arg_item(env, loc, seq, item):
     seq.append(item)
     return seq
 
-def post_append_arg_str(env, seq, token):
+def post_append_arg_str(env, loc, seq, token):
     seq.append(token.value)
     return seq
 
-def post_append_arg_int(env, seq, token):
+def post_append_arg_int(env, loc, seq, token):
     seq.append(int(token.value))
     return seq
 
-def post_nothing(env):
+def post_nothing(env, loc):
     return None
 
-def post_pass(env, arg):
+def post_pass(env, loc, arg):
     return arg
 
 class Env(object):
     def __init__(self, symboltab, functions):
         self.symboltab = symboltab
         self.functions = functions
+
+print globals()['post_symbolic_item']
 
 parse = Parser(symboltab, grammar, 'file')
 

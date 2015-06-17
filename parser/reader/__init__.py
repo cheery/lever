@@ -1,6 +1,6 @@
 from stream import CStream
 from tokenizer import L2
-from data import Expr, Literal
+from data import Expr, Literal, Position
 #import space
 
 #table = {

@@ -1,5 +1,5 @@
 from earley import Rule, print_result
-from reader import CStream, L2, Literal
+from reader import CStream, L2, Literal, Position
 import earley
 import sys
 
@@ -61,16 +61,17 @@ def format_expect(expect):
     return trail
 
 def traverse(parser, rule, start, stop, namespace, arg):
+    loc = get_range(parser, start, stop)
     mapping = rule.mapping
     if rule.lhs is Ellipsis:
         pre = None
-        post = lambda arg, node: node
+        post = lambda arg, loc, node: node
     else:
         assert rule.attribute is not None, rule
         pre = namespace.get("pre_{}".format(rule.attribute))
         post = namespace["post_{}".format(rule.attribute)]
     if callable(pre):
-        arg = pre(arg)
+        arg = pre(arg, loc)
     midresults = list(parser.chains(rule.rhs, start, stop))
     if len(midresults) == 0:
         raise Exception("parser bug at {}:{}".format(start, stop))
@@ -84,4 +85,27 @@ def traverse(parser, rule, start, stop, namespace, arg):
             args.append(traverse(parser, rule, start, stop, namespace, arg))
         else:
             args.append(rule)
-    return post(arg, *(args[index] for index in mapping))
+    return post(arg, loc, *(args[index] for index in mapping))
+
+def get_range(parser, start, stop):
+    length = len(parser.input)
+    start = max(0, min(length, start))
+    stop = max(0, min(length, stop))
+
+    if length == 0:
+        return Position(0, 0)
+    if start == stop:
+        if 0 < start < length:
+            return (parser.input[start-1].stop,
+                parser.input[start].start)
+        if start == 0:
+            pos = parser.input[0].start
+            return pos, pos
+        if start == length:
+            pos = parser.input[length-1].stop
+            return pos, pos
+        return 0
+    if start < stop:
+        return (parser.input[start].start,
+            parser.input[stop-1].stop)
+    assert False, "This means you found a new case not covered by get_range"
