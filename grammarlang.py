@@ -18,8 +18,8 @@ rule =>
         rhs
     labelled_rule(symbol rhs):
         symbol colon:":" rhs
-    labelled_mapped_rule(symbol arguments rhs): 
-        symbol lp:"(" arguments rp:")" colon:":" rhs
+    labelled_mapped_rule(symbol mapping rhs): 
+        symbol lp:"(" mapping rp:")" colon:":" rhs
 
 rhs =>
     empty_list:
@@ -35,9 +35,15 @@ item =>
     special
     call(symbol arguments):  symbol lp:"(" arguments rp:")"
 
+mapping =>
+    empty_list:
+    append_arg_str: mapping symbol
+    append_arg_str: mapping string
+    append_arg_int: mapping int
+
 arguments =>
     empty_list:
-    append_arg_str: arguments symbol
+    append_arg_item: arguments item
     append_arg_str: arguments string
     append_arg_int: arguments int
 
@@ -77,7 +83,7 @@ grammar = [
         'implicit_pass_rule'),
     Rule('rule', ['symbol', 'colon', 'rhs'],
         'labelled_rule', [0, 2]),
-    Rule('rule', ['symbol', 'lp', 'arguments', 'rp', 'colon', 'rhs'],
+    Rule('rule', ['symbol', 'lp', 'mapping', 'rp', 'colon', 'rhs'],
         'labelled_mapped_rule', [0, 2, 5]),
 
     Rule('rhs', [],        'empty_list'),
@@ -94,8 +100,13 @@ grammar = [
     Rule('special', ['symbol', 'colon', 'string'],
         "special", [0, 2]),
 
+    Rule('mapping', [], 'empty_list'),
+    Rule('mapping', ['mapping', 'symbol'], 'append_arg_str'),
+    Rule('mapping', ['mapping', 'string'], 'append_arg_str'),
+    Rule('mapping', ['mapping', 'int'],    'append_arg_int'),
+
     Rule('arguments', [], 'empty_list'),
-    Rule('arguments', ['arguments', 'symbol'], 'append_arg_str'),
+    Rule('arguments', ['arguments', 'item'], 'append_arg_item'),
     Rule('arguments', ['arguments', 'string'], 'append_arg_str'),
     Rule('arguments', ['arguments', 'int'],    'append_arg_int'),
 ]
@@ -154,6 +165,10 @@ def post_special(env, name, keyword):
 
 def post_call(env, name, arguments):
     return env.functions[name.value](*arguments)
+
+def post_append_arg_item(env, seq, item):
+    seq.append(item)
+    return seq
 
 def post_append_arg_str(env, seq, token):
     seq.append(token.value)

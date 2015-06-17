@@ -62,10 +62,12 @@ class Parser(object):
         return state, parent
 
     def find(self, name, stop):
+        out = set()
         for state, parent in self.chart[stop]:
             for rule in state.completed:
                 if rule.lhs == name:
-                    yield parent, rule
+                    out.add((parent, rule))
+        return out
 
     def chains(self, rhs, start, stop, index=None):
         if index is None:
