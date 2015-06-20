@@ -2,11 +2,13 @@
     This part of the code likely won't compile by RPython.
 """
 import common
+import struct
 from collections import OrderedDict
 
 class Function(object):
-    def __init__(self, flags, argc, localc, blocks, functions):
+    def __init__(self, flags, tmpc, argc, localc, blocks, functions):
         self.flags = flags
+        self.tmpc = tmpc
         self.argc = argc
         self.localc = localc
         self.blocks = blocks
@@ -14,6 +16,7 @@ class Function(object):
 
     def dump(self, stream):
         stream.write_integer(self.flags)
+        stream.write_integer(self.tmpc)
         stream.write_integer(self.argc)
         stream.write_integer(self.localc)
         stream.write_integer(len(self.blocks))
@@ -24,16 +27,16 @@ class Function(object):
         for func in self.functions:
             func.dump(stream)
 
-class StringTable(object):
+class ConstantTable(object):
     def __init__(self):
-        self.strings = OrderedDict()
+        self.constants = OrderedDict()
 
-    def get(self, string):
-        string_table = self.strings
-        if string in string_table:
-            return string_table[string]
-        string_table[string] = len(string_table)
-        return string_table[string]
+    def get(self, const):
+        const_table = self.constants
+        if const in const_table:
+            return const_table[const]
+        const_table[const] = len(const_table)
+        return const_table[const]
 
 class WriteStream(object):
     def __init__(self, fd):
@@ -68,15 +71,31 @@ class WriteStream(object):
         self.write_integer(len(data))
         self.write(data)
 
+    def write_i64(self, value):
+        self.write(struct.pack('l', value))
+
+    def write_double(self, value):
+        self.write(struct.pack('d', value))
+
 def open_file(pathname):
     return WriteStream(open(pathname, 'w'))
 
-def dump_function(pathname, entry, strtab):
+def dump_function(pathname, entry, consttab):
     stream = open_file(pathname)
     stream.write(common.header)
     entry.dump(stream)
     # write string table
-    stream.write_integer(len(strtab.strings))
-    for string in strtab.strings:
-        stream.write_string(string)
+    stream.write_integer(len(consttab.constants))
+    for const in consttab.constants:
+        if isinstance(const, (str, unicode)):
+            stream.write_ubyte(0x01)
+            stream.write_string(const)
+        elif isinstance(const, (int, long)):
+            stream.write_ubyte(0x02)
+            stream.write_i64(const)
+        elif isinstance(const, float):
+            stream.write_ubyte(0x03)
+            stream.write_float(const)
+        else:
+            assert False, "insert encoding for constant"
     stream.close()

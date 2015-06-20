@@ -2,15 +2,14 @@ from rpython.rlib import jit
 from rpython.rlib.objectmodel import specialize
 
 # I may change this significantly later.
-# One thing this is not telling, is that arguments are tagged with types.
-# 00 - variable
-# 01 - integer
-# 10 - string
-# 11 - block index
 
 def enc_code(name, *args):
     assert len(args) < 16
     return enc_vlq(opcode(name) | len(args)) + ''.join(map(enc_vlq, args))
+
+# arguments are tagged with types.
+ARG_LOCAL, ARG_RAW, ARG_CONST, ARG_BLOCK = range(4)
+ARG_SHIFT = 2
 
 @jit.unroll_safe
 def dec_code(data, pc):
@@ -59,8 +58,9 @@ def opcode(name):
 # This would be pointless when interpreting, it's here separately.
 def opname(value):
     value = value >> 5
-    name = ''
+    name = []
     while value > 0:
-        name += chr((value & 31) + ord('a') - 1)
+        name.append(chr((value & 31) + ord('a') - 1))
         value >>= 5
-    return ''.join(reversed(name))
+    name.reverse()
+    return ''.join(name)

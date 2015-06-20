@@ -189,8 +189,6 @@ class Env(object):
         self.symboltab = symboltab
         self.functions = functions
 
-print globals()['post_symbolic_item']
-
 parse = Parser(symboltab, grammar, 'file')
 
 def load(functions, path):
