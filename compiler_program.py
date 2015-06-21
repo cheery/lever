@@ -64,13 +64,13 @@ class Op(object):
     def uses(self):
         return set(arg for arg in self.args if isinstance(arg, Op))
 
-class VOp(object):
+class VOp(Op):
     index = None
 
     def as_arg(self, consttab):
         return self.index << ARG_SHIFT | ARG_LOCAL
 
-    def dump(self):
+    def dump(self, consttab):
         return enc_code(self.name, self.as_arg(consttab),
             *(arg.as_arg(consttab) for arg in self.args))
 
@@ -142,16 +142,16 @@ def allocate_tmp(body):
     for current, stop, op in starts:
         assert current <= stop
         if len(avail) > 0:
-            op.i = avail.pop()
+            op.index = avail.pop()
         else:
-            op.i = body.tmpc
+            op.index = body.tmpc
             body.tmpc += 1
         stops.append((stop, op))
         sort_ends(stops).sort()
         while len(stops) > 0 and stops[0][0] < current:
             _, exp = stops.pop(0)
-            assert exp.i not in avail
-            avail.append(exp.i)
+            assert exp.index not in avail
+            avail.append(exp.index)
 
 def plot_range(ranges, key, pos): 
     if key not in ranges:

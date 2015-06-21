@@ -12,23 +12,24 @@ class Parser(object):
 
     def step(self, token):
         i = len(self.chart)
-        self.chart.append(OrderedDict())
+        current = OrderedDict()
+        self.chart.append(current)
         self.input.append(token)
         # scan
         for state, parent in self.chart[i-1]:
             try:
                 k = state.goto[token.name]
-                self.chart[i][(k, parent)] = None
+                current[(k, parent)] = None
             except KeyError as ke:
                 pass
             for condition, k in state.conditions:
                 if condition(token):
-                    self.chart[i][(k, parent)] = None
+                    current[(k, parent)] = None
         # complete
         accept = False
         expect = set()
         #found = set()
-        for state, parent in self.chart[i]:
+        for state, parent in current:
             expect.update(state.goto)
             accept |= (parent == 0 and state.accept)
             #if parent == i: # XXX: Find out why I inserted this originally.
@@ -40,13 +41,13 @@ class Parser(object):
                     #    pstate, pparent = self.try_reduction_path(pstate, pparent)
                     try:
                         k = pstate.goto[rule.lhs]
-                        self.chart[i][(k, pparent)] = None
+                        current[(k, pparent)] = None
                     except KeyError as ke:
                         pass
                 #found.add(rule)
             # predict
             try:
-                self.chart[i][(state.goto[None], i)] = None
+                current[(state.goto[None], i)] = None
             except KeyError as ke:
                 pass
         self.accept = accept

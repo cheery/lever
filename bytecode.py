@@ -156,16 +156,14 @@ def interpret_body(block, frame, cl_frame):#, loop_break):
         #    frame.store(op.i, frame.load(op.value.i).iter())
 
         elif op == opcode('gatr') and len(args) == 3:
-            name = const_arg(cl_frame, args, 2)
-            assert isinstance(name, space.String)
+            name = string_arg(cl_frame, args, 2)
             frame.store(local_arg(args, 0),
-                frame.load(local_arg(args, 1)).getattr(name.string))
+                frame.load(local_arg(args, 1)).getattr(name))
         elif op == opcode('satr') and len(args) == 4:
-            name = const_arg(cl_frame, args, 2)
-            assert isinstance(name, space.String)
+            name = string_arg(cl_frame, args, 2)
             frame.store(local_arg(args, 0),
                 frame.load(local_arg(args, 1))
-                .setattr(name.string,
+                .setattr(name,
                     frame.load(local_arg(args, 3))))
         elif op == opcode('gitm') and len(args) == 3:
             frame.store(local_arg(args, 0),
@@ -196,6 +194,14 @@ def interpret_body(block, frame, cl_frame):#, loop_break):
             value = frame.load(local_arg(args, 3))
             parent.local[raw_arg(args, 2)] = value
             frame.store(local_arg(args, 0), value)
+        elif op == opcode('gglo') and len(args) == 2:
+            frame.store(local_arg(args, 0), 
+                module.getattr(string_arg(cl_frame, args, 1)))
+        elif op == opcode('sglo') and len(args) == 3:
+            frame.store(local_arg(args, 0), 
+                module.setattr(
+                    string_arg(cl_frame, args, 1),
+                    frame.load(local_arg(args, 2))))
         elif op == opcode('ret') and len(args) == 1:
             return frame.load(local_arg(args, 0))
         else:
@@ -234,11 +240,17 @@ def block_arg(cl_frame, args, index):
 def const_arg(cl_frame, args, index):
     return cl_frame.body.consttab[arg_as(args, index, ARG_CONST)]
 
+@always_inline
+def string_arg(cl_frame, args, index):
+    value = const_arg(cl_frame, args, index)
+    assert isinstance(value, String)
+    return value.string
+
 ARG_MASK = ((1 << ARG_SHIFT) - 1)
 @always_inline
 def arg_as(args, index, flag):
     val = args[index]
-    if not val & ARG_MASK:
+    if not val & ARG_MASK == flag:
         raise space.Error(u"instruction format violation") 
     return args[index] >> ARG_SHIFT
 

@@ -1,5 +1,6 @@
 from interface import Object
 from rpython.rlib.objectmodel import compute_hash
+import numbers
 
 class String(Object):
     _immutable_fields_ = ['string[*]']
@@ -19,3 +20,8 @@ class String(Object):
         if isinstance(other, String):
             return self.string == other.string
         return False
+
+    def getattr(self, name):
+        if name == u'length':
+            return numbers.Integer(len(self.string))
+        return Object.getattr(self, name)

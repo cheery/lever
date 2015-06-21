@@ -1,6 +1,7 @@
 from space import *
 from rpython.rlib import rfile
 from rpython.rlib.rstruct import ieee
+from rpython.rtyper.lltypesystem import rffi
 import os
 import struct
 
@@ -46,16 +47,13 @@ class Stream(object):
         return ieee.unpack_float(data, False)
 
     def read_u64(self):
-        return self.read_uint() << 0 | self.read_uint() << 32
+        return rffi.r_ulong(self.read_uint() << 0 | self.read_uint() << 32)
 
     def read_i64(self):
-        return self.read_u64() # XXX: fix this
-        # This code didn't work
-        u64 = self.read_u64()
-        sign = 0x8000000000000000L
-        if u64 < sign:
-            return u64
-        return u64 - sign - sign
+        assert rffi.sizeof(rffi.LONG) == 8
+        return rffi.cast(rffi.LONG, self.read_u64())
+
+sign_mask = 1L << 63
 
 def open_file(pathname):
     try:

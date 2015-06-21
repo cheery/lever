@@ -2,6 +2,7 @@ from earley import Rule, print_result
 from reader import CStream, L2, Literal, Position
 import earley
 import sys
+import time
 
 class Parser(object):
     def __init__(self, symboltab, grammar, accept, debug=False):
@@ -9,11 +10,14 @@ class Parser(object):
         self.symboltab = symboltab
         self.debug = debug
 
-    def from_file(self, namespace, env, path):
+    def from_file(self, namespace, env, path, benchmark=False):
         with open(path) as fd:
-            return self(namespace, env, fd.read())
+            return self(namespace, env, fd.read(), benchmark)
 
-    def __call__(self, namespace, env, source):
+    def __call__(self, namespace, env, source, benchmark=False):
+        if benchmark:
+            now = time.time()
+            print 'start parsing'
         parser = earley.Parser(self.init, self.nullable)
         stream = L2(CStream(source), self.symboltab)
         indent_stack = []
@@ -52,7 +56,13 @@ class Parser(object):
             raise Exception("{0.lno}:{0.col}: parse error at end of file\n{1}"
                 .format(stream.stream, trail))
         if self.debug: print_result(parser)
-        return traverse(parser, parser.root, 0, len(parser.input), namespace, env)
+        if benchmark:
+            trav = time.time()
+            print 'parsing took:', trav - now
+        results = traverse(parser, parser.root, 0, len(parser.input), namespace, env)
+        if benchmark:
+            print 'traverse took:', time.time() - trav
+        return results
 
 def format_expect(expect):
     trail = "expected end of file"

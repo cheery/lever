@@ -38,6 +38,9 @@ class ScopeBlock(object):
 
 parser = grammarlang.load(functions, 'pyllisp.grammar')
 
+def post_empty_list(env, loc):
+    return []
+
 def post_first(env, loc, item):
     return [item]
 
@@ -45,17 +48,38 @@ def post_append(env, loc, seq, item):
     seq.append(item)
     return seq
 
+def post_binary(env, loc, lhs, op, rhs):
+    # XXX: replace with lookup
+    callee = env.vop(loc, 'gglo', Constant(loc, op.value))
+    return env.vop(loc, 'call', callee, lhs, rhs)
+
+def post_prefix(env, loc, op, rhs):
+    # XXX: replace with lookup
+    callee = env.vop(loc, 'gglo', Constant(loc, op.value + "expr"))
+    return env.vop(loc, 'call', callee, rhs)
+
+def post_call(env, loc, callee, args):
+    return env.vop(loc, 'call', callee, *args)
+
+def post_getattr(env, loc, obj, name):
+    name = Constant(loc, name.value)
+    return env.vop(loc, 'gatr', obj, name)
+
+def post_getitem(env, loc, obj, index):
+    return env.vop(loc, 'gitm', obj, index)
+
 def post_lookup(env, loc, symbol):
-    return None
+    # XXX: replace with real lookup
+    return env.vop(loc, 'gglo', Constant(loc, symbol.value))
 
 def post_int(env, loc, num):
-    return Constant(loc, int(num.value))
+    return env.vop(loc, 'cnst', Constant(loc, int(num.value)))
 
 def post_float(env, loc, num):
-    return Constant(loc, int(num.value))
+    return env.vop(loc, 'cnst', Constant(loc, float(num.value)))
 
 def post_string(env, loc, string):
-    return Constant(loc, string.value)
+    return env.vop(loc, 'cnst', Constant(loc, string.value))
 
 def post_pass(env, loc, val):
     return val
@@ -67,7 +91,7 @@ def main():
     for name in sys.argv[1:]:
         env = Scope()
         entry = ScopeBlock(env)
-        result = parser.from_file(globals(), env, name)
+        result = parser.from_file(globals(), entry, name)
         entry.op(result.loc, 'ret', result)
 
         consttab = ConstantTable()
