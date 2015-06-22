@@ -1,0 +1,51 @@
+file =>
+    pass:       expr
+    pass(expr): file newline expr
+
+expr =>
+    expr20
+    binary: expr binary_spacing(plus:"+") expr20
+    binary: expr binary_spacing(minus:"-") expr20
+
+expr20 =>
+    prefix
+    binary: expr binary_spacing(star:"*") prefix
+    binary: expr binary_spacing(slash:"/") prefix
+    binary: expr binary_spacing(percent:"%") prefix
+
+prefix =>
+    postfix
+    prefix: prefix_spacing(plus:"+") postfix
+    prefix: prefix_spacing(minus:"-") postfix
+
+postfix =>
+    term
+    call(postfix arguments):
+        postfix tight(lp:"(") arguments rp:")"
+    getattr(postfix symbol):
+        postfix dot:"." symbol
+    getitem(postfix expr):
+        postfix tight(lb:"[") expr rp:"]"
+
+arguments =>
+    empty_list:
+    append:     arguments expr
+
+term =>
+    lookup:     symbol
+    int:        int
+    float:      float
+    string:     string
+    pass(expr): lp:"(" expr rp:")"
+
+
+## sample syntax
+#test => test
+#    foobar baaz
+#
+#test =>
+#    test:        notation
+#    test(a b c): a=notation b=notation c=notation
+#    test:        x=eq:"=="
+#
+#colon:":"
