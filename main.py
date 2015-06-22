@@ -4,7 +4,7 @@ from rpython.config.translationoption import get_combined_translation_config
 from util import STDIN, STDOUT, STDERR, read_file, write
 import api
 import base
-import bytecode
+import evaluator.loader
 import green
 import space
 import sys, os
@@ -77,7 +77,7 @@ def entry_point(argv):
     try:
         for arg in argv[1:]:
             module = space.Module(u'main', {}, extends=base.module)
-            program = bytecode.from_file(arg)
+            program = evaluator.loader.from_file(arg)
             result = program.call([module])
             os.write(1, (result.repr() + u'\n').encode('utf-8'))
     except space.Error as error:

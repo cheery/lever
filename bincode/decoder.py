@@ -40,11 +40,14 @@ class Stream(object):
         return output
 
     def read_string(self):
-        return self.read(self.read_integer()).decode('utf-8')
+        return self.read(self.read_u16()).decode('utf-8')
 
     def read_double(self):
         data = self.read(8)
         return ieee.unpack_float(data, False)
+
+    def read_u16(self):
+        return self.read_ubyte() << 0 | self.read_ubyte() << 8
 
     def read_u64(self):
         return rffi.r_ulong(self.read_uint() << 0 | self.read_uint() << 32)

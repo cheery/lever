@@ -416,7 +416,7 @@ class Array(Type):
             self.parameter = self
             self.size = 0
         else:
-            self.size = sizeof(ctype) * int(length)
+            self.size = sizeof(ctype) * length
         self.align = ctype.align
 
     def typecheck(self, other):
