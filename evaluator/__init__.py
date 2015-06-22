@@ -1,4 +1,5 @@
 def test():
+    import sys
     import space
     import loader
     import bincode.encoder
@@ -17,7 +18,7 @@ def test():
             15,
             1.2,
             ])
-    program = loader.from_file('sample.lic')
+    program = loader.from_file(sys.argv[1])
     module = space.Module(u'main', {}, extends=base.module)
     print program.call([module]).repr()
 

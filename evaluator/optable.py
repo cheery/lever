@@ -9,7 +9,7 @@ source = [
     ('return',   0x50, False, 'vreg'),
     ('jump',     0x60, False, 'block'),
     ('cond',     0x70, False, 'vreg block block'),
-    ('func',     0x80, True,  'func'),
+    ('func',     0x80, True,  'function'),
     ('getattr',  0xD0, True,  'vreg string'),
     ('setattr',  0xD1, True,  'vreg string vreg'),
     ('getitem',  0xD2, True,  'vreg vreg'),

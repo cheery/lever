@@ -1,11 +1,10 @@
-from bincode.encoder import Function
-from instruction_format import enc_code, ARG_SHIFT, ARG_LOCAL, ARG_RAW, ARG_CONST, ARG_BLOCK
 from rpython.rlib.listsort import make_timsort_class
+from evaluator import optable
 
-class Body(object):
-    def __init__(self, blocks, functions, localv, argc, flags):
+class Function(object):
+    def __init__(self, index, flags, argc, localv, blocks):
+        self.index = index
         self.blocks = reverse_postorder(blocks[0])
-        self.functions = functions
         #self.is_generator = is_generator
         self.tmpc = 0
         allocate_tmp(self)
@@ -13,14 +12,25 @@ class Body(object):
         self.localv = localv
         self.flags = flags
 
+    def as_arg(self, consttab, vt):
+        assert vt == 'function'
+        return self.index
+
     def dump(self, consttab):
-        blocks = [block.dump(consttab) for block in self.blocks]
-        functions = [func.dump(consttab) for func in self.functions]
+        block = []
+        for bb in self.blocks:
+            bb.label = len(block)
+            block.extend(bb.dump(consttab))
+        block = []
+        for bb in self.blocks:
+            assert bb.label == len(block)
+            block.extend(bb.dump(consttab))
         localc = len(self.localv)
-        return Function(self.flags, self.tmpc, self.argc, localc, blocks, functions)
+        return self.flags, self.tmpc, self.argc, localc, block
 
 class Block(object):
     def __init__(self, index, contents, succ):
+        self.label = 0
         self.index = index
         self.contents = contents
         self.succ = succ
@@ -39,40 +49,54 @@ class Block(object):
         self.contents.append(op)
 
     def dump(self, consttab):
-        return ''.join(op.dump(consttab) for op in self)
+        result = []
+        for op in self:
+            result.extend(op.dump(consttab))
+        return result
 
 class Constant(object):
-    def __init__(self, loc, value):
-        self.loc = loc
+    def __init__(self, value):
         self.value = value
 
-    def as_arg(self, consttab):
-        return consttab.get(self.value) << ARG_SHIFT | ARG_CONST
+    def as_arg(self, consttab, vt):
+        assert vt == 'constant' or vt == 'string' and isinstance(self.value, (str, unicode))
+        return consttab.get(self.value)
 
     def __repr__(self):
         return "Constant({})".format(self.value)
 
 class Op(object):
-    def __init__(self, loc, name, *args):
+    index = None
+
+    def __init__(self, loc, opname, args):
         self.loc = loc
-        self.name = name
         self.args = args
+        self.opname = opname
+        (self.opcode, self.has_result,
+         self.pattern, self.variadic) = optable.enc[opname]
+
+    def as_arg(self, consttab, vt):
+        assert vt == 'vreg'
+        assert self.has_result
+        return self.index
 
     def dump(self, consttab):
-        return enc_code(self.name, *(arg.as_arg(consttab) for arg in self.args))
+        assert len(self.args) >= len(self.pattern)
+        assert self.variadic or len(self.args) == len(self.pattern)
+        oplen = len(self.args) + self.has_result
+        yield self.opcode << 8 | oplen
+        if self.has_result:
+            yield self.index
+        vc = len(self.args) - len(self.pattern)
+        for arg, vt in zip(self.args, self.pattern + [self.variadic]*vc):
+            if isinstance(arg, int):
+                assert isinstance(arg, index)
+                yield arg
+            else:
+                yield arg.as_arg(consttab, vt)
 
     def uses(self):
         return set(arg for arg in self.args if isinstance(arg, Op))
-
-class VOp(Op):
-    index = None
-
-    def as_arg(self, consttab):
-        return self.index << ARG_SHIFT | ARG_LOCAL
-
-    def dump(self, consttab):
-        return enc_code(self.name, self.as_arg(consttab),
-            *(arg.as_arg(consttab) for arg in self.args))
 
 # Blocks are ordered into reverse postorder because
 # it makes easier to do some analysis on them.
