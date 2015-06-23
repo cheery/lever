@@ -1,6 +1,21 @@
-file =>
-    pass:       expr
-    pass(expr): file newline expr
+statements =>
+    pass:      flow_statement
+    pass(rhs): statements newline rhs=flow_statement
+
+flow_statement =>
+    pass: statement
+    return(statement):
+        return:"return" statement
+    if(statement subblock):
+        if:"if" statement subblock
+
+subblock => subblock: block
+
+statement =>
+    pass: expr
+    call: expr arguments_1
+    assign(lhs statement):
+        lhs=symbol eq:"=" statement
 
 expr =>
     expr20
@@ -25,10 +40,13 @@ postfix =>
     getattr(postfix symbol):
         postfix dot:"." symbol
     getitem(postfix expr):
-        postfix tight(lb:"[") expr rp:"]"
+        postfix tight(lb:"[") expr rb:"]"
 
 arguments =>
     empty_list:
+    append:     arguments expr
+
+arguments_1 =>
     append:     arguments expr
 
 term =>
@@ -36,16 +54,15 @@ term =>
     int:        int
     float:      float
     string:     string
-    pass(expr): lp:"(" expr rp:")"
+    pass(expr): loose(lp:"(") expr rp:")"
+    list(arguments): loose(lb:"[") arguments rb:"]"
+    function(bindings):
+        lp:"(" bindings rp:")" colon:":" block
 
+bindings =>
+    empty_list:
+    append:     bindings binding
 
-## sample syntax
-#test => test
-#    foobar baaz
-#
-#test =>
-#    test:        notation
-#    test(a b c): a=notation b=notation c=notation
-#    test:        x=eq:"=="
-#
-#colon:":"
+binding => binding: symbol
+
+block => pass(statements): indent statements dedent

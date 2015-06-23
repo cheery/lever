@@ -42,11 +42,13 @@ class Block(object):
     def __len__(self):
         return len(self.contents)
 
-    def as_arg(self, consttab):
-        return self.index << ARG_SHIFT | ARG_BLOCK
+    def as_arg(self, consttab, vt):
+        assert vt == 'block'
+        return self.label
 
     def append(self, op):
         self.contents.append(op)
+        self.succ.update(succ for succ in op if isinstance(succ, Block))
 
     def dump(self, consttab):
         result = []
@@ -81,8 +83,8 @@ class Op(object):
         return self.index
 
     def dump(self, consttab):
-        assert len(self.args) >= len(self.pattern)
-        assert self.variadic or len(self.args) == len(self.pattern)
+        assert len(self.args) >= len(self.pattern), self.opname
+        assert self.variadic or len(self.args) == len(self.pattern), self.opname
         oplen = len(self.args) + self.has_result
         yield self.opcode << 8 | oplen
         if self.has_result:
@@ -90,13 +92,16 @@ class Op(object):
         vc = len(self.args) - len(self.pattern)
         for arg, vt in zip(self.args, self.pattern + [self.variadic]*vc):
             if isinstance(arg, int):
-                assert isinstance(arg, index)
+                assert vt == 'index'
                 yield arg
             else:
                 yield arg.as_arg(consttab, vt)
 
     def uses(self):
         return set(arg for arg in self.args if isinstance(arg, Op))
+
+    def __iter__(self):
+        return iter(self.args)
 
 # Blocks are ordered into reverse postorder because
 # it makes easier to do some analysis on them.

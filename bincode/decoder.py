@@ -47,7 +47,8 @@ class Stream(object):
         return ieee.unpack_float(data, False)
 
     def read_u16(self):
-        return self.read_ubyte() << 0 | self.read_ubyte() << 8
+        return (self.read_ubyte() << 0 |
+                self.read_ubyte() << 8)
 
     def read_u64(self):
         return rffi.r_ulong(self.read_uint() << 0 | self.read_uint() << 32)

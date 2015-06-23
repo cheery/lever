@@ -4,7 +4,7 @@ source = [
     ('assert',   0x00, False, 'vreg'),
     ('constant', 0x10, True,  'constant'),
     ('list',     0x20, True,  'vreg*'),
-    ('move',     0x30, True,  'vreg'),
+    ('move',     0x30, False, 'vreg vreg'),
     ('call',     0x40, True,  'vreg vreg*'),
     ('return',   0x50, False, 'vreg'),
     ('jump',     0x60, False, 'block'),

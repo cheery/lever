@@ -169,45 +169,37 @@ def interpret(pc, block, regv, frame):
         #elif isinstance(op, Iter):
         #    regv.store(op.i, regv.load(op.value.i).iter())
 
-        #elif op == opcode('gatr') and len(args) == 3:
-        #    name = string_arg(frame, args, 2)
-        #    regv.store(local_arg(args, 0),
-        #        regv.load(local_arg(args, 1)).getattr(name))
-        #elif op == opcode('satr') and len(args) == 4:
-        #    name = string_arg(frame, args, 2)
-        #    regv.store(local_arg(args, 0),
-        #        regv.load(local_arg(args, 1))
-        #        .setattr(name,
-        #            regv.load(local_arg(args, 3))))
-        #elif op == opcode('gitm') and len(args) == 3:
-        #    regv.store(local_arg(args, 0),
-        #        regv.load(local_arg(args, 1))
-        #        .getitem(regv.load(local_arg(args, 2))))
-        #elif op == opcode('sitm') and len(args) == 4:
-        #    regv.store(local_arg(args, 0),
-        #        regv.load(local_arg(args, 1))
-        #        .setitem(
-        #            regv.load(local_arg(args, 2)),
-        #            regv.load(local_arg(args, 3))))
-        #elif op ==  opcode('gloc') and len(args) == 2:
-        #    regv.store(local_arg(args, 0),
-        #        frame.local[raw_arg(args, 1)])
-        #elif op ==  opcode('sloc') and len(args) == 3:
-        #    value = regv.load(local_arg(args, 2))
-        #    frame.local[raw_arg(args, 1)] = value
-        #    regv.store(local_arg(args, 0), value)
-        #elif op == opcode('gup') and len(args) == 3:
-        #    parent = frame.parent
-        #    for i in range(raw_arg(args, 1)):
-        #        parent = parent.parent
-        #    regv.store(local_arg(args, 0), frame.local[raw_arg(args, 2)])
-        #elif op ==  opcode('sup') and len(args) == 4:
-        #    parent = frame.parent
-        #    for i in range(raw_arg(args, 1)):
-        #        parent = parent.parent
-        #    value = regv.load(local_arg(args, 3))
-        #    parent.local[raw_arg(args, 2)] = value
-        #    regv.store(local_arg(args, 0), value)
+        elif opcode == opcode_of('getattr'):
+            name = get_string(unit, block, ix+2)
+            obj = regv.load(block[ix+1])
+            regv.store(block[ix+0], obj.getattr(name))
+        elif opcode == opcode_of('setattr'):
+            value = regv.load(block[ix+3])
+            name = get_string(unit, block, ix+2)
+            obj = regv.load(block[ix+1])
+            regv.store(block[ix+0], obj.setattr(name, value))
+        elif opcode == opcode_of('getitem'):
+            index = regv.load(block[ix+2])
+            obj = regv.load(block[ix+1])
+            regv.store(block[ix+0], obj.getitem(index))
+        elif opcode == opcode_of('setitem'):
+            item = regv.load(block[ix+3])
+            index = regv.load(block[ix+2])
+            obj = regv.load(block[ix+1])
+            regv.store(block[ix+0], obj.setitem(index, item))
+        elif opcode == opcode_of('getloc'):
+            regv.store(block[ix+0], frame.local[block[ix+1]])
+        elif opcode == opcode_of('setloc'):
+            value = regv.load(block[ix+2])
+            frame.local[block[ix+1]] = value
+            regv.store(block[ix+0], value)
+        elif opcode == opcode_of('getupv'):
+            value = get_upframe(frame, block[ix+1]).local[block[ix+2]]
+            regv.store(block[ix+0], value)
+        elif opcode == opcode_of('setupv'):
+            value = regv.load(block[ix+3])
+            get_upframe(frame, block[ix+1]).local[block[ix+2]] = value
+            regv.store(block[ix+0], value)
         elif opcode == opcode_of('getglob'):
             regv.store(block[ix+0],
                 module.getattr(get_string(unit, block, ix+1)))
@@ -227,6 +219,13 @@ def op_call(regv, block, ix, pc):
     for i in range(ix+2, pc):
         argv.append(regv.load(block[i]))
     regv.store(block[ix], callee.call(argv))
+
+@jit.unroll_safe
+def get_upframe(frame, index):
+    parent = frame.parent
+    for i in range(index):
+        parent = parent.parent
+    return parent
 
 @specialize.memo()
 def opcode_of(opname):

@@ -1,0 +1,11 @@
+print "hello world" -1 * (2 + 3)
+print [5 3] [1 2 3][2] [5 2 6].length
+
+baaz = (foo):
+    print("foo bar" foo)
+    return foo
+baaz("kak")
+
+if false
+    print("yes")
+    "pop"

@@ -56,7 +56,8 @@ class WriteStream(object):
         self.write(struct.pack('L', value))
 
     def write_u16(self, value):
-        self.write(struct.pack('H', value))
+        self.write_ubyte(value >> 0  & 0xFF)
+        self.write_ubyte(value >> 8  & 0xFF)
 
     def write_double(self, value):
         self.write(struct.pack('d', value))
