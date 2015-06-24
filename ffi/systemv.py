@@ -208,7 +208,7 @@ class CFunc(Type):
             cif.exchange_args[i] = exchange_size
             exchange_size += sizeof(argtype)
         cif.exchange_result = exchange_size
-        cif.exchange_result_libffi = exchange_size
+        #cif.exchange_result_libffi = exchange_size
         restype = self.restype
         if restype is null:
             exchange_size += 0

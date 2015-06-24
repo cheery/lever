@@ -5,11 +5,11 @@ from util import STDIN, STDOUT, STDERR, read_file, write
 import api
 import base
 import evaluator.loader
-import green
 import space
 import sys, os
 config = get_combined_translation_config(translating=True)
-config.translation.continuation = True
+if config.translation.continuation:
+    import green
 
 #def interactive():
 #    module = space.Module(u'shell', {}, extends=base.module)
@@ -72,7 +72,8 @@ config.translation.continuation = True
 #    return 0
 
 def entry_point(argv):
-    green.process.init(config)
+    if config.translation.continuation:
+        green.process.init(config)
     api.init(argv)
     try:
         for arg in argv[1:]:
