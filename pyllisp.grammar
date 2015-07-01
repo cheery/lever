@@ -8,6 +8,14 @@ flow_statement =>
         return:"return" statement
     if(statement subblock):
         if:"if" statement subblock
+    while(statement subblock):
+        while:"while" statement subblock
+    for: for_bind block
+
+for_bind => for_bind(symbol iter_statement):
+    for:"for" symbol in:"in" iter_statement
+
+iter_statement => iter_statement: statement
 
 subblock => subblock: block
 

@@ -114,102 +114,110 @@ def new_register_array(regc):
         regs.append(space.null)
     return RegisterArray(regs)
 
-def get_printable_location(pc, block, module, unit):
+def get_printable_location(pc, iterstop, block, module, unit):
     return "pc=%d module=%s" % (pc, module.repr().encode('utf-8'))
 
 jitdriver = jit.JitDriver(
-    greens=['pc', 'block', 'module', 'unit'], # 'loop_break'
+    greens=['pc', 'iterstop', 'block', 'module', 'unit'],
     reds=['regv', 'frame'],
     virtualizables = ['regv'],
     get_printable_location=get_printable_location)
 
-def interpret(pc, block, regv, frame):
+LARGE_PC = rffi.r_ulong(0xFFFFFFFF)
+
+def interpret(pc, block, regv, frame, iterstop=LARGE_PC):
     module = jit.promote(frame.module)
     unit   = jit.promote(frame.unit)
-    while pc < len(block):
-        jitdriver.jit_merge_point(
-            pc=pc, block=block, module=module, unit=unit,
-            regv=regv, frame=frame)
-        opcode = rffi.r_ulong(block[pc])>>8
-        ix = pc+1
-        pc = ix+rffi.r_ulong(block[pc])&255
-        if opcode == opcode_of('assert'):
-            if space.is_false(regv.load(block[ix+0])):
-                raise space.Error(u"Assertion error")
-        elif opcode == opcode_of('constant'):
-            regv.store(block[ix+0], unit.constants[block[ix+1]])
-        elif opcode == opcode_of('list'):
-            contents = []
-            for i in range(ix+1, pc):
-                contents.append(regv.load(block[i]))
-            regv.store(block[ix], space.List(contents))
-        elif opcode == opcode_of('move'):
-            regv.store(block[ix+0], regv.load(block[ix+1]))
-        elif opcode == opcode_of('call'):
-            op_call(regv, block, ix, pc)
-        elif opcode == opcode_of('return'):
-            return regv.load(block[ix+0])
-        elif opcode == opcode_of('jump'):
-            pc = rffi.r_ulong(block[ix+0])
-        elif opcode == opcode_of('cond'):
-            if space.is_false(regv.load(block[ix+0])):
-                pc = rffi.r_ulong(block[ix+2])
+    try:
+        while pc < len(block):
+            jitdriver.jit_merge_point(
+                pc=pc, block=block, module=module, unit=unit, iterstop=iterstop,
+                regv=regv, frame=frame)
+            opcode = rffi.r_ulong(block[pc])>>8
+            ix = pc+1
+            pc = ix+(rffi.r_ulong(block[pc])&255)
+            if opcode == opcode_of('assert'):
+                if space.is_false(regv.load(block[ix+0])):
+                    raise space.Error(u"Assertion error")
+            elif opcode == opcode_of('constant'):
+                regv.store(block[ix+0], unit.constants[block[ix+1]])
+            elif opcode == opcode_of('list'):
+                contents = []
+                for i in range(ix+1, pc):
+                    contents.append(regv.load(block[i]))
+                regv.store(block[ix], space.List(contents))
+            elif opcode == opcode_of('move'):
+                regv.store(block[ix+0], regv.load(block[ix+1]))
+            elif opcode == opcode_of('call'):
+                op_call(regv, block, ix, pc)
+            elif opcode == opcode_of('return'):
+                return regv.load(block[ix+0])
+            elif opcode == opcode_of('jump'):
+                pc = rffi.r_ulong(block[ix+0])
+            elif opcode == opcode_of('cond'):
+                if space.is_false(regv.load(block[ix+0])):
+                    pc = rffi.r_ulong(block[ix+2])
+                else:
+                    pc = rffi.r_ulong(block[ix+1])
+            elif opcode == opcode_of('func'):
+                regv.store(block[ix+0],
+                    Closure(frame, unit.functions[block[ix+1]]))
+            elif opcode == opcode_of('iter'):
+                regv.store(block[ix+0], regv.load(block[ix+1]).iter())
+            elif opcode == opcode_of('iterstop'):
+                iterstop = rffi.r_ulong(block[ix+0])
+            elif opcode == opcode_of('next'):
+                regv.store(block[ix+0], regv.load(block[ix+1]).callattr(u'next', []))
+            # this is missing.
+            #elif isinstance(op, Yield):
+            #    raise YieldIteration(op.block, loop_break, op.i, regv.load(op.value.i))
+            elif opcode == opcode_of('getattr'):
+                name = get_string(unit, block, ix+2)
+                obj = regv.load(block[ix+1])
+                regv.store(block[ix+0], obj.getattr(name))
+            elif opcode == opcode_of('setattr'):
+                value = regv.load(block[ix+3])
+                name = get_string(unit, block, ix+2)
+                obj = regv.load(block[ix+1])
+                regv.store(block[ix+0], obj.setattr(name, value))
+            elif opcode == opcode_of('getitem'):
+                index = regv.load(block[ix+2])
+                obj = regv.load(block[ix+1])
+                regv.store(block[ix+0], obj.getitem(index))
+            elif opcode == opcode_of('setitem'):
+                item = regv.load(block[ix+3])
+                index = regv.load(block[ix+2])
+                obj = regv.load(block[ix+1])
+                regv.store(block[ix+0], obj.setitem(index, item))
+            elif opcode == opcode_of('getloc'):
+                regv.store(block[ix+0], frame.local[block[ix+1]])
+            elif opcode == opcode_of('setloc'):
+                value = regv.load(block[ix+2])
+                frame.local[block[ix+1]] = value
+                regv.store(block[ix+0], value)
+            elif opcode == opcode_of('getupv'):
+                value = get_upframe(frame, block[ix+1]).local[block[ix+2]]
+                regv.store(block[ix+0], value)
+            elif opcode == opcode_of('setupv'):
+                value = regv.load(block[ix+3])
+                get_upframe(frame, block[ix+1]).local[block[ix+2]] = value
+                regv.store(block[ix+0], value)
+            elif opcode == opcode_of('getglob'):
+                regv.store(block[ix+0],
+                    module.getattr(get_string(unit, block, ix+1)))
+            elif opcode == opcode_of('setglob'):
+                regv.store(block[ix+0],
+                    module.setattr(
+                        get_string(unit, block, ix+1),
+                        regv.load(block[ix+2])))
             else:
-                pc = rffi.r_ulong(block[ix+1])
-        elif opcode == opcode_of('func'):
-            regv.store(block[ix+0],
-                Closure(frame, unit.functions[block[ix+1]]))
-        # these are missing.
-        #elif isinstance(op, Next):
-        #    regv.store(op.i, regv.load(op.it.i).callattr(u'next', []))
-        #elif isinstance(op, Yield):
-        #    raise YieldIteration(op.block, loop_break, op.i, regv.load(op.value.i))
-        #elif isinstance(op, SetBreak):
-        #    loop_break = op.block
-        #elif isinstance(op, Iter):
-        #    regv.store(op.i, regv.load(op.value.i).iter())
-
-        elif opcode == opcode_of('getattr'):
-            name = get_string(unit, block, ix+2)
-            obj = regv.load(block[ix+1])
-            regv.store(block[ix+0], obj.getattr(name))
-        elif opcode == opcode_of('setattr'):
-            value = regv.load(block[ix+3])
-            name = get_string(unit, block, ix+2)
-            obj = regv.load(block[ix+1])
-            regv.store(block[ix+0], obj.setattr(name, value))
-        elif opcode == opcode_of('getitem'):
-            index = regv.load(block[ix+2])
-            obj = regv.load(block[ix+1])
-            regv.store(block[ix+0], obj.getitem(index))
-        elif opcode == opcode_of('setitem'):
-            item = regv.load(block[ix+3])
-            index = regv.load(block[ix+2])
-            obj = regv.load(block[ix+1])
-            regv.store(block[ix+0], obj.setitem(index, item))
-        elif opcode == opcode_of('getloc'):
-            regv.store(block[ix+0], frame.local[block[ix+1]])
-        elif opcode == opcode_of('setloc'):
-            value = regv.load(block[ix+2])
-            frame.local[block[ix+1]] = value
-            regv.store(block[ix+0], value)
-        elif opcode == opcode_of('getupv'):
-            value = get_upframe(frame, block[ix+1]).local[block[ix+2]]
-            regv.store(block[ix+0], value)
-        elif opcode == opcode_of('setupv'):
-            value = regv.load(block[ix+3])
-            get_upframe(frame, block[ix+1]).local[block[ix+2]] = value
-            regv.store(block[ix+0], value)
-        elif opcode == opcode_of('getglob'):
-            regv.store(block[ix+0],
-                module.getattr(get_string(unit, block, ix+1)))
-        elif opcode == opcode_of('setglob'):
-            regv.store(block[ix+0],
-                module.setattr(
-                    get_string(unit, block, ix+1),
-                    regv.load(block[ix+2])))
+                raise space.Error(u"unexpected instruction: " + optable.names.get(opcode, str(opcode)).decode('utf-8'))
+    except StopIteration as stop:
+        if iterstop != LARGE_PC:
+            return interpret(iterstop, block, regv, frame)
         else:
-            raise space.Error(u"unexpected instruction: " + optable.names.get(opcode, str(opcode)).decode('utf-8'))
+            raise space.Error(u"StopIteration")
+
     return space.null
 
 @jit.unroll_safe

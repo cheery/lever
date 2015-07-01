@@ -24,7 +24,7 @@ def main(debug=False):
                 while pc < len(block):
                     opname, has_result, pattern, variadic = optable.dec[block[pc] >> 8]
                     px = pc + 1
-                    pc = pc + 1 + block[pc] & 255
+                    pc = pc + 1 + (block[pc] & 255)
                     args = block[px:pc]
                     if has_result:
                         result = args.pop(0)
@@ -58,6 +58,16 @@ class Scope(object):
         self.functions.append(self)
         self.parent_block = parent_block
 
+    def new_block(self):
+        block = Block(0, [], set())
+        self.blocks.append(block)
+        return block
+
+    def get_local(self, name):
+        if name not in self.localv:
+            self.localv.append(name)
+        return self.localv.index(name)
+
     def close(self):
         func = Function(self.index, self.flags, self.argc, self.localv, self.blocks)
         self.functions[self.index] = func
@@ -66,29 +76,32 @@ class Scope(object):
 # Represents single 'block level' in the source code
 # That means structured control flow changes the block pointer.
 class ScopeBlock(object):
-    def __init__(self, scope, parent=None):
+    def __init__(self, scope, parent=None, block=None):
         self.scope = scope
-        self.block = Block(0, [], set())
-        scope.blocks.append(self.block)
+        self.block = scope.new_block() if block is None else block
         self.parent = parent
         self.first = self.block
+        self.loop_continue = None if parent is None else parent.loop_continue 
+        self.loop_break = None if parent is None else parent.loop_break
+        self.loop_iterstop = None if parent is None else parent.loop_iterstop
+        self.result = None
 
-    def label(self):
+    def label(self, loc):
         if len(self.block) == 0:
             return self.block
-        self.block = Block(0, [], set())
-        scope.blocks.append(self.block)
-
-    def set_label(self, block):
-        if block not in self.scope.blocks:
-            self.scope.blocks.append(block)
-        self.block = block
+        new_block = self.scope.new_block()
+        self.op(loc, 'jump', new_block)
+        self.block = new_block
+        return self.block
 
     def subscope(self):
         return Scope(self, self.scope.functions)
 
     def subblock(self):
         return ScopeBlock(self.scope, self)
+
+    def subblock_goto(self, env):
+        return ScopeBlock(self.scope, self, self.label(env))
 
     def op(self, loc, name, *args):
         op = Op(loc, name, args)
@@ -165,9 +178,7 @@ def post_return(env, loc, expr):
 
 def post_assign(env, loc, lhs, rhs):
     name = lhs.value
-    if name not in env.scope.localv:
-        env.scope.localv.append(name)
-    index = env.scope.localv.index(name)
+    index = env.scope.get_local(name)
     return env.op(loc, 'setloc', index, rhs)
 
 def post_binding(env, loc, symbol):
@@ -177,15 +188,61 @@ def pre_subblock(env, loc):
     return env.subblock()
 
 def post_subblock(env, loc, result):
-    return env, result
+    env.result = result
+    return env
 
-def post_if(env, loc, cond, (sub, sub_result)):
-    exit = Block(0, [], set())
+def pre_while(env, loc):
     result = env.op(loc, 'getglob', Constant('null'))
-    env.op(loc, 'cond', cond, sub.first, exit)
-    env.set_label(exit)
-    sub.op(loc, 'move', result, sub_result)
-    sub.op(loc, 'jump', exit)
+    env = env.subblock_goto(loc)
+    env.loop_continue = env.block
+    env.loop_break = env.parent.block = env.scope.new_block()
+    env.result = result
+    return env
+
+def post_while(env, loc, cond, sub):
+    env.op(loc, 'cond', cond, sub.first, env.loop_break)
+    sub.op(loc, 'move', env.result, sub.result)
+    sub.op(loc, 'jump', env.loop_continue)
+    return env.result
+
+def pre_for(env, loc):
+    iterstop = env.scope.new_block()
+    sub = env.subblock()
+    sub.loop_continue = sub.block
+    sub.loop_break = iterstop
+    sub.loop_iterstop = iterstop
+    return sub
+
+def post_for(env, loc, bind, sub_result):
+    parent = env.parent
+    result = parent.op(loc, 'getglob', Constant('null'))
+    parent.op(loc, 'iterstop', env.loop_iterstop)
+    parent.op(loc, 'jump', env.loop_continue)
+    env.op(loc, 'move', result, sub_result)
+    env.op(loc, 'jump', env.loop_continue)
+    parent.block = env.loop_iterstop
+    if parent.loop_iterstop is not None:
+        parent.op(loc, 'iterstop', parent.loop_iterstop)
     return result
 
-if __name__=='__main__': main()
+def post_for_bind(env, loc, symbol, iterator):
+    index = env.scope.get_local(symbol.value)
+    value = env.op(loc, 'next', iterator)
+    env.op(loc, 'setloc', index, value)
+
+def pre_iter_statement(env, loc):
+    return env.parent
+
+def post_iter_statement(env, loc, statement):
+    return env.op(loc, 'iter', statement)
+
+def post_if(env, loc, cond, sub):
+    exit = env.scope.new_block()
+    result = env.op(loc, 'getglob', Constant('null'))
+    env.op(loc, 'cond', cond, sub.first, exit)
+    sub.op(loc, 'move', result, sub.result)
+    sub.op(loc, 'jump', exit)
+    env.block = exit
+    return result
+
+if __name__=='__main__': main(False)

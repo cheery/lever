@@ -9,3 +9,11 @@ baaz("kak")
 if false
     print("yes")
     "pop"
+
+i = 0
+while <(i 10)
+    print "hello" i
+    i = i + 1
+
+for i in [1 2 4 5]
+    print "each hello" i
