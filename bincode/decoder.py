@@ -61,7 +61,7 @@ sign_mask = 1L << 63
 
 def open_file(pathname):
     try:
-        fd = rfile.create_file(pathname, 'r')
+        fd = rfile.create_file(pathname, 'rb')
         try:
             return Stream(fd.read())
         finally:
