@@ -7,7 +7,7 @@ def main(debug=False):
     for name in sys.argv[1:]:
         compile_file(name, debug)
 
-def compile_file(name, debug=False):
+def compile_file(name, debug):
     env = ASTScope()
     body = parser.from_file(globals(), env, name)
     builder = env.close(body, toplevel=True)
@@ -16,6 +16,7 @@ def compile_file(name, debug=False):
     functions = builder(consttab, functions=[])
 
     if debug:
+        print 't'
         from evaluator import optable
         for func in functions:
             print func[:-2]
@@ -121,8 +122,8 @@ class ScopeBlock(object):
 #    def subscope(self):
 #        return Scope(self, self.scope.functions)
 
-    def subblock(self):
-        return ScopeBlock(self.scope, self)
+    def subblock(self, block=None):
+        return ScopeBlock(self.scope, self, block)
 
     def op(self, loc, name, *args):
         op = Op(loc, name, args)
@@ -145,61 +146,6 @@ def post_return(env, loc, expr):
 #    env.scope.argc = len(bindings)
 #    parent = env.scope.parent_block
 #    return parent.op(loc, 'func', env.scope.close())
-#
-#def post_binding(env, loc, symbol):
-#    env.scope.localv.append(symbol.value)
-#
-#def pre_subblock(env, loc):
-#    return env.subblock()
-#
-#def post_subblock(env, loc, result):
-#    env.result = result
-#    return env
-#
-#def pre_while(env, loc):
-#    result = env.op(loc, 'getglob', Constant(u'null'))
-#    env = env.subblock_goto(loc)
-#    env.loop_continue = env.block
-#    env.loop_break = env.parent.block = env.scope.new_block()
-#    env.result = result
-#    return env
-#
-#def post_while(env, loc, cond, sub):
-#    env.op(loc, 'cond', cond, sub.first, env.loop_break)
-#    sub.op(loc, 'move', env.result, sub.result)
-#    sub.op(loc, 'jump', env.loop_continue)
-#    return env.result
-#
-#def pre_for(env, loc):
-#    iterstop = env.scope.new_block()
-#    sub = env.subblock()
-#    sub.loop_continue = sub.block
-#    sub.loop_break = iterstop
-#    sub.loop_iterstop = iterstop
-#    return sub
-#
-#def post_for(env, loc, bind, sub_result):
-#    parent = env.parent
-#    result = parent.op(loc, 'getglob', Constant(u'null'))
-#    parent.op(loc, 'iterstop', env.loop_iterstop)
-#    parent.op(loc, 'jump', env.loop_continue)
-#    env.op(loc, 'move', result, sub_result)
-#    env.op(loc, 'jump', env.loop_continue)
-#    parent.block = env.loop_iterstop
-#    if parent.loop_iterstop is not None:
-#        parent.op(loc, 'iterstop', parent.loop_iterstop)
-#    return result
-#
-#def post_for_bind(env, loc, symbol, iterator):
-#    index = env.scope.get_local(symbol.value)
-#    value = env.op(loc, 'next', iterator)
-#    env.op(loc, 'setloc', index, value)
-#
-#def pre_iter_statement(env, loc):
-#    return env.parent
-#
-#def post_iter_statement(env, loc, statement):
-#    return env.op(loc, 'iter', statement)
 
 def post_getattr(env, loc, base, name):
     def build_getattr(block):
@@ -222,12 +168,30 @@ def post_local_assign(env, loc, name, statement):
         return local
     return build_local_assign
 
+def post_for(env, loc, bind, iterator, body):
+    def build_for(block):
+        exit = block.scope.new_block()
+        result = block.op(loc, 'getglob', Constant(u'null'))
+        iterat = block.op(loc, 'iter', iterator(block))
+        block.op(loc, 'iterstop', exit)
+        repeat = label_this_point(loc, block)
+        index = block.scope.get_local(bind.value.decode('utf-8'))
+        block.op(loc, 'setloc', index, block.op(loc, 'next', iterat))
+        subblock = block.subblock(block.block)
+        block.block = exit
+        compile_subblock(loc, subblock, body, repeat, result)
+        return result
+    return build_for
+
+#    sub = env.subblock()
+#    sub.loop_continue = sub.block
+#    sub.loop_break = iterstop
+#    sub.loop_iterstop = iterstop
+
 def post_while(env, loc, cond, body):
     def build_while(block):
         resu = block.op(loc, 'getglob', Constant(u'null'))
-        repe = block.scope.new_block()
-        block.op(loc, 'jump', repe)
-        block.block = repe
+        repe = label_this_point(loc, block)
         exit = block.scope.new_block()
         subblock = block.subblock()
         block.op(loc, 'cond', cond(block), subblock.first, exit)
@@ -236,6 +200,11 @@ def post_while(env, loc, cond, body):
         return resu
     return build_while
 
+def label_this_point(loc, block):
+    repe = block.scope.new_block()
+    block.op(loc, 'jump', repe)
+    block.block = repe
+    return repe
 
 def post_if(env, loc, cond, body, otherwise):
     def build_if(block):

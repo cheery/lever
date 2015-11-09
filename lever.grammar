@@ -20,6 +20,9 @@ block_statement =>
         kw_while:"while" statement block
     local_assign(symbol block_statement):
         symbol assign_op:"=" block_statement
+    for(symbol statement block):
+        kw_for:"for" symbol kw_in:"in" statement block
+
 
 otherwise =>
     done:

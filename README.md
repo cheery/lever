@@ -1,4 +1,8 @@
-# Pyllisp
+# This was Pyllisp
+
+I just put it up here just in case. If you happen to read this, you're here too early.
+
+ ![Logo](doc/logo.png)
 
 Sometimes I tend to search better ways to write and design computer programs. I like to do that kind of things when I reach the next software-induced frustration of the week. I tend to be frustrated a lot over software. Pyllisp is the manifestation of that search.
 
