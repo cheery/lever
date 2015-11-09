@@ -7,6 +7,7 @@ from module import Module
 from multimethod import Multimethod
 from numbers import Float, Integer, Boolean
 from string import String
+from uint8array import Uint8Array
 
 true = Boolean(True)
 false = Boolean(False)

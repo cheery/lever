@@ -1,8 +1,6 @@
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi, lltype
-import bincode.common
-import bincode.decoder
 import optable
 import space
 
