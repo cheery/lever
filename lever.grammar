@@ -1,3 +1,5 @@
+#
+
 file =>
     empty_list:
     statements
@@ -14,6 +16,10 @@ block_statement =>
         kw_return:"return" statement
     if(statement block otherwise):
         kw_if:"if" statement block otherwise
+    while(statement block):
+        kw_while:"while" statement block
+    local_assign(symbol block_statement):
+        symbol assign_op:"=" block_statement
 
 otherwise =>
     done:
@@ -26,11 +32,20 @@ statement =>
     pass: expr
 
 expr =>
-    expr20
-    binary: expr plus:"+" expr20
-    binary: expr minus:"-" expr20
+    expr100
+    binary: expr100 lt:"<" expr100
+    binary: expr100 gt:">" expr100
+    binary: expr100 eq:"==" expr100
+    binary: expr100 ne:"!=" expr100
+    binary: expr100 le:"<=" expr100
+    binary: expr100 ge:">=" expr100
 
-expr20 =>
+expr100 =>
+    expr200
+    binary: expr100 plus:"+" expr200
+    binary: expr100 minus:"-" expr200
+
+expr200 =>
     prefix
     binary: expr star:"*" prefix
     binary: expr slash:"/" prefix
@@ -45,6 +60,10 @@ postfix =>
     term
     call(postfix arguments):
         postfix lp:"(" arguments rp:")"
+    getitem(postfix expr):
+        postfix lb:"[" expr rb:"]"
+    getattr(postfix symbol):
+        postfix dot:"." symbol
 
 arguments =>
     empty_list:
@@ -63,70 +82,14 @@ term =>
     pass(expr):      lp:"(" expr rp:")"
     list(arguments): lb:"[" arguments rb:"]"
 
-
-#statements =>
-#    first:      flow_statement
-#    append(lhs rhs): lhs=statements newline rhs=flow_statement
-#
 #flow_statement =>
-#    pass: statement
-#    return_stmt(statement):
-#        return:"return" statement
-#    if_stmt(statement block otherwise):
-#        if:"if" statement block cond_chain
-#
-#    # while(statement block):
-#    #     while:"while" statement block
 #    # for_: for_bind block
-#
-#cond_chain =>
-#    :
-#    else_chain(block):
-#        else:"else" block
 #
 #
 #for_bind => for_bind(symbol iter_statement):
 #    for:"for" symbol in:"in" iter_statement
 #
 #iter_statement => iter_statement: statement
-#
-#statement =>
-#    pass: expr
-#    call: expr arguments_1
-#    assign(lhs statement):
-#        lhs=symbol eq:"=" statement
-#
-#expr =>
-#    expr20
-#    binary: expr binary_spacing(plus:"+") expr20
-#    binary: expr binary_spacing(minus:"-") expr20
-#
-#expr20 =>
-#    prefix
-#    binary: expr binary_spacing(star:"*") prefix
-#    binary: expr binary_spacing(slash:"/") prefix
-#    binary: expr binary_spacing(percent:"%") prefix
-#
-#prefix =>
-#    postfix
-#    prefix: prefix_spacing(plus:"+") postfix
-#    prefix: prefix_spacing(minus:"-") postfix
-#
-#postfix =>
-#    term
-#    call(postfix arguments):
-#        postfix tight(lp:"(") arguments rp:")"
-#    getattr(postfix symbol):
-#        postfix dot:"." symbol
-#    getitem(postfix expr):
-#        postfix tight(lb:"[") expr rb:"]"
-#
-#arguments =>
-#    empty_list:
-#    append:     arguments expr
-#
-#arguments_1 =>
-#    append:     arguments expr
 #
 #term =>
 #    function(bindings):

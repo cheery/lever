@@ -105,7 +105,7 @@ class Op(object):
         vc = len(self.args) - len(self.pattern)
         for arg, vt in zip(self.args, self.pattern + [self.variadic]*vc):
             if isinstance(arg, int):
-                assert vt == 'index'
+                assert vt == 'index', (self.opname, arg, vt)
                 yield arg
             else:
                 yield arg.as_arg(consttab, vt)

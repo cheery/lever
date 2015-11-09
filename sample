@@ -1,19 +1,58 @@
-print "hello world" -1 * (2 + 3)
-print [5 3] [1 2 3][2] [5 2 6].length
-
-baaz = (foo):
-    print("foo bar" foo)
-    return foo
-baaz("kak")
+if false
+    print("hello world")
+elif null
+    print("hello hello")
+else
+    print("hello else")
 
 if false
-    print("yes")
-    "pop"
+    print("hello hulla")
+elif true
+    print("hello elif")
+
+print("hello world")
+print(null, true, false)
+print(1, 2, 1 + 2, -(4*1))
 
 i = 0
-while <(i 10)
-    print "hello" i
+while i < 10
+    print("rolling...", i)
     i = i + 1
 
-for i in [1 2 4 5]
-    print "each hello" i
+test = [1, 2, 3, 4]
+
+print(test[2])
+
+print(test.length)
+
+print([5, 3], [1,2,3][2], [5,2,6].length)
+
+return test
+
+# primitives available (int,float,string,list)
+# locals/globals available
+# some of the operators available
+# list literal available
+# if/elif/else available
+# function call available
+# function return available
+# while available
+# local assign available
+# simple indexing available
+# getattr available
+
+# dict literals missing
+# for loop missing
+
+# function missing
+# generators missing, yield missing
+# while break/continue missing
+# upscope lookup missing
+
+# baaz = (foo):
+#     print("foo bar" foo)
+#     return foo
+# baaz("kak")
+# 
+# for i in [1 2 4 5]
+#     print "each hello" i

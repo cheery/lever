@@ -1,6 +1,5 @@
 from compiler.program import ConstantTable, Function, Block, Constant, Op
-from compiler import bon
-import grammarlang
+from compiler import bon, grammarlang
 import os
 import sys
 
@@ -130,7 +129,7 @@ class ScopeBlock(object):
         self.block.append(op)
         return op
 
-parser = grammarlang.load({}, 'pyllisp.grammar')
+parser = grammarlang.load({}, 'lever.grammar')
 
 def post_return(env, loc, expr):
     def build_return(block):
@@ -138,21 +137,7 @@ def post_return(env, loc, expr):
         block.op(loc, 'return', value)
         return value
     return build_return
-#    def build_call(block):
-#        a = [arg(block) for arg in args]
-#        c = callee(block)
-#        return block.op(loc, 'call', c, *a)
-#    return build_call
 
-#def post_getattr(env, loc, obj, name):
-#    return env.op(loc, 'getattr', obj, Constant(name.value))
-#
-#def post_getitem(env, loc, obj, index):
-#    return env.op(loc, 'getitem', obj, index)
-#
-#def post_list(env, loc, exprs):
-#    return env.op(loc, 'list', *exprs)
-#
 #def pre_function(env, loc):
 #    return ScopeBlock(env.subscope())
 #
@@ -160,11 +145,6 @@ def post_return(env, loc, expr):
 #    env.scope.argc = len(bindings)
 #    parent = env.scope.parent_block
 #    return parent.op(loc, 'func', env.scope.close())
-#
-#def post_assign(env, loc, lhs, rhs):
-#    name = lhs.value
-#    index = env.scope.get_local(name)
-#    return env.op(loc, 'setloc', index, rhs)
 #
 #def post_binding(env, loc, symbol):
 #    env.scope.localv.append(symbol.value)
@@ -220,6 +200,42 @@ def post_return(env, loc, expr):
 #
 #def post_iter_statement(env, loc, statement):
 #    return env.op(loc, 'iter', statement)
+
+def post_getattr(env, loc, base, name):
+    def build_getattr(block):
+        value = base(block)
+        const = Constant(name.value.decode('utf-8'))
+        return block.op(loc, 'getattr', value, const)
+    return build_getattr
+
+def post_getitem(env, loc, base, indexer):
+    def build_getitem(block):
+        v0 = base(block)
+        v1 = indexer(block)
+        return block.op(loc, 'getitem', v0, v1)
+    return build_getitem
+
+def post_local_assign(env, loc, name, statement):
+    def build_local_assign(block):
+        local = block.scope.get_local(name.value.decode('utf-8'))
+        local = block.op(loc, 'setloc', local, statement(block))
+        return local
+    return build_local_assign
+
+def post_while(env, loc, cond, body):
+    def build_while(block):
+        resu = block.op(loc, 'getglob', Constant(u'null'))
+        repe = block.scope.new_block()
+        block.op(loc, 'jump', repe)
+        block.block = repe
+        exit = block.scope.new_block()
+        subblock = block.subblock()
+        block.op(loc, 'cond', cond(block), subblock.first, exit)
+        compile_subblock(loc, subblock, body, repe, resu)
+        block.block = exit
+        return resu
+    return build_while
+
 
 def post_if(env, loc, cond, body, otherwise):
     def build_if(block):
