@@ -1,5 +1,17 @@
 from rpython.rlib.listsort import make_timsort_class
 from evaluator import optable
+from collections import OrderedDict
+
+class ConstantTable(object):
+    def __init__(self):
+        self.constants = OrderedDict()
+
+    def get(self, const):
+        const_table = self.constants
+        if const in const_table:
+            return const_table[const]
+        const_table[const] = len(const_table)
+        return const_table[const]
 
 class Function(object):
     def __init__(self, index, flags, argc, localv, blocks):
@@ -58,6 +70,7 @@ class Block(object):
 
 class Constant(object):
     def __init__(self, value):
+        assert not isinstance(value, bytes), repr(value)
         self.value = value
 
     def as_arg(self, consttab, vt):

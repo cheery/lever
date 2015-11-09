@@ -8,34 +8,32 @@ import space
 
 u16_array = lltype.GcArray(rffi.USHORT)
 
-def from_file(path):
-    stream = bincode.decoder.open_file(path)
-    assert stream.read(8) == bincode.common.header
+def from_object(obj):
+    constants_list = obj.getitem(space.String(u"constants"))
+    assert isinstance(constants_list, space.List)
+    constants = constants_list.contents
+
     functions = []
-    for i in range(stream.read_u16()):
-        flags = stream.read_u16()
-        regc = stream.read_u16()
-        argc = stream.read_u16()
-        localc = stream.read_u16()
-        blocklen = stream.read_u16()
-        block = lltype.malloc(u16_array, blocklen)
-        for i in range(blocklen):
-            block[i] = rffi.r_ushort(stream.read_u16())
+    functions_list = obj.getitem(space.String(u"functions"))
+    assert isinstance(functions_list, space.List)
+    for function_list in functions_list.contents:
+        flags = as_i( function_list.getitem(space.Integer(0)) )
+        regc = as_i( function_list.getitem(space.Integer(1)) )
+        argc = as_i( function_list.getitem(space.Integer(2)) )
+        localc = as_i( function_list.getitem(space.Integer(3)) )
+        block_list = function_list.getitem(space.Integer(4))
+        assert isinstance(block_list, space.List)
+        block = lltype.malloc(u16_array, len(block_list.contents))
+        i = 0
+        for n in block_list.contents:
+            block[i] = rffi.r_ushort( as_i(n) )
+            i += 1
         functions.append(Function(flags, regc, argc, localc, block))
-    constants = []
-    for i in range(stream.read_u16()):
-        klass = stream.read_ubyte()
-        if klass == 1:
-            constants.append(space.String(stream.read_string()))
-        elif klass == 2:
-            constants.append(space.Integer(rffi.r_long(stream.read_u64())))
-        elif klass == 3:
-            constants.append(space.Integer(-rffi.r_long(stream.read_u64())))
-        elif klass == 4:
-            constants.append(space.Float(stream.read_double()))
-        else:
-            assert False, klass
     return Program(Unit(constants[:], functions[:]))
+
+def as_i(obj):
+    assert isinstance(obj, space.Integer)
+    return obj.value
 
 class Closure(space.Object):
     _immutable_fields_ = ['parent', 'function']

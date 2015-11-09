@@ -1,5 +1,3 @@
-#from compiler import to_program
-#from reader import read, Literal, Expr
 from rpython.config.translationoption import get_combined_translation_config
 from util import STDIN, STDOUT, STDERR, read_file, write
 import api
@@ -71,6 +69,8 @@ if config.translation.continuation:
 #                return status
 #    return 0
 
+import bon
+
 def entry_point(argv):
     if config.translation.continuation:
         green.process.init(config)
@@ -78,7 +78,7 @@ def entry_point(argv):
     try:
         for arg in argv[1:]:
             module = space.Module(u'main', {}, extends=base.module)
-            program = evaluator.loader.from_file(arg)
+            program = evaluator.loader.from_object(bon.open_file(arg))
             result = program.call([module])
             os.write(1, (result.repr() + u'\n').encode('utf-8'))
     except space.Error as error:

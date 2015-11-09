@@ -1,3 +1,4 @@
+# This is no longer valid.
 from bincode.encoder import ConstantTable, Function, dump_function
 from instruction_format import enc_code
 
