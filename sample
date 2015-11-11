@@ -19,6 +19,11 @@ while i < 10
     print("rolling...", i)
     i = i + 1
 
+baaz = (k):
+    print("foo bar", k)
+    print("hello", test)
+    test := [5,2,6]
+
 test = [1, 2, 3, 4]
 
 print(test[2])
@@ -26,6 +31,12 @@ print(test[2])
 print(test.length)
 
 print([5, 3], [1,2,3][2], [5,2,6].length)
+
+for i in [1, 2, 3, 4]
+    print("each hello", i)
+
+baaz("kaka")
+baaz("kuka")
 
 return test
 
@@ -40,19 +51,15 @@ return test
 # local assign available
 # simple indexing available
 # getattr available
+# for loop available
+# function available
+# upscope lookup available
+# upscope assign available
+# setitem/setattr available
 
 # dict literals missing
-# for loop missing
 
-# function missing
 # generators missing, yield missing
 # while break/continue missing
-# upscope lookup missing
-
-# baaz = (foo):
-#     print("foo bar" foo)
-#     return foo
-# baaz("kak")
-# 
-# for i in [1 2 4 5]
-#     print "each hello" i
+# classes missing
+# function varargs missing

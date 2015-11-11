@@ -60,20 +60,12 @@ class ASTScope(object):
             localv = list(self.defines)
             env = Scope(None, functions, localv)
             block = ScopeBlock(env)
-            lastv = None
-            for stmt in body:
-                lastv = stmt(block)
-            if toplevel and lastv is not None:
-                block.op(lastv.loc, 'return', lastv)
-            else:
-                lastv = block.op(None, 'getglob', Constant(u"null"))
-                block.op(lastv.loc, 'return', lastv)
-            function = env.close()
+            function = block.func_body(body)
             return [func.dump(consttab) for func in functions]
         return build_function
 
 class Scope(object):
-    def __init__(self, parent_block, functions, localv):
+    def __init__(self, parent, functions, localv):
         self.blocks = []
         self.functions = functions
         self.localv = localv
@@ -81,7 +73,7 @@ class Scope(object):
         self.argc = 0
         self.index = len(self.functions)
         self.functions.append(self)
-        self.parent_block = parent_block
+        self.parent = parent
 
     def new_block(self):
         block = Block(0, [], set())
@@ -89,14 +81,30 @@ class Scope(object):
         return block
 
     def get_local(self, name):
-        if name not in self.localv:
-            self.localv.append(name)
+        #if name not in self.localv:
+        #    self.localv.append(name)
         return self.localv.index(name)
 
     def close(self):
         func = Function(self.index, self.flags, self.argc, self.localv, self.blocks)
         self.functions[self.index] = func
         return func
+
+    def new_func(self, bindings, defines):
+        scope = Scope(self, self.functions, [])
+        scope.argc = len(bindings)
+        for name in bindings:
+            scope.localv.append(name.value.decode('utf-8'))
+        scope.localv.extend(defines)
+        return ScopeBlock(scope)
+
+    def get_upvalue(self, name, depth=0):
+        if self.parent is None:
+            return None
+        if name in self.parent.localv:
+            return depth, self.parent.localv.index(name)
+        else:
+            return self.parent.get_upvalue(name, depth+1)
 
 # Represents single 'block level' in the source code
 # That means structured control flow changes the block pointer.
@@ -119,9 +127,6 @@ class ScopeBlock(object):
         self.block = new_block
         return self.block
 
-#    def subscope(self):
-#        return Scope(self, self.scope.functions)
-
     def subblock(self, block=None):
         return ScopeBlock(self.scope, self, block)
 
@@ -129,6 +134,17 @@ class ScopeBlock(object):
         op = Op(loc, name, args)
         self.block.append(op)
         return op
+
+    def func_body(self, body):
+        lastv = None
+        for stmt in body:
+            lastv = stmt(self)
+        if lastv is not None:
+            self.op(lastv.loc, 'return', lastv)
+        else:
+            lastv = self.op(None, 'getglob', Constant(u"null"))
+            self.op(lastv.loc, 'return', lastv)
+        return self.scope.close()
 
 parser = grammarlang.load({}, 'lever.grammar')
 
@@ -139,13 +155,15 @@ def post_return(env, loc, expr):
         return value
     return build_return
 
-#def pre_function(env, loc):
-#    return ScopeBlock(env.subscope())
-#
-#def post_function(env, loc, bindings):
-#    env.scope.argc = len(bindings)
-#    parent = env.scope.parent_block
-#    return parent.op(loc, 'func', env.scope.close())
+def pre_function(env, loc):
+    return ASTScope()
+
+def post_function(env, loc, bindings, body):
+    def build_function(block):
+        subblock = block.scope.new_func(bindings, env.defines)
+        function = subblock.func_body(body)
+        return block.op(loc, 'func', function)
+    return build_function
 
 def post_getattr(env, loc, base, name):
     def build_getattr(block):
@@ -154,6 +172,13 @@ def post_getattr(env, loc, base, name):
         return block.op(loc, 'getattr', value, const)
     return build_getattr
 
+def post_setattr(env, loc, base, name, statement):
+    def build_setattr(block):
+        value = base(block)
+        const = Constant(name.value.decode('utf-8'))
+        return block.op(loc, 'setattr', value, const, statement(block))
+    return build_setattr
+
 def post_getitem(env, loc, base, indexer):
     def build_getitem(block):
         v0 = base(block)
@@ -161,21 +186,40 @@ def post_getitem(env, loc, base, indexer):
         return block.op(loc, 'getitem', v0, v1)
     return build_getitem
 
+def post_setitem(env, loc, base, indexer, statement):
+    def build_getitem(block):
+        v0 = base(block)
+        v1 = indexer(block)
+        v2 = statement(block)
+        return block.op(loc, 'setitem', v0, v1, v2)
+    return build_getitem
+
 def post_local_assign(env, loc, name, statement):
+    env.defines.add(name.value)
     def build_local_assign(block):
-        local = block.scope.get_local(name.value.decode('utf-8'))
+        local = block.scope.get_local(name.value)
         local = block.op(loc, 'setloc', local, statement(block))
         return local
     return build_local_assign
 
+def post_upvalue_assign(env, loc, name, statement):
+    def build_upvalue_assign(block):
+        upv = block.scope.get_upvalue(name.value)
+        if upv is not None:
+            return block.op(loc, 'setupv', upv[0], upv[1], statement(block))
+        else:
+            return block.op(loc, 'setglob', Constant(name.value.decode('utf-8')), statement(block))
+    return build_upvalue_assign
+
 def post_for(env, loc, bind, iterator, body):
+    env.defines.add(bind.value)
     def build_for(block):
         exit = block.scope.new_block()
         result = block.op(loc, 'getglob', Constant(u'null'))
         iterat = block.op(loc, 'iter', iterator(block))
         block.op(loc, 'iterstop', exit)
         repeat = label_this_point(loc, block)
-        index = block.scope.get_local(bind.value.decode('utf-8'))
+        index = block.scope.get_local(bind.value)
         block.op(loc, 'setloc', index, block.op(loc, 'next', iterat))
         subblock = block.subblock(block.block)
         block.block = exit
@@ -274,7 +318,9 @@ def post_lookup(env, loc, symbol):
         if name in block.scope.localv:
             index = block.scope.localv.index(name)
             return block.op(loc, 'getloc', index)
-        # XXX: add upscope lookup here
+        upv = block.scope.get_upvalue(name)
+        if upv is not None:
+            return block.op(loc, 'getupv', *upv)
         else:
             return block.op(loc, 'getglob', Constant(name.decode('utf-8')))
     return build_lookup

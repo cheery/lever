@@ -1,4 +1,4 @@
-#
+# This file describes & implements the syntax for the lever language.
 
 file =>
     empty_list:
@@ -20,6 +20,12 @@ block_statement =>
         kw_while:"while" statement block
     local_assign(symbol block_statement):
         symbol assign_op:"=" block_statement
+    upvalue_assign(symbol block_statement):
+        symbol upvalue_assign_op:":=" block_statement
+    setitem(expr idx block_statement):
+        expr lb:"[" idx=expr rb:"]" assign_op:"=" block_statement
+    setattr(expr symbol block_statement):
+        expr dot:"." symbol assign_op:"=" block_statement
     for(symbol statement block):
         kw_for:"for" symbol kw_in:"in" statement block
 
@@ -84,23 +90,14 @@ term =>
     string:          string
     pass(expr):      lp:"(" expr rp:")"
     list(arguments): lb:"[" arguments rb:"]"
+    function(bindings block):
+        lp:"(" bindings rp:")" colon:":" block
 
-#flow_statement =>
-#    # for_: for_bind block
-#
-#
-#for_bind => for_bind(symbol iter_statement):
-#    for:"for" symbol in:"in" iter_statement
-#
-#iter_statement => iter_statement: statement
-#
-#term =>
-#    function(bindings):
-#        lp:"(" bindings rp:")" colon:":" block
-#
-#bindings =>
-#    empty_list:
-#    append:     bindings binding
-#
-#binding => binding: symbol
-#
+bindings =>
+    empty_list:
+    bindings1
+    pass(bindings1): bindings1 comma:","
+
+bindings1 =>
+    first: symbol
+    append(lst symbol): lst=bindings1 comma:"," symbol
