@@ -9,11 +9,12 @@ for x in [0.0, 0.0, 1.0, 0.0, 1.0, 1.0]
 print(data)
 
 # There was a bug in chaining rules
-# but the language has no chaining rules yet.
-# reset_round = true
-# x = 5
-# (if reset_round and 0 < x < 10)
-#     (print "a")
-# (else)
-#     (if reset_round)
-#         (print "b")
+reset_round = true
+x = 5
+if reset_round and 0 < x and x < 10
+    print("cond1: a")
+elif reset_round
+    print("cond1: b")
+
+if true and false or true
+    print("cond2:", true)

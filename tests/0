@@ -1,8 +1,5 @@
 print("testing bare functionality of the language")
 
-#(if true and false or true)
-#    (print true)
-
 factorial = (n):
     if 1 < n
         return n * factorial(n-1)

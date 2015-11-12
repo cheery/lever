@@ -1,15 +1,13 @@
 from space import *
-import os, stdlib
-
-builtin_modules = {}
-
-for module in stdlib.import_all_modules():
-    builtin_modules[module.module.name] = module.module
+import module_resolution
+import os
+import stdlib
 
 # The base environment
 module = Module(u'base', {
     u'dict': Dict.interface,
     u'module': Module.interface,
+    u'exnihilo': Exnihilo.interface,
     u'object': Object.interface,
     u'list': List.interface,
     u'multimethod': Multimethod.interface,
@@ -26,17 +24,32 @@ def builtin(fn):
     module.setattr_force(name, Builtin(fn, name))
     return fn
 
-@builtin
-@signature(Object)
-def interface(obj):
-    return obj.__class__.interface
+builtin_modules = {}
+for py_module in stdlib.import_all_modules():
+    builtin_modules[py_module.module.name] = py_module.module
+
+stdlib_modules = {}
 
 @builtin
 @signature(String)
 def import_(name):
     if name.string in builtin_modules:
         return builtin_modules[name.string]
-    raise Error(u"no such module: %s" % name.repr())
+    if name.string in stdlib_modules:
+        return stdlib_modules[name.string]
+    app_dir = os.environ.get('LEVER_PATH')
+    if app_dir is None:
+        app_dir = ''
+    path_name = os.path.join(app_dir, "stdlib").decode('utf-8') + u"/" + name.string
+    this = Module(name.string, {}, extends=module) # base.module
+    module_resolution.load_module(path_name.encode('utf-8'), this)
+    stdlib_modules[name.string] = this
+    return this
+
+@builtin
+@signature(Object)
+def interface(obj):
+    return obj.__class__.interface
 
 @builtin
 @signature(Object)
@@ -70,6 +83,17 @@ def getattr(obj, index):
 @signature(Object, String, Object)
 def setattr(obj, index, value):
     return obj.setattr(index.string, value)
+
+@builtin
+@signature(String)
+def ord_(string):
+    assert len(string.string) == 1
+    return Integer(ord(string.string[0]))
+
+@builtin
+@signature(Integer)
+def chr_(value):
+    return String(unichr(value.value))
   
 #def pyl_callattr(argv):
 #    assert len(argv) >= 2
@@ -91,13 +115,6 @@ def print_(argv):
     os.write(1, (out + u'\n').encode('utf-8'))
     return null
   
-#@global_builtin('read-file')
-#def pyl_read_file(argv):
-#    assert len(argv) >= 1
-#    arg0 = argv.pop(0)
-#    assert isinstance(arg0, String)
-#    return read_file(arg0.string)
-
 # And and or are macros in the compiler. These are
 # convenience functions, likely not often used.
 # erm. Actually 'and' function is used by chaining.
@@ -187,6 +204,10 @@ ne.default = Builtin(ne_default)
 def _(a, b):
     return boolean(a.value != b.value)
 
+@ne.multimethod_s(String, String)
+def _(a, b):
+    return boolean(not a.eq(b))
+
 eq = module.setattr_force(u'==', Multimethod(2))
 @signature(Object, Object)
 def eq_default(a, b):
@@ -197,6 +218,10 @@ eq.default = Builtin(eq_default)
 def _(a, b):
     return boolean(a.value == b.value)
 
+@eq.multimethod_s(String, String)
+def _(a, b):
+    return boolean(a.eq(b))
+
 neg = module.setattr_force(u'-expr', Multimethod(1))
 @neg.multimethod_s(Integer)
 def _(a):
@@ -206,3 +231,11 @@ pos = module.setattr_force(u'+expr', Multimethod(1))
 @pos.multimethod_s(Integer)
 def _(a):
     return Integer(+a.value)
+
+concat = module.setattr_force(u'++', Multimethod(2))
+@concat.multimethod_s(String, String)
+def _(a, b):
+    return String(a.string + b.string)
+@concat.multimethod_s(List, List)
+def _(a, b):
+    return List(a.contents + b.contents)

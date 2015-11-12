@@ -1,6 +1,3 @@
-#try:
-#    from rpython.rlib.unicodedata import unicodedb_6_2_0 as unicodedb
-#except ImportError as _:
 import unicodedb_shim as unicodedb
 from data import Position
 

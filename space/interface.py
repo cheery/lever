@@ -43,6 +43,9 @@ class Object:
     def callattr(self, name, argv):
         return self.getattr(name).call(argv)
 
+    def contains(self, obj):
+        raise Error(u"%s does not contain " % (self.repr(), obj.repr()))
+
     def repr(self):
         return u"<%s>" % self.__class__.interface.name
 

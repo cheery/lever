@@ -41,6 +41,11 @@ class List(Object):
         if name == u'length':
             return Integer(len(self.contents))
         return Object.getattr(self, name)
+
+    def contains(self, item):
+        if item in self.contents:
+            return True
+        return False
     
     def getitem(self, index):
         if not isinstance(index, Integer):

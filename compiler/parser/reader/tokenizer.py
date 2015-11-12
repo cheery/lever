@@ -55,7 +55,8 @@ def next_token(stream, table):
     elif stream.is_digit():
         string = stream.advance()
         if string == u'0' and stream.filled and stream.current == u'x':
-            string += stream.advance()
+            stream.advance()
+            string = u""
             while stream.is_hex():
                 string += stream.advance()
             return Literal(start, stream.position, u'hex', string)
@@ -73,7 +74,9 @@ def next_token(stream, table):
         while stream.filled and stream.current != terminal:
             if stream.current == u'\\':
                 stream.advance()
-            string += stream.advance()
+                string += escape_sequence(stream)
+            else:
+                string += stream.advance()
         if not stream.filled:
             raise Error(u"%s: Broken string literal" % start.repr())
         assert terminal == stream.advance()
@@ -87,3 +90,32 @@ def next_token(stream, table):
     else:
         string = stream.advance()
         return Literal(start, stream.position, u'symbol', string)
+
+def escape_sequence(stream):
+    if stream.current in escape_sequences:
+        return chr(escape_sequences[stream.advance()])
+    string = stream.advance()
+    #\xhh The character whose numerical value is given by hh interpreted as a hexadecimal number
+    if string == 'x':
+        code = get_hex(stream) + get_hex(stream)
+        if len(code) == 2:
+            return chr(int(code, 16))
+        return "\\" + string + code
+    #\nnn The character whose numerical value is given by nnn interpreted as an octal number
+    if string in "01234567":
+        string += get_octal(stream) + get_octal(stream)
+        if len(string) == 3:
+            return chr(int(string, 8))
+    return "\\" + string
+
+def get_hex(stream):
+    if stream.current in "0123456789ABCDEFabcdef":
+        return stream.get_next()
+    return ""
+
+def get_octal(stream):
+    if stream.current in "01234567":
+        return stream.get_next()
+    return ""
+
+escape_sequences = {"a": 0x07, "b": 0x08, "f": 0x0C, "n": 0x0A, "r": 0x0D, "t": 0x09, "v": 0x0B, "\\": 0x5C, "'": 0x27, "\"": 0x22, "?": 0x3F}

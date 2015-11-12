@@ -29,7 +29,6 @@ block_statement =>
     for(symbol statement block):
         kw_for:"for" symbol kw_in:"in" statement block
 
-
 otherwise =>
     done:
     elif(statement block otherwise):
@@ -41,7 +40,21 @@ statement =>
     pass: expr
 
 expr =>
+    expr3
+    or(expr3 expr): expr3 kw_or:"or" expr
+
+expr3 =>
+    expr5
+    and(expr5 expr3): expr5 kw_and:"and" expr3
+
+expr5 =>
+    expr8
+    not(expr8): kw_not:"not" expr8
+
+expr8 =>
     expr10
+    in(l r): l=expr10 kw_in:"in" r=expr10
+    not_in(l r): l=expr10 kw_not:"not" kw_in:"in" r=expr10
     binary: expr10 lt:"<" expr10
     binary: expr10 gt:">" expr10
     binary: expr10 eq:"==" expr10
@@ -68,6 +81,7 @@ expr50 =>
 
 expr100 =>
     expr200
+    binary: expr100 concat:"++" expr200
     binary: expr100 plus:"+" expr200
     binary: expr100 minus:"-" expr200
 
@@ -81,6 +95,8 @@ prefix =>
     postfix
     prefix: plus:"+" postfix
     prefix: minus:"-" postfix
+
+# here we should still have bitwise not
 
 postfix =>
     term
@@ -103,12 +119,14 @@ arguments1 =>
 term =>
     lookup:          symbol
     int:             int
+    hex:             hex
     float:           float
     string:          string
     pass(expr):      lp:"(" expr rp:")"
     list(arguments): lb:"[" arguments rb:"]"
     function(bindings block):
         lp:"(" bindings rp:")" colon:":" block
+    dict(pairs): lc:"{" pairs rc:"}"
 
 bindings =>
     empty_list:
@@ -118,3 +136,14 @@ bindings =>
 bindings1 =>
     first: symbol
     append(lst symbol): lst=bindings1 comma:"," symbol
+
+pairs =>
+    empty_list:
+    pairs1
+    pass(pairs1): pairs1 comma:","
+
+pairs1 =>
+    first: pair
+    append(lst pair): lst=pairs1 comma:"," pair
+
+pair => tuple(k v): k=expr colon:":" v=expr

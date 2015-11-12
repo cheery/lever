@@ -56,10 +56,11 @@ return test
 # upscope lookup available
 # upscope assign available
 # setitem/setattr available
-
-# dict literals missing
+# dict literals available
 
 # generators missing, yield missing
 # while break/continue missing
 # classes missing
 # function varargs missing
+# assert missing
+# raise missing

@@ -206,6 +206,18 @@ def interpret(pc, block, regv, frame, iterstop=LARGE_PC):
                     module.setattr(
                         get_string(unit, block, ix+1),
                         regv.load(block[ix+2])))
+            elif opcode == opcode_of('not'):
+                if space.is_false(regv.load(block[ix+1])):
+                    regv.store(block[ix+0], space.true)
+                else:
+                    regv.store(block[ix+0], space.false)
+            elif opcode == opcode_of('contains'):
+                v0 = regv.load(block[ix+1])
+                v1 = regv.load(block[ix+2])
+                if v0.contains(v1):
+                    regv.store(block[ix+0], space.true)
+                else:
+                    regv.store(block[ix+0], space.false)
             else:
                 raise space.Error(u"unexpected instruction: " + optable.names.get(opcode, str(opcode)).decode('utf-8'))
     except StopIteration as stop:

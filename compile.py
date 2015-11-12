@@ -35,10 +35,10 @@ def compile_file(cb_path, src_path, debug):
                 args = block[px:pc]
                 if has_result:
                     result = args.pop(0)
-                    code = ' '.join(format_args(args, pattern, variadic, consttab.constants.keys()))
+                    code = ' '.join(format_args(args, pattern, variadic, consttab.constants))
                     print "{:>2x}: {:2} = {:10} {}".format(px-1, result, opname, code)
                 else:
-                    code = ' '.join(format_args(args, pattern, variadic, consttab.constants.keys()))
+                    code = ' '.join(format_args(args, pattern, variadic, consttab.constants))
                     print "{:>2x}:      {:10} {}".format(px-1, opname, code)
     with open(cb_path, 'wb') as fd:
         bon.dump(fd, {
@@ -66,7 +66,7 @@ class ASTScope(object):
             localv = list(self.defines)
             env = Scope(None, functions, localv)
             block = ScopeBlock(env)
-            function = block.func_body(body)
+            function = block.func_body(body, toplevel)
             return [func.dump(consttab) for func in functions]
         return build_function
 
@@ -141,11 +141,11 @@ class ScopeBlock(object):
         self.block.append(op)
         return op
 
-    def func_body(self, body):
+    def func_body(self, body, toplevel=False):
         lastv = None
         for stmt in body:
             lastv = stmt(self)
-        if lastv is not None:
+        if toplevel and lastv is not None:
             self.op(lastv.loc, 'return', lastv)
         else:
             lastv = self.op(None, 'getglob', Constant(u"null"))
@@ -153,6 +153,37 @@ class ScopeBlock(object):
         return self.scope.close()
 
 parser = grammarlang.load({}, 'lever.grammar')
+
+def post_or(env, loc, a, b):
+    def build_or(block):
+        exit = block.scope.new_block()
+        first = a(block)
+        subblock = block.subblock()
+        second = b(subblock)
+        subblock.op(loc, 'move', first, second)
+        subblock.op(loc, 'jump', exit)
+        block.op(loc, 'cond', first, exit, subblock.first)
+        block.block = exit
+        return first
+    return build_or
+
+def post_and(env, loc, a, b):
+    def build_and(block):
+        exit = block.scope.new_block()
+        first = a(block)
+        subblock = block.subblock()
+        second = b(subblock)
+        subblock.op(loc, 'move', first, second)
+        subblock.op(loc, 'jump', exit)
+        block.op(loc, 'cond', first, subblock.first, exit)
+        block.block = exit
+        return first
+    return build_and
+
+def post_not(env, loc, expr):
+    def build_not(block):
+        return block.op(loc, 'not', expr(block))
+    return build_not
 
 def post_return(env, loc, expr):
     def build_return(block):
@@ -260,26 +291,29 @@ def post_if(env, loc, cond, body, otherwise):
     def build_if(block):
         resu = block.op(loc, 'getglob', Constant(u'null'))
         exit = block.scope.new_block()
-        othw = otherwise(block, exit, resu)
-        subblock = block.subblock()
-        block.op(loc, 'cond', cond(block), subblock.first, othw)
-        compile_subblock(loc, subblock, body, exit, resu)
+        subblock1 = block.subblock()
+        subblock2 = block.subblock()
+        b1 = compile_subblock(loc, subblock1, body, exit, resu)
+        b2 = otherwise(subblock2, exit, resu)
+        block.op(loc, 'cond', cond(block), b1, b2)
         block.block = exit
         return resu
     return build_if
 
 def post_elif(env, loc, cond, body, otherwise):
     def build_elif(block, exit, resu):
-        othw = otherwise(block, exit, resu)
-        subblock = block.subblock()
-        block.op(loc, 'cond', cond(block), subblock.first, othw)
-        return compile_subblock(loc, subblock, body, exit, resu)
+        subblock1 = block.subblock()
+        subblock2 = block.subblock()
+        b1 = compile_subblock(loc, subblock1, body, exit, resu)
+        b2 = otherwise(subblock2, exit, resu)
+        block.op(loc, 'cond', cond(block), b1, b2)
+        block.block = exit
+        return block.first
     return build_elif
 
 def post_else(env, loc, body):
     def build_else(block, exit, resu):
-        subblock = block.subblock()
-        return compile_subblock(loc, subblock, body, exit, resu)
+        return compile_subblock(loc, block, body, exit, resu)
     return build_else
 
 def post_done(env, loc):
@@ -300,6 +334,20 @@ def post_call(env, loc, callee, args):
         a = [arg(block) for arg in args]
         c = callee(block)
         return block.op(loc, 'call', c, *a)
+    return build_call
+
+def post_in(env, loc, lhs, rhs):
+    def build_call(block):
+        a = lhs(block)
+        b = rhs(block)
+        return block.op(loc, 'contains', b, a)
+    return build_call
+
+def post_not_in(env, loc, lhs, rhs):
+    def build_call(block):
+        a = lhs(block)
+        b = rhs(block)
+        return block.op(loc, 'not', block.op(loc, 'contains', b, a))
     return build_call
 
 def post_binary(env, loc, lhs, op, rhs):
@@ -336,6 +384,11 @@ def post_int(env, loc, num):
         return block.op(loc, 'constant', Constant(int(num.value)))
     return build_int
 
+def post_hex(env, loc, num):
+    def build_hex(block):
+        return block.op(loc, 'constant', Constant(int(num.value, 16)))
+    return build_hex
+
 def post_float(env, loc, num):
     def build_float(block):
         return block.op(loc, 'constant', Constant(float(num.value)))
@@ -351,6 +404,17 @@ def post_list(env, loc, items):
         vals = [item(block) for item in items]
         return block.op(loc, 'list', *vals)
     return build_list
+
+def post_dict(env, loc, pairs):
+    def build_dict(block):
+        dict_ = block.op(loc, 'getglob', Constant(u"dict"))
+        resu = block.op(loc, 'call', dict_)
+        for key, value in pairs:
+            v0 = key(block)
+            v1 = value(block)
+            block.op(loc, 'setitem', resu, v0, v1)
+        return resu
+    return build_dict
 
 def post_empty_list(env, loc):
     return []

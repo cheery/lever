@@ -6,6 +6,8 @@ source = [
     ('list',     0x20, True,  'vreg*'),
     ('move',     0x30, False, 'vreg vreg'),
     ('call',     0x40, True,  'vreg vreg*'),
+    ('not',      0x41, True, 'vreg'),
+    ('contains', 0x42, True, 'vreg vreg'),
     ('return',   0x50, False, 'vreg'),
     ('jump',     0x60, False, 'block'),
     ('cond',     0x70, False, 'vreg block block'),

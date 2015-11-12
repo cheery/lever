@@ -9,7 +9,7 @@ class ApiConfig:
 conf = ApiConfig()
 
 def init(argv):
-    app_dir = os.environ.get('PYLLISP_PATH')
+    app_dir = os.environ.get('LEVER_PATH')
     if app_dir is None:
         app_dir = ''
     conf.headers_dir = os.path.join(app_dir, 'headers')

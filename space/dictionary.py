@@ -3,6 +3,7 @@ from rpython.rlib.objectmodel import compute_hash, r_dict
 from interface import Error, Object
 from listobject import List
 from numbers import Integer
+import space
 
 def eq_fn(this, other):
     return this.eq(other)
@@ -33,6 +34,23 @@ class Dict(Object):
 
     def iter(self):
         return KeyIterator(self.data.iterkeys())
+
+@Dict.builtin_method
+def get(argv):
+    if len(argv) == 2:
+        v0 = argv[0]
+        v1 = argv[1]
+        v2 = space.null
+    else:
+        assert len(argv) == 3
+        v0 = argv[0]
+        v1 = argv[1]
+        v2 = argv[2]
+    assert isinstance(v0, Dict)
+    try:
+        return v0.data[v1]
+    except KeyError as error:
+        return v2
 
 @Dict.builtin_method
 @signature(Dict)
