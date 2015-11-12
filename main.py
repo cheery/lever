@@ -1,6 +1,6 @@
 from rpython.config.translationoption import get_combined_translation_config
 from rpython.rlib.objectmodel import we_are_translated
-from util import STDIN, STDOUT, STDERR, read_file, write
+from runtime.util import STDIN, STDOUT, STDERR, read_file, write
 from runtime.stdlib import api
 from runtime import base
 import evaluator.loader

@@ -1,7 +1,7 @@
 # Just the JSON decoder, because I only need a decoder for now.
 from rpython.rlib.unicodedata import unicodedb_6_2_0 as unicodedb
 import space
-import util
+from runtime import util
 
 class Stream:
     def __init__(self, source, index):
