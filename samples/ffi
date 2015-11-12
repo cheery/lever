@@ -1,14 +1,16 @@
-(= dlopen ffi.dlopen)
-(= cdef   ffi.cdef)
-(= cfunc  ffi.cfunc)
-(= long   ffi.long)
+ffi = import("ffi")
 
-(= lib (dlopen "libSDL.so"))
+cast = ffi.cast
+cfunc = ffi.cfunc
+long = ffi.long
 
+lib = ffi.library("libSDL.so")
 
-(cdef lib.SDL_Init         (cfunc long  long))
-(cdef lib.SDL_SetVideoMode (cfunc long  long long long long))
+print("SDL_Init(65535): ", 
+    cast(lib.SDL_Init, cfunc(long, [long]))(65535))
 
-(print "trying out")
-(print "SDL_Init ->" (lib.SDL_Init 65535))
-(= screen (lib.SDL_SetVideoMode 640 480 32 0))
+screen = cast(lib.SDL_SetVideoMode,
+    cfunc(long, [long,long,long,long]))(640, 480, 32, 0)
+
+cast(lib.SDL_Delay, cfunc(null, [ffi.ulong]))(1000)
+cast(lib.SDL_Quit, cfunc(null, []))()

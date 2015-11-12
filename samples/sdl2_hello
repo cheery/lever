@@ -1,0 +1,42 @@
+api = import("api")
+automem = import("ffi").automem
+
+sdl = api.open("libSDL2.so")
+
+assert = (condition, message):
+    if not(condition)
+        print(message)
+        exit(1)
+
+assert(sdl.Init(sdl.INIT_VIDEO) == 0, "SDL Init")
+
+win = sdl.CreateWindow("Hello", 100, 100,
+    640, 480, sdl.WINDOW_SHOWN)
+assert(win, "CreateWindow")
+
+ren = sdl.CreateRenderer(win, -1,
+    sdl.RENDERER_ACCELERATED | sdl.RENDERER_PRESENTVSYNC)
+assert(ren, "CreateRenderer")
+
+bmp = sdl.LoadBMP_RW(sdl.RWFromFile("samples/hello.bmp", "rb"), 1)
+assert(bmp, "LoadBMP")
+
+tex = sdl.CreateTextureFromSurface(ren, bmp)
+sdl.FreeSurface(bmp)
+assert(tex, "CreateTextureFromSurface")
+
+event = automem(sdl.Event)
+
+running = true
+while running
+    while sdl.PollEvent(event) != 0
+        if event.type == sdl.QUIT
+            running = false
+    sdl.RenderClear(ren)
+    sdl.RenderCopy(ren, tex, null, null)
+    sdl.RenderPresent(ren)
+
+sdl.DestroyTexture(tex)
+sdl.DestroyRenderer(ren)
+sdl.DestroyWindow(win)
+sdl.Quit()

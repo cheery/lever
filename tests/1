@@ -1,20 +1,19 @@
-(from (import "ffi") automem float)
+ffi = import("ffi")
 
-# Incorrectly register allocated.
-data = (automem float 6)
+data = ffi.automem(ffi.float, 6)
 i = 0
-(for x [0.0 0.0 1.0 0.0 1.0 1.0])
+for x in [0.0, 0.0, 1.0, 0.0, 1.0, 1.0]
     data[i] = x
-    i += 1
+    i = i + 1
 
-(print data)
-
+print(data)
 
 # There was a bug in chaining rules
-reset_round = true
-x = 5
-(if reset_round and 0 < x < 10)
-    (print "a")
-(else)
-    (if reset_round)
-        (print "b")
+# but the language has no chaining rules yet.
+# reset_round = true
+# x = 5
+# (if reset_round and 0 < x < 10)
+#     (print "a")
+# (else)
+#     (if reset_round)
+#         (print "b")

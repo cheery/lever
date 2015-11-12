@@ -290,7 +290,7 @@ def _(restype, argtypes_list):
         raise Error(u"expected type or null as restype, not " + restype.repr())
     argtypes = []
     for argtype in argtypes_list.contents:
-        if isinstance(restype, Type):
+        if isinstance(argtype, Type):
             argtypes.append(argtype)
         else:
             raise Error(u"expected type as argtype, not " + argtype.repr())

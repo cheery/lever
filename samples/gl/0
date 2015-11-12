@@ -1,31 +1,34 @@
-# The simplest possible opengl sample.
-# Draws a colorful screen.
+api = import("api")
+automem = import("ffi").automem
 
-api = (import "api")
-(from (import "ffi") automem)
-sdl = (api.open "libSDL2.so")
-gl = (api.open "libGL.json" sdl.GL_GetProcAddress)
+assert = (boolean):
+    if not (boolean)
+        print ("assert error")
+        exit(1)
 
-(assert (sdl.Init sdl.INIT_VIDEO) == 0)
+sdl = api.open("libSDL2.so")
+gl = api.open("libGL.json", sdl.GL_GetProcAddress)
 
-(sdl.GL_SetAttribute sdl.GL_DOUBLEBUFFER 1)
-win = (sdl.CreateWindow "Hello" 100 100 640 480)
-    sdl.WINDOW_OPENGL | sdl.WINDOW_SHOWN
-(assert win)
+assert(sdl.Init(sdl.INIT_VIDEO) == 0)
 
-ctx = (sdl.GL_CreateContext win)
-(assert ctx)
+sdl.GL_SetAttribute(sdl.GL_DOUBLEBUFFER, 1)
+win = sdl.CreateWindow("Hello", 100, 100, 640, 480, sdl.WINDOW_OPENGL | sdl.WINDOW_SHOWN)
+assert(win)
 
-event = (automem sdl.Event)
+ctx = sdl.GL_CreateContext(win)
+assert(ctx)
+
+event = automem(sdl.Event)
 
 running = true
-(while running)
-    (while (sdl.PollEvent event) != 0)
-        (if event.type == sdl.QUIT) running = false
-    (gl.clearColor 0.5 0.5 0.2 1.0)
-    (gl.clear gl.COLOR_BUFFER_BIT)
-    (sdl.GL_SwapWindow win)
+while running
+    while sdl.PollEvent(event) != 0
+        if event.type == sdl.QUIT
+            running = false
+    gl.clearColor(0.5, 0.5, 0.2, 1.0)
+    gl.clear(gl.COLOR_BUFFER_BIT)
+    sdl.GL_SwapWindow(win)
 
-(sdl.GL_DeleteContext ctx)
-(sdl.DestroyWindow win)
-(sdl.Quit)
+sdl.GL_DeleteContext(ctx)
+sdl.DestroyWindow(win)
+sdl.Quit()
