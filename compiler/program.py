@@ -1,4 +1,4 @@
-from rpython.rlib.listsort import make_timsort_class
+#from rpython.rlib.listsort import make_timsort_class
 from evaluator import optable
 from collections import OrderedDict
 
@@ -180,7 +180,8 @@ def allocate_tmp(body):
     avail = []
     for op, (start, stop) in live_ranges.iteritems():
         starts.append((start, stop, op))
-    sort_starts(starts).sort()
+    starts.sort(key=lambda x: x[0])
+    #sort_starts(starts).sort()
     for current, stop, op in starts:
         assert current <= stop
         if len(avail) > 0:
@@ -189,7 +190,8 @@ def allocate_tmp(body):
             op.index = body.tmpc
             body.tmpc += 1
         stops.append((stop, op))
-        sort_ends(stops).sort()
+        #sort_ends(stops).sort()
+        stops.sort(key=lambda x: x[0])
         while len(stops) > 0 and stops[0][0] < current:
             _, exp = stops.pop(0)
             assert exp.index not in avail
@@ -204,5 +206,5 @@ def plot_range(ranges, key, pos):
 
 # The previous version of this algorithm was run by RPython,
 # which depended on this kind of constructs to sort.
-sort_starts = make_timsort_class(lt=lambda x, y: x[0] < y[0])
-sort_ends = make_timsort_class(lt=lambda x, y: x[0] < y[0])
+#sort_starts = make_timsort_class(lt=lambda x, y: x[0] < y[0])
+#sort_ends = make_timsort_class(lt=lambda x, y: x[0] < y[0])

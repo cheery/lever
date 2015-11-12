@@ -1,14 +1,10 @@
 from space import *
-import api
-import ffi
-import os
-import filesystem
+import os, stdlib
 
-builtin_modules = {
-    u'api': api.module,
-    u'ffi': ffi.module,
-    u'fs': filesystem.module,
-}
+builtin_modules = {}
+
+for module in stdlib.import_all_modules():
+    builtin_modules[module.module.name] = module.module
 
 # The base environment
 module = Module(u'base', {

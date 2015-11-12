@@ -1,15 +1,21 @@
+#!/usr/bin/env python
 from compiler.program import ConstantTable, Function, Block, Constant, Op
 from compiler import bon, grammarlang
 import os
 import sys
 
 def main(debug=False):
-    for name in sys.argv[1:]:
-        compile_file(name, debug)
+    assert len(sys.argv) == 3
+    cb_path = sys.argv[1]
+    src_path = sys.argv[2]
 
-def compile_file(name, debug):
+    debug = os.environ.get('VERBOSE', debug)
+
+    compile_file(cb_path, src_path, debug)
+
+def compile_file(cb_path, src_path, debug):
     env = ASTScope()
-    body = parser.from_file(globals(), env, name)
+    body = parser.from_file(globals(), env, src_path)
     builder = env.close(body, toplevel=True)
 
     consttab = ConstantTable()
@@ -34,7 +40,7 @@ def compile_file(name, debug):
                 else:
                     code = ' '.join(format_args(args, pattern, variadic, consttab.constants.keys()))
                     print "{:>2x}:      {:10} {}".format(px-1, opname, code)
-    with open(os.path.splitext(name)[0] + '.lic', 'wb') as fd:
+    with open(cb_path, 'wb') as fd:
         bon.dump(fd, {
             u'functions': functions,
             u'constants': list(consttab.constants),
