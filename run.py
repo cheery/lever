@@ -16,11 +16,11 @@ try:
 
     if os.path.isfile('main-c') and run_compiled:
         check_call(['./main-c'] + files)
-    elif not os.path.exists('pypy-2.6.0-src'):
+    elif not os.path.exists('pypy-4.0.0-src'):
         print("First, read the README.md, after that run setup.py")
         sys.exit(1)
     else:
-        os.environ['PYTHONPATH'] = "pypy-2.6.0-src"
+        os.environ['PYTHONPATH'] = "pypy-4.0.0-src"
         check_call(['python', 'main.py'] + files)
 except CalledProcessError as e:
     sys.exit(e.returncode)
