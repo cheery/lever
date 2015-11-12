@@ -41,13 +41,30 @@ statement =>
     pass: expr
 
 expr =>
+    expr10
+    binary: expr10 lt:"<" expr10
+    binary: expr10 gt:">" expr10
+    binary: expr10 eq:"==" expr10
+    binary: expr10 ne:"!=" expr10
+    binary: expr10 le:"<=" expr10
+    binary: expr10 ge:">=" expr10
+
+expr10 =>
+    expr20
+    binary: expr10 bitwise_or:"|" expr20
+
+expr20 =>
+    expr30
+    binary: expr20 bitwise_xor:"^" expr30
+
+expr30 =>
+    expr50
+    binary: expr30 bitwise_and:"&" expr50
+
+expr50 =>
     expr100
-    binary: expr100 lt:"<" expr100
-    binary: expr100 gt:">" expr100
-    binary: expr100 eq:"==" expr100
-    binary: expr100 ne:"!=" expr100
-    binary: expr100 le:"<=" expr100
-    binary: expr100 ge:">=" expr100
+    binary: expr50 bitwine_shl:"<<" expr100
+    binary: expr50 bitwine_shr:">>" expr100
 
 expr100 =>
     expr200
