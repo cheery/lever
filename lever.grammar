@@ -76,8 +76,8 @@ expr30 =>
 
 expr50 =>
     expr100
-    binary: expr50 bitwine_shl:"<<" expr100
-    binary: expr50 bitwine_shr:">>" expr100
+    binary: expr50 bitwise_shl:"<<" expr100
+    binary: expr50 bitwise_shr:">>" expr100
 
 expr100 =>
     expr200
@@ -127,6 +127,7 @@ term =>
     function(bindings block):
         lp:"(" bindings rp:")" colon:":" block
     dict(pairs): lc:"{" pairs rc:"}"
+    lookup(escaped_keyword): lc:"{" escaped_keyword rc:"}"
 
 bindings =>
     empty_list:
@@ -147,3 +148,9 @@ pairs1 =>
     append(lst pair): lst=pairs1 comma:"," pair
 
 pair => tuple(k v): k=expr colon:":" v=expr
+
+escaped_keyword =>
+    pass: kw_import:"import"
+    pass: kw_and:"and"
+    pass: kw_or:"or"
+    pass: kw_not:"not"

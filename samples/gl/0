@@ -1,5 +1,5 @@
-api = import("api")
-automem = import("ffi").automem
+api = {import}("api")
+automem = {import}("ffi").automem
 
 assert = (boolean):
     if not (boolean)

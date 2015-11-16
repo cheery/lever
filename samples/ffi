@@ -1,4 +1,4 @@
-ffi = import("ffi")
+ffi = {import}("ffi")
 
 cast = ffi.cast
 cfunc = ffi.cfunc
