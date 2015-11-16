@@ -38,7 +38,12 @@ Lever base module
 
    Multimethods represent bundles of functions of fixed arity. Programmer can insert
    more of functions into a multimethod at any time.
-   
+
+   During invocation multimethods calls interface() for every argument they get. The
+   result is used to determine the function to call. If the value is missing in the
+   table, the default -method is called. If there's no default method, then an error
+   is raised.
+
 .. class:: int()
 
    An integer. Merely used to identify integers. No other interests.
