@@ -3,28 +3,31 @@ from collections import OrderedDict, defaultdict
 class Parser(object):
     def __init__(self, init, nullable):
         self.input = []
-        self.chart = [OrderedDict()]
-        self.chart[0][(init, 0)] = None
-        self.chart[0][(init.goto[None], 0)] = None
+        self.chart = [[]]
+        self.chart[0].append((init, 0))
+        self.chart[0].append((init.goto[None], 0))
         self.expect = set(init.goto) | set(init.goto[None].goto)
         self.accept = init.accept or init.goto[None].accept
         self.nullable = nullable
+        self.psl = {}
 
     def step(self, token):
         i = len(self.chart)
-        current = OrderedDict()
+        current = []
         self.chart.append(current)
         self.input.append(token)
+
         # scan
         for state, parent in self.chart[i-1]:
             try:
                 k = state.goto[token.name]
-                current[(k, parent)] = None
+                self.add_item(i, current, (k, parent))
             except KeyError as ke:
                 pass
             for condition, k in state.conditions:
                 if condition(token):
-                    current[(k, parent)] = None
+                    self.add_item(i, current, (k, parent))
+
         # complete
         accept = False
         expect = set()
@@ -33,7 +36,7 @@ class Parser(object):
             expect.update(state.goto)
             accept |= (parent == 0 and state.accept)
             #if parent == i: # XXX: Find out why I inserted this originally.
-            #    continue    # XXX: It was in the original design for empty rules.
+                #continue    # XXX: It was in the original design for empty rules.
             for rule in state.completed:
                 for pstate, pparent in self.chart[parent]:
                     # XXX: Fix chain constructor for this.
@@ -41,17 +44,29 @@ class Parser(object):
                     #    pstate, pparent = self.try_reduction_path(pstate, pparent)
                     try:
                         k = pstate.goto[rule.lhs]
-                        current[(k, pparent)] = None
+                        self.add_item(i, current, (k, pparent))
                     except KeyError as ke:
                         pass
                 #found.add(rule)
-            # predict
-            try:
-                current[(state.goto[None], i)] = None
-            except KeyError as ke:
-                pass
         self.accept = accept
         self.expect = expect
+
+    def add_item(self, index, current, new_item):
+        #self.add_one_item(index, current, new_item)
+        loc = self.psl.get(new_item)
+        if loc is None or loc != index:
+            self.psl[new_item] = index
+            current.append(new_item)
+        try:
+            kn = new_item[0].goto[None]
+            new_item = (kn, index)
+            #self.add_one_item(index, current, new_item)
+            loc = self.psl.get(new_item)
+            if loc is None or loc != index:
+                self.psl[new_item] = index
+                current.append(new_item)
+        except KeyError as ke:
+            pass
 
     def try_reduction_path(self, state, parent):
         gparent = parent
