@@ -33,7 +33,7 @@ class Parser(object):
             expect.update(state.goto)
             accept |= (parent == 0 and state.accept)
             #if parent == i: # XXX: Find out why I inserted this originally.
-            #    continue
+            #    continue    # XXX: It was in the original design for empty rules.
             for rule in state.completed:
                 for pstate, pparent in self.chart[parent]:
                     # XXX: Fix chain constructor for this.

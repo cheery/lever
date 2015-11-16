@@ -72,7 +72,40 @@ def format_expect(expect):
 
 def traverse(parser, rule, start, stop, namespace, arg):
     loc = get_range(parser, start, stop)
-    mapping = rule.mapping
+    rcount = len(rule.rhs)
+    rstack = []
+    sstack = []
+    stack = amb(list(parser.chains(rule.rhs, start, stop)), start, stop, rule)
+    pre, post = get_rule_mapping(rule, namespace)
+    if callable(pre):
+        arg = pre(arg, loc)
+
+    while len(stack) > 0:
+        assert rcount > 0, (rcount, loc, rule, start, stop)
+        nonleaf, next_rule, start, stop = stack.pop(-1)
+        if nonleaf:
+            rstack.append((rcount - 1, rule, post, loc, arg))
+            loc = get_range(parser, start, stop)
+            rule   = next_rule
+            rcount = len(rule.rhs)
+            stack.extend(amb(list(parser.chains(rule.rhs, start, stop)), start, stop, rule))
+            pre, post = get_rule_mapping(rule, namespace)
+            if callable(pre):
+                arg = pre(arg, loc)
+        else:
+            sstack.append(next_rule)
+            rcount -= 1
+        while rcount == 0 and len(rstack) > 0:
+            args = list(reversed([sstack.pop(-1) for s in rule.rhs]))
+            result = post(arg, loc, *(args[index] for index in rule.mapping))
+            sstack.append(result)
+            rcount, rule, post, loc, arg = rstack.pop(-1)
+
+    assert len(rstack) == 0, rstack
+    assert len(sstack) == 1, len(sstack)
+    return sstack[0]
+
+def get_rule_mapping(rule, namespace):
     if rule.lhs is Ellipsis:
         pre = None
         post = lambda arg, loc, node: node
@@ -80,22 +113,16 @@ def traverse(parser, rule, start, stop, namespace, arg):
         assert rule.attribute is not None, rule
         pre = namespace.get("pre_{}".format(rule.attribute))
         post = namespace["post_{}".format(rule.attribute)]
-    if callable(pre):
-        arg = pre(arg, loc)
-    midresults = list(parser.chains(rule.rhs, start, stop))
+    return pre, post
+
+def amb(midresults, start, stop, rule):
     if len(midresults) == 0:
         raise Exception("parser bug at {}:{}".format(start, stop))
     if len(midresults) > 1:
         for midresult in midresults:
             print start, stop, rule.lhs, midresult
         raise Exception("ambiguity at {}:{}".format(start, stop))
-    args = []
-    for nonleaf, rule, start, stop in midresults[0]:
-        if nonleaf:
-            args.append(traverse(parser, rule, start, stop, namespace, arg))
-        else:
-            args.append(rule)
-    return post(arg, loc, *(args[index] for index in mapping))
+    return list(reversed(midresults[0]))
 
 def get_range(parser, start, stop):
     length = len(parser.input)
