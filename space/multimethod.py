@@ -1,14 +1,29 @@
 from builtin import Builtin, signature
 from interface import Error, Object
-from listobject import List
-from rpython.rlib.objectmodel import compute_hash, r_dict
 from rpython.rlib import jit
+from rpython.rlib.objectmodel import compute_hash, r_dict
+from rpython.rlib.rarithmetic import intmask
+import space
 
 def eq_fn(this, other):
-    return this.eq(other)
+    if len(this) != len(other):
+        return False
+    for i in range(len(this)):
+        if not this[i].eq(other[i]):
+            return False
+    return True
 
 def hash_fn(this):
-    return this.hash()
+    mult = 1000003
+    x = 0x345678
+    z = len(this)
+    for item in this:
+        y = item.hash()
+        x = (x ^ y) * mult
+        z -= 1
+        mult += 82520 + z + z
+    x += 97531
+    return intmask(x)
 
 class Multimethod(Object):
     _immutable_fields_ = ['arity', 'methods']
@@ -25,7 +40,7 @@ class Multimethod(Object):
 
     @jit.elidable
     def get_method(self, *interfaces):
-        return self.methods.get(List(list(interfaces)), None)
+        return self.methods.get(list(interfaces), None)
 
     @jit.unroll_safe
     def invoke_method(self, argv, suppress_default):
@@ -33,31 +48,31 @@ class Multimethod(Object):
         if len(argv) < self.arity:
             raise Error(u"expected at least %d arguments, got %d" % (self.arity, len(argv))) 
         if self.arity == 1:
-            method = self.get_method(jit.promote(argv[0].__class__.interface))
+            method = self.get_method(jit.promote(space.get_interface(argv[0])))
         elif self.arity == 2:
             method = self.get_method(
-                jit.promote(argv[0].__class__.interface),
-                jit.promote(argv[1].__class__.interface))
+                jit.promote(space.get_interface(argv[0])),
+                jit.promote(space.get_interface(argv[1])))
         elif self.arity == 3:
             method = self.get_method(
-                jit.promote(argv[0].__class__.interface),
-                jit.promote(argv[1].__class__.interface),
-                jit.promote(argv[2].__class__.interface))
+                jit.promote(space.get_interface(argv[0])),
+                jit.promote(space.get_interface(argv[1])),
+                jit.promote(space.get_interface(argv[2])))
         elif self.arity == 4:
             method = self.get_method(
-                jit.promote(argv[0].__class__.interface),
-                jit.promote(argv[1].__class__.interface),
-                jit.promote(argv[2].__class__.interface),
-                jit.promote(argv[3].__class__.interface))
+                jit.promote(space.get_interface(argv[0])),
+                jit.promote(space.get_interface(argv[1])),
+                jit.promote(space.get_interface(argv[2])),
+                jit.promote(space.get_interface(argv[3])))
         else:
             vec = []
             for i in range(self.arity):
-                vec.append(argv[i].__class__.interface)
-            method = self.methods.get(List(vec), None)
+                vec.append(space.get_interface(argv[i]))
+            method = self.methods.get(vec, None)
         if method is None:
             vec = []
             for i in range(self.arity):
-                vec.append(argv[i].__class__.interface)
+                vec.append(space.get_interface(argv[i]))
             if self.default is None or suppress_default:
                 names = []
                 for i in range(self.arity):
@@ -67,7 +82,7 @@ class Multimethod(Object):
         return method.call(argv)
 
     def multimethod(self, *spec):
-        vec = List(list(cls.interface for cls in spec))
+        vec = list(cls.interface for cls in spec)
         def _impl_(fn):
             self.methods[vec] = Builtin(fn)
             return fn

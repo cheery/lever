@@ -24,32 +24,28 @@ def builtin(fn):
     module.setattr_force(name, Builtin(fn, name))
     return fn
 
-builtin_modules = {}
-for py_module in stdlib.import_all_modules():
-    builtin_modules[py_module.module.name] = py_module.module
-
-stdlib_modules = {}
-
 @builtin
-@signature(String)
-def import_(name):
-    if name.string in builtin_modules:
-        return builtin_modules[name.string]
-    if name.string in stdlib_modules:
-        return stdlib_modules[name.string]
-    app_dir = os.environ.get('LEVER_PATH')
-    if app_dir is None:
-        app_dir = ''
-    path_name = os.path.join(app_dir, "stdlib").decode('utf-8') + u"/" + name.string
-    this = Module(name.string, {}, extends=module) # base.module
-    module_resolution.load_module(path_name.encode('utf-8'), this)
-    stdlib_modules[name.string] = this
-    return this
+def class_(argv):
+    exnihilo = argv[0]
+    parent = Object.interface
+    name = String(u"customobject")
+    assert 1 <= len(argv) <= 3
+    if len(argv) > 1:
+        parent = argv[1]
+    if len(argv) > 2:
+        name = argv[2]
+    assert isinstance(exnihilo, Exnihilo)
+    assert isinstance(parent, Interface)
+    assert isinstance(name, String)
+    interface = Interface(parent, name.string)
+    interface.methods = exnihilo.cells
+    interface.instantiate = CustomObject.interface.instantiate
+    return interface
 
 @builtin
 @signature(Object)
 def interface(obj):
-    return obj.__class__.interface
+    return get_interface(obj)
 
 @builtin
 @signature(Object)
@@ -239,3 +235,26 @@ def _(a, b):
 @concat.multimethod_s(List, List)
 def _(a, b):
     return List(a.contents + b.contents)
+
+# Module namespace.
+builtin_modules = {}
+for py_module in stdlib.import_all_modules():
+    builtin_modules[py_module.module.name] = py_module.module
+
+stdlib_modules = {}
+
+@builtin
+@signature(String)
+def import_(name):
+    if name.string in builtin_modules:
+        return builtin_modules[name.string]
+    if name.string in stdlib_modules:
+        return stdlib_modules[name.string]
+    app_dir = os.environ.get('LEVER_PATH')
+    if app_dir is None:
+        app_dir = ''
+    path_name = os.path.join(app_dir, "stdlib").decode('utf-8') + u"/" + name.string
+    this = Module(name.string, {}, extends=module) # base.module
+    module_resolution.load_module(path_name.encode('utf-8'), this)
+    stdlib_modules[name.string] = this
+    return this

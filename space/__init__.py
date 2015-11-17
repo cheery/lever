@@ -1,5 +1,5 @@
-from rpython.rlib.objectmodel import specialize
-from interface import Error, Object, null
+from rpython.rlib.objectmodel import specialize, always_inline
+from interface import Error, Object, Interface, null
 from builtin import Builtin, signature
 from dictionary import Dict
 from listobject import List
@@ -9,6 +9,8 @@ from numbers import Float, Integer, Boolean
 from string import String
 from uint8array import Uint8Array
 from exnihilo import Exnihilo
+from customobject import CustomObject
+from rpython.rlib import jit
 
 true = Boolean(True)
 false = Boolean(False)
@@ -42,3 +44,9 @@ def from_cstring(value):
 def from_ustring(value):
     assert isinstance(value, unicode)
     return String(value)
+
+@always_inline
+def get_interface(obj):
+    if isinstance(obj, CustomObject):
+        return obj.custom_interface
+    return obj.__class__.interface

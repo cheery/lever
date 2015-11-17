@@ -1,5 +1,6 @@
 import re
 from rpython.rlib.objectmodel import compute_hash
+import space
 
 class Error(Exception):
     def __init__(self, message):
@@ -7,7 +8,7 @@ class Error(Exception):
         self.stacktrace = []
 
 class Object:
-    _immutable_fields_ = ['interface', 'flag', 'number', 'value', 'contents', 'data', 'string[*]', 'iterator', 'arity', 'methods', 'default']
+    _immutable_fields_ = ['interface', 'custom_interface', 'flag', 'number', 'value', 'contents', 'data', 'string[*]', 'iterator', 'arity', 'methods', 'default', 'cells']
     __slots__ = []
     __attrs__ = []
     # The metaclass here takes care every object will get an interface.
@@ -47,7 +48,7 @@ class Object:
         raise Error(u"%s does not contain " % (self.repr(), obj.repr()))
 
     def repr(self):
-        return u"<%s>" % self.__class__.interface.name
+        return u"<%s>" % space.get_interface(self).name
 
     def hash(self):
         return compute_hash(self)
@@ -57,7 +58,9 @@ class Object:
 
     @classmethod
     def instantiator(cls, fn):
-        cls.interface.instantiate = fn
+        def _instantiate_b_(interface, argv):
+            return fn(argv)
+        cls.interface.instantiate = _instantiate_b_
         return fn
 
     @classmethod
@@ -71,7 +74,7 @@ class Interface(Object):
     # Should add possibility to freeze the interface?
     def __init__(self, parent, name):
         assert isinstance(name, unicode)
-        self.parent = parent
+        self.parent = parent # TODO: make this matter for custom objects.
         self.name = name
         self.instantiate = None
         self.methods = {}
@@ -79,7 +82,7 @@ class Interface(Object):
     def call(self, argv):
         if self.instantiate is None:
             raise Error(u"Cannot instantiate " + self.name)
-        return self.instantiate(argv)
+        return self.instantiate(self, argv)
 
     def repr(self):
         return self.name

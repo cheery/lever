@@ -16,6 +16,7 @@ class Exnihilo(Object):
 
     def setattr(self, name, value):
         self.cells[name] = value
+        return value
 
     def repr(self):
         cellnames = u""
