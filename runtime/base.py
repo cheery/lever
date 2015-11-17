@@ -149,6 +149,14 @@ def _(a, b):
 def _(a, b):
     return List([Integer(int(a.flag)), b])
 
+@coerce.multimethod_s(Integer, Float)
+def _(a, b):
+    return List([Float(float(a.value)), b])
+
+@coerce.multimethod_s(Float, Integer)
+def _(a, b):
+    return List([a, Float(float(b.value))])
+
 def arithmetic_multimethod(operation, flo=False):
     operation = specialize.argtype(0, 1)(operation)
     method = Multimethod(2)

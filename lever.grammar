@@ -87,9 +87,9 @@ expr100 =>
 
 expr200 =>
     prefix
-    binary: expr star:"*" prefix
-    binary: expr slash:"/" prefix
-    binary: expr percent:"%" prefix
+    binary: expr200 star:"*" prefix
+    binary: expr200 slash:"/" prefix
+    binary: expr200 percent:"%" prefix
 
 prefix =>
     postfix

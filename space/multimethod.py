@@ -1,4 +1,5 @@
 from builtin import Builtin, signature
+from numbers import Integer
 from interface import Error, Object, null
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import compute_hash, r_dict
@@ -112,3 +113,8 @@ class Multimethod(Object):
             self.default = value
             return value
         return Object.setattr(self, index, value)
+
+@Multimethod.instantiator
+@signature(Integer)
+def _(arity):
+    return Multimethod(arity.value)
