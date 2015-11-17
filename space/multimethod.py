@@ -1,5 +1,5 @@
 from builtin import Builtin, signature
-from interface import Error, Object
+from interface import Error, Object, null
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import compute_hash, r_dict
 from rpython.rlib.rarithmetic import intmask
@@ -27,7 +27,7 @@ def hash_fn(this):
 
 class Multimethod(Object):
     _immutable_fields_ = ['arity', 'methods']
-    def __init__(self, arity, default=None):
+    def __init__(self, arity, default=null):
         self.arity = arity
         self.methods = r_dict(eq_fn, hash_fn, force_non_null=True)
         self.default = default
@@ -73,7 +73,7 @@ class Multimethod(Object):
             vec = []
             for i in range(self.arity):
                 vec.append(space.get_interface(argv[i]))
-            if self.default is None or suppress_default:
+            if self.default is null or suppress_default:
                 names = []
                 for i in range(self.arity):
                     names.append(vec[i].name)
@@ -92,3 +92,23 @@ class Multimethod(Object):
         def _impl_(fn):
             return self.multimethod(*spec)(signature(*spec)(fn))
         return _impl_
+
+    def setitem(self, index, value):
+        vec = []
+        assert isinstance(index, space.List)
+        for item in index.contents:
+            assert isinstance(item, space.Interface)
+            vec.append(item)
+        self.methods[vec] = value
+        return value
+
+    def getattr(self, index):
+        if index == u"default":
+            return self.default
+        return Object.getattr(self, index)
+
+    def setattr(self, index, value):
+        if index == u"default":
+            self.default = value
+            return value
+        return Object.setattr(self, index, value)

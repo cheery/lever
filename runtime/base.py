@@ -1,3 +1,4 @@
+from rpython.rlib.objectmodel import specialize, always_inline
 from space import *
 import module_resolution
 import os
@@ -11,6 +12,7 @@ module = Module(u'base', {
     u'object': Object.interface,
     u'list': List.interface,
     u'multimethod': Multimethod.interface,
+    u'float': Float.interface,
     u'int': Integer.interface,
     u'bool': Boolean.interface,
     u'str': String.interface,
@@ -49,8 +51,13 @@ def interface(obj):
 
 @builtin
 @signature(Object)
-def iter(obj):
+def iter_(obj):
     return obj.iter()
+
+@builtin
+@signature(Object)
+def repr_(obj):
+    return String(obj.repr())
   
 #  #def pyl_apply(argv):
 #  #    N = len(argv) - 1
@@ -142,7 +149,8 @@ def _(a, b):
 def _(a, b):
     return List([Integer(int(a.flag)), b])
 
-def arithmetic_multimethod(operation):
+def arithmetic_multimethod(operation, flo=False):
+    operation = specialize.argtype(0, 1)(operation)
     method = Multimethod(2)
     @Builtin
     def default(argv):
@@ -153,20 +161,24 @@ def arithmetic_multimethod(operation):
     @method.multimethod_s(Integer, Integer)
     def _(a, b):
         return Integer(operation(a.value, b.value))
+    if flo:
+        @method.multimethod_s(Float, Float)
+        def _(a, b):
+            return Float(operation(a.number, b.number))
     return method
 
-module.setattr_force(u'+', arithmetic_multimethod(lambda a, b: a + b))
-module.setattr_force(u'-', arithmetic_multimethod(lambda a, b: a - b))
-module.setattr_force(u'*', arithmetic_multimethod(lambda a, b: a * b))
-module.setattr_force(u'/', arithmetic_multimethod(lambda a, b: a / b))
-module.setattr_force(u'|', arithmetic_multimethod(lambda a, b: a | b))
-module.setattr_force(u'%', arithmetic_multimethod(lambda a, b: a % b))
-module.setattr_force(u'&', arithmetic_multimethod(lambda a, b: a & b))
-module.setattr_force(u'^', arithmetic_multimethod(lambda a, b: a ^ b))
-module.setattr_force(u'<<', arithmetic_multimethod(lambda a, b: a << b))
-module.setattr_force(u'>>', arithmetic_multimethod(lambda a, b: a >> b))
-module.setattr_force(u'min', arithmetic_multimethod(lambda a, b: min(a, b)))
-module.setattr_force(u'max', arithmetic_multimethod(lambda a, b: max(a, b)))
+module.setattr_force(u'+', arithmetic_multimethod((lambda a, b: a + b), flo=True))
+module.setattr_force(u'-', arithmetic_multimethod((lambda a, b: a - b), flo=True))
+module.setattr_force(u'*', arithmetic_multimethod((lambda a, b: a * b), flo=True))
+module.setattr_force(u'/', arithmetic_multimethod((lambda a, b: a / b), flo=True)) # TODO: should provide proper division instead of copying python behavior.
+module.setattr_force(u'|', arithmetic_multimethod((lambda a, b: a | b)))
+module.setattr_force(u'%', arithmetic_multimethod((lambda a, b: a % b)))
+module.setattr_force(u'&', arithmetic_multimethod((lambda a, b: a & b)))
+module.setattr_force(u'^', arithmetic_multimethod((lambda a, b: a ^ b)))
+module.setattr_force(u'<<', arithmetic_multimethod((lambda a, b: a << b)))
+module.setattr_force(u'>>', arithmetic_multimethod((lambda a, b: a >> b)))
+module.setattr_force(u'min', arithmetic_multimethod((lambda a, b: min(a, b)), flo=True))
+module.setattr_force(u'max', arithmetic_multimethod((lambda a, b: max(a, b)), flo=True))
 
 # Not actual implementations of these functions
 # All of these will be multimethods

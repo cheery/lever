@@ -81,6 +81,8 @@ class Interface(Object):
 
     def call(self, argv):
         if self.instantiate is None:
+            if self.name == u'null':
+                raise Error(u"Cannot call null")
             raise Error(u"Cannot instantiate " + self.name)
         return self.instantiate(self, argv)
 

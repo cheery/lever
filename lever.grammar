@@ -128,6 +128,7 @@ term =>
         lp:"(" bindings rp:")" colon:":" block
     dict(pairs): lc:"{" pairs rc:"}"
     lookup(escaped_keyword): lc:"{" escaped_keyword rc:"}"
+    lookup(string): percent:"%" string
 
 bindings =>
     empty_list:

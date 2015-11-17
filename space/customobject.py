@@ -10,7 +10,7 @@ class CustomObject(Object):
 
     def call(self, argv):
         try:
-            method = self.interface.methods[u"+call"]
+            method = self.custom_interface.methods[u"+call"]
         except KeyError as error:
             return Object.call(self, argv)
         else:
@@ -18,7 +18,7 @@ class CustomObject(Object):
 
     def getitem(self, index):
         try:
-            method = self.interface.methods[u"+getitem"]
+            method = self.custom_interface.methods[u"+getitem"]
         except KeyError as error:
             return Object.getitem(self, index)
         else:
@@ -26,7 +26,7 @@ class CustomObject(Object):
 
     def setitem(self, index, value):
         try:
-            method = self.interface.methods[u"+setitem"]
+            method = self.custom_interface.methods[u"+setitem"]
         except KeyError as error:
             return Object.setitem(self, index, value)
         else:
@@ -34,7 +34,7 @@ class CustomObject(Object):
 
     def iter(self):
         try:
-            method = self.interface.methods[u"+iter"]
+            method = self.custom_interface.methods[u"+iter"]
         except KeyError as error:
             return Object.iter(self)
         else:
@@ -54,7 +54,7 @@ class CustomObject(Object):
 
     def contains(self, obj):
         try:
-            method = self.interface.methods[u"+contains"]
+            method = self.custom_interface.methods[u"+contains"]
         except KeyError as error:
             return Object.contains(self, obj)
         else:
@@ -62,7 +62,7 @@ class CustomObject(Object):
 
     def repr(self):
         try:
-            method = self.interface.methods[u"+repr"]
+            method = self.custom_interface.methods[u"+repr"]
         except KeyError as error:
             return Object.repr(self)
         else:
@@ -73,7 +73,7 @@ class CustomObject(Object):
     # TODO: figure out whether this matters to performance.
     def hash(self):
         try:
-            method = self.interface.methods[u"+hash"]
+            method = self.custom_interface.methods[u"+hash"]
         except KeyError as error:
             return Object.hash(self)
         else:
