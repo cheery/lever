@@ -26,9 +26,13 @@ def load_module(src_path, module):
     return program.call([module])
 
 def compile_module(cb_path, src_path):
+    app_dir = os.environ.get('LEVER_PATH')
+    if app_dir is None:
+        app_dir = ''
+    compiler_path = os.path.join(app_dir, "compile.py")
     pid = os.fork()
     if pid == 0:
-        os.execv('compile.py', ["compile.py", cb_path, src_path])
+        os.execv(compiler_path, [compiler_path, cb_path, src_path])
         return
     pid, status = os.waitpid(pid, 0)
     if status != 0:

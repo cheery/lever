@@ -152,7 +152,18 @@ class ScopeBlock(object):
             self.op(lastv.loc, 'return', lastv)
         return self.scope.close()
 
-parser = grammarlang.load({}, 'lever.grammar')
+def post_import(env, loc, names):
+    for name in names:
+        env.defines.add(name.value)
+    def build_import(block):
+        import_fn = block.op(loc, 'getglob', Constant(u"import"))
+        for name in names:
+            name_const = block.op(loc, 'constant', Constant(name.value.decode('utf-8')))
+            import_ = block.op(loc, 'call', import_fn, name_const)
+            local = block.scope.get_local(name.value)
+            local = block.op(loc, 'setloc', local, import_)
+        return block.op(loc, 'getglob', Constant(u"null"))
+    return build_import
 
 def post_or(env, loc, a, b):
     def build_or(block):
@@ -431,5 +442,8 @@ def post_pass(env, loc, val):
 
 def post_tuple(env, loc, *args):
     return args
+
+lever_path = os.environ.get('LEVER_PATH', '')
+parser = grammarlang.load({}, os.path.join(lever_path, 'lever.grammar'))
 
 if __name__=='__main__': main()

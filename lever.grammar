@@ -28,6 +28,8 @@ block_statement =>
         expr dot:"." symbol assign_op:"=" block_statement
     for(symbol statement block):
         kw_for:"for" symbol kw_in:"in" statement block
+    import(symbols_list):
+        kw_import:"import" symbols_list
 
 otherwise =>
     done:
@@ -155,3 +157,7 @@ escaped_keyword =>
     pass: kw_and:"and"
     pass: kw_or:"or"
     pass: kw_not:"not"
+
+symbols_list =>
+    first: symbol
+    append(lst symbol): lst=symbols_list comma:"," symbol

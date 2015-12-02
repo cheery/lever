@@ -7,20 +7,24 @@ import sys
 import os
 
 try:
-
+    lever_path = os.path.dirname(os.path.realpath(sys.argv[0]))
     files = sys.argv[1:]
+    pythonpath = os.path.join(lever_path, 'pypy-4.0.0-src')
+    main_py_path = os.path.join(lever_path, 'main.py')
+    main_path = os.path.abspath(os.path.join(lever_path, 'main-c'))
 
     run_compiled = '-i' not in files
     if not run_compiled:
         files.remove('-i')
 
-    if os.path.isfile('main-c') and run_compiled:
-        check_call(['./main-c'] + files)
-    elif not os.path.exists('pypy-4.0.0-src'):
+    os.environ['LEVER_PATH'] = lever_path
+    if os.path.isfile(main_path) and run_compiled:
+        check_call([main_path] + files)
+    elif not os.path.exists(pythonpath):
         print("First, read the README.md, after that run setup.py")
         sys.exit(1)
     else:
-        os.environ['PYTHONPATH'] = "pypy-4.0.0-src"
-        check_call(['python', 'main.py'] + files)
+        os.environ['PYTHONPATH'] = pythonpath
+        check_call(['python', main_py_path] + files)
 except CalledProcessError as e:
     sys.exit(e.returncode)
