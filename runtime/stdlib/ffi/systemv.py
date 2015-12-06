@@ -1,5 +1,5 @@
 from simple import *
-from space import Error, Object, List, String, null, signature, argument, as_cstring
+from space import Error, Object, List, String, null, signature, argument, as_cstring, Uint8Array
 from rpython.rtyper.lltypesystem import rffi, lltype
 from rpython.rlib import jit_libffi, clibffi, unroll, rgc
 
@@ -141,6 +141,8 @@ class Pointer(Type):
             if not self.typecheck(value.ctype):
                 raise Error(u"incompatible pointer store: %s = %s" % (self.repr(), value.ctype.repr()))
             pointer = value.pointer
+        elif isinstance(value, Uint8Array):
+            pointer = rffi.cast(rffi.VOIDP, value.uint8data)
         else:
             raise Error(u"cannot pointer store %s to %s" % (value.repr(), self.repr()))
         ptr = rffi.cast(rffi.VOIDPP, offset)

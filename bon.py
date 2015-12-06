@@ -85,7 +85,7 @@ decoder[4] = rdict
 
 def rbytes(fd):
     length = r32(fd)
-    return Uint8Array(fd.read(length))
+    return to_uint8array(fd.read(length))
 
 decoder[5] = rbytes
 

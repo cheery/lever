@@ -104,6 +104,9 @@ def cast(obj, ctype):
         return Handle(obj.library, obj.name, obj.pointer, ctype)
     if isinstance(obj, Mem):
         return Mem(ctype, obj.pointer)
+    if isinstance(obj, Integer) and isinstance(ctype, Pointer):
+        return Mem(ctype, rffi.cast(rffi.VOIDP, obj.value))
+
     raise Error(u"Can cast memory locations only")
 
 @builtin
@@ -146,3 +149,21 @@ def free(argv):
     lltype.free(mem.pointer, flavor='raw')
     mem.pointer = rffi.cast(rffi.VOIDP, 0)
     return null
+
+c_ubytep = systemv.Pointer(systemv.types[u"ubyte"])
+
+@builtin
+def ref(argv):
+    mem = argument(argv, 0, Object)
+    if isinstance(mem, Mem):
+        size = simple.sizeof(mem.ctype)
+        ctype = mem.ctype
+    elif isinstance(mem, Uint8Array):
+        size = rffi.sizeof(rffi.VOIDP)
+        ctype = c_ubytep
+    else:
+        raise Error(u"expected object that can be converted to c-object")
+    pointer = lltype.malloc(rffi.VOIDP.TO, size, flavor='raw')
+    result = systemv.AutoMem(systemv.Pointer(ctype), pointer, 1)
+    ctype.store(pointer, mem)
+    return result

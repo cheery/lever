@@ -1,4 +1,5 @@
 from rpython.rlib.objectmodel import specialize, always_inline
+from rpython.rtyper.lltypesystem import rffi
 from space import *
 import module_resolution
 import os
@@ -255,6 +256,18 @@ def _(a, b):
 @concat.multimethod_s(List, List)
 def _(a, b):
     return List(a.contents + b.contents)
+
+@builtin
+@signature(String)
+def encode_utf8(value):
+    return to_uint8array(value.string.encode('utf-8'))
+
+@builtin
+@signature(Uint8Array)
+def decode_utf8(value):
+    s = rffi.charp2str(rffi.cast(rffi.CCHARP, value.uint8data))
+    return String(s.decode('utf-8'))
+
 
 # Module namespace.
 builtin_modules = {}
