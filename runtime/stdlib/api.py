@@ -28,12 +28,13 @@ def get_header(path):
     return os.path.join(conf.headers_dir, path.encode('utf-8'))
 
 class Api(Object):
-    def __init__(self, constants, types, variables):
+    def __init__(self, constants, types, variables, dependencies):
         self.cache = {}
         self.typecache = {}
         self.constants = constants
         self.types = types
         self.variables = variables
+        self.dependencies = dependencies
         self.cycle_catch = {}
 
     def getitem(self, name):
@@ -76,6 +77,9 @@ class Api(Object):
                 return ffi.systemv.types[name.string]
             if name.string == u'void':
                 return null
+            if u"." in name.string and self.dependencies is not None:
+                namespace, name = name.string.split(u".", 1)
+                return self.dependencies.getitem(String(namespace)).getattr(name)
             raise Error(name.repr() + u" not in API")
         else:
             return self.build_ctype(u"<unnamed>", name)
@@ -190,11 +194,14 @@ def open(argv):
         path = path.rsplit(u'.', 1)[0]
     json_path = path + u".json"
     so_path = path + u".so"
-    if len(argv) >= 2:
-        return FuncLibrary(open_api(json_path), argv[1])
-    return ffi.Library.interface.call([String(so_path), open_api(json_path)])
+    dependencies = None
+    if len(argv) >= 3 and argv[2] != null:
+        dependencies = argv[2]
+    if len(argv) >= 2 and argv[1] != null:
+        return FuncLibrary(open_api(json_path, dependencies), argv[1])
+    return ffi.Library.interface.call([String(so_path), open_api(json_path, dependencies)])
 
-def open_api(json_path):
+def open_api(json_path, dependencies):
     path = get_header(json_path)
     try:
         apispec = json.read_file(path)
@@ -203,5 +210,6 @@ def open_api(json_path):
     api = Api(
         apispec.getitem(String(u"constants")),
         apispec.getitem(String(u"types")),
-        apispec.getitem(String(u"variables")))
+        apispec.getitem(String(u"variables")),
+        dependencies)
     return api
