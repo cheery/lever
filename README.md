@@ -27,6 +27,8 @@ If you like to compile the JIT binary, `./setup.py compile` will compile the bin
 
 Once you've run the `./setup.py`, you can run the `./run.py sample` to test it out. If it works it runs the commands in the `sample` -file. If you do changes into the runtime, you may try out the changes without compiling by supplying `-i` -flag to the `./run.py`.
 
+You may need to install some system packages to run the samples on Linux. On freshly installed Ubuntu I needed libsdl2-dev and libsdl2-image-dev to get the examples running.
+
 ## Contribution or Use
 
 If you got excited about something you tried out with pyllisp, you may be interested in forking the project. When you do it via github it will inform me of the forks. I may merge in contributions that increase the quality of the project.

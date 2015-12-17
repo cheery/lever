@@ -30,17 +30,32 @@ class Function(object):
         assert vt == 'function'
         return self.index
 
-    def dump(self, consttab):
+    def dump(self, consttab, location_id):
         block = []
         for bb in self.blocks:
             bb.label = len(block)
-            block.extend(bb.dump(consttab))
+            for op in bb:
+                block.extend(op.dump(consttab))
         block = []
+        sourcemap = []
         for bb in self.blocks:
             assert bb.label == len(block)
-            block.extend(bb.dump(consttab))
+            for op in bb:
+                codes = list(op.dump(consttab))
+                block.extend(codes)
+                sourceloc = [
+                    location_id,
+                    op.loc[0].col if op.loc else 0,
+                    op.loc[0].lno if op.loc else 0,
+                    op.loc[1].col if op.loc else -1,
+                    op.loc[1].lno if op.loc else -1
+                ]
+                if len(sourcemap) > 0 and sourcemap[-1][1:] == sourceloc:
+                    sourcemap[-1][0] += len(codes)
+                else:
+                    sourcemap.append([len(codes)] + sourceloc)
         localc = len(self.localv)
-        return self.flags, self.tmpc, self.argc, localc, block
+        return self.flags, self.tmpc, self.argc, localc, block, sourcemap
 
 class Block(object):
     def __init__(self, index, contents, succ):

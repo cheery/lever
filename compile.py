@@ -15,11 +15,10 @@ def main(debug=False):
 
 def compile_file(cb_path, src_path, debug):
     env = ASTScope()
-    body = parser.from_file(globals(), env, src_path)
-    builder = env.close(body, toplevel=True)
-
     consttab = ConstantTable()
-    functions = builder(consttab, functions=[])
+    location_id = consttab.get(src_path)
+    body = parser.from_file(globals(), env, src_path)
+    functions = ast_scope_close(env, body, consttab, [], location_id, toplevel=True)
 
     if debug:
         print 't'
@@ -56,19 +55,17 @@ def format_args(args, pattern, variadic, constants):
         else:
             yield "{}({:x})".format(pat, arg)
 
+def ast_scope_close(scope, body, consttab, functions, location_id, toplevel=False):
+    localv = list(scope.defines)
+    env = Scope(None, functions, localv)
+    block = ScopeBlock(env)
+    function = block.func_body(body, toplevel)
+    return [func.dump(consttab, location_id) for func in functions]
+
 class ASTScope(object):
     def __init__(self):
         self.uses = set()
         self.defines = set()
-
-    def close(self, body, toplevel=False):
-        def build_function(consttab, functions):
-            localv = list(self.defines)
-            env = Scope(None, functions, localv)
-            block = ScopeBlock(env)
-            function = block.func_body(body, toplevel)
-            return [func.dump(consttab) for func in functions]
-        return build_function
 
 class Scope(object):
     def __init__(self, parent, functions, localv):
