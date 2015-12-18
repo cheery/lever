@@ -20,13 +20,14 @@ def from_object(obj):
         argc = as_i( function_list.getitem(space.Integer(2)) )
         localc = as_i( function_list.getitem(space.Integer(3)) )
         block_list = function_list.getitem(space.Integer(4))
+        sourcemap = function_list.getitem(space.Integer(5))
         assert isinstance(block_list, space.List)
         block = lltype.malloc(u16_array, len(block_list.contents))
         i = 0
         for n in block_list.contents:
             block[i] = rffi.r_ushort( as_i(n) )
             i += 1
-        functions.append(Function(flags, regc, argc, localc, block))
+        functions.append(Function(flags, regc, argc, localc, block, sourcemap))
     return Program(Unit(constants[:], functions[:]))
 
 def as_i(obj):
@@ -73,22 +74,24 @@ class Unit:
             function.unit = self
 
 class Function:
-    _immutable_fields_ = ['flags', 'regc', 'argc', 'localc', 'block[*]', 'unit']
-    def __init__(self, flags, regc, argc, localc, block):
+    _immutable_fields_ = ['flags', 'regc', 'argc', 'localc', 'block[*]', 'unit', 'sourcemap']
+    def __init__(self, flags, regc, argc, localc, block, sourcemap):
         self.flags = flags
         self.regc = regc
         self.argc = argc
         self.localc = localc
         self.block = block
         self.unit = None
+        self.sourcemap = sourcemap
 
 class Frame:
-    _immutable_fields_ = ['local', 'module', 'parent', 'unit']
+    _immutable_fields_ = ['local', 'module', 'parent', 'unit', 'sourcemap']
     def __init__(self, function, module, parent):
         self.unit = function.unit
         self.local = [space.null for i in range(function.localc)]
         self.module = module
         self.parent = parent
+        self.sourcemap = function.sourcemap
 
 class RegisterArray:
     _virtualizable_ = ['regs[*]']
@@ -225,6 +228,9 @@ def interpret(pc, block, regv, frame, iterstop=LARGE_PC):
             return interpret(iterstop, block, regv, frame)
         else:
             raise space.Error(u"StopIteration")
+    except space.Error as error:
+        error.stacktrace.append((rffi.r_long(pc), unit.constants, frame.sourcemap))
+        raise
 
     return space.null
 

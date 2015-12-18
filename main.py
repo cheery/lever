@@ -103,12 +103,34 @@ def entry_point(argv):
 def print_traceback(error):
     out = u""
     if len(error.stacktrace) > 0:
-        out = u"Traceback:\n"
-    for frame, start, stop in reversed(error.stacktrace):
-        out += u"    %s: %s %s\n" % (
-            frame.module.name, start.repr(), stop.repr())
-    out += error.__class__.__name__.decode('utf-8')
-    write(STDERR, out + u": " + error.message + u"\n")
+        out = u"\033[31mTraceback:\033[36m\n"
+    for pc, constants, sourcemap in reversed(error.stacktrace):
+        name, col0, lno0, col1, lno1 = pc_location(pc, constants, sourcemap)
+        out += u"    %s: %d,%d : %d,%d\n" % (name.repr(), lno0, col0, lno1, col1)
+    out += u"\033[31mError:\033[0m"
+    write(STDERR, out + u" " + error.message + u"\n")
+
+def pc_location(pc, constants, sourcemap):
+    if not isinstance(sourcemap, space.List):
+        return space.String(u"<no sourcemap>"), 0, 0, -1, -1
+    for cell in sourcemap.contents:
+        count = sourcemap_getitem_int(cell, 0)
+        if pc <= count:
+            const = sourcemap_getitem_int(cell, 1)
+            col0 = sourcemap_getitem_int(cell, 2)
+            lno0 = sourcemap_getitem_int(cell, 3)
+            col1 = sourcemap_getitem_int(cell, 4)
+            lno1 = sourcemap_getitem_int(cell, 5)
+            return constants[const], col0, lno0, col1, lno1
+        else:
+            pc -= count
+    return space.String(u"<over sourcemap>"), 0, 0, -1, -1
+
+def sourcemap_getitem_int(cell, index):
+    item = cell.getitem(space.Integer(index))
+    if isinstance(item, space.Integer):
+        return item.value
+    raise space.Error(u"invalid sourcemap format")
 
 def target(*args):
     return entry_point, None

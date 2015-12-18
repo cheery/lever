@@ -28,6 +28,9 @@ def main():
     if len(sys.argv) > 1 and sys.argv[1] == 'compile':
         os.environ['PYTHONPATH'] = "pypy-4.0.0-src"
         check_call("python pypy-4.0.0-src/rpython/bin/rpython --translation-jit --continuation --opt=2 main.py".split(' '))
+    if len(sys.argv) > 1 and sys.argv[1] == 'compile-stm':
+        os.environ['PYTHONPATH'] = "pypy-stm"
+        check_call("python pypy-stm/rpython/bin/rpython --translation-jit --opt=2 --stm main.py".split(' '))
     if len(sys.argv) > 1 and sys.argv[1] == 'compile-nojit':
         os.environ['PYTHONPATH'] = "pypy-4.0.0-src"
         check_call("python pypy-4.0.0-src/rpython/bin/rpython --continuation --opt=2 main.py".split(' '))

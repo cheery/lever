@@ -16,7 +16,7 @@ def main(debug=False):
 def compile_file(cb_path, src_path, debug):
     env = ASTScope()
     consttab = ConstantTable()
-    location_id = consttab.get(src_path)
+    location_id = consttab.get(src_path.decode('utf-8'))
     body = parser.from_file(globals(), env, src_path)
     functions = ast_scope_close(env, body, consttab, [], location_id, toplevel=True)
 
