@@ -51,6 +51,9 @@ help:
 clean:
 	rm -rf $(BUILDDIR)/*
 
+publish: html
+	cp -r -T $(BUILDDIR)/html ../www/doc/$(shell cat ../VERSION)
+
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
 	@echo

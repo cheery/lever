@@ -3,8 +3,12 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to Lever's documentation!
-=================================
+Welcome to Lever's documentation
+================================
+
+0.5.0 is a draft of the Lever programming language. The documentation is incomplete.
+
+Stable releases will come with complete documentation.
 
 Contents:
 
