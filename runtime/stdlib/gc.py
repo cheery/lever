@@ -8,9 +8,10 @@ def builtin(fn):
     module.setattr_force(fn.__name__.decode('utf-8'), Builtin(fn))
     return fn
 
-@builtin
-@signature()
-@jit.dont_look_inside
-def collect():
-    rgc.collect()
-    return null
+# I'm not sure how to introduce this into program that can be JIT
+# @builtin
+# @signature()
+# @jit.dont_look_inside did not work
+# def collect():
+#     rgc.collect()
+#     return null

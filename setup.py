@@ -24,16 +24,16 @@ def main():
     for dependency in depends:
         if call(['pkg-config', '--exists', dependency]) != 0:
             return troubleshoot(dependency)
-    download_and_extract('pypy-4.0.0-src', 'https://bitbucket.org/pypy/pypy/downloads/pypy-4.0.0-src.tar.bz2')
+    download_and_extract('pypy-4.0.1-src', 'https://bitbucket.org/pypy/pypy/downloads/pypy-4.0.1-src.tar.bz2')
     if len(sys.argv) > 1 and sys.argv[1] == 'compile':
-        os.environ['PYTHONPATH'] = "pypy-4.0.0-src"
-        check_call("python pypy-4.0.0-src/rpython/bin/rpython --translation-jit --continuation --opt=2 main.py".split(' '))
+        os.environ['PYTHONPATH'] = "pypy-4.0.1-src"
+        check_call("python pypy-4.0.1-src/rpython/bin/rpython --translation-jit --continuation --opt=2 main.py".split(' '))
     if len(sys.argv) > 1 and sys.argv[1] == 'compile-stm':
         os.environ['PYTHONPATH'] = "pypy-stm"
         check_call("python pypy-stm/rpython/bin/rpython --translation-jit --opt=2 --stm main.py".split(' '))
     if len(sys.argv) > 1 and sys.argv[1] == 'compile-nojit':
-        os.environ['PYTHONPATH'] = "pypy-4.0.0-src"
-        check_call("python pypy-4.0.0-src/rpython/bin/rpython --continuation --opt=2 main.py".split(' '))
+        os.environ['PYTHONPATH'] = "pypy-4.0.1-src"
+        check_call("python pypy-4.0.1-src/rpython/bin/rpython --continuation --opt=2 main.py".split(' '))
 
 def is_env_64bit():
     return platform.machine().endswith('64')

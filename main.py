@@ -2,13 +2,14 @@ from rpython.config.translationoption import get_combined_translation_config
 from rpython.rlib.objectmodel import we_are_translated
 from runtime.util import STDIN, STDOUT, STDERR, read_file, write
 from runtime.stdlib import api
-from runtime import base
+from runtime import base, eventloop
+import bon
 import evaluator.loader
 import space
 import sys, os
 config = get_combined_translation_config(translating=True)
-#if not we_are_translated():
-#    config.translation.continuation = True
+if not we_are_translated():
+    config.translation.continuation = True
 if config.translation.continuation:
     from runtime import green
 
@@ -74,31 +75,35 @@ from runtime import module_resolution
 #                return status
 #    return 0
 
-import bon
-
-def entry_point(argv):
+def entry_point(argv_raw):
     if config.translation.continuation:
-        green.process.init(config)
-    api.init(argv)
-
-    assert len(argv) > 1
+        green.init(config)
+    eventloop.init()
+    api.init(argv_raw)
+    argv = [system_init]
+    for arg in argv_raw[1:]:
+        argv.append(space.String(arg.decode('utf-8')))
+    eventloop.state.queue.append(argv)
     try:
-        arguments = []
-        for arg in argv[1:]:
-            arguments.append(space.String(arg.decode('utf-8')))
-        module = space.Module(u'main', {}, extends=base.module)
-        result = module_resolution.load_module(argv[1], module)
-        try:
-            main_func = module.getattr(u"main")
-        except space.Error as error:
-            pass
-        else:
-            result = main_func.call([space.List(arguments)])
-        os.write(1, (result.repr() + u'\n').encode('utf-8'))
+        eventloop.run()
     except space.Error as error:
         print_traceback(error)
         return 1
     return 0
+
+@space.Builtin
+def system_init(argv):
+    module_src = argv[0]
+    assert isinstance(module_src, space.String)
+    module = space.Module(u'main', {}, extends=base.module)
+    result = module_resolution.load_module(module_src.string.encode('utf-8'), module)
+    try:
+        main_func = module.getattr(u"main")
+    except space.Error as error:
+        pass
+    else:
+        result = main_func.call([space.List(argv)])
+    return space.null
 
 def print_traceback(error):
     out = u""

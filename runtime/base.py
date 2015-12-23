@@ -4,6 +4,7 @@ from space import *
 import module_resolution
 import os
 import stdlib
+import time
 
 # The base environment
 module = Module(u'base', {
@@ -268,6 +269,9 @@ def decode_utf8(value):
     s = rffi.charp2str(rffi.cast(rffi.CCHARP, value.uint8data))
     return String(s.decode('utf-8'))
 
+@builtin
+def time_(argv):
+    return Float(time.time())
 
 # Module namespace.
 builtin_modules = {}
