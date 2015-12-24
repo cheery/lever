@@ -7,9 +7,10 @@ import base
 
 class ProcessState:
     def clear(self):
-        self.stacklet = None
         self.current = None
         self.topmost = None
+
+        self.eventloop = None
 
         self.origin = None
         self.destination = None
@@ -17,17 +18,15 @@ process = ProcessState()
 process.clear()
 
 def init(config):
-    process.stacklet = StackletThread(config)
-    process.current = Greenlet(
-        process.stacklet.get_null_handle(),
-        True)
+    process.current = Greenlet(StackletThread(config), True)
     process.topmost = process.current
     process.origin = None
     process.destination = None
 
 class Greenlet(Object):
-    def __init__(self, handle, initialized, argv=None):
-        self.handle = handle
+    def __init__(self, sthread, initialized, argv=None):
+        self.sthread = sthread
+        self.handle = sthread.get_null_handle()
         self.initialized = initialized
         self.argv = argv
         self.parent = process.current
@@ -46,22 +45,24 @@ def switch(argv):
     assert isinstance(destination, Greenlet)
     process.origin = process.current
     process.destination = destination
-    if process.origin == process.destination:
+    if not process.destination.initialized:
+        process.destination.argv += argv
+        process.destination.initialized = True
+        h = process.current.sthread.new(greenlet_init)
+    elif process.origin == process.destination:
         if len(argv) == 0:
             return null
         else:
             return argv[0]
-    elif not process.destination.initialized:
-        process.destination.argv += argv
-        process.destination.initialized = True
-        h = process.stacklet.new(greenlet_init)
-        #h = process.stacklet.switch(process.destination.handle)
     else:
-        if process.stacklet.is_empty_handle(process.destination.handle):
+        if process.current.sthread.is_empty_handle(process.destination.handle):
             raise Error(u"dead greenlet")
         process.destination.argv = argv
-        h = process.stacklet.switch(process.destination.handle)
-    process.destination.handle = process.origin.handle
+        h = process.current.sthread.switch(process.destination.handle)
+    return post_switch(process.current.sthread, h)
+
+def post_switch(sthread, h):
+    process.destination.handle = sthread.get_null_handle()
     process.origin.handle = h
     process.current = process.destination
     process.origin = None
@@ -82,9 +83,7 @@ Greenlet.interface.methods[u'switch'] = Builtin(switch)
 
 def greenlet_init(head, arg):
     process.origin.handle = head
-    # fill greenlet's handle
-    #handle = process.stacklet.switch(head)
-    #process.origin.handle = handle
+    process.destination.handle = process.current.sthread.get_null_handle()
 
     process.current = process.destination
     process.origin = None
@@ -98,7 +97,7 @@ def greenlet_init(head, arg):
         argv = None
 
     parent = process.current.parent
-    while process.stacklet.is_empty_handle(parent.handle):
+    while process.current.sthread.is_empty_handle(parent.handle):
         parent = parent.parent
     parent.argv = argv
     parent.error = error
@@ -112,4 +111,4 @@ def getcurrent(argv):
 
 @base.builtin
 def greenlet(argv):
-    return Greenlet(process.current.handle, False, argv)
+    return Greenlet(process.current.sthread, False, argv)

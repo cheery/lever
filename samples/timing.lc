@@ -3,40 +3,14 @@ main := ():
     print("preparing interrupt")
     print("time now", time())
     schedule(timing, 0.1)
-    schedule(timing, 0.12)
-    schedule(timing, 0.2)
-    schedule(timing, 0.19)
+    schedule(timing, 0.25)
+    schedule(timing, 0.5)
+    schedule(timing, 1.0)
     sleep(2.0)
     schedule(timing, 0.1)
-    print("interrupt from main()")
+    print("some more from main()")
 
 timing = (duration):
     print("entry", duration)
     for k in [0, 1, 2, 3]
-        print("timing", duration, k)
-        v = sleep(duration)
-        print(v)
-
-#main := ():
-#    print("alternative test")
-#    u = greenlet(hello, getcurrent())
-#    g = greenlet(hello, u)
-#    print("result", g.switch("hello"))
-#
-#hello = (glet):
-#    print("hello", glet)
-#    glet.switch()
-#    return null
-
-main := ():
-    print("third test")
-    schedule(test, 0.1)
-    schedule(test, 0.2)
-    schedule(test, 0.3)
-    schedule(test, 0.4)
-    schedule(test, 0.5)
-
-test = (num):
-    print("test", num)
-    for k in [0, 1, 2, 3]
-        print("timing", num, k, sleep(num))
+        print("tick", sleep(duration), k, duration)

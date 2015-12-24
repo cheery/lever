@@ -1,22 +1,21 @@
 import base, green, space
 import time
 
-class EventLoopState:
-    sleepers = None
-    queue = None
-state = EventLoopState()
+class EventLoop(object):
+    def __init__(self):
+        self.sleepers = []
+        self.queue = []
 
 def init():
-    state.sleepers = []
-    state.queue = []
+    green.process.eventloop = EventLoop()
 
 inf = float("inf")
 
 def run():
+    state = green.process.eventloop
     while len(state.queue) > 0 or len(state.sleepers) > 0:
         queue = state.queue
         state.queue = []
-        print 'QUEUE', len(queue)
         for argv in queue:
             # The queue invokes on both greenlets and functions
             # This is used to ensure that triggering an event
@@ -26,25 +25,24 @@ def run():
                 green.switch(argv)
             else:
                 green.switch([green.greenlet(argv)])
-            print 'STEP', len(queue)
-        print 'FLUSH', len(queue)
-        #now = time.time()
-        #timeout = inf
-        #sleepers = state.sleepers
+        now = time.time()
+        timeout = inf
+        sleepers = state.sleepers
         state.sleepers = []
-        #for wakeup, sleeper in sleepers:
-        #    if wakeup <= now:
-        #        state.queue.append([sleeper, space.Float(now)])
-        #    else:
-        #        timeout = min(timeout, wakeup)
-        #        state.sleepers.append((wakeup, sleeper))
-        #if len(state.queue) == 0 and len(state.sleepers) > 0:
-        #    wait = timeout - now
-        #    if wait > 0:
-        #        time.sleep(wait)
+        for wakeup, sleeper in sleepers:
+            if wakeup <= now:
+                state.queue.append([sleeper, space.Float(now)])
+            else:
+                timeout = min(timeout, wakeup)
+                state.sleepers.append((wakeup, sleeper))
+        if len(state.queue) == 0 and len(state.sleepers) > 0:
+            wait = timeout - now
+            if wait > 0:
+                time.sleep(wait)
 
 @base.builtin
 def schedule(argv):
+    state = green.process.eventloop
     state.queue.append(argv)
     return space.null
 
@@ -59,15 +57,16 @@ def sleep(argv):
 
 @space.signature(space.Float)
 def sleep_1(duration):
+    state = green.process.eventloop
     assert green.process.current != green.process.topmost, "bad context for greenlet sleep"
     assert green.process.current is not None
     trigger_time = time.time() + duration.number
     state.sleepers.append((trigger_time, green.process.current))
-    print 'SLEEP'
     return green.switch([green.process.topmost])
 
 @space.signature(space.Float, space.Object)
 def sleep_2(duration, func):
+    state = green.process.eventloop
     trigger_time = time.time() + duration.number
     state.sleepers.append((trigger_time, func))
     return space.null

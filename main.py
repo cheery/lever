@@ -83,7 +83,7 @@ def entry_point(argv_raw):
     argv = [system_init]
     for arg in argv_raw[1:]:
         argv.append(space.String(arg.decode('utf-8')))
-    eventloop.state.queue.append(argv)
+    green.process.eventloop.queue.append(argv)
     try:
         eventloop.run()
     except space.Error as error:

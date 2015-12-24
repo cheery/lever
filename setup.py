@@ -33,7 +33,7 @@ def main():
         check_call("python pypy-stm/rpython/bin/rpython --translation-jit --opt=2 --stm main.py".split(' '))
     if len(sys.argv) > 1 and sys.argv[1] == 'compile-nojit':
         os.environ['PYTHONPATH'] = "pypy-4.0.1-src"
-        check_call("python pypy-4.0.1-src/rpython/bin/rpython --continuation --opt=2 main.py".split(' '))
+        check_call("python pypy-4.0.1-src/rpython/bin/rpython --continuation --lldebug --opt=2 main.py".split(' '))
 
 def is_env_64bit():
     return platform.machine().endswith('64')
