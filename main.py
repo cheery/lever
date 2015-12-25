@@ -1,5 +1,4 @@
-from rpython.config.translationoption import get_combined_translation_config
-from rpython.rlib.objectmodel import we_are_translated
+from rpython.rlib.objectmodel import we_are_translated, keepalive_until_here
 from runtime.util import STDIN, STDOUT, STDERR, read_file, write
 from runtime.stdlib import api
 from runtime import base, eventloop
@@ -7,14 +6,11 @@ import bon
 import evaluator.loader
 import space
 import sys, os
-config = get_combined_translation_config(translating=True)
-if not we_are_translated():
-    config.translation.continuation = True
-if config.translation.continuation:
-    from runtime import green
 
-from runtime import module_resolution
 
+#from runtime import green
+#from runtime import module_resolution
+from runtime import main
 #def interactive():
 #    module = space.Module(u'shell', {}, extends=base.module)
 #    prompt = u"pyl> "
@@ -75,21 +71,23 @@ from runtime import module_resolution
 #                return status
 #    return 0
 
-def entry_point(argv_raw):
-    if config.translation.continuation:
-        green.init(config)
-    eventloop.init()
-    api.init(argv_raw)
-    argv = [system_init]
-    for arg in argv_raw[1:]:
-        argv.append(space.String(arg.decode('utf-8')))
-    green.process.eventloop.queue.append(argv)
-    try:
-        eventloop.run()
-    except space.Error as error:
-        print_traceback(error)
-        return 1
-    return 0
+#def entry_point(argv_raw):
+#    sthread = StackletThread(config)
+#    green.init(sthread)
+#    eventloop.init()
+#    api.init(argv_raw)
+#    argv = [system_init]
+#    for arg in argv_raw[1:]:
+#        argv.append(space.String(arg.decode('utf-8')))
+#    green.process.eventloop.queue.append(argv)
+#    retcode = 0
+#    try:
+#        eventloop.run()
+#    except space.Error as error:
+#        print_traceback(error)
+#        retcode = 1
+#    keepalive_until_here(sthread)
+#    return retcode
 
 @space.Builtin
 def system_init(argv):
@@ -105,44 +103,12 @@ def system_init(argv):
         result = main_func.call([space.List(argv)])
     return space.null
 
-def print_traceback(error):
-    out = u""
-    if len(error.stacktrace) > 0:
-        out = u"\033[31mTraceback:\033[36m\n"
-    for pc, constants, sourcemap in reversed(error.stacktrace):
-        name, col0, lno0, col1, lno1 = pc_location(pc, constants, sourcemap)
-        out += u"    %s: %d,%d : %d,%d\n" % (name.repr(), lno0, col0, lno1, col1)
-    out += u"\033[31mError:\033[0m"
-    write(STDERR, out + u" " + error.message + u"\n")
-
-def pc_location(pc, constants, sourcemap):
-    if not isinstance(sourcemap, space.List):
-        return space.String(u"<no sourcemap>"), 0, 0, -1, -1
-    for cell in sourcemap.contents:
-        count = sourcemap_getitem_int(cell, 0)
-        if pc <= count:
-            const = sourcemap_getitem_int(cell, 1)
-            col0 = sourcemap_getitem_int(cell, 2)
-            lno0 = sourcemap_getitem_int(cell, 3)
-            col1 = sourcemap_getitem_int(cell, 4)
-            lno1 = sourcemap_getitem_int(cell, 5)
-            return constants[const], col0, lno0, col1, lno1
-        else:
-            pc -= count
-    return space.String(u"<over sourcemap>"), 0, 0, -1, -1
-
-def sourcemap_getitem_int(cell, index):
-    item = cell.getitem(space.Integer(index))
-    if isinstance(item, space.Integer):
-        return item.value
-    raise space.Error(u"invalid sourcemap format")
-
 def target(*args):
-    return entry_point, None
+    return main.entry_point, None
 
 def jitpolicy(driver):
     from rpython.jit.codewriter.policy import JitPolicy
     return JitPolicy()
 
 if __name__=='__main__':
-    sys.exit(entry_point(sys.argv))
+    sys.exit(main.entry_point(sys.argv))

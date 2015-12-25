@@ -3,6 +3,7 @@ from rpython.rlib.objectmodel import compute_hash
 import space
 
 class Error(Exception):
+    _immutable_fields_ = ['message', 'stacktrace']
     def __init__(self, message):
         self.message = message
         self.stacktrace = []

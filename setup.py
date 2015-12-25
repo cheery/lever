@@ -27,13 +27,15 @@ def main():
     download_and_extract('pypy-4.0.1-src', 'https://bitbucket.org/pypy/pypy/downloads/pypy-4.0.1-src.tar.bz2')
     if len(sys.argv) > 1 and sys.argv[1] == 'compile':
         os.environ['PYTHONPATH'] = "pypy-4.0.1-src"
-        check_call("python pypy-4.0.1-src/rpython/bin/rpython --translation-jit --continuation --opt=2 main.py".split(' '))
+        check_call("python pypy-4.0.1-src/rpython/bin/rpython --translation-jit --continuation --gc=incminimark --gcrootfinder=asmgcc --opt=2 main.py".split(' '))
     if len(sys.argv) > 1 and sys.argv[1] == 'compile-stm':
         os.environ['PYTHONPATH'] = "pypy-stm"
         check_call("python pypy-stm/rpython/bin/rpython --translation-jit --opt=2 --stm main.py".split(' '))
     if len(sys.argv) > 1 and sys.argv[1] == 'compile-nojit':
         os.environ['PYTHONPATH'] = "pypy-4.0.1-src"
-        check_call("python pypy-4.0.1-src/rpython/bin/rpython --continuation --lldebug --opt=2 main.py".split(' '))
+        check_call("python pypy-4.0.1-src/rpython/bin/rpython main.py --gc=incminimark --gcrootfinder=shadowstack".split(' '))
+
+#--continuation --gc=incminimark --gcrootfinder=shadowstack --opt=2
 
 def is_env_64bit():
     return platform.machine().endswith('64')
