@@ -1,75 +1,72 @@
 from rpython.rlib.objectmodel import we_are_translated, keepalive_until_here
-from rpython.config.translationoption import get_combined_translation_config
-from rpython.rlib.rstacklet import StackletThread
-from rpython.rlib.rthread import ThreadLocalReference
-from rpython.rlib import rgc
+#from rpython.rlib.rthread import ThreadLocalReference
+#from rpython.rlib import rgc
 from stdlib import api # XXX: perhaps give every module an init?
+                       # Probably better way is to move the path resolution from api into here.
 from util import STDIN, STDOUT, STDERR, read_file, write
+from continuations import Continuation
 import base
 import space
 import time
 import module_resolution
 
-config = get_combined_translation_config(translating=True)
-config.translation.continuation = True
+class ExecutionContext(object):
+    def __init__(self, config):
+        self.config = config
+        self.sthread = None                 # Stacklets
+        self.queue = []                     # Event queue.
+        self.sleepers = []                  # Holds the sleeping greenlets.
+        self.current = Greenlet(None, [])
+        self.eventloop = self.current
 
 class GlobalState(object):
-    sthread = None
-    eventloop = None
-    ev_queue = None
-    ev_sleepers = None
-    origin = None
-    target = None
-    error = None
+    ec = None
+
+def get_ec():
+    return g.ec
 
 #global_state = ThreadLocalReference(GlobalState)
 g = GlobalState()
 
 inf = float("inf")
 
-def entry_point(raw_argv):
-    sthread = StackletThread(config)
-    #g = GlobalState()
-    g.target = Greenlet(sthread, None, sthread.get_null_handle(), [])
-    g.target.initialized = True
-    g.eventloop = g.target
-    #global_state.set(g)
-    api.init(raw_argv)
+def new_entry_point(config):
+    def entry_point(raw_argv):
+        g.ec = ec = ExecutionContext(config)
+        api.init(raw_argv)
 
-    g.ev_queue = []
-    g.ev_sleepers = []
-    argv = [normal_startup]
-    for arg in raw_argv[1:]:
-        argv.append(space.String(arg.decode('utf-8')))
-    schedule(argv)
+        argv = [normal_startup]
+        for arg in raw_argv[1:]:
+            argv.append(space.String(arg.decode('utf-8')))
+        schedule(argv)
 
-    rno = 0
-    try:
-        while len(g.ev_queue) + len(g.ev_sleepers) > 0:
-            rgc.collect()
-            queue, g.ev_queue = g.ev_queue, []
-            for item in queue:
-                # the queue did invoke on both greenlets and functions
-                # then I realized the greenlet is created anyway,
-                # so here we have a queue with only greenlets.
-                switch([item])
-            now = time.time()
-            timeout = inf
-            sleepers, g.ev_sleepers = g.ev_sleepers, []
-            for sleeper in sleepers:
-                if sleeper.wakeup <= now:
-                    sleeper.greenlet.argv.append(space.Float(now))
-                    g.ev_queue.append(sleeper.greenlet)
-                else:
-                    timeout = min(timeout, sleeper.wakeup)
-                    g.ev_sleepers.append(sleeper)
-            if len(g.ev_queue) == 0 and len(g.ev_sleepers) > 0 and now < timeout:
-                time.sleep(timeout - now)
-    except space.Error as error:
-        print_traceback(error)
-        rno = 1
-    g.sthread = sthread
-    return rno
+        rno = 0
+        try:
+            # This behavior is similar to javascript's event loop, except that
+            # the messages put into queue are handled by greenlets rather than
+            # callbacks. The greenlets allow synchronous notation for
+            # asynchronous programs.
+            while len(ec.queue) + len(ec.sleepers) > 0:
+                queue, ec.queue = ec.queue, []
+                for item in queue:
+                    switch([item])
+                now = time.time()
+                timeout = inf
+                sleepers, ec.sleepers = ec.sleepers, []
+                for sleeper in sleepers:
+                    if sleeper.wakeup <= now:
+                        sleeper.greenlet.argv.append(space.Float(now))
+                        ec.queue.append(sleeper.greenlet)
+                    else:
+                        timeout = min(timeout, sleeper.wakeup)
+                        ec.sleepers.append(sleeper)
+                if len(ec.queue) == 0 and len(ec.sleepers) > 0 and now < timeout:
+                    time.sleep(timeout - now)
+        except space.Error as error:
+            print_traceback(error)
+            rno = 1
+        return rno
+    return entry_point
 
 @space.Builtin
 def normal_startup(argv):
@@ -87,19 +84,16 @@ def normal_startup(argv):
 
 @base.builtin
 def schedule(argv):
-    #g = global_state.get()
+    ec = get_ec()
     if len(argv) > 0 and isinstance(argv[0], Greenlet):
         c = argv.pop(0)
         assert isinstance(c, Greenlet)
         c.argv += argv
     else:
-        sthread = g.target.sthread
-        c = Greenlet(sthread, g.eventloop, sthread.get_null_handle(), argv)
-    if c.exhausted:
+        c = Greenlet(ec.eventloop, argv)
+    if c.is_exhausted():
         raise space.Error(u"attempting to put exhausted greenlet into queue")
-    if c == g.eventloop:
-        raise space.Error(u"attempting to schedule the event loop into queue")
-    g.ev_queue.append(c)
+    ec.queue.append(c)
     return c
 
 class Suspended(object):
@@ -120,29 +114,27 @@ def sleep(argv):
 
 @space.signature(space.Float)
 def sleep_greenlet(duration):
-    #g = global_state.get()
-    if g.target == g.eventloop:
+    ec = get_ec()
+    if ec.current == ec.eventloop:
         raise space.Error(u"bad context for greenlet sleep")
-    assert g.target.exhausted == False
+    assert ec.current.is_exhausted() == False
     wakeup = time.time() + duration.number
-    g.ev_sleepers.append(Suspended(wakeup, g.target))
-    return switch([g.eventloop])
+    ec.sleepers.append(Suspended(wakeup, ec.current))
+    return switch([ec.eventloop])
 
 @space.signature(space.Float, space.Object)
 def sleep_callback(duration, func):
-    #g = global_state.get()
+    ec = get_ec()
     wakeup = time.time() + duration.number
-    g.ev_sleepers.append(Suspended(wakeup, schedule([func])))
+    ec.sleepers.append(Suspended(wakeup, schedule([func])))
     return space.null
 
 class Greenlet(space.Object):
-    def __init__(self, sthread, parent, handle, argv):
-        self.sthread = sthread
+    def __init__(self, parent, argv):
         self.parent = parent
-        self.handle = handle
+        self.handle = None
         self.argv = argv
-        self.exhausted = False
-        self.initialized = False
+        self.error = None
 
     def getattr(self, name):
         if name == u'parent':
@@ -152,78 +144,70 @@ class Greenlet(space.Object):
     def repr(self):
         return u"<greenlet>"
 
+    def is_exhausted(self):
+        return self.handle is not None and self.handle.is_empty()
+
 @base.builtin
 def getcurrent(argv):
-    #g = global_state.get()
-    return g.target
+    return get_ec().current
 
 @base.builtin # XXX: replace with instantiator
 def greenlet(argv):
-    #g = global_state.get()
-    sthread = g.target.sthread
-    return Greenlet(sthread, g.target, sthread.get_null_handle(), argv)
+    return Greenlet(get_ec().current, argv)
 
-def new_greenlet(head, _):
-    #print "init"
-    #g = global_state.get()
-    this = g.target
+@Continuation.wrapped_callback
+def new_greenlet(cont):
+    ec = get_ec()
+    self = ec.current
+    argv, self.argv = self.argv, [] # XXX: Throw into empty greenlet won't happen.
     try:
-        rgc.collect()
-        argv = end_transfer(g, head)
         if len(argv) == 0:
             raise space.Error(u"greenlet with no arguments")
         func = argv.pop(0)
         argv = argv_expand(func.call(argv))
+        error = None
     except space.Error as error:
-        g.error = error
         argv = []
-    assert this == g.target
-    assert not this.exhausted
-    g.target.exhausted = True
-    parent = g.target.parent
-    assert parent is not None
-    while parent.exhausted:
+    assert self == ec.current
+    parent = self.parent
+    while parent and parent.handle.is_empty():
+        # note that non-initiated or non-activated parent is invalid.
         parent = parent.parent
-    #print "quit"
-    return begin_transfer(g, parent, argv) # XXX: note that reparented handle 
-                                           #      must not be null for this to work.
+    assert parent is not None
+    parent.argv.extend(argv)
+    parent.error = error
+
+    ec.current = parent
+    self.handle, parent.handle = parent.handle, self.handle
+    return self.handle # XXX: note that the handle must not be null for this to work.
 
 def switch(argv):
-    #print "switch"
-    #g = global_state.get()
+    ec = get_ec()
     target = argv.pop(0)
+    self = ec.current
     if not isinstance(target, Greenlet):
         raise space.Error(u"first argument to 'switch' not a greenlet")
-    if target.exhausted:
-        raise space.Error(u"dead greenlet")
-    if g.target == target:
+    if ec.current == target:
+        argv, self.argv = self.argv, []
+        argv.extend(argv)
         return argv_compact(argv)
-    handle = begin_transfer(g, target, argv)
-    if not g.target.initialized:
-        g.target.initialized = True
-        h = g.target.sthread.new(new_greenlet)
+    if target.handle is not None and target.handle.is_empty():
+        raise space.Error(u"empty greenlet")
+    target.argv.extend(argv)
+    ec.current = target
+    if target.handle:
+        self.handle, target.handle = target.handle, self.handle
+        self.handle.switch()
     else:
-        h = g.target.sthread.switch(handle)
-    return argv_compact(end_transfer(g, h))
-
-Greenlet.interface.methods[u'switch'] = space.Builtin(switch)
-
-def begin_transfer(g, target, argv):
-    #print "begin_transfer"
-    g.origin = g.target
-    g.target = target
-    target.argv += argv
-    return target.handle
-
-def end_transfer(g, head):
-    #print "end_transfer"
-    g.origin.handle = head
-    g.target.handle = g.target.sthread.get_null_handle()
-    argv, g.target.argv = g.target.argv, []
-    if g.error is not None:
-        error, g.error = g.error, None
+        self.handle = Continuation()
+        self.handle.init(new_greenlet)
+    argv, self.argv = self.argv, []
+    if self.error:
+        error, self.error = self.error, None
         raise error
-    return argv
+    return argv_compact(argv)
+    
+Greenlet.interface.methods[u'switch'] = space.Builtin(switch)
 
 def argv_compact(argv):
     if len(argv) == 0:

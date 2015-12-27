@@ -8,7 +8,9 @@ Welcome to Lever's documentation
 
 0.5.0 is a draft of the Lever programming language. The documentation is incomplete.
 
-Stable releases will come with complete documentation.
+Stable releases will come with complete documentation. For most things not described here, I advice you to `join the irc channel set up for the community`_.
+
+.. _join the irc channel set up for the community: http://webchat.freenode.net/?randomnick=1&channels=%23lever&prompt=1
 
 Contents:
 

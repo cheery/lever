@@ -1,12 +1,12 @@
 from rpython.rlib.objectmodel import we_are_translated, keepalive_until_here
 from runtime.util import STDIN, STDOUT, STDERR, read_file, write
 from runtime.stdlib import api
-from runtime import base, eventloop
 import bon
 import evaluator.loader
 import space
 import sys, os
 
+#config = get_combined_translation_config(translating=True)
 
 #from runtime import green
 #from runtime import module_resolution
@@ -103,12 +103,19 @@ def system_init(argv):
         result = main_func.call([space.List(argv)])
     return space.null
 
-def target(*args):
-    return main.entry_point, None
+def force_config(config):
+    config.translation.continuation = True
+
+def target(driver, args):
+    force_config(driver.config)
+    return main.new_entry_point(driver.config), None
 
 def jitpolicy(driver):
     from rpython.jit.codewriter.policy import JitPolicy
     return JitPolicy()
 
 if __name__=='__main__':
-    sys.exit(main.entry_point(sys.argv))
+    from rpython.config.translationoption import get_combined_translation_config
+    config = get_combined_translation_config(translating=True)
+    force_config(config)
+    sys.exit(main.new_entry_point(config)(sys.argv))

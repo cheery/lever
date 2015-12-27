@@ -1,3 +1,5 @@
+import gc
+
 main := ():
     print("scheduling some timings")
     print("preparing interrupt")
@@ -6,7 +8,7 @@ main := ():
     schedule(timing, 0.1)
     schedule(timing, 0.25)
     schedule(timing, 0.5)
-    sleep(5.0)
+    sleep(2.0)
     schedule(timing, 0.1)
     print("some more from main()")
 
