@@ -1,0 +1,18 @@
+main := ():
+    print ("hello from main")
+    schedule(tick_tock)
+    sleep(1.0)
+    print ("hello hello")
+    sleep(1.0)
+    print ("hello again")
+    sleep(1.0)
+    print ("and bye")
+
+tick_tock = ():
+    i = 0
+    while i < 3
+        print("tick")
+        sleep(0.5)
+        print("tock")
+        sleep(0.5)
+        i = i + 1
