@@ -1,4 +1,4 @@
-main := ():
+main = ():
     print ("hello from main")
     schedule(tick_tock)
     sleep(1.0)

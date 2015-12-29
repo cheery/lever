@@ -14,7 +14,7 @@ def main(debug=False):
     compile_file(cb_path, src_path, debug)
 
 def compile_file(cb_path, src_path, debug):
-    env = ASTScope()
+    env = ASTScope(toplevel=True)
     consttab = ConstantTable()
     location_id = consttab.get(src_path.decode('utf-8'))
     body = parser.from_file(globals(), env, src_path)
@@ -63,9 +63,10 @@ def ast_scope_close(scope, body, consttab, functions, location_id, toplevel=Fals
     return [func.dump(consttab, location_id) for func in functions]
 
 class ASTScope(object):
-    def __init__(self):
+    def __init__(self, toplevel=False):
         self.uses = set()
         self.defines = set()
+        self.toplevel = toplevel
 
 class Scope(object):
     def __init__(self, parent, functions, localv):
@@ -240,6 +241,10 @@ def post_setitem(env, loc, base, indexer, statement):
     return build_getitem
 
 def post_local_assign(env, loc, name, statement):
+    if env.toplevel:
+        def build_toplevel_assign(block):
+            return block.op(loc, 'setglob', Constant(name.value.decode('utf-8')), statement(block))
+        return build_toplevel_assign
     env.defines.add(name.value)
     def build_local_assign(block):
         local = block.scope.get_local(name.value)
