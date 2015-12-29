@@ -85,14 +85,7 @@ def normal_startup(argv):
 @base.builtin
 def schedule(argv):
     ec = get_ec()
-    if len(argv) > 0 and isinstance(argv[0], Greenlet):
-        c = argv.pop(0)
-        assert isinstance(c, Greenlet)
-        c.argv += argv
-    else:
-        c = Greenlet(ec.eventloop, argv)
-    if c.is_exhausted():
-        raise space.Error(u"attempting to put exhausted greenlet into queue")
+    c = to_greenlet(argv)
     ec.queue.append(c)
     return c
 
@@ -126,8 +119,20 @@ def sleep_greenlet(duration):
 def sleep_callback(duration, func):
     ec = get_ec()
     wakeup = time.time() + duration.number
-    ec.sleepers.append(Suspended(wakeup, schedule([func])))
+    ec.sleepers.append(Suspended(wakeup, to_greenlet([func])))
     return space.null
+
+def to_greenlet(argv):
+    ec = get_ec()
+    if len(argv) > 0 and isinstance(argv[0], Greenlet):
+        c = argv.pop(0)
+        assert isinstance(c, Greenlet)
+        c.argv += argv
+    else:
+        c = Greenlet(ec.eventloop, argv)
+    if c.is_exhausted():
+        raise space.Error(u"attempting to put exhausted greenlet into queue")
+    return c
 
 class Greenlet(space.Object):
     def __init__(self, parent, argv):

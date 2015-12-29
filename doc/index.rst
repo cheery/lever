@@ -19,6 +19,34 @@ Contents:
 
    stdlib
 
+Compiling Instructions
+======================
+
+There are some things that may need explicit platform support and I'll be busy coding
+the first programs in the language. Therefore I only promise that Linux version runs.
+
+At maximum there will be a release for the SteamOS, so you have to compile this
+yourself. If you happen to be a person doing packaging for a distribution, please
+provide your contact info so that I can assist you out and help keep the packaging
+updated effortlessly.
+
+Fortunately the compiling will only take few minutes and it's easy. I have set up a
+script to compile lever. Here's how to invoke it from a terminal::
+
+    cd path/to/lever
+    python setup.py compile
+
+If you're on debian based system, it prompts to install what you need to compile it.
+Otherwise you are adviced to provide the missing dependencies yourself. The script
+won't attempt to proceed if it cannot find the needed libraries.
+
+The compiling results with the executable. For now the run.py -script can be
+used to run any of the examples. Here's how to run one of the samples::
+
+    python run.py samples/ticktock.lc
+
+
+
 Lever base module
 =================
 
@@ -51,6 +79,41 @@ Lever base module
    result is used to determine the function to call. If the value is missing in the
    table, the default -method is called. If there's no default method, then an error
    is raised.
+
+.. class:: greenlet(arguments...)
+
+   Conceptually greenlets represent a body of work you can stop for a moment while
+   you do a different task. Note that you are always in a greenlet. You can always
+   put the current task to sleep, or switch to the eventloop to run a different task.
+
+   Greenlet represents a call frame that can be suspended. The arguments describe a
+   function to call and it can be left blank. In that case the switching has to pass
+   a function that is called inside the greenlet.
+
+   The greenlet.parent describes where the call returns once it finishes.
+
+   greenlet.switch(arguments...) suspends the current greenlet and switches to the
+   targeted greenlet. If the greenlet hasn't started yet, the given arguments are
+   concatenated to the initial arguments. If the greenlet is suspended, the arguments
+   are compacted into a value and returned in the target greenlet.
+
+.. function:: getcurrent()
+
+   Returns the currently running greenlet.
+
+.. function:: schedule(arguments...)
+
+   Schedule is similar to the greenlet -command, except that it queues the greenlet
+   and sets it to return into the eventloop when it finishes. It returns the
+   newly created greenlet.
+
+.. function:: sleep(duration, [function])
+
+   The sleep performs two functions. It can be used to suspend the current greenlet,
+   queue it after duration of seconds pass.
+
+   If you pass it a function or greenlet, it will convert it into a greenlet and
+   adds it to the event queue after the duration passes.
 
 .. class:: int()
 
