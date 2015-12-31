@@ -1,0 +1,633 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Welcome to Lever’s documentation &mdash; Lever 0.5.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/nature.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.5.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <script type="text/javascript" src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"></script>
+    <link rel="top" title="Lever 0.5.0 documentation" href="#" />
+    <link rel="next" title="Standard library" href="stdlib.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="stdlib.html" title="Standard library"
+             accesskey="N">next</a> |</li>
+        <li><a href="#">Lever 0.5.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="welcome-to-lever-s-documentation">
+<h1>Welcome to Lever&#8217;s documentation<a class="headerlink" href="#welcome-to-lever-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>0.5.0 is an early release of the Lever programming language. This documentation
+is incomplete.</p>
+<p>Stable releases will come with complete documentation. For most things not
+described here, I advice you to <a class="reference external" href="http://webchat.freenode.net/?randomnick=1&amp;channels=%23lever&amp;prompt=1">join the irc channel set up for the community</a>.</p>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="stdlib.html">Standard library</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="stdlib.html#api">api</a></li>
+<li class="toctree-l2"><a class="reference internal" href="stdlib.html#ffi">ffi</a></li>
+</ul>
+</li>
+</ul>
+</div>
+</div>
+<div class="section" id="installing-lever">
+<h1>Installing Lever<a class="headerlink" href="#installing-lever" title="Permalink to this headline">¶</a></h1>
+<p>There are some things that may need explicit platform support and I&#8217;ll be busy
+coding the first programs in the language. Therefore I only promise that Linux
+version runs.</p>
+<p>At maximum there will be a release for the SteamOS, so you have to compile this
+yourself. If you happen to be a person doing packaging for a distribution, please
+provide your contact info so that I can assist you out and help keep the packaging
+updated effortlessly.</p>
+<div class="section" id="obtain-the-source-code">
+<h2>Obtain the source code<a class="headerlink" href="#obtain-the-source-code" title="Permalink to this headline">¶</a></h2>
+<p>Easiest way to obtain Lever source code is to use git. Git also helps
+tremendously if you later decide to contribute to lever. To download yourself a
+repository you can contribute to, do:</p>
+<div class="highlight-python"><div class="highlight"><pre>git clone https://github.com/cheery/lever
+</pre></div>
+</div>
+<p>At any time, you may also download an archive snapshot of the repository and extract:</p>
+<div class="highlight-python"><div class="highlight"><pre>wget https://github.com/cheery/lever/archive/master.zip
+unzip master.zip
+</pre></div>
+</div>
+</div>
+<div class="section" id="compiling-instructions">
+<h2>Compiling instructions<a class="headerlink" href="#compiling-instructions" title="Permalink to this headline">¶</a></h2>
+<p>Fortunately the compiling will only take few minutes and it&#8217;s easy. I have set up a
+script to compile lever. Here&#8217;s how to invoke it from a terminal:</p>
+<div class="highlight-python"><div class="highlight"><pre>cd lever
+python setup.py compile
+</pre></div>
+</div>
+<p>If you&#8217;re on debian based system, it prompts to install what you need to compile it.
+Otherwise you are adviced to provide the missing dependencies yourself. The script
+won&#8217;t attempt to proceed if it cannot find the needed libraries.</p>
+<p>The compiling results with the executable. For now the run.py -script can be
+used to run any of the examples. Here&#8217;s how to run one of the samples:</p>
+<div class="highlight-python"><div class="highlight"><pre>python run.py samples/ticktock.lc
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="languages-present-in-lever-runtime">
+<h1>Languages present in Lever runtime<a class="headerlink" href="#languages-present-in-lever-runtime" title="Permalink to this headline">¶</a></h1>
+<p>Lever currently uses python for scripts and for compiling from source code to
+bytecode. Though it is its own language.</p>
+<p>The interpreter is written in RPython. From there it is translated into native
+machine code and a matching JIT compiler is generated.</p>
+</div>
+<div class="section" id="lever-syntax-grammar">
+<h1>Lever syntax &amp; grammar<a class="headerlink" href="#lever-syntax-grammar" title="Permalink to this headline">¶</a></h1>
+<p>Before lever runs a source listing, it compiles that into instructions so that
+virtual machine can load in the program. Instead of having a grammar in itself,
+the compiler loads it as an input from the lever.grammar -file.</p>
+<p>The lever.grammar is a listing of context-free rules the compiler recognizes.
+If you happen to prefer different syntax for some reason, all you need to do is
+change the lever.grammar and provide it along your project.</p>
+<p>There is a thin layer of tokenizing before the grammar is applied to the input
+source listing.</p>
+<p>If you have used dynamically typed languages before, and you know what a
+context free grammar is, most of this grammar should make sense.</p>
+<p>The functions processing each of these rules are in compile.py, and they are
+prefixed with post_.</p>
+<div class="section" id="blocks">
+<h2>Blocks<a class="headerlink" href="#blocks" title="Permalink to this headline">¶</a></h2>
+<p>Lever files are sequences of statements separated by newline. Each statement
+can be evaluated and when done so return a value, these statements are called
+blocks, whenever appropriate, increased indentation level can form a block
+inside expressions:</p>
+<div class="highlight-python"><div class="highlight"><pre>file =&gt;
+    empty_list:
+    statements
+
+block =&gt; pass(statements): indent statements dedent
+
+statements =&gt;
+    first:           block_statement
+    append(lhs rhs): lhs=statements newline rhs=block_statement
+</pre></div>
+</div>
+</div>
+<div class="section" id="different-statements">
+<h2>Different statements<a class="headerlink" href="#different-statements" title="Permalink to this headline">¶</a></h2>
+<p>The statement is divided into block-level and ordinary statements. Right now,
+expressions are the only ordinary statements:</p>
+<div class="highlight-python"><div class="highlight"><pre>block_statement =&gt;
+    pass: statement
+    return(statement):
+        kw_return:&quot;return&quot; statement
+    if(statement block otherwise):
+        kw_if:&quot;if&quot; statement block otherwise
+    while(statement block):
+        kw_while:&quot;while&quot; statement block
+    local_assign(symbol block_statement):
+        symbol assign_op:&quot;=&quot; block_statement
+    upvalue_assign(symbol block_statement):
+        symbol upvalue_assign_op:&quot;:=&quot; block_statement
+    setitem(expr idx block_statement):
+        expr lb:&quot;[&quot; idx=expr rb:&quot;]&quot; assign_op:&quot;=&quot; block_statement
+    setattr(expr symbol block_statement):
+        expr dot:&quot;.&quot; symbol assign_op:&quot;=&quot; block_statement
+    for(symbol statement block):
+        kw_for:&quot;for&quot; symbol kw_in:&quot;in&quot; statement block
+    import(symbols_list):
+        kw_import:&quot;import&quot; symbols_list
+
+otherwise =&gt;
+    done:
+    elif(statement block otherwise):
+        newline kw_elif:&quot;elif&quot; statement block otherwise
+    else(block):
+        newline kw_else:&quot;else&quot; block
+
+statement =&gt;
+    pass: expr
+</pre></div>
+</div>
+<p>Note that on topmost level function, the local_assign assigns a value into
+module namespace rather than the local scope.</p>
+<p>The upvalue assign -rule can be used to store values into already bound variables.</p>
+<p>I have also not entirely decided how variable lookup should happen. Right now,
+lookup happens from local scope, if there is a preceding dominating control
+flow block that does local_assign into that variable. This is a cornel case and
+the behavior may change, though.</p>
+</div>
+<div class="section" id="expressions">
+<h2>Expressions<a class="headerlink" href="#expressions" title="Permalink to this headline">¶</a></h2>
+<p>Expressions are some of the few things that might be easier to describe with
+precedence table. For now, you can take a thumb of rule that the rule appearing
+lower in this subsequent listing will take higher precedence:</p>
+<div class="highlight-python"><div class="highlight"><pre>expr =&gt;
+    expr3
+    or(expr3 expr): expr3 kw_or:&quot;or&quot; expr
+
+expr3 =&gt;
+    expr5
+    and(expr5 expr3): expr5 kw_and:&quot;and&quot; expr3
+
+expr5 =&gt;
+    expr8
+    not(expr8): kw_not:&quot;not&quot; expr8
+
+expr8 =&gt;
+    expr10
+    in(l r): l=expr10 kw_in:&quot;in&quot; r=expr10
+    not_in(l r): l=expr10 kw_not:&quot;not&quot; kw_in:&quot;in&quot; r=expr10
+    binary: expr10 lt:&quot;&lt;&quot; expr10
+    binary: expr10 gt:&quot;&gt;&quot; expr10
+    binary: expr10 eq:&quot;==&quot; expr10
+    binary: expr10 ne:&quot;!=&quot; expr10
+    binary: expr10 le:&quot;&lt;=&quot; expr10
+    binary: expr10 ge:&quot;&gt;=&quot; expr10
+
+expr10 =&gt;
+    expr20
+    binary: expr10 bitwise_or:&quot;|&quot; expr20
+
+expr20 =&gt;
+    expr30
+    binary: expr20 bitwise_xor:&quot;^&quot; expr30
+
+expr30 =&gt;
+    expr50
+    binary: expr30 bitwise_and:&quot;&amp;&quot; expr50
+
+expr50 =&gt;
+    expr100
+    binary: expr50 bitwise_shl:&quot;&lt;&lt;&quot; expr100
+    binary: expr50 bitwise_shr:&quot;&gt;&gt;&quot; expr100
+
+expr100 =&gt;
+    expr200
+    binary: expr100 concat:&quot;++&quot; expr200
+    binary: expr100 plus:&quot;+&quot; expr200
+    binary: expr100 minus:&quot;-&quot; expr200
+
+expr200 =&gt;
+    prefix
+    binary: expr200 star:&quot;*&quot; prefix
+    binary: expr200 slash:&quot;/&quot; prefix
+    binary: expr200 percent:&quot;%&quot; prefix
+
+prefix =&gt;
+    postfix
+    prefix: plus:&quot;+&quot; postfix
+    prefix: minus:&quot;-&quot; postfix
+
+postfix =&gt;
+    term
+    call(postfix arguments):
+        postfix lp:&quot;(&quot; arguments rp:&quot;)&quot;
+    getitem(postfix expr):
+        postfix lb:&quot;[&quot; expr rb:&quot;]&quot;
+    getattr(postfix symbol):
+        postfix dot:&quot;.&quot; symbol
+
+arguments =&gt;
+    empty_list:
+    arguments1
+    pass(arguments1): arguments1 comma:&quot;,&quot;
+
+arguments1 =&gt;
+    first: expr
+    append(lst expr): lst=arguments1 comma:&quot;,&quot; expr
+</pre></div>
+</div>
+</div>
+<div class="section" id="terms">
+<h2>Terms<a class="headerlink" href="#terms" title="Permalink to this headline">¶</a></h2>
+<p>These are the current terms understood by the language:</p>
+<div class="highlight-python"><div class="highlight"><pre>term =&gt;
+    lookup:          symbol
+    int:             int
+    hex:             hex
+    float:           float
+    string:          string
+    pass(expr):      lp:&quot;(&quot; expr rp:&quot;)&quot;
+    list(arguments): lb:&quot;[&quot; arguments rb:&quot;]&quot;
+    function(bindings block):
+        lp:&quot;(&quot; bindings rp:&quot;)&quot; colon:&quot;:&quot; block
+    dict(pairs): lc:&quot;{&quot; pairs rc:&quot;}&quot;
+    lookup(escaped_keyword): lc:&quot;{&quot; escaped_keyword rc:&quot;}&quot;
+    lookup(string): percent:&quot;%&quot; string
+
+bindings =&gt;
+    empty_list:
+    bindings1
+    pass(bindings1): bindings1 comma:&quot;,&quot;
+
+bindings1 =&gt;
+    first: symbol
+    append(lst symbol): lst=bindings1 comma:&quot;,&quot; symbol
+
+pairs =&gt;
+    empty_list:
+    pairs1
+    pass(pairs1): pairs1 comma:&quot;,&quot;
+
+pairs1 =&gt;
+    first: pair
+    append(lst pair): lst=pairs1 comma:&quot;,&quot; pair
+
+pair =&gt; tuple(k v): k=expr colon:&quot;:&quot; v=expr
+
+escaped_keyword =&gt;
+    pass: kw_import:&quot;import&quot;
+    pass: kw_and:&quot;and&quot;
+    pass: kw_or:&quot;or&quot;
+    pass: kw_not:&quot;not&quot;
+
+symbols_list =&gt;
+    first: symbol
+    append(lst symbol): lst=symbols_list comma:&quot;,&quot; symbol
+</pre></div>
+</div>
+</div>
+</div>
+<div class="section" id="lever-base-module">
+<h1>Lever base module<a class="headerlink" href="#lever-base-module" title="Permalink to this headline">¶</a></h1>
+<dl class="class">
+<dt id="dict">
+<em class="property">class </em><tt class="descname">dict</tt><big>(</big><span class="optional">[</span><em>iterable</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#dict" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dictionary is a hash table that maps keys to values.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="module">
+<em class="property">class </em><tt class="descname">module</tt><a class="headerlink" href="#module" title="Permalink to this definition">¶</a></dt>
+<dd><p>Modules are hierarchical name-&gt;value -tables. They can be reset and reloaded.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="exnihilo">
+<em class="property">class </em><tt class="descname">exnihilo</tt><a class="headerlink" href="#exnihilo" title="Permalink to this definition">¶</a></dt>
+<dd><p>Produces &#8216;from scratch&#8217; -objects that can be filled with anything you wish.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="object">
+<em class="property">class </em><tt class="descname">object</tt><a class="headerlink" href="#object" title="Permalink to this definition">¶</a></dt>
+<dd><p>Base interface for all interfaces.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="list">
+<em class="property">class </em><tt class="descname">list</tt><a class="headerlink" href="#list" title="Permalink to this definition">¶</a></dt>
+<dd><p>Lists represent sequences of values.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="multimethod">
+<em class="property">class </em><tt class="descname">multimethod</tt><big>(</big><em>arity</em><big>)</big><a class="headerlink" href="#multimethod" title="Permalink to this definition">¶</a></dt>
+<dd><p>Multimethods represent bundles of functions of fixed arity. Programmer can insert
+more of functions into a multimethod at any time.</p>
+<p>During invocation multimethods calls interface() for every argument they get. The
+result is used to determine the function to call. If the value is missing in the
+table, the default -method is called. If there&#8217;s no default method, then an error
+is raised.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="greenlet">
+<em class="property">class </em><tt class="descname">greenlet</tt><big>(</big><em>arguments...</em><big>)</big><a class="headerlink" href="#greenlet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Conceptually greenlets represent a body of work you can stop for a moment while
+you do a different task. Note that you are always in a greenlet. You can always
+put the current task to sleep, or switch to the eventloop to run a different task.</p>
+<p>Greenlet represents a call frame that can be suspended. The arguments describe a
+function to call and it can be left blank. In that case the switching has to pass
+a function that is called inside the greenlet.</p>
+<p>The greenlet.parent describes where the call returns once it finishes.</p>
+<p>greenlet.switch(arguments...) suspends the current greenlet and switches to the
+targeted greenlet. If the greenlet hasn&#8217;t started yet, the given arguments are
+concatenated to the initial arguments. If the greenlet is suspended, the arguments
+are compacted into a value and returned in the target greenlet.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="getcurrent">
+<tt class="descname">getcurrent</tt><big>(</big><big>)</big><a class="headerlink" href="#getcurrent" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the currently running greenlet.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="schedule">
+<tt class="descname">schedule</tt><big>(</big><em>arguments...</em><big>)</big><a class="headerlink" href="#schedule" title="Permalink to this definition">¶</a></dt>
+<dd><p>Schedule is similar to the greenlet -command, except that it queues the greenlet
+and sets it to return into the eventloop when it finishes. It returns the
+newly created greenlet.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="sleep">
+<tt class="descname">sleep</tt><big>(</big><em>duration</em><span class="optional">[</span>, <em>function</em><span class="optional">]</span><big>)</big><a class="headerlink" href="#sleep" title="Permalink to this definition">¶</a></dt>
+<dd><p>The sleep performs two functions. It can be used to suspend the current greenlet,
+queue it after duration of seconds pass.</p>
+<p>If you pass it a function or greenlet, it will convert it into a greenlet and
+adds it to the event queue after the duration passes.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="int">
+<em class="property">class </em><tt class="descname">int</tt><a class="headerlink" href="#int" title="Permalink to this definition">¶</a></dt>
+<dd><p>An integer. Merely used to identify integers. No other interests.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="bool">
+<em class="property">class </em><tt class="descname">bool</tt><a class="headerlink" href="#bool" title="Permalink to this definition">¶</a></dt>
+<dd><p>Boolean. Merely used to identify booleans and to convert values into booleans.</p>
+</dd></dl>
+
+<dl class="class">
+<dt id="str">
+<em class="property">class </em><tt class="descname">str</tt><a class="headerlink" href="#str" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents strings. Strings are immutable.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="null">
+<tt class="descname">null</tt><a class="headerlink" href="#null" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents nonexistence of value.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="true">
+<tt class="descname">true</tt><a class="headerlink" href="#true" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a true value.</p>
+</dd></dl>
+
+<dl class="data">
+<dt id="false">
+<tt class="descname">false</tt><a class="headerlink" href="#false" title="Permalink to this definition">¶</a></dt>
+<dd><p>Represents a false value.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<tt class="descname">{import}(name)</tt></dt>
+<dd><p>Imports a function.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="interface">
+<tt class="descname">interface</tt><big>(</big><em>object</em><big>)</big><a class="headerlink" href="#interface" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve the interface of an object.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="iter">
+<tt class="descname">iter</tt><big>(</big><em>object</em><big>)</big><a class="headerlink" href="#iter" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieve an iterator. Invokes the +iter from the interface table.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="getitem">
+<tt class="descname">getitem</tt><big>(</big><em>object</em>, <em>index</em><big>)</big><a class="headerlink" href="#getitem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equivalent to object[index]. Presented as a convenience. Invokes the +getitem from
+the interface table.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="setitem">
+<tt class="descname">setitem</tt><big>(</big><em>object</em>, <em>index</em>, <em>value</em><big>)</big><a class="headerlink" href="#setitem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Equivalent to object[index] = value. Presented as a convenience. Invokes the +setitem
+from the interface table.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="getattr">
+<tt class="descname">getattr</tt><big>(</big><em>object</em>, <em>name</em><big>)</big><a class="headerlink" href="#getattr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Retrieves attribute from an object.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="setattr">
+<tt class="descname">setattr</tt><big>(</big><em>object</em>, <em>name</em>, <em>value</em><big>)</big><a class="headerlink" href="#setattr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Sets an attribute from an object.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="ord">
+<tt class="descname">ord</tt><big>(</big><em>character</em><big>)</big><a class="headerlink" href="#ord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns integer representing the unicode point of the character.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="chr">
+<tt class="descname">chr</tt><big>(</big><em>integer</em><big>)</big><a class="headerlink" href="#chr" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns a character that corresponds to the integer.</p>
+</dd></dl>
+
+<dl class="function">
+<dt id="print">
+<tt class="descname">print</tt><big>(</big><em>values...</em><big>)</big><a class="headerlink" href="#print" title="Permalink to this definition">¶</a></dt>
+<dd><p>Prints the given values, with space between them.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<tt class="descname">{and}(a, b)</tt></dt>
+<dd><p>A convenience function that does a and b without conditional chaining rules.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<tt class="descname">{or}(a, b)</tt></dt>
+<dd><p>A convenience function that does a or b without conditional chaining rules.</p>
+</dd></dl>
+
+<dl class="function">
+<dt>
+<tt class="descname">{not}(a)</tt></dt>
+<dd><p>A convenience function that inverses a truth value.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="coerce">
+<tt class="descname">coerce</tt><big>(</big><em>a</em>, <em>b</em><big>)</big><a class="headerlink" href="#coerce" title="Permalink to this definition">¶</a></dt>
+<dd><p>A Base multimethod for converting two value into values that pair arithmetically.
+Coercion is used when the values cannot be found from the usual multimethod table
+and when the exact pairing cannot be found.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<tt class="descname">{+}, {-}, {*}, {/}, {|}, {%}, {&amp;}, {^}, {&lt;&lt;}, {&gt;&gt;}, min, max</tt></dt>
+<dd><p>Standard arithmetic methods.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<tt class="descname">{&lt;}, {&gt;}, {&lt;=}, {&gt;=}, {!=}, {==}</tt></dt>
+<dd><p>Stardard comparative methods.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<tt class="descname">{-expr}, {+expr}</tt></dt>
+<dd><p>Multimethods for negative and positive prefix.</p>
+</dd></dl>
+
+<dl class="method">
+<dt>
+<tt class="descname">{++}</tt></dt>
+<dd><p>Concatenation multimethod. Implemented on lists and strings.</p>
+</dd></dl>
+
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+            <p class="logo"><a href="#">
+              <img class="logo" src="_static/logo.png" alt="Logo"/>
+            </a></p>
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome to Lever&#8217;s documentation</a></li>
+<li><a class="reference internal" href="#installing-lever">Installing Lever</a><ul>
+<li><a class="reference internal" href="#obtain-the-source-code">Obtain the source code</a></li>
+<li><a class="reference internal" href="#compiling-instructions">Compiling instructions</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#languages-present-in-lever-runtime">Languages present in Lever runtime</a></li>
+<li><a class="reference internal" href="#lever-syntax-grammar">Lever syntax &amp; grammar</a><ul>
+<li><a class="reference internal" href="#blocks">Blocks</a></li>
+<li><a class="reference internal" href="#different-statements">Different statements</a></li>
+<li><a class="reference internal" href="#expressions">Expressions</a></li>
+<li><a class="reference internal" href="#terms">Terms</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#lever-base-module">Lever base module</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h4>Next topic</h4>
+  <p class="topless"><a href="stdlib.html"
+                        title="next chapter">Standard library</a></p>
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="stdlib.html" title="Standard library"
+             >next</a> |</li>
+        <li><a href="#">Lever 0.5.0 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2015, Henri Tuhola.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
