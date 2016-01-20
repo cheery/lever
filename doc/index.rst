@@ -6,7 +6,7 @@
 Welcome to Lever's documentation
 ================================
 
-0.5.0 is an early release of the Lever programming language. This documentation
+0.6.0 will be the next release of the Lever programming language. This documentation
 is incomplete.
 
 Stable releases will come with complete documentation. For most things not
@@ -458,6 +458,18 @@ Lever base module
 .. method:: {++}
 
    Concatenation multimethod. Implemented on lists and strings.
+
+Contributing to Lever
+=====================
+
+Contributing to Documentation
+-----------------------------
+
+The Lever documentation sits in doc/ subdirectory. The following commands will
+update the documentation so you can preview your changes::
+
+    cd doc/
+    make publish
 
 Indices and tables
 ==================
