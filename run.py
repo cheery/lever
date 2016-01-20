@@ -5,6 +5,7 @@
 from subprocess import check_call, CalledProcessError
 import sys
 import os
+import platform
 
 try:
     lever_path = os.path.dirname(os.path.realpath(sys.argv[0]))
@@ -12,6 +13,8 @@ try:
     pythonpath = os.path.join(lever_path, 'pypy-4.0.1-src')
     main_py_path = os.path.join(lever_path, 'main.py')
     main_path = os.path.abspath(os.path.join(lever_path, 'main-c'))
+    if platform.system() == "Windows":
+        main_path += ".exe"
 
     run_compiled = '-i' not in files
     if not run_compiled:

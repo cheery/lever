@@ -2,6 +2,7 @@ import bon
 import evaluator
 import os
 import space
+import sys
 
 def load_module(src_path, module):
     cb_path = src_path + '.cb'
@@ -25,15 +26,69 @@ def load_module(src_path, module):
     program = evaluator.loader.from_object(bon.open_file(cb_path))
     return program.call([module])
 
-def compile_module(cb_path, src_path):
-    app_dir = os.environ.get('LEVER_PATH')
-    if app_dir is None:
-        app_dir = ''
-    compiler_path = os.path.join(app_dir, "compile.py")
-    pid = os.fork()
-    if pid == 0:
-        os.execv(compiler_path, [compiler_path, cb_path, src_path])
-        return
-    pid, status = os.waitpid(pid, 0)
-    if status != 0:
-        raise space.Error(u"module compile failed: %s %s" % (cb_path.decode('utf-8'), src_path.decode('utf-8')))
+if sys.platform != "win32":
+    # we have some expectations from non-windows platforms.
+    # the expectation is that they hesitate to suck for sake of just being different.
+    def compile_module(cb_path, src_path):
+        app_dir = os.environ.get('LEVER_PATH')
+        if app_dir is None:
+            app_dir = ''
+        compiler_path = os.path.join(app_dir, "compile.py")
+        pid = os.fork()
+        if pid == 0:
+            os.execv(compiler_path, [compiler_path, cb_path, src_path])
+            return
+        pid, status = os.waitpid(pid, 0)
+        if status != 0:
+            raise space.Error(u"module compile failed: %s %s" % (cb_path.decode('utf-8'), src_path.decode('utf-8')))
+else:
+    def compile_module(cb_path, src_path):
+        app_dir = os.environ.get('LEVER_PATH')
+        if app_dir is None:
+            app_dir = ''
+        compiler_path = os.path.join(app_dir, "compile.py")
+        py_path = find_python_interpreter()
+        status = os.spawnv(os.P_WAIT, py_path, [py_path, escape_arg(compiler_path), escape_arg(cb_path), escape_arg(src_path)])
+        if status != 0:
+            raise space.Error(u"module compile failed: %s %s" % (cb_path.decode('utf-8'), src_path.decode('utf-8')))
+
+    def find_python_interpreter():
+        pths = os.environ.get("PATH").split(";")
+        for p in pths:
+            k = os.path.join(p, "python.exe")
+            if os.path.exists(k):
+                return escape_arg(k)
+        return "python.exe" 
+
+    def escape_arg(arg):
+        result = []
+        bs_buf = []
+        # Add a space to separate this argument from the others
+        needquote = (" " in arg) or ("\t" in arg) or not arg
+        if needquote:
+            result.append('"')
+
+        for c in arg:
+            if c == '\\':
+                # Don't know if we need to double yet.
+                bs_buf.append(c)
+            elif c == '"':
+                # Double backslashes.
+                result.append('\\' * len(bs_buf)*2)
+                bs_buf = []
+                result.append('\\"')
+            else:
+                # Normal char
+                if bs_buf:
+                    result.extend(bs_buf)
+                    bs_buf = []
+                result.append(c)
+
+        # Add remaining backslashes, if any.
+        if bs_buf:
+            result.extend(bs_buf)
+
+        if needquote:
+            result.extend(bs_buf)
+            result.append('"')
+        return ''.join(result)

@@ -7,6 +7,9 @@
     If you're in hurry, just run "./setup.py"
 """
 from subprocess import call, check_call
+from urllib import urlopen
+from StringIO import StringIO
+from zipfile import ZipFile
 import platform
 import re
 import sys
@@ -17,7 +20,7 @@ cmd_depends = "pkg-config gcc make bzip2".split(' ')
 depends = "libffi zlib sqlite3 ncurses expat libssl".split(' ')
 
 devnull = open(os.devnull, 'w')
-def main():
+def linux_main():
     for cmd in cmd_depends:
         if call([cmd, '--version'], stdout=devnull, stderr=devnull) != 0:
             return troubleshoot(cmd)
@@ -25,6 +28,17 @@ def main():
         if call(['pkg-config', '--exists', dependency]) != 0:
             return troubleshoot(dependency)
     download_and_extract('pypy-4.0.1-src', 'https://bitbucket.org/pypy/pypy/downloads/pypy-4.0.1-src.tar.bz2')
+    compiling_commands()
+
+def windows_main():
+    if not os.path.exists("pypy-4.0.1-src"):
+        print "Windows? BLERG!"
+        url = urlopen('https://bitbucket.org/pypy/pypy/downloads/pypy-4.0.1-src.zip')
+        zipfile = ZipFile(StringIO(url.read()))
+        zipfile.extractall()
+    compiling_commands()
+
+def compiling_commands():
     if len(sys.argv) > 1 and sys.argv[1] == 'compile':
         os.environ['PYTHONPATH'] = "pypy-4.0.1-src"
         check_call("python pypy-4.0.1-src/rpython/bin/rpython --translation-jit --gc=incminimark --opt=2 main.py".split(' '))
@@ -78,4 +92,11 @@ def download_and_extract(target, archive):
 #        assert len(dirs) == 1, "found more than 1 directory matching 'pypy-c-jit-', not sure what to do."
 #        os.rename(dirs[0], target)
 
-if __name__=='__main__': main()
+if __name__=='__main__':
+    system = platform.system()
+    if system == "Linux":
+        linux_main()
+    elif system == "Windows":
+        windows_main()
+    else:
+        assert False, "no setup script for {}".format(system)

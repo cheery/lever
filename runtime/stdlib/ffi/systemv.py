@@ -50,7 +50,7 @@ class Mem(Object):
                 pointer = rffi.ptradd(self.pointer, offset)
                 if isinstance(ctype, Struct) or isinstance(ctype, Union):
                     return Mem(Pointer(ctype), pointer)
-                elif isinstance(ctype, Signed) or isinstance(ctype, Unsigned) or isinstance(ctype, Pointer):
+                elif isinstance(ctype, Signed) or isinstance(ctype, Unsigned) or isinstance(ctype, Floating) or isinstance(ctype, Pointer):
                     return ctype.load(pointer)
                 else:
                     raise Error(u"no load supported for " + ctype.repr())
@@ -69,7 +69,7 @@ class Mem(Object):
             if isinstance(ctype, Struct) or isinstance(ctype, Union):
                 offset, ctype = ctype.namespace[name]
                 pointer = rffi.ptradd(self.pointer, offset)
-                if isinstance(ctype, Signed) or isinstance(ctype, Unsigned):
+                if isinstance(ctype, Signed) or isinstance(ctype, Unsigned) or isinstance(ctype, Floating) or isinstance(ctype, Pointer):
                     return ctype.store(pointer, value)
                 else:
                     raise Exception(u"no store supported for " + ctype.repr())
@@ -308,6 +308,20 @@ class Struct(Type):
         self.name = name
         if fields is not None:
             self.declare(fields)
+	self.ffitype = lltype.nullptr(clibffi.FFI_STRUCT_P.TO)
+
+    @rgc.must_be_light_finalizer
+    def __del__(self):
+        if self.ffitype:
+            lltype.free(self.ffitype, flavor='raw')
+
+    def cast_to_ffitype(self):
+        if not self.ffitype:
+            field_types = []
+            for name, field in self.fields:
+                field_types.append(field.cast_to_ffitype())
+            self.ffitype = clibffi.make_struct_ffitype_e(self.size, self.align, field_types)
+        return self.ffitype.ffistruct
 
     def declare(self, fields):
         if self.fields is not None:
@@ -333,6 +347,11 @@ class Struct(Type):
         if self is other:
             return True
         return False
+
+    def load(self, offset):
+        pointer = lltype.malloc(rffi.VOIDP.TO, self.size, flavor='raw')
+        rffi.c_memcpy(pointer, offset, self.size)
+        return AutoMem(Pointer(self), pointer, 1)
  
     def repr(self):
         if self.fields is None:
@@ -420,6 +439,9 @@ class Array(Type):
         else:
             self.size = sizeof(ctype) * length
         self.align = ctype.align
+
+    def cast_to_ffitype(self):
+        return self.ctype.cast_to_ffitype()
 
     def typecheck(self, other):
         if isinstance(other, Pointer):

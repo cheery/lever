@@ -1,3 +1,4 @@
+from rpython.translator.platform import platform
 from space import *
 import ffi
 import json, os
@@ -190,10 +191,10 @@ def open(argv):
     if len(argv) < 1:
         raise Error(u"expected at least 1 argument for api.open")
     path = argument(argv, 0, String).string
-    if path.endswith(u".so") or path.endswith(u".json"):
+    if path.endswith(u".so") or path.endswith(u".json") or path.endswith(u".dll"):
         path = path.rsplit(u'.', 1)[0]
     json_path = path + u".json"
-    so_path = path + u".so"
+    so_path = path + u"." + platform.so_ext.decode('utf-8')
     dependencies = None
     if len(argv) >= 3 and argv[2] != null:
         dependencies = argv[2]

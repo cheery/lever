@@ -55,7 +55,7 @@ def _(argv):
     try:
         lib = rdynload.dlopen(path)
     except rdynload.DLOpenError, e:
-        raise Error(u"Unable to load library: " + e.msg.decode('utf-8'))
+        raise Error(u"Unable to load library: " + name.string)# + e.msg.decode('utf-8'))
     finally:
         lltype.free(path, flavor='raw')
     return Library(name.string, apispec, lib)
