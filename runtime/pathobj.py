@@ -1,5 +1,6 @@
 from space import *
 import sys
+import operators
 
 # Again we have some expectations that other platforms do not suck.
 if sys.platform == "win32":
@@ -114,3 +115,18 @@ def path_string(path, path_separator):
         if path.label != u"":
             string = path.label + u":" + string
     return string
+
+@operators.concat.multimethod_s(String, Path)
+def _(a, b):
+    return path_op_concat(posix_path(a.string), b)
+
+@operators.concat.multimethod_s(Path, String)
+def _(a, b):
+    return path_op_concat(a, posix_path(b.string))
+
+@operators.concat.multimethod_s(Path, Path)
+def path_op_concat(a, b):
+    if b.is_absolute:
+        return Path(list(b.pathseq), b.is_absolute, b.label)
+    pathseq = pathseq_ncat(list(a.pathseq), b.pathseq)
+    return Path(pathseq, a.is_absolute, a.label)

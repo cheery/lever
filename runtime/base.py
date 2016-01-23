@@ -1,11 +1,12 @@
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi
 from space import *
-from pathobj import Path, pathseq_ncat, posix_path
+from pathobj import Path
 import module_resolution
 import os
 import stdlib
 import time
+import operators
 
 # The base environment
 module = Module(u'base', {
@@ -24,6 +25,9 @@ module = Module(u'base', {
     u'false': false,
     u'path': Path.interface,
 }, frozen=True)
+
+for name, value in operators.by_symbol.iteritems():
+    module.setattr_force(name, value)
 
 def builtin(fn):
     name = fn.__name__.rstrip('_').decode('utf-8')
@@ -62,14 +66,6 @@ def iter_(obj):
 @signature(Object)
 def repr_(obj):
     return String(obj.repr())
-  
-#  #def pyl_apply(argv):
-#  #    N = len(argv) - 1
-#  #    assert N >= 1
-#  #    args = argv[1:N]
-#  #    varg = argv[N]
-#  #    assert isinstance(varg, List)
-#  #    return argv[0].invoke(args + varg.items)
   
 @builtin
 @signature(Object, Object)
@@ -140,126 +136,6 @@ def or_(a, b):
 def not_(a):
     return boolean(is_false(a))
 
-coerce = module.setattr_force(u'coerce', Multimethod(2))
-@coerce.multimethod_s(Boolean, Boolean)
-def _(a, b):
-    return List([Integer(int(a.flag)), Integer(int(b.flag))])
-
-@coerce.multimethod_s(Integer, Boolean)
-def _(a, b):
-    return List([a, Integer(int(b.flag))])
-
-@coerce.multimethod_s(Boolean, Integer)
-def _(a, b):
-    return List([Integer(int(a.flag)), b])
-
-@coerce.multimethod_s(Integer, Float)
-def _(a, b):
-    return List([Float(float(a.value)), b])
-
-@coerce.multimethod_s(Float, Integer)
-def _(a, b):
-    return List([a, Float(float(b.value))])
-
-def arithmetic_multimethod(operation, flo=False):
-    operation = specialize.argtype(0, 1)(operation)
-    method = Multimethod(2)
-    @Builtin
-    def default(argv):
-        args = coerce.call(argv)
-        assert isinstance(args, List)
-        return method.call_suppressed(args.contents)
-    method.default = default
-    @method.multimethod_s(Integer, Integer)
-    def _(a, b):
-        return Integer(operation(a.value, b.value))
-    if flo:
-        @method.multimethod_s(Float, Float)
-        def _(a, b):
-            return Float(operation(a.number, b.number))
-    return method
-
-module.setattr_force(u'+', arithmetic_multimethod((lambda a, b: a + b), flo=True))
-module.setattr_force(u'-', arithmetic_multimethod((lambda a, b: a - b), flo=True))
-module.setattr_force(u'*', arithmetic_multimethod((lambda a, b: a * b), flo=True))
-module.setattr_force(u'/', arithmetic_multimethod((lambda a, b: a / b), flo=True)) # TODO: should provide proper division instead of copying python behavior.
-module.setattr_force(u'|', arithmetic_multimethod((lambda a, b: a | b)))
-module.setattr_force(u'%', arithmetic_multimethod((lambda a, b: a % b)))
-module.setattr_force(u'&', arithmetic_multimethod((lambda a, b: a & b)))
-module.setattr_force(u'^', arithmetic_multimethod((lambda a, b: a ^ b)))
-module.setattr_force(u'<<', arithmetic_multimethod((lambda a, b: a << b)))
-module.setattr_force(u'>>', arithmetic_multimethod((lambda a, b: a >> b)))
-module.setattr_force(u'min', arithmetic_multimethod((lambda a, b: min(a, b)), flo=True))
-module.setattr_force(u'max', arithmetic_multimethod((lambda a, b: max(a, b)), flo=True))
-
-# Not actual implementations of these functions
-# All of these will be multimethods
-@signature(Integer, Integer)
-def cmp_lt(a, b):
-    return boolean(a.value < b.value)
-module.setattr_force(u'<', Builtin(cmp_lt, u'<'))
-
-@signature(Integer, Integer)
-def cmp_gt(a, b):
-    return boolean(a.value > b.value)
-module.setattr_force(u'>', Builtin(cmp_gt, u'>'))
-
-@signature(Integer, Integer)
-def cmp_le(a, b):
-    return boolean(a.value <= b.value)
-module.setattr_force(u'<=', Builtin(cmp_le, u'<='))
-
-@signature(Integer, Integer)
-def cmp_ge(a, b):
-    return boolean(a.value >= b.value)
-module.setattr_force(u'>=', Builtin(cmp_ge, u'>='))
-
-ne = module.setattr_force(u'!=', Multimethod(2))
-@signature(Object, Object)
-def ne_default(a, b):
-    return boolean(a != b)
-ne.default = Builtin(ne_default)
-
-@ne.multimethod_s(Integer, Integer)
-def _(a, b):
-    return boolean(a.value != b.value)
-
-@ne.multimethod_s(String, String)
-def _(a, b):
-    return boolean(not a.eq(b))
-
-eq = module.setattr_force(u'==', Multimethod(2))
-@signature(Object, Object)
-def eq_default(a, b):
-    return boolean(a == b)
-eq.default = Builtin(eq_default)
-
-@eq.multimethod_s(Integer, Integer)
-def _(a, b):
-    return boolean(a.value == b.value)
-
-@eq.multimethod_s(String, String)
-def _(a, b):
-    return boolean(a.eq(b))
-
-neg = module.setattr_force(u'-expr', Multimethod(1))
-@neg.multimethod_s(Integer)
-def _(a):
-    return Integer(-a.value)
-
-pos = module.setattr_force(u'+expr', Multimethod(1))
-@pos.multimethod_s(Integer)
-def _(a):
-    return Integer(+a.value)
-
-concat = module.setattr_force(u'++', Multimethod(2))
-@concat.multimethod_s(String, String)
-def _(a, b):
-    return String(a.string + b.string)
-@concat.multimethod_s(List, List)
-def _(a, b):
-    return List(a.contents + b.contents)
-
 @builtin
 @signature(String)
 def encode_utf8(value):
@@ -297,20 +173,3 @@ def import_(name):
     module_resolution.load_module(path_name.encode('utf-8'), this)
     stdlib_modules[name.string] = this
     return this
-
-
-# TODO: these should likely go into pathobj.py
-@concat.multimethod_s(String, Path)
-def _(a, b):
-    return path_op_concat(posix_path(a.string), b)
-
-@concat.multimethod_s(Path, String)
-def _(a, b):
-    return path_op_concat(a, posix_path(b.string))
-
-@concat.multimethod_s(Path, Path)
-def path_op_concat(a, b):
-    if b.is_absolute:
-        return Path(list(b.pathseq), b.is_absolute, b.label)
-    pathseq = pathseq_ncat(list(a.pathseq), b.pathseq)
-    return Path(pathseq, a.is_absolute, a.label)
