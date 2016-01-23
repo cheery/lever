@@ -1,6 +1,7 @@
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi
 from space import *
+from pathobj import Path, pathseq_ncat, posix_path
 import module_resolution
 import os
 import stdlib
@@ -21,6 +22,7 @@ module = Module(u'base', {
     u'null': null,
     u'true': true,
     u'false': false,
+    u'path': Path.interface,
 }, frozen=True)
 
 def builtin(fn):
@@ -295,3 +297,20 @@ def import_(name):
     module_resolution.load_module(path_name.encode('utf-8'), this)
     stdlib_modules[name.string] = this
     return this
+
+
+# TODO: these should likely go into pathobj.py
+@concat.multimethod_s(String, Path)
+def _(a, b):
+    return path_op_concat(posix_path(a.string), b)
+
+@concat.multimethod_s(Path, String)
+def _(a, b):
+    return path_op_concat(a, posix_path(b.string))
+
+@concat.multimethod_s(Path, Path)
+def path_op_concat(a, b):
+    if b.is_absolute:
+        return Path(list(b.pathseq), b.is_absolute, b.label)
+    pathseq = pathseq_ncat(list(a.pathseq), b.pathseq)
+    return Path(pathseq, a.is_absolute, a.label)

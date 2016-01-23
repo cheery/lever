@@ -91,7 +91,8 @@ class Multimethod(Object):
 
     def multimethod_s(self, *spec):
         def _impl_(fn):
-            return self.multimethod(*spec)(signature(*spec)(fn))
+            self.multimethod(*spec)(signature(*spec)(fn))
+            return fn
         return _impl_
 
     def setitem(self, index, value):

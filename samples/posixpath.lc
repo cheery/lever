@@ -1,0 +1,28 @@
+# By default, lever conforms to posix path convention, independent of platform.
+
+test = path("usr/person")
+print(test.basename)
+
+
+# Path objects are mutable, to let you mangle them as you like.
+test_c = test.copy()
+test.basename = test.basename ++ ".waldo"
+test.label = "leverlanguage.com"
+test.is_absolute = true
+print(test)
+
+test.push("subdirectory/blep")
+print(test)
+test.push("..")
+print(test)
+test.push(".")
+print(test)
+
+test = path("")
+test.basename = "hello:hello"
+test.label = "hello"
+print(test)
+
+print(path("/pathname/"))
+
+print(test_c)
