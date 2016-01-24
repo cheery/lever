@@ -4,10 +4,15 @@ import sys
 import operators
 
 # Again we have some expectations that other platforms do not suck.
+# TODO: read NT path conventions.
 if sys.platform == "win32":
-    os_path_separator = u"\\"
+    #os_path_separator = u"\\"
+    os_path_decode = lambda string: string.replace(u"\\", u"/").replace(u"^", u"\\")
+    os_path_encode = lambda string: string.replace(u"\\", u"^").replace(u"/", u"\\")
 else:
-    os_path_separator = u"/"
+    #os_path_separator = u"/"
+    os_path_decode = lambda string: string
+    os_path_encode = lambda string: string
 
 class Path(Object):
     def __init__(self, pathseq, is_absolute, label):
@@ -53,7 +58,7 @@ class Path(Object):
 @Path.builtin_method
 @signature(Path, String)
 def push(path, seq):
-    newpath = posix_path(seq.string)
+    newpath = parse_path(seq.string)
     if newpath.is_absolute:
         path.is_absolute = newpath.is_absolute
         path.label = newpath.label
@@ -71,13 +76,10 @@ def get_os_path(path):
 @signature(Object)
 def _(obj):
     if isinstance(obj, String):
-        return posix_path(obj.string)
+        return parse_path(obj.string)
     elif isinstance(obj, Path):
         return Path(list(obj.pathseq), obj.is_absolute, obj.label)
     raise Error(u"path() expected string or path object.")
-
-def posix_path(string, parse_label=True):
-    return parse_path(string, u"/", parse_label)
 
 def pathseq_ncat(pathseq, tail):
     if len(pathseq) > 0 and pathseq[-1] == u"":
@@ -96,16 +98,17 @@ def pathseq_ncat(pathseq, tail):
     return pathseq
 
 def os_parse_path(string):
-    return parse_path(string, os_path_separator, True)
+    return parse_path(os_path_decode(string))
 
 def os_path_string(path):
-    return path_string(path, os_path_separator) 
+    return os_path_encode(path_string(path))
 
 def getcwd():
     return os_parse_path(os.getcwd().decode('utf-8'))
 
-def parse_path(string, path_separator, parse_label):
-    pathseq = string.split(path_separator)
+# parse posix path.
+def parse_path(string, parse_label=True):
+    pathseq = string.split(u"/")
     head = pathseq.pop(0)
     if head.count(u":") > 0 and parse_label:
         label, head = head.split(u":", 1)
@@ -114,9 +117,9 @@ def parse_path(string, path_separator, parse_label):
     is_absolute = (head == u"" and len(pathseq) > 0)
     return Path(pathseq_ncat([head], pathseq), is_absolute, label)
 
-def path_string(path, path_separator):
+def path_string(path, path_separator=u"/"):
     if isinstance(path, String):
-        path = posix_path(path.string)
+        path = parse_path(path.string)
     if not isinstance(path, Path):
         raise Error(u"expected a path object")
     if path.is_absolute:
@@ -132,11 +135,11 @@ def path_string(path, path_separator):
 
 @operators.concat.multimethod_s(String, Path)
 def _(a, b):
-    return path_op_concat(posix_path(a.string), b)
+    return path_op_concat(parse_path(a.string), b)
 
 @operators.concat.multimethod_s(Path, String)
 def _(a, b):
-    return path_op_concat(a, posix_path(b.string))
+    return path_op_concat(a, parse_path(b.string))
 
 @operators.concat.multimethod_s(Path, Path)
 def path_op_concat(a, b):
