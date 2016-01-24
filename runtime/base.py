@@ -1,7 +1,7 @@
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi
 from space import *
-from pathobj import Path
+import pathobj
 import module_resolution
 import os
 import stdlib
@@ -23,7 +23,7 @@ module = Module(u'base', {
     u'null': null,
     u'true': true,
     u'false': false,
-    u'path': Path.interface,
+    u'path': pathobj.Path.interface,
 }, frozen=True)
 
 for name, value in operators.by_symbol.iteritems():
@@ -150,6 +150,17 @@ def decode_utf8(value):
 @builtin
 def time_(argv):
     return Float(time.time())
+
+@builtin
+@signature()
+def getcwd():
+    return pathobj.getcwd()
+
+@builtin
+@signature(Object)
+def chdir(obj):
+    os.chdir(pathobj.os_path_string(obj).encode('utf-8'))
+    return null
 
 # Module namespace.
 builtin_modules = {}

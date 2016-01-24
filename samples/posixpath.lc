@@ -5,7 +5,7 @@ print(test.basename)
 
 
 # Path objects are mutable, to let you mangle them as you like.
-test_c = test.copy()
+test_c = path(test)
 test.basename = test.basename ++ ".waldo"
 test.label = "leverlanguage.com"
 test.is_absolute = true

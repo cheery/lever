@@ -16,15 +16,17 @@ by_symbol = {
     u'+expr': pos,
 }
 
-def arithmetic_multimethod(sym, operation, flo=False):
-    operation = specialize.argtype(0, 1)(operation)
-    method = Multimethod(2)
-    @Builtin
+def coerce_by_default(method):
     def default(argv):
         args = coerce.call(argv)
         assert isinstance(args, List)
         return method.call_suppressed(args.contents)
-    method.default = default
+    method.default = Builtin(default)
+
+def arithmetic_multimethod(sym, operation, flo=False):
+    operation = specialize.argtype(0, 1)(operation)
+    method = Multimethod(2)
+    coerce_by_default(method)
     @method.multimethod_s(Integer, Integer)
     def _(a, b):
         return Integer(operation(a.value, b.value))
@@ -38,7 +40,6 @@ def arithmetic_multimethod(sym, operation, flo=False):
 add  = arithmetic_multimethod(u'+',   (lambda a, b: a + b), flo=True)
 sub  = arithmetic_multimethod(u'-',   (lambda a, b: a - b), flo=True)
 mul  = arithmetic_multimethod(u'*',   (lambda a, b: a * b), flo=True)
-div  = arithmetic_multimethod(u'/',   (lambda a, b: a / b), flo=True) # TODO: should provide proper division instead of copying python behavior.
 or_  = arithmetic_multimethod(u'|',   (lambda a, b: a | b))
 mod  = arithmetic_multimethod(u'%',   (lambda a, b: a % b))
 and_ = arithmetic_multimethod(u'&',   (lambda a, b: a & b))
@@ -48,6 +49,20 @@ shr  = arithmetic_multimethod(u'>>',  (lambda a, b: a >> b))
 min_ = arithmetic_multimethod(u'min', (lambda a, b: min(a, b)), flo=True)
 max_ = arithmetic_multimethod(u'max', (lambda a, b: max(a, b)), flo=True)
 
+# You get a float if you divide.
+div  = by_symbol[u'/'] = Multimethod(2)
+coerce_by_default(div)
+
+@div.multimethod_s(Integer, Integer)
+def _(a, b):
+    return Float(float(a.value) / float(b.value))
+
+@div.multimethod_s(Float, Float)
+def _(a, b):
+    return Float(a.number / b.number)
+
+# Binary coercion is used in lever arithmetic to turn left and right side into
+# items that can be calculated with.
 @coerce.multimethod_s(Boolean, Boolean)
 def _(a, b):
     return List([Integer(int(a.flag)), Integer(int(b.flag))])

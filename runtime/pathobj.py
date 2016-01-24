@@ -1,4 +1,5 @@
 from space import *
+import os
 import sys
 import operators
 
@@ -50,11 +51,6 @@ class Path(Object):
         return u"path(" + String(path_string(self, u"/")).repr() + u")"
 
 @Path.builtin_method
-@signature(Path)
-def copy(path):
-    return Path(list(path.pathseq), path.is_absolute, path.label)
-
-@Path.builtin_method
 @signature(Path, String)
 def push(path, seq):
     newpath = posix_path(seq.string)
@@ -66,20 +62,22 @@ def push(path, seq):
     pathseq_ncat(path.pathseq, newpath.pathseq)
     return null
 
+@Path.builtin_method
+@signature(Path)
+def get_os_path(path):
+    return String(os_path_string(path))
+
 @Path.instantiator
-@signature(String)
+@signature(Object)
 def _(obj):
-    return posix_path(obj.string)
+    if isinstance(obj, String):
+        return posix_path(obj.string)
+    elif isinstance(obj, Path):
+        return Path(list(obj.pathseq), obj.is_absolute, obj.label)
+    raise Error(u"path() expected string or path object.")
 
 def posix_path(string, parse_label=True):
-    pathseq = string.split(u"/")
-    head = pathseq.pop(0)
-    if head.count(u":") > 0 and parse_label:
-        label, head = head.split(u":", 1)
-    else:
-        label = u""
-    is_absolute = (head == u"" and len(pathseq) > 0)
-    return Path(pathseq_ncat([head], pathseq), is_absolute, label)
+    return parse_path(string, u"/", parse_label)
 
 def pathseq_ncat(pathseq, tail):
     if len(pathseq) > 0 and pathseq[-1] == u"":
@@ -97,8 +95,24 @@ def pathseq_ncat(pathseq, tail):
         pathseq.append(u"")
     return pathseq
 
+def os_parse_path(string):
+    return parse_path(string, os_path_separator, True)
+
 def os_path_string(path):
     return path_string(path, os_path_separator) 
+
+def getcwd():
+    return os_parse_path(os.getcwd().decode('utf-8'))
+
+def parse_path(string, path_separator, parse_label):
+    pathseq = string.split(path_separator)
+    head = pathseq.pop(0)
+    if head.count(u":") > 0 and parse_label:
+        label, head = head.split(u":", 1)
+    else:
+        label = u""
+    is_absolute = (head == u"" and len(pathseq) > 0)
+    return Path(pathseq_ncat([head], pathseq), is_absolute, label)
 
 def path_string(path, path_separator):
     if isinstance(path, String):
@@ -130,3 +144,4 @@ def path_op_concat(a, b):
         return Path(list(b.pathseq), b.is_absolute, b.label)
     pathseq = pathseq_ncat(list(a.pathseq), b.pathseq)
     return Path(pathseq, a.is_absolute, a.label)
+
