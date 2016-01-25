@@ -7,6 +7,7 @@ import os
 import stdlib
 import time
 import operators
+import vectormath
 
 # The base environment
 module = Module(u'base', {
@@ -27,6 +28,9 @@ module = Module(u'base', {
 }, frozen=True)
 
 for name, value in operators.by_symbol.iteritems():
+    module.setattr_force(name, value)
+
+for name, value in vectormath.by_symbol.iteritems():
     module.setattr_force(name, value)
 
 def builtin(fn):

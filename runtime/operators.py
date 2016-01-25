@@ -1,5 +1,6 @@
 from space import *
 
+clamp = Multimethod(3)
 coerce = Multimethod(2)
 concat = Multimethod(2)
 neg = Multimethod(1)
@@ -8,6 +9,7 @@ ne  = Multimethod(2)
 eq  = Multimethod(2)
 
 by_symbol = {
+    u'clamp': clamp,
     u'coerce': coerce,
     u'++': concat,
     u'!=': ne,

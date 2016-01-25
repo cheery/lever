@@ -1,0 +1,21 @@
+vector = vec3(0.1, 0.2, 0.3)
+
+print(vector)
+print(vector.x)
+print(vector.y)
+print(vector.z)
+
+print(left + forward)
+print(left - forward)
+print(left * 0.1)
+print(0.1 * left)
+print(left / 0.1)
+print(0.1 / vec3(1.0, 2.0, 3.0))
+
+print(clamp(1.9, 0.4, 0.7))
+print(random())
+print(random_circle())
+print(random_sphere())
+
+# There is also quaternion and matrix arithmetic facilities in place.
+# I haven't yet documented them out.

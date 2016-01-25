@@ -1,0 +1,490 @@
+from math import sqrt, sin, cos, tan, pi
+from rpython.rlib.rrandom import Random
+from space import *
+import operators
+import time
+
+length = Multimethod(1)
+#distance = Multimethod(2)
+dot = Multimethod(2)
+cross = Multimethod(2)
+normalize = Multimethod(1)
+#reflect = Multimethod(2)
+#refract = Multimethod(3)
+
+class Vec3(Object):
+    __slots__ = ['x', 'y', 'z']
+    def __init__(self, x, y, z):
+        self.x = x
+        self.y = y
+        self.z = z
+
+    def getattr(self, name):
+        if name == u"x":
+            return Float(self.x)
+        if name == u"y":
+            return Float(self.y)
+        if name == u"z":
+            return Float(self.z)
+        if name == u"length":
+            return Integer(3)
+        return Object.getattr(self, name)
+
+    def iter(self):
+        return List([Float(self.x), Float(self.y), Float(self.z)]).iter()
+
+    def repr(self):
+        return u"vec3(%f, %f, %f)" % (self.x, self.y, self.z)
+
+@Vec3.instantiator
+def _(argv):
+    if len(argv) > 3:
+        raise Error(u"Too many arguments to vec3")
+    xyz = [0.0, 0.0, 0.0]
+    for i, arg in enumerate(argv):
+        xyz[i] = to_float(arg)
+    return Vec3(xyz[0], xyz[1], xyz[2])
+
+@operators.add.multimethod_s(Vec3, Vec3)
+def _(self, other):
+    return Vec3(self.x + other.x, self.y + other.y, self.z + other.z)
+
+@operators.sub.multimethod_s(Vec3, Vec3)
+def _(self, other):
+    return Vec3(self.x - other.x, self.y - other.y, self.z - other.z)
+
+@operators.mul.multimethod_s(Vec3, Float)
+def _(self, s):
+    return Vec3(self.x * s.number, self.y * s.number, self.z * s.number)
+
+@operators.mul.multimethod_s(Float, Vec3)
+def _(s, self):
+    return Vec3(s.number * self.x, s.number * self.y, s.number * self.z)
+
+@operators.div.multimethod_s(Vec3, Float)
+def _(self, s):
+    return Vec3(self.x / s.number, self.y / s.number, self.z / s.number)
+
+@operators.div.multimethod_s(Float, Vec3)
+def _(s, self):
+    return Vec3(s.number / self.x, s.number / self.y, s.number / self.z)
+
+@length.multimethod_s(Vec3)
+def _(v):
+    x, y, z = v.x, v.y, v.z
+    return Float(sqrt(x*x + y*y + z*z))
+
+#def distance(a, b):
+#    return length(a - b)
+
+@dot.multimethod_s(Vec3, Vec3)
+def _(a, b):
+    x0, y0, z0 = a.x, a.y, a.z
+    x1, y1, z1 = b.x, b.y, b.z
+    return Float(x0*x1 + y0*y1 + z0*z1)
+
+@cross.multimethod_s(Vec3, Vec3)
+def _(a, b):
+    x0, y0, z0 = a.x, a.y, a.z
+    x1, y1, z1 = b.x, b.y, b.z
+    return Vec3(y0*z1 - z0*y1, z0*x1 - x0*z1, x0*y1 - y0*x1)
+
+@normalize.multimethod_s(Vec3)
+def _(v):
+    x, y, z = v.x, v.y, v.z
+    d = sqrt(x*x + y*y + z*z)
+    if d > 0.0:
+        return Vec3(v.x / d, v.y / d, v.z / d)
+    return v
+
+#def reflect(i, n):
+#    return i - 2.0 * dot(n, i) * n
+#
+#def refract(i, n, eta):
+#    ni = dot(n, i)
+#    k = 1.0 - eta * eta * (1.0 - ni*ni)
+#    return 0.0 if k < 0.0 else eta * i - (eta * ni + sqrt(k)) * n
+
+class Quat(Object):
+    __slots__ = ['x', 'y', 'z', 'w']
+    def __init__(self, x, y, z, w):
+        self.x = x
+        self.y = y
+        self.z = z
+        self.w = w
+
+    def getattr(self, name):
+        if name == u"x":
+            return Float(self.x)
+        if name == u"y":
+            return Float(self.y)
+        if name == u"z":
+            return Float(self.z)
+        if name == u"w":
+            return Float(self.w)
+        if name == u"length":
+            return Integer(4)
+        return Object.getattr(self, name)
+
+    def iter(self):
+        return List([Float(self.x), Float(self.y), Float(self.z), Float(self.w)]).iter()
+
+@Quat.instantiator
+def _(argv):
+    if len(argv) > 4:
+        raise Error(u"Too many arguments to quat")
+    xyz = [0.0, 0.0, 0.0, 1.0]
+    for i, arg in enumerate(argv):
+        xyz[i] = to_float(arg)
+    return Quat(xyz[0], xyz[1], xyz[2], xyz[3])
+
+@Quat.builtin_method
+@signature(Quat)
+def invert(self):
+    dot = sqrt(self.x*self.x + self.y*self.y + self.z*self.z + self.w*self.w)
+    invDot = 1.0 / dot if dot > 0.0 else 0.0
+    return Quat(-self.x*invDot, -self.y*invDot, -self.z*invDot, self.w*invDot)
+
+@operators.neg.multimethod_s(Quat)
+def _(self):
+    return Quat(-self.x, -self.y, -self.z, self.w)
+
+@operators.pos.multimethod_s(Quat)
+def _(self):
+    return self
+
+@operators.mul.multimethod_s(Quat, Quat)
+def _(self, other):
+    ax, ay, az, aw = self.x, self.y, self.z, self.w
+    bx, by, bz, bw = other.x, other.y, other.z, other.w
+    return Quat(
+        ax * bw + aw * bx + ay * bz - az * by,
+        ay * bw + aw * by + az * bx - ax * bz,
+        az * bw + aw * bz + ax * by - ay * bx,
+        aw * bw - ax * bx - ay * by - az * bz)
+
+@operators.mul.multimethod_s(Quat, Vec3)
+def _(self, other):
+    qx, qy, qz, qw = self.x, self.y, self.z, self.w
+    x, y, z = other.x, other.y, other.z
+    ix = qw * x + qy * z - qz * y
+    iy = qw * y + qz * x - qx * z
+    iz = qw * z + qx * y - qy * x
+    iw = -qx * x - qy * y - qz * z
+    return Vec3(
+        ix * qw + iw * -qx + iy * -qz - iz * -qy,
+        iy * qw + iw * -qy + iz * -qx - ix * -qz,
+        iz * qw + iw * -qz + ix * -qy - iy * -qx)
+
+@Builtin
+@signature(Vec3, Float)
+def axisangle(v, angle):
+    angle = to_float(angle)
+    x, y, z = v.x, v.y, v.z
+    s = sin(angle * 0.5)
+    return Quat(s*x, s*y, s*z, cos(angle * 0.5))
+
+class Mat4(Object):
+    __slots__ = ['values']
+    def __init__(self, values):
+        self.values = list(values)
+
+    def getattr(self, name):
+        if name == u"length":
+            return Integer(16)
+        return Object.getattr(self, name)
+
+    def iter(self):
+        seq = []
+        for x in self.values:
+            seq.append(Float(x))
+        return List(seq).iter()
+
+    #def __repr__(self):
+    #    return "mat4({})".format(self.values)
+
+@Mat4.instantiator
+def _(argv):
+    if len(argv) > 16:
+        raise Error(u"Too many arguments to mat4")
+    mat = [1.0, 0.0, 0.0, 0.0,
+           0.0, 1.0, 0.0, 0.0,
+           0.0, 0.0, 1.0, 0.0,
+           0.0, 0.0, 0.0, 1.0]
+    for i, arg in enumerate(argv):
+        mat[i] = to_float(arg)
+    return Mat4(mat)
+
+@Mat4.builtin_method
+@signature(Mat4)
+def transpose(self):
+    a = self.values
+    return Mat4([a[0], a[4], a[8], a[12], a[1], a[5], a[9], a[13], a[2], a[6], a[10], a[14], a[3], a[7], a[11], a[15]])
+
+@Mat4.builtin_method
+@signature(Mat4)
+def invert(self):
+    a = self.values
+    a00 = a[0]; a01 = a[1]; a02 = a[2]; a03 = a[3];
+    a10 = a[4]; a11 = a[5]; a12 = a[6]; a13 = a[7];
+    a20 = a[8]; a21 = a[9]; a22 = a[10]; a23 = a[11];
+    a30 = a[12]; a31 = a[13]; a32 = a[14]; a33 = a[15];
+
+    b00 = a00 * a11 - a01 * a10
+    b01 = a00 * a12 - a02 * a10
+    b02 = a00 * a13 - a03 * a10
+    b03 = a01 * a12 - a02 * a11
+    b04 = a01 * a13 - a03 * a11
+    b05 = a02 * a13 - a03 * a12
+    b06 = a20 * a31 - a21 * a30
+    b07 = a20 * a32 - a22 * a30
+    b08 = a20 * a33 - a23 * a30
+    b09 = a21 * a32 - a22 * a31
+    b10 = a21 * a33 - a23 * a31
+    b11 = a22 * a33 - a23 * a32
+    det = b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06
+    if det == 0.0:
+        return None
+    det = 1.0 / det
+
+    return Mat4([
+        (a11 * b11 - a12 * b10 + a13 * b09) * det,
+        (a02 * b10 - a01 * b11 - a03 * b09) * det,
+        (a31 * b05 - a32 * b04 + a33 * b03) * det,
+        (a22 * b04 - a21 * b05 - a23 * b03) * det,
+        (a12 * b08 - a10 * b11 - a13 * b07) * det,
+        (a00 * b11 - a02 * b08 + a03 * b07) * det,
+        (a32 * b02 - a30 * b05 - a33 * b01) * det,
+        (a20 * b05 - a22 * b02 + a23 * b01) * det,
+        (a10 * b10 - a11 * b08 + a13 * b06) * det,
+        (a01 * b08 - a00 * b10 - a03 * b06) * det,
+        (a30 * b04 - a31 * b02 + a33 * b00) * det,
+        (a21 * b02 - a20 * b04 - a23 * b00) * det,
+        (a11 * b07 - a10 * b09 - a12 * b06) * det,
+        (a00 * b09 - a01 * b07 + a02 * b06) * det,
+        (a31 * b01 - a30 * b03 - a32 * b00) * det,
+        (a20 * b03 - a21 * b01 + a22 * b00) * det])
+
+@Mat4.builtin_method
+@signature(Mat4)
+def adjoint(self):
+    a = self.values
+    a00 = a[0]; a01 = a[1]; a02 = a[2]; a03 = a[3];
+    a10 = a[4]; a11 = a[5]; a12 = a[6]; a13 = a[7];
+    a20 = a[8]; a21 = a[9]; a22 = a[10]; a23 = a[11];
+    a30 = a[12]; a31 = a[13]; a32 = a[14]; a33 = a[15];
+    return Mat4([
+         (a11 * (a22 * a33 - a23 * a32) - a21 * (a12 * a33 - a13 * a32) + a31 * (a12 * a23 - a13 * a22)),
+        -(a01 * (a22 * a33 - a23 * a32) - a21 * (a02 * a33 - a03 * a32) + a31 * (a02 * a23 - a03 * a22)),
+         (a01 * (a12 * a33 - a13 * a32) - a11 * (a02 * a33 - a03 * a32) + a31 * (a02 * a13 - a03 * a12)),
+        -(a01 * (a12 * a23 - a13 * a22) - a11 * (a02 * a23 - a03 * a22) + a21 * (a02 * a13 - a03 * a12)),
+        -(a10 * (a22 * a33 - a23 * a32) - a20 * (a12 * a33 - a13 * a32) + a30 * (a12 * a23 - a13 * a22)),
+         (a00 * (a22 * a33 - a23 * a32) - a20 * (a02 * a33 - a03 * a32) + a30 * (a02 * a23 - a03 * a22)),
+        -(a00 * (a12 * a33 - a13 * a32) - a10 * (a02 * a33 - a03 * a32) + a30 * (a02 * a13 - a03 * a12)),
+         (a00 * (a12 * a23 - a13 * a22) - a10 * (a02 * a23 - a03 * a22) + a20 * (a02 * a13 - a03 * a12)),
+         (a10 * (a21 * a33 - a23 * a31) - a20 * (a11 * a33 - a13 * a31) + a30 * (a11 * a23 - a13 * a21)),
+        -(a00 * (a21 * a33 - a23 * a31) - a20 * (a01 * a33 - a03 * a31) + a30 * (a01 * a23 - a03 * a21)),
+         (a00 * (a11 * a33 - a13 * a31) - a10 * (a01 * a33 - a03 * a31) + a30 * (a01 * a13 - a03 * a11)),
+        -(a00 * (a11 * a23 - a13 * a21) - a10 * (a01 * a23 - a03 * a21) + a20 * (a01 * a13 - a03 * a11)),
+        -(a10 * (a21 * a32 - a22 * a31) - a20 * (a11 * a32 - a12 * a31) + a30 * (a11 * a22 - a12 * a21)),
+         (a00 * (a21 * a32 - a22 * a31) - a20 * (a01 * a32 - a02 * a31) + a30 * (a01 * a22 - a02 * a21)),
+        -(a00 * (a11 * a32 - a12 * a31) - a10 * (a01 * a32 - a02 * a31) + a30 * (a01 * a12 - a02 * a11)),
+         (a00 * (a11 * a22 - a12 * a21) - a10 * (a01 * a22 - a02 * a21) + a20 * (a01 * a12 - a02 * a11))])
+
+@Mat4.builtin_method
+@signature(Mat4)
+def determinant(self):
+    a = self.values
+    a00 = a[0]; a01 = a[1]; a02 = a[2]; a03 = a[3];
+    a10 = a[4]; a11 = a[5]; a12 = a[6]; a13 = a[7];
+    a20 = a[8]; a21 = a[9]; a22 = a[10]; a23 = a[11];
+    a30 = a[12]; a31 = a[13]; a32 = a[14]; a33 = a[15];
+    b00 = a00 * a11 - a01 * a10
+    b01 = a00 * a12 - a02 * a10
+    b02 = a00 * a13 - a03 * a10
+    b03 = a01 * a12 - a02 * a11
+    b04 = a01 * a13 - a03 * a11
+    b05 = a02 * a13 - a03 * a12
+    b06 = a20 * a31 - a21 * a30
+    b07 = a20 * a32 - a22 * a30
+    b08 = a20 * a33 - a23 * a30
+    b09 = a21 * a32 - a22 * a31
+    b10 = a21 * a33 - a23 * a31
+    b11 = a22 * a33 - a23 * a32
+    return Float(b00 * b11 - b01 * b10 + b02 * b09 + b03 * b08 - b04 * b07 + b05 * b06)
+
+@Mat4.builtin_method
+@signature(Mat4, Vec3)
+def rotate_vec3(self, v):
+    a = self.values
+    x, y, z = v.x, v.y, v.z
+    return Vec3(
+        a[0]*x + a[4]*y + a[8]*z,
+        a[1]*x + a[5]*y + a[9]*z,
+        a[2]*x + a[6]*y + a[10]*z)
+
+@operators.mul.multimethod_s(Mat4, Vec3)
+def _(self, other):
+    a = self.values
+    a00 = a[0]; a01 = a[1]; a02 = a[2]; a03 = a[3];
+    a10 = a[4]; a11 = a[5]; a12 = a[6]; a13 = a[7];
+    a20 = a[8]; a21 = a[9]; a22 = a[10]; a23 = a[11];
+    a30 = a[12]; a31 = a[13]; a32 = a[14]; a33 = a[15];
+    x, y, z = other.x, other.y, other.z
+    return Vec3(
+        a00*x + a10*y + a20*z + a30,
+        a01*x + a11*y + a21*z + a31,
+        a02*x + a12*y + a22*z + a32)
+
+@operators.mul.multimethod_s(Mat4, Mat4)
+def _(self, other):
+    a = self.values
+    a00 = a[0]; a01 = a[1]; a02 = a[2]; a03 = a[3];
+    a10 = a[4]; a11 = a[5]; a12 = a[6]; a13 = a[7];
+    a20 = a[8]; a21 = a[9]; a22 = a[10]; a23 = a[11];
+    a30 = a[12]; a31 = a[13]; a32 = a[14]; a33 = a[15];
+    b = other.values
+    out = [0.0] * 16
+    b0  = b[0]; b1 = b[1]; b2 = b[2]; b3 = b[3];
+    out[0] = b0*a00 + b1*a10 + b2*a20 + b3*a30
+    out[1] = b0*a01 + b1*a11 + b2*a21 + b3*a31
+    out[2] = b0*a02 + b1*a12 + b2*a22 + b3*a32
+    out[3] = b0*a03 + b1*a13 + b2*a23 + b3*a33
+
+    b0 = b[4]; b1 = b[5]; b2 = b[6]; b3 = b[7];
+    out[4] = b0*a00 + b1*a10 + b2*a20 + b3*a30
+    out[5] = b0*a01 + b1*a11 + b2*a21 + b3*a31
+    out[6] = b0*a02 + b1*a12 + b2*a22 + b3*a32
+    out[7] = b0*a03 + b1*a13 + b2*a23 + b3*a33
+
+    b0 = b[8]; b1 = b[9]; b2 = b[10]; b3 = b[11];
+    out[8] = b0*a00 + b1*a10 + b2*a20 + b3*a30
+    out[9] = b0*a01 + b1*a11 + b2*a21 + b3*a31
+    out[10] = b0*a02 + b1*a12 + b2*a22 + b3*a32
+    out[11] = b0*a03 + b1*a13 + b2*a23 + b3*a33
+
+    b0 = b[12]; b1 = b[13]; b2 = b[14]; b3 = b[15];
+    out[12] = b0*a00 + b1*a10 + b2*a20 + b3*a30
+    out[13] = b0*a01 + b1*a11 + b2*a21 + b3*a31
+    out[14] = b0*a02 + b1*a12 + b2*a22 + b3*a32
+    out[15] = b0*a03 + b1*a13 + b2*a23 + b3*a33
+    return Mat4(out)
+
+@Mat4.builtin_method
+@signature(Mat4, Vec3)
+def translate(self, v):
+    x, y, z = v.x, v.y, v.z
+    a = self.values
+    return Mat4(a[0:12] + [
+        a[0] * x + a[4] * y + a[8] * z + a[12],
+        a[1] * x + a[5] * y + a[9] * z + a[13],
+        a[2] * x + a[6] * y + a[10] * z + a[14],
+        a[3] * x + a[7] * y + a[11] * z + a[15]])
+
+@Mat4.builtin_method
+@signature(Mat4, Vec3)
+def scale(self, v):
+    x, y, z = v.x, v.y, v.z
+    a = self.values
+    return Mat4([a[0]*x, a[1]*x, a[2]*x, a[3]*x, a[4]*y, a[5]*y, a[6]*y, a[7]*y, a[8]*z, a[9]*z, a[10]*z, a[11]*z, a[12], a[13], a[14], a[15]])
+
+@operators.clamp.multimethod_s(Float, Float, Float)
+def clamp(x, low, high):
+    return Float(min(max(x.number, low.number), high.number))
+
+@operators.clamp.multimethod_s(Integer, Integer, Integer)
+def clamp(x, low, high):
+    return Integer(min(max(x.value, low.value), high.value))
+
+# This may move into stdlib module eventually, possibly.
+random = Random()
+
+def init_random():
+    key = []
+    n = int(time.time())
+    one = 1
+    two = 2
+    thirtytwo = 32
+    masklower = pow(2, 32) - 1
+    while n > 0:
+        key.append(n & masklower)
+        n >>= 32
+    random.init_by_array(key)
+
+@Builtin
+@signature()
+def random_():
+    return Float(random.random())
+
+@Builtin
+@signature()
+def random_circle():
+    r = random.random() * 2.0 * pi
+    return Vec3(cos(r), sin(r), 0.0)
+
+@Builtin
+@signature()
+def random_sphere():
+    r = random.random() * 2.0 * pi
+    z = (random.random() * 2.0) - 1.0
+    s = sqrt(1.0 - z*z)
+    return Vec3(cos(r) * s, sin(r) * s, z)
+
+# These may also belong somewhere else, but they start here.
+@Builtin
+@signature(Float)
+def sin_(f):
+    return Float(sin(f.number))
+
+@Builtin
+@signature(Float)
+def cos_(f):
+    return Float(cos(f.number))
+
+@Builtin
+@signature(Float)
+def tan_(f):
+    return Float(tan(f.number))
+
+@Builtin
+@signature(Float)
+def sqrt_(f):
+    return Float(sqrt(f.number))
+
+by_symbol = {
+    u"vec3": Vec3.interface,
+    u"quat": Quat.interface,
+    u"mat4": Mat4.interface,
+    u"left":     Vec3(-1.0, 0.0, 0.0),
+    u"right":    Vec3(+1.0, 0.0, 0.0),
+    u"up":       Vec3( 0.0,+1.0, 0.0),
+    u"down":     Vec3( 0.0,-1.0, 0.0),
+    u"forward":  Vec3( 0.0, 0.0,+1.0),
+    u"backward": Vec3( 0.0, 0.0,-1.0),
+    u"axisangle": axisangle,
+    u"random":        random_,
+    u"random_circle": random_circle,
+    u"random_sphere": random_sphere,
+    u"length":    length,
+    u"dot":       dot,
+    u"cross":     cross,
+    u"normalize": normalize,
+    u"sin":       sin_,
+    u"cos":       cos_,
+    u"tan":       tan_,
+    u"sqrt":      sqrt_,
+    u"pi":        Float(pi),
+}
+
+def to_float(obj):
+    if isinstance(obj, Float):
+        return obj.number
+    elif isinstance(obj, Integer):
+        return float(obj.value)
+    elif isinstance(obj, Boolean):
+        if is_true(obj):
+            return 1.0
+        else:
+            return 0.0
+    else:
+        raise Error(u"expected float value")

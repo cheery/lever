@@ -3,6 +3,7 @@ from rpython.rlib.objectmodel import we_are_translated, keepalive_until_here
 #from rpython.rlib import rgc
 from stdlib import api # XXX: perhaps give every module an init?
                        # Probably better way is to move the path resolution from api into here.
+import vectormath
 from util import STDIN, STDOUT, STDERR, read_file, write
 from continuations import Continuation
 import base
@@ -34,6 +35,7 @@ def new_entry_point(config):
     def entry_point(raw_argv):
         g.ec = ec = ExecutionContext(config)
         api.init(raw_argv)
+        vectormath.init_random()
 
         argv = [normal_startup]
         for arg in raw_argv[1:]:
