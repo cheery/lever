@@ -5,24 +5,12 @@ from dictionary import Dict
 from listobject import List
 from module import Module
 from multimethod import Multimethod
-from numbers import Float, Integer, Boolean
+from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean
 from string import String
 from uint8array import Uint8Array, to_uint8array
 from exnihilo import Exnihilo
 from customobject import CustomObject
 from rpython.rlib import jit
-
-true = Boolean(True)
-false = Boolean(False)
-
-def is_true(flag):
-    return flag is not null and flag is not false
-
-def is_false(flag):
-    return flag is null or flag is false
-
-def boolean(cond):
-    return true if cond else false
 
 @specialize.arg(1, 2)
 def argument(argv, index, cls):

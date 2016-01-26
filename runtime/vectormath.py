@@ -475,16 +475,3 @@ by_symbol = {
     u"sqrt":      sqrt_,
     u"pi":        Float(pi),
 }
-
-def to_float(obj):
-    if isinstance(obj, Float):
-        return obj.number
-    elif isinstance(obj, Integer):
-        return float(obj.value)
-    elif isinstance(obj, Boolean):
-        if is_true(obj):
-            return 1.0
-        else:
-            return 0.0
-    else:
-        raise Error(u"expected float value")

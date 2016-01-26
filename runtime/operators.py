@@ -143,6 +143,14 @@ def _(a):
 def _(a):
     return Integer(+a.value)
 
+@neg.multimethod_s(Float)
+def _(a):
+    return Float(-a.number)
+
+@pos.multimethod_s(Float)
+def _(a):
+    return Float(+a.number)
+
 @concat.multimethod_s(String, String)
 def _(a, b):
     return String(a.string + b.string)

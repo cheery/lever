@@ -1,6 +1,6 @@
 from rpython.rlib import jit_libffi, clibffi, unroll
 from rpython.rtyper.lltypesystem import rffi, lltype
-from space import Error, Object, Integer, Float
+from space import Error, Object, Integer, Float, to_float, to_int
 # Simple, platform independent concepts are put up
 # here, so they won't take space elsewhere.
 
@@ -57,12 +57,10 @@ class Signed(Type):
             assert False, "undefined ffi type"
 
     def store(self, offset, value):
-        if not isinstance(value, Integer):
-            raise Error(u"cannot transform to primtype %s" % value.repr())
         for rtype in signed_types:
             if self.size == rffi.sizeof(rtype):
                 pnt = rffi.cast(rffi.CArrayPtr(rtype), offset)
-                pnt[0] = rffi.cast(rtype, value.value)
+                pnt[0] = rffi.cast(rtype, to_int(value))
                 break
         else:
             assert False, "undefined ffi type"
@@ -99,12 +97,10 @@ class Unsigned(Type):
             assert False, "undefined ffi type"
 
     def store(self, offset, value):
-        if not isinstance(value, Integer):
-            raise Error(u"cannot transform to primtype %s" % value.repr())
         for rtype in unsigned_types:
             if self.size == rffi.sizeof(rtype):
                 pnt = rffi.cast(rffi.CArrayPtr(rtype), offset)
-                pnt[0] = rffi.cast(rtype, value.value)
+                pnt[0] = rffi.cast(rtype, to_int(value))
                 break
         else:
             assert False, "undefined ffi type"
@@ -140,12 +136,11 @@ class Floating(Type):
             assert False, "undefined ffi type"
 
     def store(self, offset, value):
-        if not isinstance(value, Float):
-            raise Error(u"cannot transform to flotype %s" % value.repr())
+        number = to_float(value)
         for rtype in floating_types:
             if self.size == rffi.sizeof(rtype):
                 pnt = rffi.cast(rffi.CArrayPtr(rtype), offset)
-                pnt[0] = rffi.cast(rtype, value.number)
+                pnt[0] = rffi.cast(rtype, number)
                 break
         else:
             assert False, "undefined ffi type"
