@@ -26,10 +26,11 @@ class Parser(object):
         while stream.filled:
             if line < stream.first.start.lno:
                 while stream.first.start.col < indent and 'dedent' in parser.expect:
-                        start = stream.first.start
-                        parser.step(Literal(start, start, 'dedent', ''))
-                        indent = indent_stack.pop()
-                assert stream.first.start.col >= indent
+                    start = stream.first.start
+                    parser.step(Literal(start, start, 'dedent', ''))
+                    indent = indent_stack.pop()
+                if stream.first.start.col < indent:
+                    raise Exception("Uneven indent at line %s" % stream.first.start)
                 if stream.first.start.col == indent and 'newline' in parser.expect:
                     start = stream.first.start
                     parser.step(Literal(start, start, 'newline', ''))

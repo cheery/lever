@@ -139,6 +139,49 @@ def _(argv):
     return Quat(xyz[0], xyz[1], xyz[2], xyz[3])
 
 @Quat.builtin_method
+def to_mat4(argv):
+    if len(argv) < 1:
+        raise Error(u"Too few arguments")
+    q = argv[0]
+    if not isinstance(q, Quat):
+        raise Error(u"Expected quaternion")
+    if len(argv) > 1:
+        p = argv[1]
+        if not isinstance(p, Vec3):
+            raise Error(u"Expected vec3 as argument")
+        x, y, z = p.x, p.y, p.z
+    else:
+        x = y = z = 0.0
+    sqx = q.x*q.x
+    sqy = q.y*q.y
+    sqz = q.z*q.z
+    sqw = q.w*q.w
+    # inverse only required if quaternion not normalized
+    invs = 1 / (sqx + sqy + sqz + sqw)
+    m00 = ( sqx - sqy - sqz + sqw)*invs
+    m11 = (-sqx + sqy - sqz + sqw)*invs
+    m22 = (-sqx - sqy + sqz + sqw)*invs
+    tmp1 = q.x*q.y
+    tmp2 = q.z*q.w
+    m10 = 2.0 * (tmp1 + tmp2)*invs
+    m01 = 2.0 * (tmp1 - tmp2)*invs
+    tmp1 = q.x*q.z
+    tmp2 = q.y*q.w
+    m20 = 2.0 * (tmp1 - tmp2)*invs
+    m02 = 2.0 * (tmp1 + tmp2)*invs
+    tmp1 = q.y*q.z
+    tmp2 = q.x*q.w
+    m21 = 2.0 * (tmp1 + tmp2)*invs
+    m12 = 2.0 * (tmp1 - tmp2)*invs
+    return Mat4([
+        m00, m10, m20, 0.0,
+        m01, m11, m21, 0.0,
+        m02, m12, m22, 0.0,
+        x,   y,   z,   1.0])
+    
+
+
+@Quat.builtin_method
 @signature(Quat)
 def invert(self):
     dot = sqrt(self.x*self.x + self.y*self.y + self.z*self.z + self.w*self.w)
@@ -460,6 +503,22 @@ def tan_(f):
 def sqrt_(f):
     return Float(sqrt(f.number))
 
+@Builtin
+@signature(Object, Object, Object, Object)
+def projection_matrix(fovy, aspect, znear, zfar):
+    fovy = to_float(fovy)
+    aspect = to_float(aspect)
+    znear = to_float(znear)
+    zfar = to_float(zfar)
+    f = 1/tan(fovy/2.0)
+    zd = znear-zfar
+    return Mat4([
+        f/aspect, 0.0,  0.0,                 0.0,
+        0.0,        f,  0.0,                 0.0,
+        0.0,      0.0,  (zfar+znear) / zd,   -1.0,
+        0.0,      0.0,  (2*zfar*znear) / zd, 0.0
+    ])
+
 by_symbol = {
     u"vec3": Vec3.interface,
     u"quat": Quat.interface,
@@ -483,4 +542,5 @@ by_symbol = {
     u"tan":       tan_,
     u"sqrt":      sqrt_,
     u"pi":        Float(pi),
+    u"projection_matrix": projection_matrix,
 }

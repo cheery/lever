@@ -184,7 +184,7 @@ def import_(name):
     app_dir = os.environ.get('LEVER_PATH')
     if app_dir is None:
         app_dir = ''
-    path_name = os.path.join(app_dir, "stdlib").decode('utf-8') + u"/" + name.string
+    path_name = os.path.join(app_dir, "stdlib").decode('utf-8') + u"/" + name.string + u".lc"
     this = Module(name.string, {}, extends=module) # base.module
     module_resolution.load_module(path_name.encode('utf-8'), this)
     stdlib_modules[name.string] = this
