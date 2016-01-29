@@ -10,10 +10,13 @@ import base
 import space
 import time
 import module_resolution
+import os
+import pathobj
 
 class ExecutionContext(object):
-    def __init__(self, config):
+    def __init__(self, config, lever_path):
         self.config = config
+        self.lever_path = lever_path
         self.sthread = None                 # Stacklets
         self.queue = []                     # Event queue.
         self.sleepers = []                  # Holds the sleeping greenlets.
@@ -31,10 +34,17 @@ g = GlobalState()
 
 inf = float("inf")
 
-def new_entry_point(config):
+def new_entry_point(config, default_lever_path=u''):
     def entry_point(raw_argv):
-        g.ec = ec = ExecutionContext(config)
-        api.init(raw_argv)
+        lever_path = os.environ.get('LEVER_PATH')
+        if lever_path is None:
+            lever_path = pathobj.parse(default_lever_path)
+        else:
+            lever_path = pathobj.os_parse(lever_path.decode('utf-8'))
+        lever_path = pathobj.concat(pathobj.getcwd(), lever_path)
+        
+        g.ec = ec = ExecutionContext(config, lever_path)
+        api.init(lever_path)
         vectormath.init_random()
 
         argv = [normal_startup]
@@ -72,10 +82,12 @@ def new_entry_point(config):
 
 @space.Builtin
 def normal_startup(argv):
-    module_src = argv[0]
-    assert isinstance(module_src, space.String)
+    if len(argv) > 0:
+        main_script = argv[0]
+    else:
+        main_script = pathobj.concat(get_ec().lever_path, pathobj.parse(u"app/main.lc"))
     module = space.Module(u'main', {}, extends=base.module)
-    result = module_resolution.load_module(module_src.string.encode('utf-8'), module)
+    result = module_resolution.start(main_script, module)
     try:
         main_func = module.getattr(u"main")
     except space.Error as error:

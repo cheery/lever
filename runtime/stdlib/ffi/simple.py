@@ -32,8 +32,8 @@ def sizeof_a(tp, n):
     else:
         return tp.size * n
 
-signed_types = unroll.unrolling_iterable([rffi.LONG, rffi.INT, rffi.SHORT, rffi.CHAR])
-unsigned_types = unroll.unrolling_iterable([rffi.ULONG, rffi.UINT, rffi.USHORT, rffi.UCHAR])
+signed_types = unroll.unrolling_iterable([rffi.LONG, rffi.INT, rffi.SHORT, rffi.CHAR, rffi.LONGLONG])
+unsigned_types = unroll.unrolling_iterable([rffi.ULONG, rffi.UINT, rffi.USHORT, rffi.UCHAR, rffi.ULONGLONG])
 floating_types = unroll.unrolling_iterable([rffi.FLOAT, rffi.DOUBLE])
 
 class Signed(Type):

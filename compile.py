@@ -28,6 +28,7 @@ def compile_file(cb_path, src_path, debug):
             block = func[-1]
             pc = 0
             while pc < len(block):
+                print block
                 opname, has_result, pattern, variadic = optable.dec[block[pc] >> 8]
                 px = pc + 1
                 pc = pc + 1 + (block[pc] & 255)

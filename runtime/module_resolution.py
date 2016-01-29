@@ -3,6 +3,33 @@ import evaluator
 import os
 import space
 import sys
+import main
+import pathobj
+
+def start(main_script, main_module):
+    assert isinstance(main_script, space.String)
+    script_dir = pathobj.concat(pathobj.getcwd(), pathobj.os_parse(main_script.string))
+    name = script_dir.getattr(u"basename")
+    #This is bit of work in progress.
+    if isinstance(name, space.String) and name.string.endswith(".lc"):
+        L = len(name.string) - 3
+        if L >= 0:
+            name = space.String(name.string[0:L])
+    main_module.setattr(u"name", name)
+    script_dir.setattr(u"basename", space.String(u""))
+    main_module.setattr(u"dir", script_dir)
+    #ec = main.get_ec()
+    s = main_script.string.encode('utf-8')
+    return load_module(s, main_module)
+
+# plans: implement import -object here.
+#        have import.scope -object that takes care about how import can behave.
+#        allow modules derive or create new scopes and isolate themselves.
+# import resolution:
+#  local/script.lc
+#  scope/
+#  $LEVER_PATH/lib/
+#  global
 
 def load_module(src_path, module):
     cb_path = src_path + '.cb'
@@ -23,7 +50,7 @@ def load_module(src_path, module):
             cb_present = not cb_mtime < src_stat.st_mtime
         if not cb_present:
             compile_module(cb_path, src_path)
-    program = evaluator.loader.from_object(bon.open_file(cb_path))
+    program = evaluator.loader.from_object(bon.open_file(pathobj.os_parse(cb_path.decode('utf-8'))))
     return program.call([module])
 
 if sys.platform != "win32":

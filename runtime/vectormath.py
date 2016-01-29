@@ -145,9 +145,17 @@ def invert(self):
     invDot = 1.0 / dot if dot > 0.0 else 0.0
     return Quat(-self.x*invDot, -self.y*invDot, -self.z*invDot, self.w*invDot)
 
+@operators.neg.multimethod_s(Vec3)
+def _(self):
+    return Vec3(-self.x, -self.y, -self.z)
+
 @operators.neg.multimethod_s(Quat)
 def _(self):
     return Quat(-self.x, -self.y, -self.z, self.w)
+
+@operators.pos.multimethod_s(Vec3)
+def _(self):
+    return self
 
 @operators.pos.multimethod_s(Quat)
 def _(self):
@@ -400,16 +408,17 @@ def clamp(x, low, high):
 random = Random()
 
 def init_random():
-    key = []
-    n = int(time.time())
-    one = 1
-    two = 2
-    thirtytwo = 32
-    masklower = pow(2, 32) - 1
-    while n > 0:
-        key.append(n & masklower)
-        n >>= 32
-    random.init_by_array(key)
+    pass
+    #key = []
+    #n = int(time.time())
+    #one = 1
+    #two = 2
+    #thirtytwo = 32
+    #masklower = pow(2, 32) - 1
+    #while n > 0:
+    #    key.append(n & masklower)
+    #    n >>= 32
+    #random.init_by_array(key)
 
 @Builtin
 @signature()

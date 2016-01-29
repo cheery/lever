@@ -1,14 +1,33 @@
 # By default, lever conforms to posix path convention, independent of platform.
 
-test = path("usr/person")
-print(test.basename)
+# The state machine sanity test.. These paths should match themselves .lstrip(':')
+print(path(""))
+print(path("."))
+print(path("/"))
+print(path("/a"))
+print(path("/a/"))
+print(path("/a/aa"))
+print(path("a"))
+print(path(":a"))
+print(path("a:"))
+print(path("host:/abcd"))
+print(path("a:a"))
+print(path("a/"))
+print(path("a/a"))
+print(path("//host"))
+print(path("//host/c/d"))
+print(path("://host"))
+print(path("http://host"))
 
+test = path("usr/person")
+print(test)
+print(test.basename)
 
 # Path objects are mutable, to let you mangle them as you like.
 test_c = path(test)
 test.basename = test.basename ++ ".waldo"
-test.label = "leverlanguage.com"
-test.is_absolute = true
+test.prefix.label = "leverlanguage.com"
+test.prefix.is_absolute = true
 print(test)
 
 test.push("subdirectory/blep")
@@ -17,12 +36,16 @@ test.push("..")
 print(test)
 test.push(".")
 print(test)
+test.push("../../../../../../../../")
+print(test)
 
 test = path("")
 test.basename = "hello:hello"
-test.label = "hello"
+test.prefix.label = "hello"
 print(test)
 
 print(path("/pathname/"))
 
 print(test_c)
+print(dir)
+print(name)

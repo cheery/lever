@@ -1,4 +1,5 @@
 import os
+import pathobj
 
 STDIN = 0
 STDOUT = 1
@@ -7,7 +8,7 @@ STDERR = 2
 frame_size = 4096*1024
 
 def read_file(path):
-    assert isinstance(path, str)
+    path = pathobj.os_stringify(path).encode('utf-8')
     fd = os.open(path, os.O_RDONLY, 0777)
     try:
         data = ""

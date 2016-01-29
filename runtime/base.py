@@ -1,12 +1,13 @@
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi
 from space import *
-import pathobj
 import module_resolution
-import os
-import stdlib
-import time
 import operators
+import os
+import pathobj
+import stdlib
+import sys
+import time
 import vectormath
 
 # The base environment
@@ -163,7 +164,7 @@ def getcwd():
 @builtin
 @signature(Object)
 def chdir(obj):
-    os.chdir(pathobj.os_path_string(obj).encode('utf-8'))
+    pathobj.chdir(obj)
     return null
 
 # Module namespace.
@@ -188,3 +189,8 @@ def import_(name):
     module_resolution.load_module(path_name.encode('utf-8'), this)
     stdlib_modules[name.string] = this
     return this
+
+@builtin
+@signature(Object)
+def exit(obj):
+    raise Error(u"exit(...) called, not implemented")

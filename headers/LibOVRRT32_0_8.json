@@ -158,7 +158,7 @@
     "PERF_HUD_MODE": "PerfHudMode", 
     "POSITIONAL_TRACKER_DRIVER_PRODUCT_VERSION": "1.0.14.0", 
     "PRODUCT_VERSION": 0, 
-    "PTR_SIZE": 8, 
+    "PTR_SIZE": 4, 
     "PerfHud_Count": 5, 
     "PerfHud_EnumSize": 2147483647, 
     "PerfHud_LatencyTiming": 1, 
@@ -293,6 +293,32 @@
       ], 
       "type": "struct"
     }, 
+    "GLTexture": {
+      "fields": [
+        [
+          "Texture", 
+          "Texture"
+        ], 
+        [
+          "OGL", 
+          "GLTextureData"
+        ]
+      ], 
+      "type": "union"
+    }, 
+    "GLTextureData": {
+      "fields": [
+        [
+          "Header", 
+          "TextureHeader"
+        ], 
+        [
+          "TexId", 
+          "uint"
+        ]
+      ], 
+      "type": "struct"
+    }, 
     "GraphicsLuid": {
       "fields": [
         [
@@ -311,14 +337,6 @@
         [
           "Type", 
           "int"
-        ], 
-        [
-          "pad0", 
-          {
-            "ctype": "ubyte", 
-            "length": 4, 
-            "type": "array"
-          }
         ], 
         [
           "ProductName", 
@@ -415,14 +433,6 @@
         [
           "DisplayRefreshRate", 
           "float"
-        ], 
-        [
-          "pad1", 
-          {
-            "ctype": "ubyte", 
-            "length": 4, 
-            "type": "array"
-          }
         ]
       ], 
       "type": "struct"
@@ -443,19 +453,11 @@
         ], 
         [
           "UserData", 
-          "ulong"
+          "uint"
         ], 
         [
           "ConnectionTimeoutMS", 
           "uint"
-        ], 
-        [
-          "pad0", 
-          {
-            "ctype": "ubyte", 
-            "length": 4, 
-            "type": "array"
-          }
         ]
       ], 
       "type": "struct"
@@ -505,6 +507,133 @@
       ], 
       "type": "struct"
     }, 
+    "LayerDirect": {
+      "fields": [
+        [
+          "Header", 
+          "LayerHeader"
+        ], 
+        [
+          "ColorTexture", 
+          {
+            "ctype": "SwapTextureSet*", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "Viewport", 
+          {
+            "ctype": "Recti", 
+            "length": 2, 
+            "type": "array"
+          }
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "LayerEyeFov": {
+      "fields": [
+        [
+          "Header", 
+          "LayerHeader"
+        ], 
+        [
+          "ColorTexture", 
+          {
+            "ctype": "SwapTextureSet*", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "Viewport", 
+          {
+            "ctype": "Recti", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "Fov", 
+          {
+            "ctype": "FovPort", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "RenderPose", 
+          {
+            "ctype": "Posef", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "SensorSampleTime", 
+          "double"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "LayerEyeFovDepth": {
+      "fields": [
+        [
+          "Header", 
+          "LayerHeader"
+        ], 
+        [
+          "ColorTexture", 
+          {
+            "ctype": "SwapTextureSet*", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "Viewport", 
+          {
+            "ctype": "Recti", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "Fov", 
+          {
+            "ctype": "FovPort", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "RenderPose", 
+          {
+            "ctype": "Posef", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "SensorSampleTime", 
+          "double"
+        ], 
+        [
+          "DepthTexture", 
+          {
+            "ctype": "SwapTextureSet*", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "ProjectionDesc", 
+          "TimewarpProjectionDesc"
+        ]
+      ], 
+      "type": "struct"
+    }, 
     "LayerHeader": {
       "fields": [
         [
@@ -518,10 +647,60 @@
       ], 
       "type": "struct"
     }, 
+    "LayerQuad": {
+      "fields": [
+        [
+          "Header", 
+          "LayerHeader"
+        ], 
+        [
+          "ColorTexture", 
+          "SwapTextureSet*"
+        ], 
+        [
+          "Viewport", 
+          "Recti"
+        ], 
+        [
+          "QuadPoseCenter", 
+          "Posef"
+        ], 
+        [
+          "QuadSize", 
+          "Vector2f"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Layer_Union": {
+      "fields": [
+        [
+          "Header", 
+          "LayerHeader"
+        ], 
+        [
+          "EyeFov", 
+          "LayerEyeFov"
+        ], 
+        [
+          "EyeFovDepth", 
+          "LayerEyeFovDepth"
+        ], 
+        [
+          "Quad", 
+          "LayerQuad"
+        ], 
+        [
+          "Direct", 
+          "LayerDirect"
+        ]
+      ], 
+      "type": "union"
+    }, 
     "LogCallback": {
       "to": {
         "argtypes": [
-          "ulong", 
+          "uint", 
           "int", 
           "ubyte*"
         ], 
@@ -696,17 +875,9 @@
           "TextureHeader"
         ], 
         [
-          "pad0", 
-          {
-            "ctype": "ubyte", 
-            "length": 4, 
-            "type": "array"
-          }
-        ], 
-        [
           "PlatformData", 
           {
-            "ctype": "ulong", 
+            "ctype": "uint", 
             "length": 8, 
             "type": "array"
           }
@@ -723,6 +894,23 @@
         [
           "TextureSize", 
           "Sizei"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "TimewarpProjectionDesc": {
+      "fields": [
+        [
+          "Projection22", 
+          "float"
+        ], 
+        [
+          "Projection23", 
+          "float"
+        ], 
+        [
+          "Projection32", 
+          "float"
         ]
       ], 
       "type": "struct"

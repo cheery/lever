@@ -1,19 +1,17 @@
 from rpython.translator.platform import platform
+from runtime import pathobj
 from space import *
 import ffi
 import json, os
 
 class ApiConfig:
     def __init__(self):
-        self.headers_dir = 'headers'
+        self.headers_dir = None
 
 conf = ApiConfig()
 
-def init(argv):
-    app_dir = os.environ.get('LEVER_PATH')
-    if app_dir is None:
-        app_dir = ''
-    conf.headers_dir = os.path.join(app_dir, 'headers')
+def init(lever_path):
+    conf.headers_dir = pathobj.concat(lever_path, pathobj.parse(u"headers"))
 
 def dirname(p):
     """Returns the directory component of a pathname, adjusted for rpython"""
@@ -26,7 +24,7 @@ def dirname(p):
         return ""
 
 def get_header(path):
-    return os.path.join(conf.headers_dir, path.encode('utf-8'))
+    return pathobj.concat(conf.headers_dir, path)
 
 class Api(Object):
     def __init__(self, constants, types, variables, dependencies):
@@ -180,6 +178,7 @@ def wrap_json(obj):
         assert False, repr(obj)
 
 module = Module(u'api', {
+    u"so_ext": from_cstring(platform.so_ext)
 }, frozen=True)
 
 def builtin(fn):
@@ -188,12 +187,18 @@ def builtin(fn):
 
 @builtin
 def open(argv):
+    print "api.open will be soon removed in favor to api.open_nobind"
+    print "Fix code using api.open(...) to use api.library(...)"
+    return library(argv)
+
+@builtin
+def library(argv):
     if len(argv) < 1:
         raise Error(u"expected at least 1 argument for api.open")
     path = argument(argv, 0, String).string
     if path.endswith(u".so") or path.endswith(u".json") or path.endswith(u".dll"):
         path = path.rsplit(u'.', 1)[0]
-    json_path = path + u".json"
+    json_path = pathobj.parse(path + u".json")
     so_path = path + u"." + platform.so_ext.decode('utf-8')
     dependencies = None
     if len(argv) >= 3 and argv[2] != null:
@@ -202,12 +207,24 @@ def open(argv):
         return FuncLibrary(open_api(json_path, dependencies), argv[1])
     return ffi.Library.interface.call([String(so_path), open_api(json_path, dependencies)])
 
+@builtin
+@signature(Object, Object)
+def open_nobind(path, dependencies):
+    path = pathobj.to_path(path)
+    basename = path.getattr(u"basename")
+    if isinstance(basename, String):
+        if not basename.string.endswith(u".json"):
+            path.setattr(
+                u"basename",
+                String(basename.string + u".json"))
+    return open_api(path, dependencies)
+
 def open_api(json_path, dependencies):
     path = get_header(json_path)
     try:
         apispec = json.read_file(path)
     except OSError as error:
-        raise Error(("[Errno %d]: %s\n" % (error.errno, path)).decode('utf-8'))
+        raise Error(u"[Errno %d]: %s\n" % (error.errno, pathobj.stringify(path)))
     api = Api(
         apispec.getitem(String(u"constants")),
         apispec.getitem(String(u"types")),

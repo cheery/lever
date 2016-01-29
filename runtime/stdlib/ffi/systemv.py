@@ -16,8 +16,8 @@ types = {
     u'uint': Unsigned(rffi.sizeof(rffi.UINT)),
     u'long': Signed(rffi.sizeof(rffi.LONG)),
     u'ulong': Unsigned(rffi.sizeof(rffi.ULONG)),
-    u'longlong': Signed(rffi.sizeof(rffi.LONGLONG)),
-    u'ulonglong': Unsigned(rffi.sizeof(rffi.ULONGLONG)),
+    u'llong': Signed(rffi.sizeof(rffi.LONGLONG)),
+    u'ullong': Unsigned(rffi.sizeof(rffi.ULONGLONG)),
     u'size_t': Unsigned(rffi.sizeof(rffi.SIZE_T)),
     u'i8': Signed(1),
     u'i16': Signed(2),
@@ -48,12 +48,13 @@ class Mem(Object):
             if isinstance(ctype, Struct) or isinstance(ctype, Union):
                 offset, ctype = ctype.namespace[name]
                 pointer = rffi.ptradd(self.pointer, offset)
-                if isinstance(ctype, Struct) or isinstance(ctype, Union):
+                if isinstance(ctype, Struct) or isinstance(ctype, Union) or isinstance(ctype, Array):
                     return Mem(Pointer(ctype), pointer)
-                elif isinstance(ctype, Signed) or isinstance(ctype, Unsigned) or isinstance(ctype, Floating) or isinstance(ctype, Pointer):
-                    return ctype.load(pointer)
-                else:
-                    raise Error(u"no load supported for " + ctype.repr())
+                return ctype.load(pointer)
+                #elif isinstance(ctype, Signed) or isinstance(ctype, Unsigned) or isinstance(ctype, Floating) or isinstance(ctype, Pointer):
+                #    return ctype.load(pointer)
+                #else:
+                #    raise Error(u"no load supported for " + ctype.repr())
             elif isinstance(ctype, Type):
                 if name == u"str" and ctype.size == 1:
                     s = rffi.charp2str(rffi.cast(rffi.CCHARP, self.pointer))
@@ -69,10 +70,10 @@ class Mem(Object):
             if isinstance(ctype, Struct) or isinstance(ctype, Union):
                 offset, ctype = ctype.namespace[name]
                 pointer = rffi.ptradd(self.pointer, offset)
-                if isinstance(ctype, Signed) or isinstance(ctype, Unsigned) or isinstance(ctype, Floating) or isinstance(ctype, Pointer):
-                    return ctype.store(pointer, value)
-                else:
-                    raise Exception(u"no store supported for " + ctype.repr())
+                return ctype.store(pointer, value)
+                #if isinstance(ctype, Signed) or isinstance(ctype, Unsigned) or isinstance(ctype, Floating) or isinstance(ctype, Pointer):
+                #else:
+                #    raise Exception(u"no store supported for " + ctype.repr())
             elif name == u"to":
                 return ctype.store(self.pointer, value)
         raise Error(u"cannot attribute access other mem than structs or unions")
@@ -84,8 +85,13 @@ class Mem(Object):
         ctype = self.ctype
         if isinstance(ctype, Pointer):
             ctype = ctype.to
+            if isinstance(ctype, Array):
+                ctype = ctype.ctype
+                # TODO: could do length check if length present.
             if isinstance(ctype, Type):
                 pointer = rffi.ptradd(self.pointer, ctype.size*index)
+                if isinstance(ctype, Struct) or isinstance(ctype, Union) or isinstance(ctype, Array):
+                    return Mem(Pointer(ctype), pointer)
                 return ctype.load(pointer)
         raise Error(u"cannot item access other mem than pointers or arrays")
 
@@ -96,7 +102,11 @@ class Mem(Object):
         ctype = self.ctype
         if isinstance(ctype, Pointer):
             ctype = ctype.to
-            if isinstance(ctype, Type):
+            if isinstance(ctype, Array):
+                pointer = rffi.ptradd(self.pointer, ctype.ctype.size*index)
+                # TODO: could do length check if length present.
+                return ctype.ctype.store(pointer, value)
+            elif isinstance(ctype, Type):
                 pointer = rffi.ptradd(self.pointer, ctype.size*index)
                 return ctype.store(pointer, value)
         raise Error(u"cannot item access other mem than pointers or arrays")
@@ -203,24 +213,26 @@ class CFunc(Type):
             cif.rtype = self.restype.cast_to_ffitype()
  
         exchange_size = argc * rffi.sizeof(rffi.VOIDPP)
+        exchange_size = align(exchange_size, 8)
         for i in range(argc):
             argtype = self.argtypes[i]
             assert isinstance(argtype, Type)
-            exchange_size = align(exchange_size, argtype.align)
+            exchange_size = align(exchange_size, max(8, argtype.align))
             cif.exchange_args[i] = exchange_size
             exchange_size += sizeof(argtype)
-        cif.exchange_result = exchange_size
         #cif.exchange_result_libffi = exchange_size
         restype = self.restype
         if restype is null:
-            exchange_size += 0
+            exchange_size = align(exchange_size, 8)
+            cif.exchange_result = exchange_size
+            exchange_size += jit_libffi.SIZE_OF_FFI_ARG
         elif isinstance(restype, Type):
-            exchange_size = align(exchange_size, restype.align)
-            exchange_size += sizeof(restype)
-        else:
+            exchange_size = align(exchange_size, max(8, restype.align))
+            cif.exchange_result = exchange_size
+            exchange_size += max(sizeof(restype), jit_libffi.SIZE_OF_FFI_ARG)
+        else: # SIZE_OF_FFI_ARG
             assert False
         cif.exchange_size = align(exchange_size, 8)
-
         jit_libffi.jit_ffi_prep_cif(cif)
         self.cif = cif
 
@@ -350,8 +362,16 @@ class Struct(Type):
 
     def load(self, offset):
         pointer = lltype.malloc(rffi.VOIDP.TO, self.size, flavor='raw')
-        rffi.c_memcpy(pointer, offset, self.size)
+        rffi.c_memcpy(pointer, offset, sizeof(self))
         return AutoMem(Pointer(self), pointer, 1)
+
+    def store(self, offset, value):
+        if isinstance(value, Mem):
+            ctype = value.ctype
+            if isinstance(ctype, Pointer) and ctype.to is self:
+                rffi.c_memcpy(offset, value.pointer, sizeof(self))
+                return value
+        raise Error(u"cannot struct store " + value.repr())
  
     def repr(self):
         if self.fields is None:
@@ -449,6 +469,12 @@ class Array(Type):
         if isinstance(other, Array):
             return self.ctype.typecheck(other.ctype)
         return False
+
+    def load(self, offset):
+        raise Error(u"array load notimpl")
+
+    def store(self, offset, value):
+        raise Error(u"Array store notimpl")
 
     def repr(self):
         return u'<array ' + self.ctype.repr() + u'>'

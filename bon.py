@@ -8,6 +8,7 @@ from space import *
 from rpython.rlib import rfile
 from rpython.rlib.rstruct import ieee
 from rpython.rtyper.lltypesystem import rffi
+from runtime import pathobj
 import os
 
 #types = {}
@@ -15,15 +16,16 @@ decoder = {}
 #encoder = {} todo?
 
 def open_file(pathname):
+    name = pathobj.os_stringify(pathname).encode('utf-8')
     try:
-        fd = rfile.create_file(pathname, 'rb')
+        fd = rfile.create_file(name, 'rb')
         try:
             return load(fd)
         finally:
             fd.close()
     except IOError as error:
         message = os.strerror(error.errno).decode('utf-8')
-        raise Error(u"%s: %s" % (pathname.decode('utf-8'), message))
+        raise Error(u"%s: %s" % (pathobj.stringify(pathname), message))
 
 def load(fd):
     type_id = ord(fd.read(1)[0])
