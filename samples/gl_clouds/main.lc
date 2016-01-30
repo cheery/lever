@@ -1,0 +1,227 @@
+import ffi, api, fs, vr, platform
+
+win32 = (platform.name == "win32")
+
+if win32
+    sdl = ffi.library("SDL2.dll", api.open_nobind("libSDL2", {}))
+else
+    sdl = ffi.library("libSDL2.so", api.open_nobind("libSDL2", {}))
+gl = api.library("libGL", sdl.GL_GetProcAddress)
+sdl_img = api.library("libSDL2_image", null, {"libSDL2": sdl})
+
+# TODO: Fix ovr lib, exception handling, and general path handling.
+# TODO: reference to opaque pointer or non-attribute crashes.
+
+main = ():
+    # todo: add assert
+    if 0 != sdl.Init(sdl.INIT_EVERYTHING)
+        print("cannot sdl2 init")
+        exit(1)
+    sdl_img.Init(sdl_img.INIT_JPG | sdl_img.INIT_PNG)
+
+    sdl.GL_SetAttribute(sdl.GL_CONTEXT_MAJOR_VERSION, 4)
+    sdl.GL_SetAttribute(sdl.GL_CONTEXT_MINOR_VERSION, 4)
+
+    sdl.GL_SetAttribute(sdl.GL_DOUBLEBUFFER, 1)
+    sdl.GL_SetAttribute(sdl.GL_DEPTH_SIZE, 24)
+
+    width = 200
+    height = 200
+    win = sdl.CreateWindow("Tutorial", 100, 100, width, height,
+      sdl.WINDOW_OPENGL | sdl.WINDOW_SHOWN)
+    if not win
+        print ("cannot open window")
+        exit(1)
+
+    ctx = sdl.GL_CreateContext(win)
+    if not ctx
+        print ("cannot create opengl 4 context")
+        exit(1)
+
+    # shader program
+    po = gl.createProgram()
+    vso = gl.createShader(gl.VERTEX_SHADER)
+    fso = gl.createShader(gl.FRAGMENT_SHADER)
+
+    vsrc = fs.read_file(dir ++ "clouds.vert")
+    fsrc = fs.read_file(dir ++ "clouds.frag")
+
+    build_shader(vso, vsrc)
+    build_shader(fso, fsrc)
+
+    gl.attachShader(po, vso)
+    gl.attachShader(po, fso)
+    gl.linkProgram(po)
+
+    linked = ffi.automem(ffi.int)
+    gl.getProgramiv(po, gl.LINK_STATUS, linked)
+    if linked.to != gl.TRUE
+        print("shader link failed")
+        print(get_info_log(po))
+        exit(1)
+
+    vertex_count = 6
+    
+    # vertex data
+    data = autoarray(ffi.float, [
+       -1.0,-1.0, 0.0,
+        1.0,-1.0, 0.0,
+       -1.0, 1.0, 0.0,
+       -1.0, 1.0, 0.0,
+        1.0,-1.0, 0.0,
+        1.0, 1.0, 0.0,
+    ])
+    data_size = ffi.sizeof(ffi.float) * vertex_count*3
+
+    ids = ffi.automem(ffi.int)
+    gl.genBuffers(1, ids)
+    vbo = ids.to
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+    gl.bufferData(gl.ARRAY_BUFFER, data_size, data, gl.STATIC_DRAW)
+
+    # vertex array object (binds to the vbo above)
+    v_position = gl.getAttribLocation(po, "position")
+    ids = ffi.automem(ffi.int)
+    gl.genVertexArrays(1, ids)
+    vao = ids.to
+    gl.bindVertexArray(vao)
+    gl.enableVertexAttribArray(v_position)
+    gl.vertexAttribPointer(v_position, 3, gl.FLOAT, gl.FALSE, ffi.sizeof(ffi.float)*3, ffi.cast(0, ffi.voidp))
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, 0)
+
+    # image
+    bread = sdl_img.Load((dir ++ "noise.png").get_os_path())
+    # todo: assert bread
+    print(bread.w, bread.h)
+    ids = ffi.automem(ffi.int)
+    gl.genTextures(1, ids)
+    texture_id = ids.to
+    gl.bindTexture(gl.TEXTURE_2D, texture_id)
+
+    mode = gl.RGB
+    if bread.format.BytesPerPixel == 4
+        mode = gl.RGBA
+    
+    gl.texImage2D(gl.TEXTURE_2D, 0, mode, bread.w, bread.h, 0, mode, gl.UNSIGNED_BYTE, bread.pixels)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR)
+    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR_MIPMAP_LINEAR)
+    gl.generateMipmap(gl.TEXTURE_2D)
+
+    u_resolution = gl.getUniformLocation(po, "resolution")
+    u_time       = gl.getUniformLocation(po, "time")
+    u_texture0   = gl.getUniformLocation(po, "texture0")
+    u_projection = gl.getUniformLocation(po, "projection")
+    u_modelview  = gl.getUniformLocation(po, "modelview")
+    u_eyematrix = gl.getUniformLocation(po, "eyematrix")
+    u_org       = gl.getUniformLocation(po, "org")
+    u_invprojection = gl.getUniformLocation(po, "invprojection")
+
+    fovy = 60 / 180 * pi
+
+    projection = autoarray(ffi.float, projection_matrix(fovy, width / height, 0.1, 100))
+    modelview  = autoarray(ffi.float, mat4().translate(vec3(-0.0, -0.0, -0.5)))
+    eyematrix  = ffi.automem(ffi.float, 16)
+
+    event = ffi.automem(sdl.Event)
+
+    with_hmd = win32
+    if with_hmd
+        hmd = vr.init(gl)
+        for eye in hmd.eyes
+            eye.invprojection = eye.projection.invert()
+    else
+        hmd = exnihilo()
+        hmd.on = false
+        hmd.begin = ():
+            return null
+        hmd.submit = ():
+            return null
+
+    cam = exnihilo()
+    cam.projection = projection_matrix(fovy, width / height, 0.1, 100)
+    cam.invprojection = cam.projection.invert()
+    cam.pos = vec3()
+    cam.ori = quat()
+
+    render = (eye):
+        pos = eye.pos + up
+        gl.useProgram(po)
+        uniform_mat4(u_invprojection, eye.ori.to_mat4() * eye.invprojection)
+        gl.uniform3f(u_org, pos.x, pos.y, pos.z)
+        gl.uniform1f(u_time, now*0.2)
+        gl.activeTexture(gl.TEXTURE0 + 0)
+        gl.bindTexture(gl.TEXTURE_2D, texture_id)
+        gl.uniform1i(u_texture0, 0)
+        gl.drawArrays(gl.TRIANGLES, 0, vertex_count)
+
+    gl.clearColor(0, 1, 0, 1)
+
+    running = true
+    while running
+        while sdl.PollEvent(event) != 0
+            if event.type == sdl.QUIT
+                return null
+        now = sdl.GetTicks() / 1000.0
+        model_matrix = mat4().translate(vec3(-0.0 + sin(now / 3) * 4.0, -0.0 + cos(now) * 0.5, -10.0))
+        hmd.begin()
+        if hmd.on
+            for eye in hmd.eyes
+                eye.bind()
+                gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+                render(eye)
+                gl.bindFramebuffer(gl.FRAMEBUFFER, 0)
+        hmd.submit()
+        gl.bindFramebuffer(gl.FRAMEBUFFER, 0)
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+        gl.viewport(0, 0, width, height)
+        render(cam)
+        sdl.GL_SwapWindow(win)
+
+    sdl.GL_DeleteContext(ctx)
+    sdl.DestroyWindow(win)
+    sdl_img.Quit()
+    sdl.Quit()
+
+tmp_matrix = ffi.automem(ffi.float, 16)
+uniform_mat4 = (loc, matrix):
+    arraycopy(tmp_matrix, matrix)
+    gl.uniformMatrix4fv(loc, 1, 0, tmp_matrix)
+
+build_shader = (so, source):
+    source = encode_utf8(source)
+    source_length = ffi.automem(ffi.uint)
+    source_length.to = source.length
+    gl.shaderSource(so, 1, ffi.ref(source), source_length)
+
+    compiled = ffi.automem(ffi.int)
+
+    gl.compileShader(so)
+    gl.getShaderiv(so, gl.COMPILE_STATUS, compiled)
+    if compiled.to != gl.TRUE
+        print("shader compile failed")
+        print(get_info_log(so))
+        exit(1)
+
+get_info_log = (obj):
+    blen = ffi.automem(ffi.uint)
+    gl.getObjectParameterivARB(obj, gl.OBJECT_INFO_LOG_LENGTH_ARB, blen)
+    gl.getShaderiv(obj, gl.INFO_LOG_LENGTH, blen)
+    log = ffi.automem(ffi.ubyte, blen.to)
+    gl.getInfoLogARB(obj, blen.to, null, log)
+    return log.str
+
+autoarray = (ctype, sequence):
+    mem = ffi.automem(ctype, sequence.length)
+    i = 0
+    for x in sequence
+        mem[i] = x 
+        i = i + 1
+    return mem
+
+arraycopy = (dst, src):
+    i = 0
+    for x in src
+        dst[i] = x
+        i = i + 1

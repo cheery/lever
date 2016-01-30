@@ -94,9 +94,9 @@ class Frame:
         self.sourcemap = function.sourcemap
 
 class RegisterArray:
-    _virtualizable_ = ['regs[*]']
+    #_virtualizable_ = ['regs[*]']
     def __init__(self, regs):
-        self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
+        #self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self.regs = regs
 
     @always_inline
@@ -119,7 +119,7 @@ def get_printable_location(pc, iterstop, block, module, unit):
 jitdriver = jit.JitDriver(
     greens=['pc', 'iterstop', 'block', 'module', 'unit'],
     reds=['regv', 'frame'],
-    virtualizables = ['regv'],
+    #virtualizables = ['regv'],
     get_printable_location=get_printable_location)
 
 LARGE_PC = rffi.r_ulong(0xFFFFFFFF)

@@ -1,5 +1,5 @@
 from builtin import signature
-from interface import Error, Object
+from interface import Error, Object, null
 from rpython.rlib.rarithmetic import intmask
 from numbers import Integer
 
@@ -70,6 +70,12 @@ class List(Object):
         for item in self.contents:
             out.append(item.repr())
         return u'[' + u' '.join(out) + u']'
+
+@List.builtin_method
+@signature(List, Object)
+def append(self, other):
+    self.contents.append(other)
+    return null
 
 class ListIterator(Object):
     _immutable_fields_ = ['iterator']

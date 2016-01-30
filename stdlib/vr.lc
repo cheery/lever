@@ -97,6 +97,10 @@ init = (gl):
         result = ovr.SubmitFrame(session, 0, null, layerlist, 1)
         hmd.on = (result == ovr.Success)
 
+    # TODO: hmd quit
+    #ovr.Destroy(session)
+    #ovr.Shutdown()
+
     return hmd
 
     # Left these in here in case they're ever needed around.
