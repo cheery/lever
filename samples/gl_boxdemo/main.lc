@@ -217,7 +217,7 @@ main = ():
 
     boxes = []
     i = 0
-    while i < 1000
+    while i < 100
         box = exnihilo()
         circle = random_circle()
         box.base = vec3(circle.x, 0.0, circle.y) * 20.0 + up * (random() * 40.0 - 20.0)
