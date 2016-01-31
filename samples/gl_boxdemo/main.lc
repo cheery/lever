@@ -131,30 +131,65 @@ main = ():
 
     gl.bindBuffer(gl.ARRAY_BUFFER, 0)
 
-    # image
-    bread = sdl_img.Load((dir ++ "noise.png").get_os_path())
-    # todo: assert bread
-    print(bread.w, bread.h)
     ids = ffi.automem(ffi.int)
     gl.genTextures(1, ids)
     texture_id = ids.to
-    gl.bindTexture(gl.TEXTURE_2D, texture_id)
+    gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture_id)
 
+    idir = dir ++ "NightPath"
+    image = sdl_img.Load((idir ++ "negx.jpg").get_os_path())
     mode = gl.RGB
-    if bread.format.BytesPerPixel == 4
+    if image.format.BytesPerPixel == 4
         mode = gl.RGBA
-    
-    gl.texImage2D(gl.TEXTURE_2D, 0, mode, bread.w, bread.h, 0, mode, gl.UNSIGNED_BYTE, bread.pixels)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
-    gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_X, 0, mode, image.w, image.h, 0, mode, gl.UNSIGNED_BYTE, image.pixels)
+    sdl.FreeSurface(image)
+
+    image = sdl_img.Load((idir ++ "posx.jpg").get_os_path())
+    mode = gl.RGB
+    if image.format.BytesPerPixel == 4
+        mode = gl.RGBA
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_X, 0, mode, image.w, image.h, 0, mode, gl.UNSIGNED_BYTE, image.pixels)
+    sdl.FreeSurface(image)
+
+    image = sdl_img.Load((idir ++ "negy.jpg").get_os_path())
+    mode = gl.RGB
+    if image.format.BytesPerPixel == 4
+        mode = gl.RGBA
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Y, 0, mode, image.w, image.h, 0, mode, gl.UNSIGNED_BYTE, image.pixels)
+    sdl.FreeSurface(image)
+
+    image = sdl_img.Load((idir ++ "posy.jpg").get_os_path())
+    mode = gl.RGB
+    if image.format.BytesPerPixel == 4
+        mode = gl.RGBA
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Y, 0, mode, image.w, image.h, 0, mode, gl.UNSIGNED_BYTE, image.pixels)
+    sdl.FreeSurface(image)
+
+    image = sdl_img.Load((idir ++ "negz.jpg").get_os_path())
+    mode = gl.RGB
+    if image.format.BytesPerPixel == 4
+        mode = gl.RGBA
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_NEGATIVE_Z, 0, mode, image.w, image.h, 0, mode, gl.UNSIGNED_BYTE, image.pixels)
+    sdl.FreeSurface(image)
+
+    image = sdl_img.Load((idir ++ "posz.jpg").get_os_path())
+    mode = gl.RGB
+    if image.format.BytesPerPixel == 4
+        mode = gl.RGBA
+    gl.texImage2D(gl.TEXTURE_CUBE_MAP_POSITIVE_Z, 0, mode, image.w, image.h, 0, mode, gl.UNSIGNED_BYTE, image.pixels)
+    sdl.FreeSurface(image)
+
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MIN_FILTER, gl.LINEAR)
+    gl.texParameteri(gl.TEXTURE_CUBE_MAP, gl.TEXTURE_MAG_FILTER, gl.LINEAR)
 
     u_resolution = gl.getUniformLocation(po, "resolution")
     u_time       = gl.getUniformLocation(po, "time")
     u_texture0   = gl.getUniformLocation(po, "texture0")
     u_projection = gl.getUniformLocation(po, "projection")
+    u_invprojection = gl.getUniformLocation(po, "invprojection")
     u_modelview  = gl.getUniformLocation(po, "modelview")
     u_eyematrix = gl.getUniformLocation(po, "eyematrix")
-    u_fov       = gl.getUniformLocation(po, "fov")
+    u_org       = gl.getUniformLocation(po, "org")
     u_env_color = gl.getUniformLocation(po, "env_color")
     u_diffuse_color = gl.getUniformLocation(po, "diffuse_color")
 
@@ -197,7 +232,7 @@ main = ():
     update = (now):
         for box in boxes
             box.pos = axisangle(up, now*box.speed + box.cycle) * box.base + up * cos(now + box.cycle)
-            box.ori = axisangle(box.axis, now)
+            box.ori = axisangle(box.axis, now * 0.1)
             box.matrix = box.ori.to_mat4(box.pos).scale(box.scale)
 
     render = (eye):
@@ -209,10 +244,10 @@ main = ():
         gl.uniform1f(u_time, now*0.2)
         gl.uniform2f(u_resolution, 1.0*width, 1.0*height)
         gl.uniform3f(u_env_color, 0.8, 0.8, 0.7)
-        #uniform_mat4(u_invprojection, eye.ori.to_mat4() * eye.invprojection)
-        #gl.uniform3f(u_org, pos.x, pos.y, pos.z)
+        uniform_mat4(u_invprojection, eye.ori.to_mat4() * eye.invprojection)
+        gl.uniform3f(u_org, eye.pos.x, eye.pos.y, eye.pos.z)
         gl.activeTexture(gl.TEXTURE0 + 0)
-        gl.bindTexture(gl.TEXTURE_2D, texture_id)
+        gl.bindTexture(gl.TEXTURE_CUBE_MAP, texture_id)
         gl.uniform1i(u_texture0, 0)
 
         for box in boxes
