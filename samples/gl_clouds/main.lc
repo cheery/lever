@@ -1,6 +1,7 @@
 import ffi, api, fs, vr, platform
 
 win32 = (platform.name == "win32")
+with_hmd = win32 # or = false if you don't have oculus rift.
 
 if win32
     sdl = ffi.library("SDL2.dll", api.open_nobind("libSDL2", {}))
@@ -25,8 +26,8 @@ main = ():
     sdl.GL_SetAttribute(sdl.GL_DOUBLEBUFFER, 1)
     sdl.GL_SetAttribute(sdl.GL_DEPTH_SIZE, 24)
 
-    width = 200
-    height = 200
+    width = 640
+    height = 480
     win = sdl.CreateWindow("Tutorial", 100, 100, width, height,
       sdl.WINDOW_OPENGL | sdl.WINDOW_SHOWN)
     if not win
@@ -126,7 +127,6 @@ main = ():
 
     event = ffi.automem(sdl.Event)
 
-    with_hmd = win32
     if with_hmd
         hmd = vr.init(gl)
         for eye in hmd.eyes

@@ -1,6 +1,7 @@
 import ffi, api, fs, vr, platform
 
 win32 = (platform.name == "win32")
+with_hmd = win32 # or = false if you don't have oculus rift.
 
 if win32
     sdl = ffi.library("SDL2.dll", api.open_nobind("libSDL2", {}))
@@ -195,7 +196,6 @@ main = ():
 
     fovy = 60 / 180 * pi
 
-    with_hmd = win32
     if with_hmd
         hmd = vr.init(gl)
         for eye in hmd.eyes
