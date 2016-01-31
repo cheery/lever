@@ -85,7 +85,7 @@ else:
             k = os.path.join(p, "python.exe")
             if os.path.exists(k):
                 return escape_arg(k)
-        return "python.exe" 
+        return r"C:\Python27\python.exe" 
 
     def escape_arg(arg):
         result = []
