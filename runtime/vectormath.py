@@ -1,5 +1,6 @@
 from math import sqrt, sin, cos, tan, pi
 from rpython.rlib.rrandom import Random
+from rpython.rlib.rarithmetic import r_uint
 from space import *
 import operators
 import time
@@ -453,13 +454,12 @@ random = Random()
 def init_random():
     key = []
     n = int(time.time())
-    one = 1
-    two = 2
-    thirtytwo = 32
-    masklower = 0xffffffff
+    masklower = r_uint(0xffffffff)
     while n > 0:
         key.append(n & masklower)
         n >>= 32
+    if len(key) == 0:
+        key.append(r_uint(0))
     random.init_by_array(key)
 
 @Builtin
