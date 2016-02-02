@@ -222,7 +222,7 @@ def open_nobind(path, dependencies):
 def open_api(json_path, dependencies):
     path = get_header(json_path)
     try:
-        apispec = json.read_file(path)
+        apispec = json.read_file([path])
     except OSError as error:
         raise Error(u"[Errno %d]: %s\n" % (error.errno, pathobj.stringify(path)))
     api = Api(

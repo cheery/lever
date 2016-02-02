@@ -1,7 +1,16 @@
 # Just the JSON decoder, because I only need a decoder for now.
 from rpython.rlib.unicodedata import unicodedb_6_2_0 as unicodedb
-import space
 from runtime import util
+from runtime.stdlib import fs
+from space import *
+import space
+
+module = Module(u'json', {}, frozen=True)
+
+def builtin(fn):
+    name = fn.__name__.rstrip('_').decode('utf-8')
+    module.setattr_force(name, Builtin(fn, name))
+    return fn
 
 class Stream:
     def __init__(self, source, index):
@@ -134,7 +143,10 @@ def digits(stream):
         res += stream.advance()
     return res
 
+@builtin
+@signature(Object)
 def read_file(path):
-    source = util.read_file(path)
-    stream = Stream(source, 0)
-    return decode(stream)
+    stringobj = fs.read_file([path])
+    assert isinstance(stringobj, String)
+    string = stringobj.string
+    return decode(Stream(string, 0))

@@ -1,0 +1,11 @@
+{
+    "stride": 24,
+    "format": {
+        "position": {
+            "offset": 0,  "type": "float", "size": 3, "normalized": false
+        },
+        "normal": {
+            "offset": 12, "type": "float", "size": 3, "normalized": false
+        }
+    }
+}

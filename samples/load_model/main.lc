@@ -1,0 +1,18 @@
+import fs, json, ffi
+
+data = json.read_file(dir ++ "page.json")
+print(data)
+
+print(data["stride"])
+for name in data["format"]
+    field = data["format"][name]
+    print(name, field["offset"], field["type"], field["size"], field["normalized"])
+
+bina = fs.read_file(dir ++ "page.data", "b")
+i = 0
+while i < bina.length
+    print(bina[i])
+    i = i + 1
+
+nums = ffi.cast(bina, ffi.pointer(ffi.int))
+print(nums[0])

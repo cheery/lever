@@ -104,6 +104,8 @@ def cast(obj, ctype):
         return Handle(obj.library, obj.name, obj.pointer, ctype)
     if isinstance(obj, Mem):
         return Mem(ctype, obj.pointer)
+    if isinstance(obj, Uint8Array):
+        return Mem(ctype, rffi.cast(rffi.VOIDP, obj.uint8data))
     if isinstance(obj, Integer) and isinstance(ctype, Pointer):
         return Mem(ctype, rffi.cast(rffi.VOIDP, obj.value))
 
