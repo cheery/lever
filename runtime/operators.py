@@ -7,6 +7,10 @@ neg = Multimethod(1)
 pos = Multimethod(1)
 ne  = Multimethod(2)
 eq  = Multimethod(2)
+lt  = Multimethod(2)
+le  = Multimethod(2)
+gt  = Multimethod(2)
+ge  = Multimethod(2)
 
 by_symbol = {
     u'clamp': clamp,
@@ -14,6 +18,10 @@ by_symbol = {
     u'++': concat,
     u'!=': ne,
     u'==': eq,
+    u'<':  lt,
+    u'>':  gt,
+    u'<=': le,
+    u'>=': ge,
     u'-expr': neg,
     u'+expr': pos,
 }
@@ -87,27 +95,37 @@ def _(a, b):
 
 # Not actual implementations of these functions
 # All of these will be multimethods
-@signature(Integer, Integer)
+@lt.multimethod_s(Integer, Integer)
 def cmp_lt(a, b):
     return boolean(a.value < b.value)
 
-@signature(Integer, Integer)
+@gt.multimethod_s(Integer, Integer)
 def cmp_gt(a, b):
     return boolean(a.value > b.value)
 
-@signature(Integer, Integer)
+@le.multimethod_s(Integer, Integer)
 def cmp_le(a, b):
     return boolean(a.value <= b.value)
 
-@signature(Integer, Integer)
+@ge.multimethod_s(Integer, Integer)
 def cmp_ge(a, b):
     return boolean(a.value >= b.value)
 
-# TODO: turn into multimethods
-by_symbol[u'<']  = Builtin(cmp_lt, u'<')
-by_symbol[u'>']  = Builtin(cmp_gt, u'>')
-by_symbol[u'<='] = Builtin(cmp_le, u'<=')
-by_symbol[u'>='] = Builtin(cmp_ge, u'>=')
+@lt.multimethod_s(Float, Float)
+def cmp_lt(a, b):
+    return boolean(a.number < b.number)
+
+@gt.multimethod_s(Float, Float)
+def cmp_gt(a, b):
+    return boolean(a.number > b.number)
+
+@le.multimethod_s(Float, Float)
+def cmp_le(a, b):
+    return boolean(a.number <= b.number)
+
+@ge.multimethod_s(Float, Float)
+def cmp_ge(a, b):
+    return boolean(a.number >= b.number)
 
 @signature(Object, Object)
 def ne_default(a, b):
@@ -117,6 +135,10 @@ ne.default = Builtin(ne_default)
 @ne.multimethod_s(Integer, Integer)
 def _(a, b):
     return boolean(a.value != b.value)
+
+@ne.multimethod_s(Float, Float)
+def _(a, b):
+    return boolean(a.number != b.number)
 
 @ne.multimethod_s(String, String)
 def _(a, b):
@@ -130,6 +152,10 @@ eq.default = Builtin(eq_default)
 @eq.multimethod_s(Integer, Integer)
 def _(a, b):
     return boolean(a.value == b.value)
+
+@eq.multimethod_s(Float, Float)
+def _(a, b):
+    return boolean(a.number == b.number)
 
 @eq.multimethod_s(String, String)
 def _(a, b):

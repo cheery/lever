@@ -1,8 +1,8 @@
-from space import *
 from rpython.rlib import rfile
 from rpython.rtyper.lltypesystem import rffi, lltype
-import os
 from runtime import pathobj
+from space import *
+import os
 
 # TODO: https://msdn.microsoft.com/en-gb/library/windows/desktop/aa365198
 #       http://man7.org/linux/man-pages/man7/aio.7.html
@@ -13,6 +13,65 @@ def builtin(fn):
     name = fn.__name__.rstrip('_').decode('utf-8')
     module.setattr_force(name, Builtin(fn, name))
     return fn
+
+@builtin
+@signature(Object)
+def exists(path):
+    pathname = pathobj.to_path(path)
+    path = pathobj.os_stringify(pathname).encode('utf-8')
+    return boolean(os.path.exists(path))
+
+@builtin
+@signature(Object)
+def stat(path):
+    pathname = pathobj.to_path(path)
+    path = pathobj.os_stringify(pathname).encode('utf-8')
+    try:
+        s = os.stat(path)
+    except IOError as error:
+        raise ioerror(pathname, error)
+    return Exnihilo({
+        u"st_mode": Integer(s.st_mode),
+        u"st_ino": Integer(s.st_ino),
+        u"st_dev": Integer(s.st_dev),
+        u"st_nlink": Integer(s.st_nlink),
+        u"st_uid": Integer(s.st_uid),
+        u"st_gid": Integer(s.st_gid),
+        u"st_size": Integer(s.st_size),
+        u"st_atime": Float(s.st_atime),
+        u"st_mtime": Float(s.st_mtime),
+        u"st_ctime": Float(s.st_ctime),
+    })
+
+@builtin
+@signature(Object)
+def getatime(path):
+    pathname = pathobj.to_path(path)
+    path = pathobj.os_stringify(pathname).encode('utf-8')
+    try:
+        return Float(os.path.getatime(path))
+    except IOError as error:
+        raise ioerror(pathname, error)
+
+@builtin
+@signature(Object)
+def getmtime(path):
+    pathname = pathobj.to_path(path)
+    path = pathobj.os_stringify(pathname).encode('utf-8')
+    try:
+        return Float(os.path.getmtime(path))
+    except IOError as error:
+        raise ioerror(pathname, error)
+
+@builtin
+@signature(Object)
+def getctime(path):
+    pathname = pathobj.to_path(path)
+    path = pathobj.os_stringify(pathname).encode('utf-8')
+    try:
+        return Float(os.path.getctime(path))
+    except IOError as error:
+        raise ioerror(pathname, error)
 
 @builtin
 def read_file(argv):
@@ -34,8 +93,7 @@ def read_file(argv):
         finally:
             fd.close()
     except IOError as error:
-        message = os.strerror(error.errno).decode('utf-8')
-        raise Error(u"%s: %s" % (pathname.repr(), message))
+        raise ioerror(pathname, error)
 
 @builtin
 def open_(argv):
@@ -51,8 +109,7 @@ def open_(argv):
     try:
         return File(rfile.create_file(path, 'rb'))
     except IOError as error:
-        message = os.strerror(error.errno).decode('utf-8')
-        raise Error(u"%s: %s" % (pathname.repr(), message))
+        raise ioerror(pathname, error)
 
 class File(Object):
     def __init__(self, fd):
@@ -122,5 +179,9 @@ def isatty(self):
 def flush(self):
     self.fd.flush()
     return null
+
+def ioerror(pathname, error):
+    message = os.strerror(error.errno).decode('utf-8')
+    return Error(u"%s: %s" % (pathname.repr(), message))
 
 module.setattr_force(u"file", File.interface)

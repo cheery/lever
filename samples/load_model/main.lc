@@ -1,18 +1,47 @@
-import fs, json, ffi
+# This script loads some files exported using exporter.py from test.blend
+# The idea here is that with bit of scripting you don't need to
+# restart the app you're working on to observe how scripts change it.
+import fs, json, ffi, process, platform
 
-data = json.read_file(dir ++ "page.json")
-print(data)
+main = ():
+    blend_path = make_blend(dir ++ "test")
+    header = json.read_file(blend_path)
+    hdir = blend_path ++ ".."
 
-print(data["stride"])
-for name in data["format"]
-    field = data["format"][name]
-    print(name, field["offset"], field["type"], field["size"], field["normalized"])
+    print(header["stride"])
+    for name in header["format"]
+        field = header["format"][name]
+        print(name, field["offset"], field["type"], field["size"], field["normalized"])
 
-bina = fs.read_file(dir ++ "page.data", "b")
-i = 0
-while i < bina.length
-    print(bina[i])
-    i = i + 1
+    print(hdir ++ header["vbo"])
+    bina = fs.read_file(hdir ++ header["vbo"], "b")
+    print("vertex_count", int(bina.length / header["stride"]))
 
-nums = ffi.cast(bina, ffi.pointer(ffi.int))
-print(nums[0])
+    nums = ffi.cast(bina, ffi.pointer(ffi.float))
+    print(nums[0])
+    print(nums[1])
+    print(nums[2])
+
+make_blend = (pathname):
+    header_path = path(pathname)
+    header_path.basename = header_path.basename ++ ".json"
+    blend_path = path(pathname)
+    blend_path.basename = blend_path.basename ++ ".blend"
+    if needs_update(header_path, blend_path)
+        args = ["--background", "--python", dir ++ "exporter.py", "--", header_path]
+        if platform.name == "win32"
+            pid = process.spawnv(blend_path, args)
+        else
+            blender_exe = process.which("blender")
+            args = [blend_path] ++ args
+            pid = process.spawnv(blender_exe, args)
+        status = process.waitpid(pid)
+        print("status", status)
+    return header_path
+
+needs_update = (dst, src):
+    sm = fs.getmtime(src)
+    if not fs.exists(dst)
+        return true
+    dm = fs.getmtime(dst)
+    return sm >= dm

@@ -6,6 +6,8 @@ green = vec3(0, 1, 0)
 blue = vec3(0, 0, 1)
 
 plotter = (clean, plot):
+    fovy = 60 / 180 * pi # convert 60 degrees to radians.
+
     while true
         clean()
         plot(vec3(0,0), red)
@@ -14,11 +16,14 @@ plotter = (clean, plot):
         plot(vec3(0,1), green)
 
         now = time()
-        pt = vec3(cos(now), sin(now))
-        plot(vec3(0,0), white)
-        plot(pt, white)
+        pt = vec3(cos(now), -0.5, sin(now) +2)
+        plot(project(vec3(0,-0.5, +2)), white)
+        plot(project(pt), white)
 
         sleep(0.01)
+
+project = (point):
+    return vec3(point.x / point.z, point.y / point.z)
 
 win32 = (platform.name == "win32")
 with_hmd = win32 # or = false if you don't have oculus rift.
