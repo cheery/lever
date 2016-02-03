@@ -34,7 +34,7 @@ block_statement =>
         kw_import:"import" symbols_list
 
 slot =>
-    upvalue_slot: symbol
+    lookup_slot: symbol
     attr_slot(expr symbol): expr dot:"." symbol
     item_slot(expr idx):    expr lb:"[" idx=expr rb:"]" 
 

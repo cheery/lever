@@ -270,8 +270,15 @@ def post_op_assign(env, loc, slot, op, statement):
         return setslot(block.op(loc, 'call', o, getslot(), value))
     return build_op_assign
 
-def post_upvalue_slot(env, loc, name):
-    def build_upvalue_slot(block):
+def post_lookup_slot(env, loc, name):
+    def build_lookup_slot(block):
+        if name in block.scope.localv:
+            index = block.scope.localv.index(name)
+            def getslot():
+                return block.op(loc, 'getloc', index)
+            def setslot(value):
+                return block.op(loc, 'setloc', index, value)
+            return getslot, setslot
         upv = block.scope.get_upvalue(name.value)
         def getslot():
             if upv is not None:
@@ -284,7 +291,7 @@ def post_upvalue_slot(env, loc, name):
             else:
                 return block.op(loc, 'setglob', Constant(name.value.decode('utf-8')), value)
         return getslot, setslot
-    return build_upvalue_slot
+    return build_lookup_slot
 
 def post_attr_slot(env, loc, base, name):
     def build_attr_slot(block):

@@ -71,6 +71,15 @@ while k < 10
     print("K", k)
     k += 1
 
+foo = exnihilo()
+foo.a = 4
+foo.a += 1
+print("a:", foo.a)
+
+foo = [0]
+foo[0] += 1
+print("[0]:", foo[0])
+
 # primitives available (int,float,string,list)
 # locals/globals available
 # some of the operators available
