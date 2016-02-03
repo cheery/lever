@@ -253,7 +253,7 @@ def post_local_assign(env, loc, name, statement):
         return local
     return build_local_assign
 
-def post_upvalue_assign(env, loc, name, statement):
+def post_upvalue_assign(env, loc, name, binop, statement):
     def build_upvalue_assign(block):
         upv = block.scope.get_upvalue(name.value)
         if upv is not None:
@@ -261,6 +261,52 @@ def post_upvalue_assign(env, loc, name, statement):
         else:
             return block.op(loc, 'setglob', Constant(name.value.decode('utf-8')), statement(block))
     return build_upvalue_assign
+
+def post_op_assign(env, loc, slot, op, statement):
+    def build_op_assign(block):
+        getslot, setslot = slot(block)
+        value = statement(block)
+        o = block.op(loc, 'getglob', Constant(op.value.decode('utf-8')))
+        return setslot(block.op(loc, 'call', o, getslot(), value))
+    return build_op_assign
+
+def post_upvalue_slot(env, loc, name):
+    def build_upvalue_slot(block):
+        upv = block.scope.get_upvalue(name.value)
+        def getslot():
+            if upv is not None:
+                return block.op(loc, 'getupv', *upv)
+            else:
+                return block.op(loc, 'getglob', Constant(name.value.decode('utf-8')))
+        def setslot(value):
+            if upv is not None:
+                return block.op(loc, 'setupv', upv[0], upv[1], value)
+            else:
+                return block.op(loc, 'setglob', Constant(name.value.decode('utf-8')), value)
+        return getslot, setslot
+    return build_upvalue_slot
+
+def post_attr_slot(env, loc, base, name):
+    def build_attr_slot(block):
+        value = base(block)
+        const = Constant(name.value.decode('utf-8'))
+        def getslot():
+            return block.op(loc, 'getattr', value, const)
+        def setslot(stmt):
+            return block.op(loc, 'setattr', value, const, stmt)
+        return getslot, setslot
+    return build_attr_slot
+
+def post_item_slot(env, loc, base, indexer):
+    def build_item_slot(block):
+        v0 = base(block)
+        v1 = indexer(block)
+        def getslot():
+            return block.op(loc, 'getitem', v0, v1)
+        def setslot(value):
+            return block.op(loc, 'setitem', v0, v1, value)
+        return getslot, setslot
+    return build_item_slot
 
 def post_for(env, loc, bind, iterator, body):
     env.defines.add(bind.value)

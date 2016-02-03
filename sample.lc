@@ -66,6 +66,10 @@ dot = multimethod(2)
 
 print(dot)
 
+k = 0
+while k < 10
+    print("K", k)
+    k += 1
 
 # primitives available (int,float,string,list)
 # locals/globals available

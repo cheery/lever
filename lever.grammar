@@ -22,6 +22,8 @@ block_statement =>
         symbol assign_op:"=" block_statement
     upvalue_assign(symbol block_statement):
         symbol upvalue_assign_op:":=" block_statement
+    op_assign(slot op block_statement):
+        slot op assign_op:"=" block_statement
     setitem(expr idx block_statement):
         expr lb:"[" idx=expr rb:"]" assign_op:"=" block_statement
     setattr(expr symbol block_statement):
@@ -30,6 +32,11 @@ block_statement =>
         kw_for:"for" symbol kw_in:"in" statement block
     import(symbols_list):
         kw_import:"import" symbols_list
+
+slot =>
+    upvalue_slot: symbol
+    attr_slot(expr symbol): expr dot:"." symbol
+    item_slot(expr idx):    expr lb:"[" idx=expr rb:"]" 
 
 otherwise =>
     done:
@@ -97,6 +104,19 @@ prefix =>
     postfix
     prefix: plus:"+" postfix
     prefix: minus:"-" postfix
+
+op =>
+    bitwise_or:"|"
+    bitwise_xor:"^"
+    bitwise_and:"&"
+    bitwise_shl:"<<"
+    bitwise_shr:">>"
+    concat:"++"
+    plus:"+"
+    minus:"-"
+    percent:"%"
+    slash:"/"
+    star:"*"
 
 # here we should still have bitwise not
 
