@@ -48,6 +48,9 @@ def compiling_commands():
     if len(sys.argv) > 1 and sys.argv[1] == 'compile-nojit':
         os.environ['PYTHONPATH'] = "pypy-4.0.1-src"
         check_call("python pypy-4.0.1-src/rpython/bin/rpython --gc=incminimark main.py".split(' '))
+    if len(sys.argv) > 1 and sys.argv[1] == 'default':
+        os.environ['PYTHONPATH'] = "pypy"
+        check_call("python pypy/rpython/bin/rpython --gc=incminimark main.py".split(' '))
 
 #--continuation --gc=incminimark --gcrootfinder=shadowstack --opt=2
 

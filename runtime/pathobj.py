@@ -95,6 +95,11 @@ class Path(Object):
     def repr(self):
         return u"path(" + String(stringify(self)).repr() + u")"
 
+    def drop_slash(self):
+        L = len(self.pathseq)
+        if L > 0 and self.pathseq[L-1] == u"":
+            self.pathseq.pop()
+
 @Path.builtin_method
 @signature(Path, String)
 def push(path, seq):
