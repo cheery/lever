@@ -86,14 +86,13 @@ def normal_startup(argv):
         main_script = argv[0]
     else:
         main_script = pathobj.concat(get_ec().lever_path, pathobj.parse(u"app/main.lc"))
-    module = space.Module(u'main', {}, extends=base.module)
-    result = module_resolution.start(main_script, module)
+    module = module_resolution.start(main_script)
     try:
         main_func = module.getattr(u"main")
     except space.Error as error:
         pass # in this case main_func just isn't in the module.
     else:
-        result = main_func.call([space.List(argv)])
+        main_func.call([space.List(argv)])
     return space.null
 
 @base.builtin

@@ -38,7 +38,7 @@ for py_module in stdlib.import_all_modules():
     p = pathobj.concat(root_module.local, pathobj.parse(py_module.module.name))
     root_module.setcache(p, p, py_module.module, 0.0)
 
-def start(main_script, main_module):
+def start(main_script):
     assert isinstance(main_script, String)
     lib_scope = ModuleScope(
         pathobj.concat(main.get_ec().lever_path, pathobj.parse(u"lib")),
