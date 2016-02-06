@@ -12,7 +12,7 @@ try:
     files = sys.argv[1:]
     pythonpath = os.path.join(lever_path, 'pypy-4.0.1-src')
     main_py_path = os.path.join(lever_path, 'main.py')
-    main_path = os.path.abspath(os.path.join(lever_path, 'main-c'))
+    main_path = os.path.abspath(os.path.join(lever_path, 'lever'))
     if platform.system() == "Windows":
         main_path += ".exe"
 

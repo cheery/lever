@@ -1,0 +1,341 @@
+import ffi, api, fs, vr, platform
+
+caption = "topdownshoot"
+width  = 1000
+height = 1000
+
+win32 = (platform.name == "win32")
+with_hmd = false # or = true if you have oculus rift.
+                 # rift not tested yet.
+# https://wiki.libsdl.org/CategoryAPI
+if win32
+    sdl = ffi.library("SDL2.dll", api.open_nobind("libSDL2", {}))
+else
+    sdl = ffi.library("libSDL2.so", api.open_nobind("libSDL2", {}))
+# https://www.opengl.org/documentation/
+# https://www.opengl.org/sdk/docs/man/
+gl = api.library("libGL", sdl.GL_GetProcAddress)
+# https://www.libsdl.org/projects/SDL_image/
+sdl_img = api.library("libSDL2_image", null, {"libSDL2": sdl})
+
+main = ():
+    assert(0 == sdl.Init(sdl.INIT_EVERYTHING), "sdl2 init")
+    assert(0 < sdl_img.Init(sdl_img.INIT_JPG | sdl_img.INIT_PNG), "sdl2 image init")
+    sdl.GL_SetAttribute(sdl.GL_CONTEXT_MAJOR_VERSION, 4)
+    sdl.GL_SetAttribute(sdl.GL_CONTEXT_MINOR_VERSION, 4)
+    sdl.GL_SetAttribute(sdl.GL_DOUBLEBUFFER, 1)
+    sdl.GL_SetAttribute(sdl.GL_DEPTH_SIZE, 24)
+    win = sdl.CreateWindow(caption, 0, 0, width, height,
+        sdl.WINDOW_OPENGL | sdl.WINDOW_SHOWN)
+    assert(win, "cannot open window")
+    ctx = sdl.GL_CreateContext(win)
+    assert(ctx, "cannot create opengl 4 context")
+    program = simple_program(dir ++ "plain.vert", dir ++ "plain.frag")
+    cube = cube_model()
+    top = load_model(dir ++ "top")
+    top_vao = new_vao(program, top)
+    cube_vao = new_vao(program, cube)
+
+    fovy = 60 * (pi / 180)
+    cam = exnihilo()
+    cam.projection = projection_matrix(fovy, width / height, 0.1, 100)
+    cam.invprojection = cam.projection.invert()
+
+    top_matrix = mat4()
+    cube_matrix = mat4().scale(vec3(2.0, 2.0, 2.0)).translate(vec3(0.0, -1.0, 0.0))
+    update = (now):
+        k = axisangle(up, now*15) * right * 0.1
+        top_matrix := (
+            shortest_arc(up, normalize(up + k)) *
+            axisangle(up, now*15)
+        ).to_mat4(
+            right * cos(now/2) + forward * sin(now/8)
+        )
+
+        cam.pos = vec3(3.0 + 8 * sin(0.0), 2.0, 2.0 * cos(0.0))
+
+        # lookat towards 0, (camera looks to -z, though)
+        direction = -normalize(up*0.5-cam.pos)
+        dir_up = normalize(cross(direction, cross(up, direction)))
+        look = shortest_arc(forward, direction)
+        look = shortest_arc(look * up, dir_up) * look
+        cam.ori = look
+
+    gl.enable(gl.DEPTH_TEST)
+    render = (eye):
+        invcamera = eye.ori.to_mat4(eye.pos).invert()
+        gl.clearColor(0.8, 0.8, 0.7, 1)
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+        gl.useProgram(program.id)
+        uniform_mat4(program.uniform("projection"), eye.projection)
+
+        uniform_mat4(program.uniform("modelview"), invcamera * top_matrix)
+        uniform_mat4(program.uniform("model"), top_matrix)
+        gl.uniform3f(program.uniform("color"), 0.7, 0.1, 0.1)
+        top_vao.bind()
+        gl.drawArrays(top.mode, 0, top.vertex_count)
+
+        uniform_mat4(program.uniform("modelview"), invcamera * cube_matrix)
+        uniform_mat4(program.uniform("model"), cube_matrix)
+        gl.uniform3f(program.uniform("color"), 0.1, 0.7, 0.1)
+        cube_vao.bind()
+        gl.drawArrays(cube.mode, 0, cube.vertex_count)
+
+    #hmd = init_hmd()
+    event = ffi.automem(sdl.Event)
+    running = true
+    while running
+        while sdl.PollEvent(event) != 0
+            if event.type == sdl.QUIT
+                return null
+        now = sdl.GetTicks() / 1000.0
+        update(now)
+        #hmd.begin()
+        #if hmd.on
+        #    for eye in hmd.eyes
+        #        eye.bind()
+        #        render(eye)
+        #        gl.bindFramebuffer(gl.FRAMEBUFFER, 0)
+        #hmd.submit()
+        #gl.bindFramebuffer(gl.FRAMEBUFFER, 0)
+        gl.viewport(0, 0, width, height)
+        render(cam)
+        sdl.GL_SwapWindow(win)
+    # on quit, these are not actually reached.. should fix later.
+    sdl.GL_DeleteContext(ctx)
+    sdl.DestroyWindow(win)
+    sdl_img.Quit()
+    sdl.Quit()
+
+simple_program = (vsource, fsource):
+    id = gl.createProgram()
+    vso = simple_shader(gl.VERTEX_SHADER, vsource)
+    fso = simple_shader(gl.FRAGMENT_SHADER, fsource)
+    gl.attachShader(id, vso)
+    gl.attachShader(id, fso)
+    gl.linkProgram(id)
+    linked = ffi.automem(ffi.int)
+    gl.getProgramiv(id, gl.LINK_STATUS, linked)
+    if linked.to != gl.TRUE
+        print("shader link failed")
+        print(get_info_log(id))
+        exit(1)
+    program = exnihilo()
+    program.id = id
+    program.vso = vso
+    program.fso = fso
+    program.uniform = (name):
+        return gl.getUniformLocation(program.id, name)
+    program.attrib = (name):
+        return gl.getAttribLocation(program.id, name)
+    return program
+
+simple_shader = (type, pathname):
+    so = gl.createShader(type)
+    source = fs.read_file(pathname)
+    source = encode_utf8(source)
+    source_length = ffi.automem(ffi.uint)
+    source_length.to = source.length
+    gl.shaderSource(so, 1, ffi.ref(source), source_length)
+    compiled = ffi.automem(ffi.int)
+    gl.compileShader(so)
+    gl.getShaderiv(so, gl.COMPILE_STATUS, compiled)
+    if compiled.to != gl.TRUE
+        print("shader compile failed")
+        print(get_info_log(so))
+        exit(1)
+    return so
+
+get_info_log = (obj):
+    blen = ffi.automem(ffi.uint)
+    gl.getObjectParameterivARB(obj, gl.OBJECT_INFO_LOG_LENGTH_ARB, blen)
+    gl.getShaderiv(obj, gl.INFO_LOG_LENGTH, blen)
+    log = ffi.automem(ffi.ubyte, blen.to)
+    gl.getInfoLogARB(obj, blen.to, null, log)
+    return log.str
+
+cube_model = ():
+    vertex_count = 6*6
+    stride = ffi.sizeof(ffi.float)*6
+    data_size = vertex_count * stride
+    data = autoarray(ffi.float, [
+       -1.0,-1.0,-1.0, 0.0, 0.0,-1.0,
+        1.0,-1.0,-1.0, 0.0, 0.0,-1.0,
+       -1.0, 1.0,-1.0, 0.0, 0.0,-1.0,
+       -1.0, 1.0,-1.0, 0.0, 0.0,-1.0,
+        1.0,-1.0,-1.0, 0.0, 0.0,-1.0,
+        1.0, 1.0,-1.0, 0.0, 0.0,-1.0,
+
+       -1.0,-1.0, 1.0, 0.0, 0.0, 1.0,
+        1.0,-1.0, 1.0, 0.0, 0.0, 1.0,
+       -1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
+       -1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
+        1.0,-1.0, 1.0, 0.0, 0.0, 1.0,
+        1.0, 1.0, 1.0, 0.0, 0.0, 1.0,
+
+       -1.0,-1.0,-1.0, 0.0,-1.0, 0.0,
+       -1.0,-1.0, 1.0, 0.0,-1.0, 0.0,
+        1.0,-1.0,-1.0, 0.0,-1.0, 0.0,
+        1.0,-1.0,-1.0, 0.0,-1.0, 0.0,
+       -1.0,-1.0, 1.0, 0.0,-1.0, 0.0,
+        1.0,-1.0, 1.0, 0.0,-1.0, 0.0,
+                      
+       -1.0, 1.0,-1.0, 0.0, 1.0, 0.0,
+       -1.0, 1.0, 1.0, 0.0, 1.0, 0.0,
+        1.0, 1.0,-1.0, 0.0, 1.0, 0.0,
+        1.0, 1.0,-1.0, 0.0, 1.0, 0.0,
+       -1.0, 1.0, 1.0, 0.0, 1.0, 0.0,
+        1.0, 1.0, 1.0, 0.0, 1.0, 0.0,
+
+       -1.0,-1.0,-1.0,-1.0, 0.0, 0.0,
+       -1.0, 1.0,-1.0,-1.0, 0.0, 0.0,
+       -1.0,-1.0, 1.0,-1.0, 0.0, 0.0,
+       -1.0,-1.0, 1.0,-1.0, 0.0, 0.0,
+       -1.0, 1.0,-1.0,-1.0, 0.0, 0.0,
+       -1.0, 1.0, 1.0,-1.0, 0.0, 0.0,
+                      
+        1.0,-1.0,-1.0, 1.0, 0.0, 0.0,
+        1.0, 1.0,-1.0, 1.0, 0.0, 0.0,
+        1.0,-1.0, 1.0, 1.0, 0.0, 0.0,
+        1.0,-1.0, 1.0, 1.0, 0.0, 0.0,
+        1.0, 1.0,-1.0, 1.0, 0.0, 0.0,
+        1.0, 1.0, 1.0, 1.0, 0.0, 0.0,
+    ])
+    ids = ffi.automem(ffi.int)
+    gl.genBuffers(1, ids)
+    vbo = ids.to
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+    gl.bufferData(gl.ARRAY_BUFFER, data_size, data, gl.STATIC_DRAW)
+    model = exnihilo()
+    model.mode = gl.TRIANGLES
+    model.vertex_count = vertex_count
+    model.vbo = vbo
+    model.stride = stride
+    model.format = {
+        "position": {"normalized": false,
+                     "size": 3,
+                     "type": "float",
+                     "offset": 0},
+        "normal": {"normalized": false,
+                   "size": 3,
+                   "type": "float",
+                   "offset": ffi.sizeof(ffi.float) * 3}
+    }
+    return model
+
+new_vao = (program, model):
+    ids = ffi.automem(ffi.int)
+    gl.genVertexArrays(1, ids)
+    vao = ids.to
+    gl.bindBuffer(gl.ARRAY_BUFFER, model.vbo)
+    gl.bindVertexArray(vao)
+    for name in model.format
+        attr = program.attrib(name)
+        if attr >= 0
+            field = model.format[name]
+            gl.enableVertexAttribArray(attr)
+            gl.vertexAttribPointer(attr, field["size"], gltypes[field["type"]],
+                field["normalized"], model.stride, ffi.cast(field["offset"], ffi.voidp))
+    obj = exnihilo()
+    obj.id = vao
+    obj.bind = ():
+        gl.bindVertexArray(obj.id)
+    return obj
+
+gltypes = {
+    "float": gl.FLOAT,
+    "int": gl.INT,
+}
+
+# Makes it bit cleaner to upload matrices and buffers.
+tmp_matrix = ffi.automem(ffi.float, 16)
+uniform_mat4 = (loc, matrix):
+    arraycopy(tmp_matrix, matrix)
+    gl.uniformMatrix4fv(loc, 1, 0, tmp_matrix)
+
+autoarray = (ctype, sequence):
+    mem = ffi.automem(ctype, sequence.length)
+    i = 0
+    for x in sequence
+        mem[i] = x 
+        i = i + 1
+    return mem
+
+arraycopy = (dst, src):
+    i = 0
+    for x in src
+        dst[i] = x
+        i = i + 1
+
+# Makeshift assert -function for stopping the program on failure.
+assert = (cond, message):
+    if not cond
+        print("assert:", message)
+        exit(1) # exit is undefined, so it throws an exception.
+
+init_hmd = ():
+    if with_hmd
+        hmd = vr.init(gl)
+        for eye in hmd.eyes
+            eye.invprojection = eye.projection.invert()
+    else
+        hmd = exnihilo()
+        hmd.on = false
+        hmd.begin = ():
+            return null
+        hmd.submit = ():
+            return null
+    return hmd
+
+# http://lolengine.net/blog/2013/09/18/beautiful-maths-quaternion-from-vectors
+shortest_arc = (u, v):
+    m = sqrt(2.0 + 2.0 * dot(u, v))
+    w = (1.0 / m) * cross(u, v)
+    return quat(w.x, w.y, w.z, 0.5 * m)
+
+import json, process
+
+load_model = (pathname):
+    header_path = make_blend(pathname)
+    header = json.read_file(header_path)
+    header_dir = header_path ++ ".."
+    bin = fs.read_file(header_dir ++ header["vbo"], "b")
+    data = ffi.cast(bin, ffi.pointer(ffi.float))
+    ids = ffi.automem(ffi.int)
+    gl.genBuffers(1, ids)
+    vbo = ids.to
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+    gl.bufferData(gl.ARRAY_BUFFER, bin.length, data, gl.STATIC_DRAW)
+    model = exnihilo()
+    model.mode = gl.TRIANGLES
+    model.stride = header["stride"]
+    model.vertex_count = int(bin.length / model.stride)
+    model.vbo = vbo
+    model.format = header["format"]
+    return model
+
+make_blend = (pathname):
+    header_path = path(pathname)
+    header_path.basename = header_path.basename ++ ".json"
+    blend_path = path(pathname)
+    blend_path.basename = blend_path.basename ++ ".blend"
+    if needs_update(header_path, blend_path)
+        args = ["--background", "--python", dir ++ "exporter.py", "--", header_path]
+        if platform.name == "win32"
+            pid = process.spawnv(blend_path, args)
+        else
+            blender_exe = process.which("blender")
+            args = [blend_path] ++ args
+            pid = process.spawnv(blender_exe, args)
+        process.waitpid(pid)
+        if needs_update(header_path, blend_path)
+            print("blender export failed")
+            exit(1)
+    return header_path
+
+needs_update = (dst, src):
+    if not fs.exists(dst)
+        return true
+    sm = fs.getmtime(src)
+    dm = fs.getmtime(dst)
+    return sm >= dm

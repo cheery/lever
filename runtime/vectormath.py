@@ -1,4 +1,4 @@
-from math import sqrt, sin, cos, tan, pi
+from math import sqrt, sin, cos, tan, pi, acos, asin, atan, atan2
 from rpython.rlib.rrandom import Random
 from rpython.rlib.rarithmetic import r_uint
 from space import *
@@ -499,8 +499,30 @@ def tan_(f):
 
 @Builtin
 @signature(Float)
+def asin_(f):
+    return Float(asin(f.number))
+
+@Builtin
+@signature(Float)
+def acos_(f):
+    return Float(acos(f.number))
+
+@Builtin
+@signature(Float)
+def atan_(f):
+    return Float(atan(f.number))
+
+@Builtin
+@signature(Float, Float)
+def atan2_(y, x):
+    return Float(atan2(y.number, x.number))
+
+@Builtin
+@signature(Float)
 def sqrt_(f):
     return Float(sqrt(f.number))
+
+#acos, asin, atan, atan2
 
 @Builtin
 @signature(Object, Object, Object, Object)

@@ -168,27 +168,6 @@ def chdir(obj):
     pathobj.chdir(obj)
     return null
 
-# Module namespace.
-#builtin_modules = {}
-#for py_module in stdlib.import_all_modules():
-#    builtin_modules[py_module.module.name] = py_module.module
-#
-#lib_modules = {}
-#
-#@builtin
-#@signature(String)
-#def import_(name):
-#    if name.string in builtin_modules:
-#        return builtin_modules[name.string]
-#    if name.string in lib_modules:
-#        return lib_modules[name.string]
-#    app_dir = pathobj.concat(main.get_ec().lever_path, pathobj.to_path(String(u"lib")))
-#    path_name = pathobj.concat(app_dir, pathobj.to_path(name))
-#    this = Module(name.string, {}, extends=module) # base.module
-#    module_resolution.load(path_name, this)
-#    lib_modules[name.string] = this
-#    return this
-
 @builtin
 @signature(Object)
 def exit(obj):

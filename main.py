@@ -107,6 +107,7 @@ def force_config(config):
     config.translation.continuation = True
 
 def target(driver, args):
+    driver.exe_name = "lever"
     force_config(driver.config)
     return main.new_entry_point(driver.config), None
 
