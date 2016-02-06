@@ -253,7 +253,7 @@ def post_local_assign(env, loc, name, statement):
         return local
     return build_local_assign
 
-def post_upvalue_assign(env, loc, name, binop, statement):
+def post_upvalue_assign(env, loc, name, statement):
     def build_upvalue_assign(block):
         upv = block.scope.get_upvalue(name.value)
         if upv is not None:

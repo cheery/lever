@@ -122,7 +122,7 @@ def _(obj):
     if isinstance(obj, String):
         return parse(obj.string)
     elif isinstance(obj, Path):
-        return Path(duplicate_prefix(obj.prefix), list(obj.pathseq))
+        return duplicate(obj)
     raise Error(u"path() expected string or path object.")
 
 @PosixPrefix.instantiator
@@ -274,6 +274,9 @@ def is_absolute(pathobj):
         return prefix.is_absolute
     return True
 
+def duplicate(path):
+    return Path(duplicate_prefix(path.prefix), list(path.pathseq))
+
 def duplicate_prefix(prefix):
     if isinstance(prefix, PosixPrefix):
         return PosixPrefix(prefix.label, prefix.is_absolute)
@@ -335,6 +338,17 @@ def to_path(obj):
         return obj
     else:
         raise Error(u"expected path")
+
+def directory(path):
+    path = duplicate(path)
+    path.drop_slash()
+    if len(path.pathseq) == 0:
+        raise Error(u"cannot take directory(), too short path")
+    path.pathseq.pop()
+    return path
+
+def abspath(path):
+    return concat(getcwd(), path)
 
 # nt stands for "non-technology"
 nt_parse = lambda string: parse(string, nt=True)

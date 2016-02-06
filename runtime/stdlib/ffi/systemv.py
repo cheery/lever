@@ -218,21 +218,21 @@ class CFunc(Type):
             argtype = self.argtypes[i]
             assert isinstance(argtype, Type)
             exchange_size = align(exchange_size, max(8, argtype.align))
-            cif.exchange_args[i] = exchange_size
+            cif.exchange_args[i] = int(exchange_size)
             exchange_size += sizeof(argtype)
         #cif.exchange_result_libffi = exchange_size
         restype = self.restype
         if restype is null:
             exchange_size = align(exchange_size, 8)
-            cif.exchange_result = exchange_size
+            cif.exchange_result = int(exchange_size)
             exchange_size += jit_libffi.SIZE_OF_FFI_ARG
         elif isinstance(restype, Type):
             exchange_size = align(exchange_size, max(8, restype.align))
-            cif.exchange_result = exchange_size
+            cif.exchange_result = int(exchange_size)
             exchange_size += max(sizeof(restype), jit_libffi.SIZE_OF_FFI_ARG)
         else: # SIZE_OF_FFI_ARG
             assert False
-        cif.exchange_size = align(exchange_size, 8)
+        cif.exchange_size = int(align(exchange_size, 8))
         jit_libffi.jit_ffi_prep_cif(cif)
         self.cif = cif
 
