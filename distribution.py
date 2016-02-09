@@ -50,3 +50,4 @@ include("LICENSE.md", "LICENSE.lever.txt")
 include_contents("win32_extras")
 
 zf.close()
+print os.path.abspath(archive)
