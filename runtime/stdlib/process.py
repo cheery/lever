@@ -29,7 +29,7 @@ else:
     def spawnv(path, args): 
         pathname = pathobj.to_path(path)
         path = pathobj.os_stringify(pathname).encode('utf-8')
-        argv = [path]
+        argv = []
         for arg in args.contents:
             if isinstance(arg, pathobj.Path):
                 argv.append(pathobj.os_stringify(arg).encode('utf-8'))

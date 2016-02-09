@@ -28,13 +28,12 @@ make_blend = (pathname):
     blend_path = path(pathname)
     blend_path.basename = blend_path.basename ++ ".blend"
     if needs_update(header_path, blend_path)
-        args = ["--background", "--python", dir ++ "exporter.py", "--", header_path]
+        args = ["blender", blend_path, "--background", "--python", dir ++ "exporter.py", "--", header_path]
         if platform.name == "win32"
-            pid = process.spawnv(blend_path, args)
+            blender_exe = "C:/Program Files/Blender Foundation/Blender/blender.exe"
         else
             blender_exe = process.which("blender")
-            args = [blend_path] ++ args
-            pid = process.spawnv(blender_exe, args)
+        pid = process.spawnv(blender_exe, args)
         status = process.waitpid(pid)
         print("status", status)
     return header_path

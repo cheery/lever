@@ -9,7 +9,7 @@ rel = lambda x: os.path.join(os.path.dirname(outpath), x)
 
 for obj in bpy.data.objects:
     if isinstance(obj.data, Mesh):
-        mesh = obj.data
+        mesh = obj.to_mesh(bpy.context.scene, True, "RENDER")
         break
 else:
     raise Exception("No mesh found")
@@ -22,6 +22,10 @@ header = {
     }
 }
 
+for polygon in mesh.polygons:
+    l = polygon.loop_total
+    assert l == 3, "polygon count %s" % l
+        
 with open(outpath, "w") as fd:
     json.dump(header, fd)
 
@@ -29,7 +33,6 @@ with open(rel(header["vbo"]), "wb") as fd:
     for polygon in mesh.polygons:
         s = polygon.loop_start
         l = polygon.loop_total
-        assert l == 3, ""
         for i in range(s, s+l):
             vi = mesh.loops[i].vertex_index
             v = mesh.vertices[vi]

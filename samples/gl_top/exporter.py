@@ -14,7 +14,7 @@ for obj in bpy.data.objects:
 else:
     raise Exception("No mesh found")
 
-vbo_path = os.path.splitext(outpath)[0] + ".vbo"
+vbo_path = os.path.splitext(os.path.basename(outpath))[0] + ".vbo"
 header = {
     "vbo": vbo_path,
     "stride": struct.calcsize('ffffff'),

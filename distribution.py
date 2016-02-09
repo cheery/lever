@@ -36,10 +36,12 @@ def include_contents(dirname):
             path = os.path.join(root, fil)
             include(path, os.path.relpath(path, dirname))
 
-#include("lever.exe")
+include("lever.exe")
+include("lever.grammar")
 include("VERSION")
 include_dir("app")
 include_dir("lib")
+include_dir("evaluator")
 include_dir("compiler")
 include("compile.py")
 include_dir("samples")

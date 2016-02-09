@@ -86,6 +86,7 @@ def normal_startup(argv):
         main_script = argv[0]
     else:
         main_script = pathobj.concat(get_ec().lever_path, pathobj.parse(u"app/main.lc"))
+        main_script = space.String(pathobj.os_stringify(main_script))
     module = module_resolution.start(main_script)
     try:
         main_func = module.getattr(u"main")
