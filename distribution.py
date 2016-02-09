@@ -9,13 +9,13 @@ mtime = os.path.getmtime("lever.exe")
 # I do not want to release stale distribution.
 for root, dirs, fils in os.walk("evaluator"):
     for fil in fils:
-        mtime = min(mtime, os.path.getmtime(os.path.join(path, fil)))
+        mtime = min(mtime, os.path.getmtime(os.path.join(root, fil)))
 for root, dirs, fils in os.walk("space"):
     for fil in fils:
-        mtime = min(mtime, os.path.getmtime(os.path.join(path, fil)))
+        mtime = min(mtime, os.path.getmtime(os.path.join(root, fil)))
 for root, dirs, fils in os.walk("runtime"):
     for fil in fils:
-        mtime = min(mtime, os.path.getmtime(os.path.join(path, fil)))
+        mtime = min(mtime, os.path.getmtime(os.path.join(root, fil)))
 if mtime > os.path.getmtime("lever.exe"):
     print("Stale executable, re-run setup.py compile on win32")
     sys.exit(1)
