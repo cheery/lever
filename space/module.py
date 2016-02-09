@@ -1,4 +1,4 @@
-from interface import Error, Object
+from interface import Error, Object, null
 from rpython.rlib import jit
 
 class Cell:
@@ -71,3 +71,11 @@ class Module(Object):
 
     def repr(self):
         return u"<module %s>" % self.name
+
+    # Utility for reimporting modules
+    def clear(self):
+        if self.frozen:
+            raise Error(u"Cannot clear frozen module")
+        for name, cell in self.cells.iteritems():
+            if isinstance(MutableCell):
+                cell.slot = null
