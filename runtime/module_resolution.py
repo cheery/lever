@@ -15,8 +15,8 @@ class ModuleScope(Object):
         self.parent = parent
         self.frozen = frozen # if frozen, the scope relies on cache.
 
-    def setcache(self, m_path, lc_path, module, mtime):
-        m = ModuleCache(lc_path, module, mtime)
+    def setcache(self, m_path, module, mtime):
+        m = ModuleCache(m_path, module, mtime)
         self.cache[pathobj.stringify(m_path)] = m
         return m
 
@@ -27,16 +27,49 @@ class ModuleScope(Object):
         except KeyError as k:
             return None
 
+    def getitem(self, item):
+        if isinstance(item, String):
+            if item.string in self.cache:
+                return self.cache[item.string]
+        raise Error(u"%s not in module scope" % item.repr())
+
+    def iter(self):
+        return ScopeIterator(self.cache.iterkeys())
+
+class ScopeIterator(Object):
+    _immutable_fields_ = ['iterator']
+    def __init__(self, iterator):
+        self.iterator = iterator
+
+@ScopeIterator.builtin_method
+@signature(ScopeIterator)
+def next(self):
+    return String(self.iterator.next())
+
 class ModuleCache(Object):
-    def __init__(self, srcpath, module, mtime):
-        self.srcpath = srcpath
+    def __init__(self, path, module, mtime):
+        self.path = path
         self.module = module
         self.mtime = mtime
+
+    def getattr(self, name):
+        if name == u"path":
+            return self.path
+        if name == u"module":
+            return self.module
+        if name == u"mtime":
+            return Float(self.mtime)
+        return Object.getattr(self, name)
+
+@ModuleCache.builtin_method
+@signature(ModuleCache)
+def get_moduleinfo(self):
+    return moduleinfo(self.path)
 
 root_module = ModuleScope(pathobj.parse(u"builtin:/"), frozen=True)
 for py_module in stdlib.import_all_modules():
     p = pathobj.concat(root_module.local, pathobj.parse(py_module.module.name))
-    root_module.setcache(p, p, py_module.module, 0.0)
+    root_module.setcache(p, py_module.module, 0.0)
 
 def start(main_script):
     assert isinstance(main_script, String)
@@ -51,7 +84,7 @@ def start(main_script):
         raise Error(u"main module not present")
     mi.default_config(this, scope)
     mi.loadit(this)
-    scope.setcache(main_path, mi.lc_path, this, max(mi.lc_mtime, mi.cb_mtime))
+    scope.setcache(main_path, this, max(mi.lc_mtime, mi.cb_mtime))
     return this
 
 # plans: 
@@ -110,9 +143,17 @@ class ModuleInfo(Object):
     def loadit(self, module):
         if not self.cb_present:
             compile_module(self.cb_path, self.lc_path)
+            self.cb_mtime = os.path.getmtime(pathobj.os_stringify(self.cb_path).encode('utf-8'))
             self.cb_present = True
         program = evaluator.loader.from_object(bon.open_file(self.cb_path))
         return program.call([module])
+
+    def getattr(self, name):
+        if name == u"present":
+            return boolean(self.cb_present or self.lc_present)
+        if name == u"mtime":
+            return Float(max(self.lc_mtime, self.cb_mtime))
+        return Object.getattr(self, name)
 
 class Import(Object):
     def __init__(self, local, scope):
@@ -139,7 +180,7 @@ class Import(Object):
                 this = Module(name.string, {}, extends=base.module) # base.module
                 mi.default_config(this, self.scope)
                 mi.loadit(this)
-                self.scope.setcache(path, mi.lc_path, this, max(mi.lc_mtime, mi.cb_mtime))
+                self.scope.setcache(path, this, max(mi.lc_mtime, mi.cb_mtime))
                 return this
         # scope/
         scope = self.scope
@@ -154,10 +195,27 @@ class Import(Object):
                     this = Module(name.string, {}, extends=base.module) # base.module
                     mi.default_config(this, scope)
                     mi.loadit(this)
-                    scope.setcache(path, mi.lc_path, this, max(mi.lc_mtime, mi.cb_mtime))
+                    scope.setcache(path, this, max(mi.lc_mtime, mi.cb_mtime))
                     return this
             scope = scope.parent
         raise Error(u"module '%s' not present" % name.string)
+
+    def getattr(self, name):
+        if name == u'scope':
+            return self.scope
+        return Object.getattr(self, name)
+
+@ModuleScope.builtin_method
+@signature(ModuleScope, String)
+def reimport(scope, obj):
+    if obj.string not in scope.cache:
+        raise Error(u"Cannot reimport, module not present")
+    mc = scope.cache[obj.string]
+    mi = moduleinfo(mc.path)
+    mi.default_config(mc.module, scope)
+    mi.loadit(mc.module)
+    mc.mtime = max(mi.lc_mtime, mi.cb_mtime)
+    return mc.module
 
 if sys.platform != "win32":
     # we have some expectations from non-windows platforms.
