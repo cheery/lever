@@ -122,9 +122,7 @@ jitdriver = jit.JitDriver(
     #virtualizables = ['regv'],
     get_printable_location=get_printable_location)
 
-LARGE_PC = rffi.r_ulong(0xFFFFFFFF)
-
-def interpret(pc, block, regv, frame, iterstop=LARGE_PC):
+def interpret(pc, block, regv, frame, iterstop=0):
     module = jit.promote(frame.module)
     unit   = jit.promote(frame.unit)
     try:
@@ -224,7 +222,7 @@ def interpret(pc, block, regv, frame, iterstop=LARGE_PC):
             else:
                 raise space.Error(u"unexpected instruction: " + optable.names.get(opcode, str(opcode)).decode('utf-8'))
     except StopIteration as stop:
-        if iterstop != LARGE_PC:
+        if iterstop != 0:
             return interpret(iterstop, block, regv, frame)
         else:
             raise space.Error(u"StopIteration")

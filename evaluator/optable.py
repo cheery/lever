@@ -2,6 +2,7 @@ import re
 
 source = [
     ('assert',   0x00, False, 'vreg'),
+    ('except',   0x01, True,  'block'),
     ('constant', 0x10, True,  'constant'),
     ('list',     0x20, True,  'vreg*'),
     ('move',     0x30, False, 'vreg vreg'),

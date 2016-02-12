@@ -10,9 +10,12 @@ class Parser(object):
         self.symboltab = symboltab
         self.debug = debug
 
-    def from_file(self, namespace, env, path, benchmark=False):
+    def from_file(self, namespace, env, path, benchmark=False, as_unicode=False):
         with open(path) as fd:
-            return self(namespace, env, fd.read(), benchmark)
+            if as_unicode:
+                return self(namespace, env, fd.read().decode('utf-8'), benchmark)
+            else:
+                return self(namespace, env, fd.read(), benchmark)
 
     def __call__(self, namespace, env, source, benchmark=False):
         if benchmark:
