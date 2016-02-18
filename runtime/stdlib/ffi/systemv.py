@@ -46,7 +46,10 @@ class Mem(Object):
             ctype = ctype.to
             # or isinstance(tp, Array):
             if isinstance(ctype, Struct) or isinstance(ctype, Union):
-                offset, ctype = ctype.namespace[name]
+                try:
+                    offset, ctype = ctype.namespace[name]
+                except KeyError as ke:
+                    return Object.getattr(self, name)
                 pointer = rffi.ptradd(self.pointer, offset)
                 if isinstance(ctype, Struct) or isinstance(ctype, Union) or isinstance(ctype, Array):
                     return Mem(Pointer(ctype), pointer)
@@ -68,7 +71,10 @@ class Mem(Object):
         if isinstance(ctype, Pointer):
             ctype = ctype.to
             if isinstance(ctype, Struct) or isinstance(ctype, Union):
-                offset, ctype = ctype.namespace[name]
+                try:
+                    offset, ctype = ctype.namespace[name]
+                except KeyError as ke:
+                    return Object.setattr(self, name, value)
                 pointer = rffi.ptradd(self.pointer, offset)
                 return ctype.store(pointer, value)
                 #if isinstance(ctype, Signed) or isinstance(ctype, Unsigned) or isinstance(ctype, Floating) or isinstance(ctype, Pointer):
@@ -190,7 +196,7 @@ def _(ctype):
 
 class CFunc(Type):
     def __init__(self, restype, argtypes):
-        self.align = self.size
+        self.align = rffi.sizeof(rffi.VOIDP)
         self.argtypes = argtypes
         self.cif = lltype.nullptr(jit_libffi.CIF_DESCRIPTION)
         self.notready = True
@@ -348,6 +354,8 @@ class Struct(Type):
                 raise Error(u"parametric field in middle of a structure")
             if ctype.parameter:
                 self.parameter = ctype.parameter
+            if ctype.align == 0:
+                print ctype, ctype.align
             offset = align(offset, ctype.align)
             self.offsets.append(offset)
             self.align = max(self.align, ctype.align)

@@ -31,7 +31,7 @@ class Integer(Object):
         return u"%d" % self.value
 
     def hash(self):
-        return compute_hash(self.value)
+        return compute_hash(int(self.value))
 
     def eq(self, other):
         if isinstance(other, Integer):
@@ -44,6 +44,14 @@ class Boolean(Object):
     __attrs__ = ['flag']
     def __init__(self, flag):
         self.flag = flag
+
+    def hash(self):
+        return 1 if self.flag else 0
+
+    def eq(self, other):
+        if isinstance(other, Boolean):
+            return self.flag == other.flag
+        return False
 
     def repr(self):
         if self.flag:
