@@ -64,6 +64,10 @@ class Mem(Object):
                     return String(s.decode('utf-8'))
                 elif name == u"to":
                     return ctype.load(self.pointer)
+            elif isinstance(ctype, Array):
+                if name == u"str" and ctype.ctype.size == 1:
+                    s = rffi.charp2str(rffi.cast(rffi.CCHARP, self.pointer))
+                    return String(s.decode('utf-8'))
         raise Error(u"cannot attribute access other mem than structs or unions")
 
     def setattr(self, name, value):
@@ -349,7 +353,8 @@ class Struct(Type):
 
         offset = 0
         for name, ctype in fields:
-            assert isinstance(ctype, Type)
+            if not isinstance(ctype, Type):
+                raise Error(u"expected ctype: " + ctype.repr())
             if self.parameter is not None:
                 raise Error(u"parametric field in middle of a structure")
             if ctype.parameter:

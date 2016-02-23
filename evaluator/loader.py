@@ -113,22 +113,22 @@ def new_register_array(regc):
         regs.append(space.null)
     return RegisterArray(regs)
 
-def get_printable_location(pc, iterstop, block, module, unit):
+def get_printable_location(pc, block, module, unit):
     return "pc=%d module=%s" % (pc, module.repr().encode('utf-8'))
 
 jitdriver = jit.JitDriver(
-    greens=['pc', 'iterstop', 'block', 'module', 'unit'],
+    greens=['pc', 'block', 'module', 'unit'],
     reds=['regv', 'frame'],
     #virtualizables = ['regv'],
     get_printable_location=get_printable_location)
 
-def interpret(pc, block, regv, frame, iterstop=0):
+def interpret(pc, block, regv, frame):
     module = jit.promote(frame.module)
     unit   = jit.promote(frame.unit)
     try:
         while pc < len(block):
             jitdriver.jit_merge_point(
-                pc=pc, block=block, module=module, unit=unit, iterstop=iterstop,
+                pc=pc, block=block, module=module, unit=unit,
                 regv=regv, frame=frame)
             opcode = rffi.r_ulong(block[pc])>>8
             ix = pc+1
@@ -161,10 +161,11 @@ def interpret(pc, block, regv, frame, iterstop=0):
                     Closure(frame, unit.functions[block[ix+1]]))
             elif opcode == opcode_of('iter'):
                 regv.store(block[ix+0], regv.load(block[ix+1]).iter())
-            elif opcode == opcode_of('iterstop'):
-                iterstop = rffi.r_ulong(block[ix+0])
             elif opcode == opcode_of('next'):
-                regv.store(block[ix+0], regv.load(block[ix+1]).callattr(u'next', []))
+                try:
+                    regv.store(block[ix+0], regv.load(block[ix+1]).callattr(u'next', []))
+                except StopIteration as _:
+                    pc = rffi.r_ulong(block[ix+2])
             # this is missing.
             #elif isinstance(op, Yield):
             #    raise YieldIteration(op.block, loop_break, op.i, regv.load(op.value.i))
@@ -222,10 +223,7 @@ def interpret(pc, block, regv, frame, iterstop=0):
             else:
                 raise space.Error(u"unexpected instruction: " + optable.names.get(opcode, str(opcode)).decode('utf-8'))
     except StopIteration as stop:
-        if iterstop != 0:
-            return interpret(iterstop, block, regv, frame)
-        else:
-            raise space.Error(u"StopIteration")
+        raise space.Error(u"StopIteration")
     except space.Error as error:
         error.stacktrace.append((rffi.r_long(pc), unit.constants, frame.sourcemap))
         raise

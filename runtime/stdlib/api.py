@@ -158,6 +158,12 @@ class FuncLibrary(Object):
         else:
             raise Error(u"expected memory object, not %s" % res.repr())
 
+@FuncLibrary.instantiator
+def _(argv):
+    if len(argv) < 2:
+        raise Error(u"expected at least 2 arguments")
+    return FuncLibrary(argv[0], argv[1])
+
 def wrap_json(obj):
     if isinstance(obj, dict):
         dict_ = Dict()
@@ -178,7 +184,8 @@ def wrap_json(obj):
         assert False, repr(obj)
 
 module = Module(u'api', {
-    u"so_ext": from_cstring(platform.so_ext)
+    u"so_ext": from_cstring(platform.so_ext),
+    u"funclibrary": FuncLibrary.interface,
 }, frozen=True)
 
 def builtin(fn):

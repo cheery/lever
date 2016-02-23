@@ -40,19 +40,14 @@ class Context(object):
         self.loop_stack = []
         self.loop_continue = None
         self.loop_break = None
-        self.loop_iterstop = 0
 
-    def push_loop(self, cont, brek, iterstop=None):
-        self.loop_stack.append((self.loop_continue, self.loop_break, self.loop_iterstop))
-        if iterstop is not None:
-            self.loop_iterstop = iterstop
+    def push_loop(self, cont, brek):
+        self.loop_stack.append((self.loop_continue, self.loop_break))
         self.loop_continue = cont
         self.loop_break = brek
 
     def pop_loop(self):
-        (self.loop_continue, self.loop_break, self.loop_iterstop
-        ) = self.loop_stack.pop()
-        return self.loop_iterstop
+        (self.loop_continue, self.loop_break) = self.loop_stack.pop()
 
 class Scope(object):
     def __init__(self, parent, flags, argc, localv):
@@ -106,12 +101,12 @@ class ForBlock(Cell):
         result = context.block.op(self.loc, 'getglob', [u"null"])
         iter = self.iterator.visit(context)
         iter = context.block.op(self.loc, 'iter', [iter])
-        context.block.op(self.loc, 'iterstop', [exit])
+        #context.block.op(self.loc, 'iterstop', [exit])
         repeat = label_this_point(self.loc, context.block)
-        context.push_loop(repeat, exit, exit)
+        context.push_loop(repeat, exit)
 
         context.block = repeat
-        value = context.block.op(self.loc, 'next', [iter])
+        value = context.block.op(self.loc, 'next', [iter, exit])
         setvar(context, self.loc, 'local', self.bind.value, value)
         val = None
         for expr in self.body:
@@ -121,8 +116,8 @@ class ForBlock(Cell):
         context.block.op(self.loc, 'jump', [repeat])
         
         context.block = exit
-        iterstop = context.pop_loop()
-        context.block.op(self.loc, 'iterstop', [iterstop])
+        context.pop_loop()
+        #context.block.op(self.loc, 'iterstop', [iterstop])
         return result
  
 def post_while(env, loc, cond, body):
