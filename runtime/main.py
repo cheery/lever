@@ -6,6 +6,7 @@ from stdlib import api # XXX: perhaps give every module an init?
 import vectormath
 from util import STDIN, STDOUT, STDERR, read_file, write
 from continuations import Continuation
+from evaluator.loader import TraceEntry
 import base
 import space
 import time
@@ -52,7 +53,6 @@ def new_entry_point(config, default_lever_path=u''):
             argv.append(space.String(arg.decode('utf-8')))
         schedule(argv)
 
-        rno = 0
         try:
             # This behavior is similar to javascript's event loop, except that
             # the messages put into queue are handled by greenlets rather than
@@ -74,10 +74,13 @@ def new_entry_point(config, default_lever_path=u''):
                         ec.sleepers.append(sleeper)
                 if len(ec.queue) == 0 and len(ec.sleepers) > 0 and now < timeout:
                     time.sleep(timeout - now)
-        except space.Error as error:
-            print_traceback(error)
-            rno = 1
-        return rno
+        except space.Unwinder as unwinder:
+            exception = unwinder.exception
+            if isinstance(exception, space.SystemExitObject):
+                return int(exception.status)
+            print_traceback(unwinder)
+            return 1
+        return 0
     return entry_point
 
 @space.Builtin
@@ -90,7 +93,7 @@ def normal_startup(argv):
     module = module_resolution.start(main_script)
     try:
         main_func = module.getattr(u"main")
-    except space.Error as error:
+    except space.Unwinder as unwinder:
         pass # in this case main_func just isn't in the module.
     else:
         main_func.call([space.List(argv)])
@@ -117,13 +120,13 @@ def sleep(argv):
     elif len(argv) == 2:
         return sleep_callback(argv)
     else:
-        raise space.Error(u"expected 1 or 2 arguments to sleep(), got %d" % len(argv))
+        raise space.OldError(u"expected 1 or 2 arguments to sleep(), got %d" % len(argv))
 
 @space.signature(space.Float)
 def sleep_greenlet(duration):
     ec = get_ec()
     if ec.current == ec.eventloop:
-        raise space.Error(u"bad context for greenlet sleep")
+        raise space.OldError(u"bad context for greenlet sleep")
     assert ec.current.is_exhausted() == False
     wakeup = time.time() + duration.number
     ec.sleepers.append(Suspended(wakeup, ec.current))
@@ -145,7 +148,7 @@ def to_greenlet(argv):
     else:
         c = Greenlet(ec.eventloop, argv)
     if c.is_exhausted():
-        raise space.Error(u"attempting to put exhausted greenlet into queue")
+        raise space.OldError(u"attempting to put exhausted greenlet into queue")
     return c
 
 class Greenlet(space.Object):
@@ -153,7 +156,7 @@ class Greenlet(space.Object):
         self.parent = parent
         self.handle = None
         self.argv = argv
-        self.error = None
+        self.unwinder = None
 
     def getattr(self, name):
         if name == u'parent':
@@ -181,11 +184,11 @@ def new_greenlet(cont):
     argv, self.argv = self.argv, [] # XXX: Throw into empty greenlet won't happen.
     try:
         if len(argv) == 0:
-            raise space.Error(u"greenlet with no arguments")
+            raise space.OldError(u"greenlet with no arguments")
         func = argv.pop(0)
         argv = argv_expand(func.call(argv))
-        error = None
-    except space.Error as error:
+        unwinder = None
+    except space.Unwinder as unwinder:
         argv = []
     assert self == ec.current
     parent = self.parent
@@ -194,7 +197,7 @@ def new_greenlet(cont):
         parent = parent.parent
     assert parent is not None
     parent.argv.extend(argv)
-    parent.error = error
+    parent.unwinder = unwinder
 
     ec.current = parent
     self.handle, parent.handle = parent.handle, self.handle
@@ -205,13 +208,13 @@ def switch(argv):
     target = argv.pop(0)
     self = ec.current
     if not isinstance(target, Greenlet):
-        raise space.Error(u"first argument to 'switch' not a greenlet")
+        raise space.OldError(u"first argument to 'switch' not a greenlet")
     if ec.current == target:
         argv, self.argv = self.argv, []
         argv.extend(argv)
         return argv_compact(argv)
     if target.handle is not None and target.handle.is_empty():
-        raise space.Error(u"empty greenlet")
+        raise space.OldError(u"empty greenlet")
     target.argv.extend(argv)
     ec.current = target
     if target.handle:
@@ -221,9 +224,9 @@ def switch(argv):
         self.handle = Continuation()
         self.handle.init(new_greenlet)
     argv, self.argv = self.argv, []
-    if self.error:
-        error, self.error = self.error, None
-        raise error
+    if self.unwinder:
+        unwinder, self.unwinder = self.unwinder, None
+        raise unwinder
     return argv_compact(argv)
     
 Greenlet.interface.methods[u'switch'] = space.Builtin(switch)
@@ -242,15 +245,22 @@ def argv_expand(obj):
         return [obj]
     return obj.contents
 
-def print_traceback(error):
+def print_traceback(unwinder):
     out = u""
-    if len(error.stacktrace) > 0:
+    if len(unwinder.traceback) > 0:
         out = u"\033[31mTraceback:\033[36m\n"
-    for pc, constants, sourcemap in reversed(error.stacktrace):
+    for entry in reversed(unwinder.traceback.contents):
+        if not isinstance(entry, TraceEntry):
+            continue
+        pc = entry.pc
+        constants = entry.constants
+        sourcemap = entry.sourcemap
         name, col0, lno0, col1, lno1 = pc_location(pc, constants, sourcemap)
         out += u"    %s: %d,%d : %d,%d\n" % (name.repr(), lno0, col0, lno1, col1)
-    out += u"\033[31mError:\033[0m"
-    write(STDERR, out + u" " + error.message + u"\n")
+    out += u"\033[31m"
+    out += space.get_interface(unwinder.exception).name
+    out += u":\033[0m"
+    write(STDERR, out + u" " + unwinder.exception.repr() + u"\n")
 
 def pc_location(pc, constants, sourcemap):
     if not isinstance(sourcemap, space.List):
@@ -272,4 +282,4 @@ def sourcemap_getitem_int(cell, index):
     item = cell.getitem(space.Integer(index))
     if isinstance(item, space.Integer):
         return item.value
-    raise space.Error(u"invalid sourcemap format")
+    raise space.OldError(u"invalid sourcemap format")

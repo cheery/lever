@@ -1,9 +1,10 @@
 from builtin import Builtin, signature
 from numbers import Integer
-from interface import Error, Object, null
+from interface import Object, null
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import compute_hash, r_dict
 from rpython.rlib.rarithmetic import intmask
+from errors import OldError
 import space
 
 def eq_fn(this, other):
@@ -47,7 +48,7 @@ class Multimethod(Object):
     def invoke_method(self, argv, suppress_default):
         self = jit.promote(self)
         if len(argv) < self.arity:
-            raise Error(u"expected at least %d arguments, got %d" % (self.arity, len(argv))) 
+            raise OldError(u"expected at least %d arguments, got %d" % (self.arity, len(argv))) 
         if self.arity == 1:
             method = self.get_method(jit.promote(space.get_interface(argv[0])))
         elif self.arity == 2:
@@ -78,7 +79,7 @@ class Multimethod(Object):
                 names = []
                 for i in range(self.arity):
                     names.append(vec[i].name)
-                raise Error(u"no method for ["+u' '.join(names)+u"]")
+                raise OldError(u"no method for ["+u' '.join(names)+u"]")
             return self.default.call(argv)
         return method.call(argv)
 

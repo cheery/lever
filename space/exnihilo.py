@@ -12,7 +12,7 @@ class Exnihilo(Object):
         try:
             return self.cells[name]
         except KeyError:
-            raise space.Error(u"object contains no field %s" % name)
+            raise space.OldError(u"object contains no field %s" % name)
 
     def setattr(self, name, value):
         self.cells[name] = value

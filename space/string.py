@@ -31,9 +31,9 @@ class String(Object):
 
     def getitem(self, index):
         if not isinstance(index, numbers.Integer):
-            raise space.Error(u"index not an integer")
+            raise space.OldError(u"index not an integer")
         if not 0 <= index.value < len(self.string):
-            raise space.Error(u"index out of range")
+            raise space.OldError(u"index out of range")
         return String(self.string[index.value])
 
 @String.builtin_method

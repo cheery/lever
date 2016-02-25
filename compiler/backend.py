@@ -2,19 +2,24 @@
 # backend.
 from evaluator import optable
 
-def new_block():
-    return Block([], set())
+def new_block(exc):
+    if exc:
+        succ = [x.block for x in exc.trace()]
+    else:
+        succ = []
+    return Block([], set(succ), exc)
 
 class Function(object):
     def __init__(self, index):
         self.index = index
 
 class Block(object):
-    def __init__(self, contents, succ):
+    def __init__(self, contents, succ, exc):
         self.label = 0
         self.contents = contents
         self.succ = succ
         self.visited = False # For reverse_postorder()
+        self.exc = exc
 
     def __getitem__(self, index):
         return self.contents[index]
@@ -33,6 +38,30 @@ class Block(object):
         self.append(op)
         return op
 
+class Exc(object):
+    has_result = True
+    index = None
+    opname = "exc"
+    def __init__(self, block, parent=None):
+        self.block = block
+        self.parent = parent
+        assert len(block) == 0, "exc block must be fresh"
+        block.append(self)
+
+    def uses(self):
+        return set()
+
+    def __iter__(self):
+        return iter(())
+
+    def trace(self):
+        seq = []
+        while self:
+            seq.append(self)
+            self = self.parent
+        seq.reverse()
+        return seq
+
 class Op(object):
     index = None
     def __init__(self, loc, opname, args):
@@ -43,19 +72,22 @@ class Op(object):
          self.pattern, self.variadic) = optable.enc[opname]
 
     def uses(self):
-        return set(arg for arg in self.args if isinstance(arg, Op))
+        return set(arg for arg in self.args if isinstance(arg, (Op, Exc)))
 
     def __iter__(self):
         return iter(self.args)
 
-def dump(flags, argc, localv, entry_block, consttab, location_id, debug):
+def dump(flags, argc, topc, localv, entry_block, consttab, location_id, debug):
     blocks = reverse_postorder(entry_block)
     tmpc = allocate_tmp(blocks, debug)
     block = []
     for bb in blocks:
         bb.label = len(block)
         for op in bb:
+            if isinstance(op, Exc):
+                continue
             block.extend(encode_op(op, consttab))
+    exceptions = find_exception_ranges(blocks, len(block))
     block = []
     sourcemap = []
     for bb in blocks:
@@ -63,6 +95,8 @@ def dump(flags, argc, localv, entry_block, consttab, location_id, debug):
             print "block {}".format(bb.index)
         assert bb.label == len(block)
         for op in bb:
+            if isinstance(op, Exc):
+                continue
             if debug:
                 print "  {1} := {0} {2}".format(op.opname.ljust(12), op.index, ', '.join(map(repr_oparg, op.args)))
             codes = list(encode_op(op, consttab))
@@ -80,16 +114,36 @@ def dump(flags, argc, localv, entry_block, consttab, location_id, debug):
             else:
                 sourcemap.append([len(codes)] + sourceloc)
     localc = len(localv)
-    return flags, tmpc, argc, localc, block, sourcemap
+    return flags, tmpc, argc, topc, localc, block, sourcemap, exceptions
+
+def find_exception_ranges(blocks, finish):
+    exceptions = []
+    starts = []
+    stack = []
+    for block in blocks:
+        new_stack = block.exc.trace() if block.exc else []
+        L = len(stack) - 1
+        while L >= 0 and (L >= len(new_stack) or stack[L] != new_stack[L]):
+            exc = stack.pop()
+            exceptions.append([starts.pop(), block.label, exc.block.label, exc.index])
+            L -= 1
+        stack = new_stack
+        while len(starts) < len(stack):
+            starts.append(block.label)
+    for exc in reversed(stack):
+        exceptions.append([starts.pop(), finish, exc.block.label, exc.index])
+    return exceptions
 
 def repr_oparg(arg):
+    if isinstance(arg, Exc):
+        return "Exc({})".format(arg.index)
     if isinstance(arg, Op):
         return "Op({})".format(arg.index)
     if isinstance(arg, Block):
         return "Block({})".format(arg.index)
     return repr(arg)
 
-# improve this one
+# improve this one ? 
 def encode_op(op, consttab):
     assert len(op.args) >= len(op.pattern), op.opname
     assert op.variadic or len(op.args) == len(op.pattern), op.opname
@@ -106,7 +160,7 @@ def as_arg(op, vt, arg, consttab):
         assert isinstance(arg, int)
         return arg
     if vt == 'vreg':
-        assert isinstance(arg, Op), (op.opname, op.loc, arg)
+        assert isinstance(arg, (Op, Exc)), (op.opname, op.loc, arg)
         assert arg.has_result, (arg.opname, arg.loc, arg)
         return arg.index
     if vt == 'block':
@@ -157,33 +211,33 @@ def allocate_tmp(blocks, debug):
         index += 1
         base += len(block)
     # This one runs to verify the iteration stop is recognized by allocator.
-    done = False
-    while not done:
-        done = True
-        for block in blocks:
-            except_ = block.except_in
-            iterstop = block.iterstop_in
-            for op in block:
-                if op.opname == "iterstop" and isinstance(op.args[0], Block):
-                    iterstop = [op.args[0]]
-                elif op.opname == "iterstop":
-                    iterstop = []
-                elif op.opname == "except" and isinstance(op.args[0], Block):
-                    except_ = op.args[0]
-                elif op.opname == "except":
-                    except_ = []
-            for succ in block.succ:
-                N = len(succ.iterstop_in) + len(succ.except_in)
-                succ.iterstop_in.update(iterstop)
-                succ.except_in.update(except_)
-                M = len(succ.iterstop_in) + len(succ.except_in)
-                if N != M:
-                    done = False
-    for block in blocks:
-        block.except_in.discard(block)
-        block.succ.update(block.except_in)
-        block.iterstop_in.discard(block)
-        block.succ.update(block.iterstop_in)
+    # done = False
+    # while not done:
+    #     done = True
+    #     for block in blocks:
+    #         except_ = block.except_in
+    #         iterstop = block.iterstop_in
+    #         for op in block:
+    #             if op.opname == "iterstop" and isinstance(op.args[0], Block):
+    #                 iterstop = [op.args[0]]
+    #             elif op.opname == "iterstop":
+    #                 iterstop = []
+    #             elif op.opname == "except" and isinstance(op.args[0], Block):
+    #                 except_ = op.args[0]
+    #             elif op.opname == "except":
+    #                 except_ = []
+    #         for succ in block.succ:
+    #             N = len(succ.iterstop_in) + len(succ.except_in)
+    #             succ.iterstop_in.update(iterstop)
+    #             succ.except_in.update(except_)
+    #             M = len(succ.iterstop_in) + len(succ.except_in)
+    #             if N != M:
+    #                 done = False
+    #for block in blocks:
+    #    block.except_in.discard(block)
+    #    block.succ.update(block.except_in)
+    #    block.iterstop_in.discard(block)
+    #    block.succ.update(block.iterstop_in)
     done = False
     while not done:
         if debug:

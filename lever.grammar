@@ -32,6 +32,14 @@ block_statement =>
         kw_for:"for" symbol kw_in:"in" statement block
     import(symbols_list):
         kw_import:"import" symbols_list
+    try(block excepts):
+        kw_try:"try" block excepts
+    raise(statement):
+        kw_raise:"raise" statement
+    break():
+        kw_break:"break"
+    continue():
+        kw_continue:"continue"
 
 slot =>
     lookup_slot: symbol
@@ -44,6 +52,14 @@ otherwise =>
         newline kw_elif:"elif" statement block otherwise
     else(block):
         newline kw_else:"else" block
+
+excepts =>
+    first:  except
+    append: excepts except
+
+except =>
+    except(expr symbol block):
+        kw_except:"except" expr kw_as:"as" symbol block
 
 statement =>
     pass: expr
@@ -124,6 +140,8 @@ postfix =>
     term
     call(postfix arguments):
         postfix lp:"(" arguments rp:")"
+    callv(postfix arguments1):
+        postfix lp:"(" arguments1 variadic:"..." rp:")"
     getitem(postfix expr):
         postfix lb:"[" expr rb:"]"
     getattr(postfix symbol):
@@ -153,13 +171,27 @@ term =>
     lookup(string): percent:"%" string
 
 bindings =>
-    empty_list:
-    bindings1
-    pass(bindings1): bindings1 comma:","
+    pass(optionals):
+        optionals
+    pass(optionals):
+        optionals comma:","
+    with_variadic(optionals symbol):
+        optionals comma:"," symbol variadic:"..."
 
-bindings1 =>
-    first: symbol
-    append(lst symbol): lst=bindings1 comma:"," symbol
+optionals =>
+    optional(optional): optional
+    append_optional(optionals optional):
+        optionals comma:"," optional
+    mandatorys
+
+optional =>
+    tuple(symbol expr):
+        symbol assign_op:"=" expr
+
+mandatorys =>
+    mandatory(symbol): symbol
+    append_mandatory(mandatorys symbol):
+        mandatorys comma:"," symbol
 
 pairs =>
     empty_list:

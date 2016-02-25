@@ -1,8 +1,9 @@
 from builtin import signature
 from rpython.rlib.objectmodel import compute_hash, r_dict
-from interface import Error, Object
+from interface import Object
 from listobject import List
 from numbers import Integer
+from errors import OldError
 import space
 
 def eq_fn(this, other):
@@ -26,7 +27,7 @@ class Dict(Object):
         try:
             return self.data[index]
         except KeyError as error:
-            raise Error(u"key %s not in %s" % (index.repr(), self.repr()))
+            raise OldError(u"key %s not in %s" % (index.repr(), self.repr()))
 
     def setitem(self, index, value):
         self.data[index] = value

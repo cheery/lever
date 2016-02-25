@@ -40,7 +40,7 @@ class Vec3(Object):
 @Vec3.instantiator
 def _(argv):
     if len(argv) > 3:
-        raise Error(u"Too many arguments to vec3")
+        raise OldError(u"Too many arguments to vec3")
     xyz = [0.0, 0.0, 0.0]
     for i, arg in enumerate(argv):
         xyz[i] = to_float(arg)
@@ -133,7 +133,7 @@ class Quat(Object):
 @Quat.instantiator
 def _(argv):
     if len(argv) > 4:
-        raise Error(u"Too many arguments to quat")
+        raise OldError(u"Too many arguments to quat")
     xyz = [0.0, 0.0, 0.0, 1.0]
     for i, arg in enumerate(argv):
         xyz[i] = to_float(arg)
@@ -142,14 +142,14 @@ def _(argv):
 @Quat.builtin_method
 def to_mat4(argv):
     if len(argv) < 1:
-        raise Error(u"Too few arguments")
+        raise OldError(u"Too few arguments")
     q = argv[0]
     if not isinstance(q, Quat):
-        raise Error(u"Expected quaternion")
+        raise OldError(u"Expected quaternion")
     if len(argv) > 1:
         p = argv[1]
         if not isinstance(p, Vec3):
-            raise Error(u"Expected vec3 as argument")
+            raise OldError(u"Expected vec3 as argument")
         x, y, z = p.x, p.y, p.z
     else:
         x = y = z = 0.0
@@ -258,7 +258,7 @@ class Mat4(Object):
 @Mat4.instantiator
 def _(argv):
     if len(argv) > 16:
-        raise Error(u"Too many arguments to mat4")
+        raise OldError(u"Too many arguments to mat4")
     mat = [1.0, 0.0, 0.0, 0.0,
            0.0, 1.0, 0.0, 0.0,
            0.0, 0.0, 1.0, 0.0,

@@ -1,6 +1,7 @@
-from interface import Object, Error, null
+from interface import Object, null
 from rpython.rlib.objectmodel import compute_hash
 from builtin import signature
+from errors import OldError
 
 class Float(Object):
     _immutable_fields_ = ['number']
@@ -72,7 +73,7 @@ def to_float(obj):
         else:
             return 0.0
     else:
-        raise Error(u"expected float value")
+        raise OldError(u"expected float value")
 
 def to_int(obj):
     if isinstance(obj, Float):
@@ -85,7 +86,7 @@ def to_int(obj):
         else:
             return 0
     else:
-        raise Error(u"expected int value")
+        raise OldError(u"expected int value")
 
 true = Boolean(True)
 false = Boolean(False)

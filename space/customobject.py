@@ -1,5 +1,6 @@
 import space
-from interface import Object, BoundMethod, Error
+from interface import Object, BoundMethod
+from errors import OldError
 
 class CustomObject(Object):
     _immutable_fields_ = ['custom_interface', 'cells']
@@ -47,7 +48,7 @@ class CustomObject(Object):
             try:
                 return BoundMethod(self, index, self.custom_interface.methods[index])
             except KeyError as e:
-                raise Error(u"%s not in %s" % (index, self.repr()))
+                raise OldError(u"%s not in %s" % (index, self.repr()))
 
     def setattr(self, index, value): # TODO: figure out something that makes sense here.
         self.cells[index] = value

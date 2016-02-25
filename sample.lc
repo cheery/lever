@@ -80,6 +80,28 @@ foo = [0]
 foo[0] += 1
 print("[0]:", foo[0])
 
+
+test = (first=4, foo...):
+    print(first)
+    print(foo)
+
+test(1,2,3)
+test(null, 5)
+test()
+
+
+while true
+    print("breaking out of while")
+    break
+
+try
+    not_present_here()
+except Error as x
+    print("got", interface(x), ":", x)
+    print("and traceback:", x.traceback)
+    print("lets raise it again")
+    raise x
+
 # primitives available (int,float,string,list)
 # locals/globals available
 # some of the operators available
@@ -98,10 +120,10 @@ print("[0]:", foo[0])
 # setitem/setattr available
 # dict literals available
 # classes available
+# function varargs available
+# raise available
+# while break/continue available
 
 # scope block capture missing.
 # generators missing, yield missing
-# while break/continue missing
-# function varargs missing
 # assert missing
-# raise missing

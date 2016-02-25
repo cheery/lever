@@ -58,7 +58,7 @@ def which(program):
             return pathobj.concat(pathobj.getcwd(), program)
         return null
     elif not isinstance(program, String):
-        raise Error(u"string or path expected to .which()")
+        raise OldError(u"string or path expected to .which()")
     program = as_cstring(program)
     for path in os.environ.get("PATH").split(os.pathsep):
         path = path.strip('"')

@@ -38,7 +38,7 @@ class Api(Object):
 
     def getitem(self, name):
         if not isinstance(name, String):
-            raise Error(u"API.getitem requires a string")
+            raise OldError(u"API.getitem requires a string")
         name = name
         if name.string in self.cache:
             return self.cache[name.string]
@@ -52,9 +52,9 @@ class Api(Object):
             decl = self.variables.getitem(name)
             cname = decl.getitem(String(u"name"))
             if not isinstance(cname, String):
-                raise Error(u"incorrect name record")
+                raise OldError(u"incorrect name record")
             if not isinstance(name, String):
-                raise Error(u"incorrect name record")
+                raise OldError(u"incorrect name record")
             ctype = decl.getitem(String(u"type"))
             return ffi.Wrap(cname.string, self.build_ctype(name.string, ctype))
         return self.lookup_type(name)
@@ -79,7 +79,7 @@ class Api(Object):
             if u"." in name.string and self.dependencies is not None:
                 namespace, name = name.string.split(u".", 1)
                 return self.dependencies.getitem(String(namespace)).getattr(name)
-            raise Error(name.repr() + u" not in API")
+            raise OldError(name.repr() + u" not in API")
         else:
             return self.build_ctype(u"<unnamed>", name)
 
@@ -89,7 +89,7 @@ class Api(Object):
             restype = decl.getitem(String(u'restype'))
             argtypes_list = decl.getitem(String(u'argtypes'))
             if not isinstance(argtypes_list, List):
-                raise Error(u"incorrect function record")
+                raise OldError(u"incorrect function record")
             restype = self.lookup_type(restype)
             argtypes = []
             for argtype in argtypes_list.contents:
@@ -119,20 +119,20 @@ class Api(Object):
             elif isinstance(length, Integer):
                 return ffi.Array(ctype, length.value)
             else:
-                raise Error(name + u": incorrect length value: %s" % length.repr())
+                raise OldError(name + u": incorrect length value: %s" % length.repr())
         if isinstance(which, String) and which.string == u"pointer":
             to = self.lookup_type(decl.getitem(String(u'to')))
             return ffi.Pointer(to)
-        raise Error(name + u": no ctype builder for " + which.repr())
+        raise OldError(name + u": no ctype builder for " + which.repr())
 
     def parse_fields(self, name, fields_list):
         if not isinstance(fields_list, List):
-            raise Error(name + u": ctype fields, expected list")
+            raise OldError(name + u": ctype fields, expected list")
         fields = []
         for field in fields_list.contents:
             field_name = field.getitem(Integer(0))
             if not isinstance(field_name, String):
-                raise Error(name + u": first column should be the name")
+                raise OldError(name + u": first column should be the name")
             ctype = self.lookup_type(field.getitem(Integer(1)))
             fields.append((field_name.string, ctype))
         return fields
@@ -156,12 +156,12 @@ class FuncLibrary(Object):
         if isinstance(res, ffi.Mem):
             return ffi.Mem(ctype, res.pointer, 1)
         else:
-            raise Error(u"expected memory object, not %s" % res.repr())
+            raise OldError(u"expected memory object, not %s" % res.repr())
 
 @FuncLibrary.instantiator
 def _(argv):
     if len(argv) < 2:
-        raise Error(u"expected at least 2 arguments")
+        raise OldError(u"expected at least 2 arguments")
     return FuncLibrary(argv[0], argv[1])
 
 def wrap_json(obj):
@@ -199,20 +199,33 @@ def open(argv):
     return library(argv)
 
 @builtin
-def library(argv):
-    if len(argv) < 1:
-        raise Error(u"expected at least 1 argument for api.open")
-    path = argument(argv, 0, String).string
+@signature(String, Object, Object, optional=2)
+def library(path, func, dependencies):
+    path = path.string
     if path.endswith(u".so") or path.endswith(u".json") or path.endswith(u".dll"):
         path = path.rsplit(u'.', 1)[0]
     json_path = pathobj.parse(path + u".json")
     so_path = path + u"." + platform.so_ext.decode('utf-8')
-    dependencies = None
-    if len(argv) >= 3 and argv[2] != null:
-        dependencies = argv[2]
-    if len(argv) >= 2 and argv[1] != null:
-        return FuncLibrary(open_api(json_path, dependencies), argv[1])
-    return ffi.Library.interface.call([String(so_path), open_api(json_path, dependencies)])
+    api = open_api(json_path, dependencies)
+    if func is not None:
+        return FuncLibrary(api, func)
+    return ffi.Library.interface.call([String(so_path), api])
+
+#@builtin
+#def library(argv):
+#    if len(argv) < 1:
+#        raise OldError(u"expected at least 1 argument for api.open")
+#    path = argument(argv, 0, String).string
+#    if path.endswith(u".so") or path.endswith(u".json") or path.endswith(u".dll"):
+#        path = path.rsplit(u'.', 1)[0]
+#    json_path = pathobj.parse(path + u".json")
+#    so_path = path + u"." + platform.so_ext.decode('utf-8')
+#    dependencies = None
+#    if len(argv) >= 3 and argv[2] != null:
+#        dependencies = argv[2]
+#    if len(argv) >= 2 and argv[1] != null:
+#        return FuncLibrary(open_api(json_path, dependencies), argv[1])
+#    return ffi.Library.interface.call([String(so_path), open_api(json_path, dependencies)])
 
 @builtin
 @signature(Object, Object)
@@ -231,7 +244,7 @@ def open_api(json_path, dependencies):
     try:
         apispec = json.read_file([path])
     except OSError as error:
-        raise Error(u"[Errno %d]: %s\n" % (error.errno, pathobj.stringify(path)))
+        raise OldError(u"[Errno %d]: %s\n" % (error.errno, pathobj.stringify(path)))
     api = Api(
         apispec.getitem(String(u"constants")),
         apispec.getitem(String(u"types")),

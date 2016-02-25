@@ -1,6 +1,6 @@
 from rpython.rlib import jit_libffi, clibffi, unroll
 from rpython.rtyper.lltypesystem import rffi, lltype
-from space import Error, Object, Integer, Float, to_float, to_int
+from space import OldError, Object, Integer, Float, to_float, to_int
 # Simple, platform independent concepts are put up
 # here, so they won't take space elsewhere.
 
@@ -17,7 +17,7 @@ def align(x, a):
 def sizeof(tp):
     assert isinstance(tp, Type)
     if tp.size == 0 or tp.align == 0:
-        raise Error(u"cannot determine size of opaque type")
+        raise OldError(u"cannot determine size of opaque type")
     return tp.size
 
 # This is something rpython's allocator is doing, and
@@ -26,7 +26,7 @@ def sizeof(tp):
 def sizeof_a(tp, n):
     assert isinstance(tp, Type)
     if tp.size == 0 or tp.align == 0:
-        raise Error(u"cannot determine size of opaque type")
+        raise OldError(u"cannot determine size of opaque type")
     if tp.parameter is not None:
         return tp.size + sizeof(tp.parameter)*n
     else:

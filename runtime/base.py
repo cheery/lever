@@ -29,6 +29,10 @@ module = Module(u'base', {
     u'path': pathobj.Path.interface,
 }, frozen=True)
 
+# we may later want to do the same for the stuff you see above.
+for error in all_errors:
+    module.setattr_force(error.interface.name, error.interface)
+
 for name, value in operators.by_symbol.iteritems():
     module.setattr_force(name, value)
 
@@ -84,6 +88,11 @@ def setitem(obj, index, value):
     return obj.setitem(index, value)
 
 @builtin
+@signature(Object)
+def listattr(obj):
+    return List(obj.listattr())
+
+@builtin
 @signature(Object, String)
 def getattr(obj, index):
     return obj.getattr(index.string)
@@ -103,7 +112,20 @@ def ord_(string):
 @signature(Integer)
 def chr_(value):
     return String(unichr(value.value))
-  
+
+@builtin
+@signature(Object, Object)
+def isinstance_(value, which):
+    interface = get_interface(value)
+    while interface is not null:
+        if interface is which:
+            return true
+        # There should be exactly one recursively defined interface.
+        if interface.parent is interface:
+            return false
+        interface = interface.parent
+    return true
+ 
 #def pyl_callattr(argv):
 #    assert len(argv) >= 2
 #    name = argv[1]
@@ -169,6 +191,7 @@ def chdir(obj):
     return null
 
 @builtin
-@signature(Object)
+@signature(Integer, optional=1)
 def exit(obj):
-    raise Error(u"exit(...) called, not implemented")
+    status = 0 if obj is None else obj.value
+    raise unwind(SystemExitObject(status))

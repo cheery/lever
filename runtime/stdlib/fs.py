@@ -76,7 +76,7 @@ def getctime(path):
 @builtin
 def read_file(argv):
     if len(argv) < 1:
-        raise Error(u"too few arguments to fs.read_file()")
+        raise OldError(u"too few arguments to fs.read_file()")
     pathname = pathobj.to_path(argv[0])
     path = pathobj.os_stringify(pathname).encode('utf-8')
     convert = from_cstring
@@ -85,7 +85,7 @@ def read_file(argv):
             if ch == 'b':
                 convert = to_uint8array
             else:
-                raise Error(u"unknown mode string action")
+                raise OldError(u"unknown mode string action")
     try:
         fd = rfile.create_file(path, 'rb')
         try:
@@ -98,7 +98,7 @@ def read_file(argv):
 @builtin
 def open_(argv):
     if len(argv) < 1:
-        raise Error(u"too few arguments to fs.open()")
+        raise OldError(u"too few arguments to fs.open()")
     pathname = pathobj.to_path(argv[0])
     path = pathobj.os_stringify(pathname).encode('utf-8')
     if len(argv) > 1:
@@ -118,10 +118,10 @@ class File(Object):
 @File.builtin_method
 def read(argv):
     if len(argv) < 1:
-        raise Error(u"too few arguments to file.read()")
+        raise OldError(u"too few arguments to file.read()")
     self = argv[0]
     if not isinstance(self, File):
-        raise Error(u"expected file object")
+        raise OldError(u"expected file object")
     if len(argv) > 1:
         count_or_dst = argv[1]
         if isinstance(count_or_dst, Uint8Array):
@@ -182,6 +182,6 @@ def flush(self):
 
 def ioerror(pathname, error):
     message = os.strerror(error.errno).decode('utf-8')
-    return Error(u"%s: %s" % (pathname.repr(), message))
+    return OldError(u"%s: %s" % (pathname.repr(), message))
 
 module.setattr_force(u"file", File.interface)

@@ -37,7 +37,7 @@ class Stream:
 
     def expect(self, ch):
         if not self.shift(ch):
-            raise space.Error(u"JSON decode expected '%s', got '%s'" % (ch, self.get()))
+            raise space.OldError(u"JSON decode expected '%s', got '%s'" % (ch, self.get()))
 
 def decode(stream):
     stream.skipspace()
@@ -89,13 +89,13 @@ def decode(stream):
     if stream.shift(u'.'):
         num += u'.' + digits(stream)
         if stream.get() in u'eE':
-            raise space.Error(u"XXX")
+            raise space.OldError(u"XXX")
         return space.Float(float(num.encode('utf-8')))
     else:
         if stream.get() in u'eE':
-            raise space.Error(u"XXX")
+            raise space.OldError(u"XXX")
         return space.Integer(sign*int(num.encode('utf-8')))
-    raise space.Error(u"JSON decode error at %s" % stream.get())
+    raise space.OldError(u"JSON decode error at %s" % stream.get())
 
 def decode_pair(stream, dct):
     stream.skipspace()
@@ -135,7 +135,7 @@ def escape_ch(ch):
         return u'\r'
     if ch == u't':
         return u'\t'
-    raise space.Error(u"JSON decode error")
+    raise space.OldError(u"JSON decode error")
 
 def digits(stream):
     res = u''

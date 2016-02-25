@@ -2,13 +2,14 @@ import re
 
 source = [
     ('assert',   0x00, False, 'vreg'),
-    ('except',   0x01, True,  'block'),
+    ('raise',    0x05, False, 'vreg'),
     ('constant', 0x10, True,  'constant'),
     ('list',     0x20, True,  'vreg*'),
     ('move',     0x30, False, 'vreg vreg'),
     ('call',     0x40, True,  'vreg vreg*'),
-    ('not',      0x41, True, 'vreg'),
-    ('contains', 0x42, True, 'vreg vreg'),
+    ('not',      0x41, True,  'vreg'),
+    ('contains', 0x42, True,  'vreg vreg'),
+    ('callv',    0x45, True,  'vreg vreg vreg*'),
     ('return',   0x50, False, 'vreg'),
     ('jump',     0x60, False, 'block'),
     ('cond',     0x70, False, 'vreg block block'),

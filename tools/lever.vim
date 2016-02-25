@@ -7,7 +7,7 @@ if exists("b:current_syntax")
     finish
 endif
 
-syn keyword leverKeyword if elif else while import from return for in
+syn keyword leverKeyword if elif else while import from return for in as break continue raise try except
 syn keyword leverBoolean true false
 
 syn match   leverNumberError	"\<0[xX]\x*[g-zG-Z]\+\x*[lL]\=\>" display

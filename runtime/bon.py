@@ -25,7 +25,7 @@ def open_file(pathname):
             fd.close()
     except IOError as error:
         message = os.strerror(error.errno).decode('utf-8')
-        raise Error(u"%s: %s" % (pathobj.stringify(pathname), message))
+        raise OldError(u"%s: %s" % (pathobj.stringify(pathname), message))
 
 def load(fd):
     type_id = ord(fd.read(1)[0])

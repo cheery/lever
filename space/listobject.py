@@ -1,7 +1,8 @@
 from builtin import signature
-from interface import Error, Object, null
+from interface import Object, null
 from rpython.rlib.rarithmetic import intmask
 from numbers import Integer
+from errors import OldError
 
 class List(Object):
     _immutable_fields_ = ['contents']
@@ -49,16 +50,16 @@ class List(Object):
     
     def getitem(self, index):
         if not isinstance(index, Integer):
-            raise Error(u"index not an integer")
+            raise OldError(u"index not an integer")
         if not 0 <= index.value < len(self.contents):
-            raise Error(u"index out of range")
+            raise OldError(u"index out of range")
         return self.contents[index.value]
 
     def setitem(self, index, value):
         if not isinstance(index, Integer):
-            raise Error(u"index not an integer")
+            raise OldError(u"index not an integer")
         if not 0 <= index.value < len(self.contents):
-            raise Error(u"index out of range")
+            raise OldError(u"index out of range")
         self.contents[index.value] = value
         return value
 

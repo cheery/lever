@@ -24,9 +24,9 @@ class PosixPrefix(Prefix):
             return null
         if name == u"label":
             if not isinstance(value, String):
-                raise Error(u"label must be a string")
+                raise OldError(u"label must be a string")
             if value.string.count(u"/") + value.string.count(u":") > 0:
-                raise Error(u"label must not contain '/' or ':'")
+                raise OldError(u"label must not contain '/' or ':'")
             self.label = value.string
             return null
         return Object.setattr(self, name, value)
@@ -46,16 +46,16 @@ class URLPrefix(Prefix):
     def setattr(self, name, value):
         if name == u"protocol":
             if not isinstance(value, String):
-                raise Error(u"protocol must be a string")
+                raise OldError(u"protocol must be a string")
             if value.string.count(u"/") + value.string.count(u":") > 0:
-                raise Error(u"protocol must not contain '/' or ':'")
+                raise OldError(u"protocol must not contain '/' or ':'")
             self.label = value.string
             return null
         if name == u"domain":
             if not isinstance(value, String):
-                raise Error(u"domain must be a string")
+                raise OldError(u"domain must be a string")
             if value.string.count(u"/") > 0:
-                raise Error(u"domain must not contain '/'")
+                raise OldError(u"domain must not contain '/'")
             self.label = value.string
             return null
         return Object.setattr(self, name, value)
@@ -77,9 +77,9 @@ class Path(Object):
     def setattr(self, name, value):
         if name == u"basename":
             if not isinstance(value, String):
-                raise Error(u"basename must be a string")
+                raise OldError(u"basename must be a string")
             if value.string.count(u"/") > 0:
-                raise Error(u"basename must not contain slash character")
+                raise OldError(u"basename must not contain slash character")
             if len(self.pathseq) == 0:
                 self.pathseq.append(value.string)
             else:
@@ -89,7 +89,7 @@ class Path(Object):
             if isinstance(value, Prefix):
                 self.prefix = value
             else:
-                raise Error(u"prefix must be a valid prefix object, for now.")
+                raise OldError(u"prefix must be a valid prefix object, for now.")
         return Object.setattr(self, name, value)
 
     def repr(self):
@@ -123,7 +123,7 @@ def _(obj):
         return parse(obj.string)
     elif isinstance(obj, Path):
         return duplicate(obj)
-    raise Error(u"path() expected string or path object.")
+    raise OldError(u"path() expected string or path object.")
 
 @PosixPrefix.instantiator
 def _(argv):
@@ -202,7 +202,7 @@ def parse(string, nt=False):
                 prefix.domain = domain
                 state = 8 # ordinary path.
             elif slash:
-                raise Error(u"path parser state corruption")
+                raise OldError(u"path parser state corruption")
             else:
                 buf.append(ch)
         # state == 8: uniform path. {name}
@@ -214,7 +214,7 @@ def parse(string, nt=False):
             else:
                 buf.append(ch)
         else:
-            raise Error(u"path parser state corruption")
+            raise OldError(u"path parser state corruption")
     if state == 0:
         prefix = PosixPrefix(u"", is_absolute=False)
     elif state == 1:
@@ -233,7 +233,7 @@ def parse(string, nt=False):
     elif state == 8 and isinstance(prefix, Prefix):
         pathseq.append(u''.join(buf))
     else:
-        raise Error(u"path parser state corruption")
+        raise OldError(u"path parser state corruption")
     return Path(prefix, pathseq_ncat([], pathseq))
 
 @operators.concat.multimethod_s(String, Path)
@@ -288,7 +288,7 @@ def stringify(path, nt=False):
     if isinstance(path, String):
         path = parse(path.string)
     if not isinstance(path, Path):
-        raise Error(u"expected a path object")
+        raise OldError(u"expected a path object")
     prefix = path.prefix
     if isinstance(prefix, URLPrefix):
         string = prefix.protocol
@@ -315,13 +315,13 @@ def stringify(path, nt=False):
             string = prefix.label + u":" + string
         return string
     else:
-        raise Error(u"custom prefix passed to stringification [corruption]")
+        raise OldError(u"custom prefix passed to stringification [corruption]")
 
 def stringify_pathseq(pathseq, nt=False):
     if nt:
         for name in pathseq:
             if name.count(u"\\") > 0:
-                raise Error(ur"nt_stringify cannot stringify file/directory names that contain '\\'")
+                raise OldError(ur"nt_stringify cannot stringify file/directory names that contain '\\'")
         return u"\\".join(pathseq)
     return u"/".join(pathseq)
 
@@ -337,13 +337,13 @@ def to_path(obj):
     elif isinstance(obj, Path):
         return obj
     else:
-        raise Error(u"expected path")
+        raise OldError(u"expected path")
 
 def directory(path):
     path = duplicate(path)
     path.drop_slash()
     if len(path.pathseq) == 0:
-        raise Error(u"cannot take directory(), too short path")
+        raise OldError(u"cannot take directory(), too short path")
     path.pathseq.pop()
     return path
 

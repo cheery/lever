@@ -1,5 +1,5 @@
 from simple import *
-from space import Error, Object, List, String, null, signature, argument, as_cstring, Uint8Array
+from space import OldError, Object, List, String, null, signature, as_cstring, Uint8Array
 from rpython.rtyper.lltypesystem import rffi, lltype
 from rpython.rlib import jit_libffi, clibffi, unroll, rgc
 
@@ -57,7 +57,7 @@ class Mem(Object):
                 #elif isinstance(ctype, Signed) or isinstance(ctype, Unsigned) or isinstance(ctype, Floating) or isinstance(ctype, Pointer):
                 #    return ctype.load(pointer)
                 #else:
-                #    raise Error(u"no load supported for " + ctype.repr())
+                #    raise OldError(u"no load supported for " + ctype.repr())
             elif isinstance(ctype, Type):
                 if name == u"str" and ctype.size == 1:
                     s = rffi.charp2str(rffi.cast(rffi.CCHARP, self.pointer))
@@ -68,7 +68,7 @@ class Mem(Object):
                 if name == u"str" and ctype.ctype.size == 1:
                     s = rffi.charp2str(rffi.cast(rffi.CCHARP, self.pointer))
                     return String(s.decode('utf-8'))
-        raise Error(u"cannot attribute access other mem than structs or unions")
+        raise OldError(u"cannot attribute access other mem than structs or unions")
 
     def setattr(self, name, value):
         ctype = self.ctype
@@ -86,11 +86,11 @@ class Mem(Object):
                 #    raise Exception(u"no store supported for " + ctype.repr())
             elif name == u"to":
                 return ctype.store(self.pointer, value)
-        raise Error(u"cannot attribute access other mem than structs or unions")
+        raise OldError(u"cannot attribute access other mem than structs or unions")
 
     def getitem(self, index):
         if not isinstance(index, Integer):
-            raise Error(u"index must be an integer")
+            raise OldError(u"index must be an integer")
         index = index.value
         ctype = self.ctype
         if isinstance(ctype, Pointer):
@@ -103,11 +103,11 @@ class Mem(Object):
                 if isinstance(ctype, Struct) or isinstance(ctype, Union) or isinstance(ctype, Array):
                     return Mem(Pointer(ctype), pointer)
                 return ctype.load(pointer)
-        raise Error(u"cannot item access other mem than pointers or arrays")
+        raise OldError(u"cannot item access other mem than pointers or arrays")
 
     def setitem(self, index, value):
         if not isinstance(index, Integer):
-            raise Error(u"index must be an integer")
+            raise OldError(u"index must be an integer")
         index = index.value
         ctype = self.ctype
         if isinstance(ctype, Pointer):
@@ -119,12 +119,12 @@ class Mem(Object):
             elif isinstance(ctype, Type):
                 pointer = rffi.ptradd(self.pointer, ctype.size*index)
                 return ctype.store(pointer, value)
-        raise Error(u"cannot item access other mem than pointers or arrays")
+        raise OldError(u"cannot item access other mem than pointers or arrays")
 
     def call(self, argv):
         if isinstance(self.ctype, CFunc):
             return self.ctype.ccall(self.pointer, argv)
-        raise Error(u"cannot call " + self.ctype.repr())
+        raise OldError(u"cannot call " + self.ctype.repr())
 
     def repr(self):
         name = self.ctype.repr()
@@ -159,12 +159,12 @@ class Pointer(Type):
         elif isinstance(value, Mem):
             # It could be worthwhile to typecheck the ctype here.
             if not self.typecheck(value.ctype):
-                raise Error(u"incompatible pointer store: %s = %s" % (self.repr(), value.ctype.repr()))
+                raise OldError(u"incompatible pointer store: %s = %s" % (self.repr(), value.ctype.repr()))
             pointer = value.pointer
         elif isinstance(value, Uint8Array):
             pointer = rffi.cast(rffi.VOIDP, value.uint8data)
         else:
-            raise Error(u"cannot pointer store %s to %s" % (value.repr(), self.repr()))
+            raise OldError(u"cannot pointer store %s to %s" % (value.repr(), self.repr()))
         ptr = rffi.cast(rffi.VOIDPP, offset)
         ptr[0] = pointer
         return value
@@ -175,7 +175,7 @@ class Pointer(Type):
             ptr = rffi.cast(rffi.VOIDPP, offset)
             ptr[0] = pointer
         else:
-            raise Error(u"cannot pointer store string to %s" % self.repr())
+            raise OldError(u"cannot pointer store string to %s" % self.repr())
 
     def typecheck(self, other):
         if other is null:
@@ -249,7 +249,7 @@ class CFunc(Type):
     def ccall(self, pointer, argv):
         argc = len(argv)
         if argc != len(self.argtypes):
-            raise Error(u"ffi call expects %d arguments" % argc)
+            raise OldError(u"ffi call expects %d arguments" % argc)
         if self.notready:
             self.prepare_cif()
             self.notready = False
@@ -311,13 +311,13 @@ class CFunc(Type):
 @signature(Object, List)
 def _(restype, argtypes_list):
     if restype is not null and not isinstance(restype, Type):
-        raise Error(u"expected type or null as restype, not " + restype.repr())
+        raise OldError(u"expected type or null as restype, not " + restype.repr())
     argtypes = []
     for argtype in argtypes_list.contents:
         if isinstance(argtype, Type):
             argtypes.append(argtype)
         else:
-            raise Error(u"expected type as argtype, not " + argtype.repr())
+            raise OldError(u"expected type as argtype, not " + argtype.repr())
     return CFunc(restype, argtypes)
 
 class Struct(Type):
@@ -347,16 +347,16 @@ class Struct(Type):
 
     def declare(self, fields):
         if self.fields is not None:
-            raise Error(u"struct can be declared only once")
+            raise OldError(u"struct can be declared only once")
         self.fields = fields
         self.align = 1
 
         offset = 0
         for name, ctype in fields:
             if not isinstance(ctype, Type):
-                raise Error(u"expected ctype: " + ctype.repr())
+                raise OldError(u"expected ctype: " + ctype.repr())
             if self.parameter is not None:
-                raise Error(u"parametric field in middle of a structure")
+                raise OldError(u"parametric field in middle of a structure")
             if ctype.parameter:
                 self.parameter = ctype.parameter
             if ctype.align == 0:
@@ -384,7 +384,7 @@ class Struct(Type):
             if isinstance(ctype, Pointer) and ctype.to is self:
                 rffi.c_memcpy(offset, value.pointer, sizeof(self))
                 return value
-        raise Error(u"cannot struct store " + value.repr())
+        raise OldError(u"cannot struct store " + value.repr())
  
     def repr(self):
         if self.fields is None:
@@ -400,13 +400,13 @@ def _(fields_list):
     if fields_list is null:
         return Struct(None)
     if not isinstance(fields_list, List):
-        raise Error(u"expected a list")
+        raise OldError(u"expected a list")
     fields = []
     for field in fields_list.contents:
         name = field.getitem(Integer(0))
         ctype = field.getitem(Integer(1))
         if not (isinstance(name, String) and isinstance(ctype, Type)):
-            raise Error(u"expected declaration format: [name, ctype]")
+            raise OldError(u"expected declaration format: [name, ctype]")
         fields.append((name.string, ctype))
     return Struct(fields)
 
@@ -422,7 +422,7 @@ class Union(Type):
 
     def declare(self, fields):
         if self.fields is not None:
-            raise Error(u"union can be declared only once")
+            raise OldError(u"union can be declared only once")
         self.fields = fields
         self.align = 1
 
@@ -430,7 +430,7 @@ class Union(Type):
         for name, ctype in fields:
             assert isinstance(ctype, Type)
             if ctype.parameter is not None:
-                raise Error(u"parametric field in an union")
+                raise OldError(u"parametric field in an union")
             self.align = max(self.align, ctype.align)
             self.size = max(self.size, sizeof(ctype))
             self.namespace[name] = (0, ctype)
@@ -456,7 +456,7 @@ def _(fields_list):
         name = field.getitem(Integer(0))
         ctype = field.getitem(Integer(1))
         if not (isinstance(name, String) and isinstance(ctype, Type)):
-            raise Error(u"expected declaration format: [name, ctype]")
+            raise OldError(u"expected declaration format: [name, ctype]")
         fields.append((name.string, ctype))
     return Union(fields)
 
@@ -465,7 +465,7 @@ class Array(Type):
         assert isinstance(ctype, Type)
         self.ctype = ctype
         if ctype.parameter is not None:
-            raise Error(u"parametric field in an array")
+            raise OldError(u"parametric field in an array")
         if length == 0:
             self.parameter = self
             self.size = 0
@@ -484,19 +484,16 @@ class Array(Type):
         return False
 
     def load(self, offset):
-        raise Error(u"array load notimpl")
+        raise OldError(u"array load notimpl")
 
     def store(self, offset, value):
-        raise Error(u"Array store notimpl")
+        raise OldError(u"Array store notimpl")
 
     def repr(self):
         return u'<array ' + self.ctype.repr() + u'>'
 
 @Array.instantiator
-def _(argv):
-    ctype = argument(argv, 0, Type)
-    if len(argv) >= 2:
-        n = argument(argv, 1, Integer).value
-    else:
-        n = 0
+@signature(Type, Integer, optional=1)
+def _(ctype, n):
+    n = 0 if n is None else n.value
     return Array(ctype, n)

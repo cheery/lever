@@ -2,12 +2,6 @@ import re
 from rpython.rlib.objectmodel import compute_hash
 import space
 
-class Error(Exception):
-    _immutable_fields_ = ['message', 'stacktrace']
-    def __init__(self, message):
-        self.message = message
-        self.stacktrace = []
-
 class Object:
     _immutable_fields_ = ['interface', 'custom_interface', 'flag', 'number', 'value', 'contents', 'data', 'string[*]', 'iterator', 'arity', 'methods', 'default', 'cells']
     __slots__ = []
@@ -22,31 +16,37 @@ class Object:
                     name = re.sub("(.)([A-Z]+)", r"\1_\2", name).lower().decode('utf-8'))
 
     def call(self, argv):
-        raise Error(u"cannot call " + self.repr())
+        raise space.OldError(u"cannot call " + self.repr())
 
     def getitem(self, index):
-        raise Error(u"cannot getitem " + self.repr())
+        raise space.OldError(u"cannot getitem " + self.repr())
 
     def setitem(self, index, value):
-        raise Error(u"cannot setitem " + self.repr())
+        raise space.OldError(u"cannot setitem " + self.repr())
 
     def iter(self):
-        raise Error(u"cannot iterate " + self.repr())
+        raise space.OldError(u"cannot iterate " + self.repr())
+
+    def listattr(self):
+        listing = []
+        for name in self.__class__.interface.methods:
+            listing.append(space.String(name))
+        return listing
 
     def getattr(self, index):
         try:
             return BoundMethod(self, index, self.__class__.interface.methods[index])
         except KeyError as e:
-            raise Error(u"%s not in %s" % (index, self.repr()))
+            raise space.OldError(u"%s not in %s" % (index, self.repr()))
 
     def setattr(self, index, value):
-        raise Error(u"cannot set %s in %s" % (index, self.repr()))
+        raise space.OldError(u"cannot set %s in %s" % (index, self.repr()))
 
     def callattr(self, name, argv):
         return self.getattr(name).call(argv)
 
     def contains(self, obj):
-        raise Error(u"%s does not contain " % (self.repr(), obj.repr()))
+        raise space.OldError(u"%s does not contain " % (self.repr(), obj.repr()))
 
     def repr(self):
         return u"<%s>" % space.get_interface(self).name
@@ -83,8 +83,8 @@ class Interface(Object):
     def call(self, argv):
         if self.instantiate is None:
             if self.name == u'null':
-                raise Error(u"Cannot call null")
-            raise Error(u"Cannot instantiate " + self.name)
+                raise space.OldError(u"Cannot call null")
+            raise space.OldError(u"Cannot instantiate " + self.name)
         return self.instantiate(self, argv)
 
     def repr(self):

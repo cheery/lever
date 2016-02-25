@@ -31,7 +31,7 @@ class ModuleScope(Object):
         if isinstance(item, String):
             if item.string in self.cache:
                 return self.cache[item.string]
-        raise Error(u"%s not in module scope" % item.repr())
+        raise OldError(u"%s not in module scope" % item.repr())
 
     def iter(self):
         return ScopeIterator(self.cache.iterkeys())
@@ -81,7 +81,7 @@ def start(main_script):
     scope = ModuleScope(mi.directory, lib_scope)
     this = Module(mi.name.string, {}, extends=base.module) # base.module
     if not (mi.lc_present or mi.cb_present):
-        raise Error(u"main module not present")
+        raise OldError(u"main module not present")
     mi.default_config(this, scope)
     mi.loadit(this)
     scope.setcache(main_path, this, max(mi.lc_mtime, mi.cb_mtime))
@@ -162,12 +162,12 @@ class Import(Object):
 
     def call(self, argv):
         if len(argv) != 1:
-            raise Error(u"wrong number of arguments to import")
+            raise OldError(u"wrong number of arguments to import")
         name = argv[0]
         if isinstance(name, pathobj.Path):
-            raise Error(u"no direct loading yet")
+            raise OldError(u"no direct loading yet")
         elif not isinstance(name, String):
-            raise Error(u"expected string")
+            raise OldError(u"expected string")
         # import resolution:
         #  local/script.lc
         path = pathobj.concat(self.local, pathobj.to_path(name))
@@ -198,7 +198,7 @@ class Import(Object):
                     scope.setcache(path, this, max(mi.lc_mtime, mi.cb_mtime))
                     return this
             scope = scope.parent
-        raise Error(u"module '%s' not present" % name.string)
+        raise OldError(u"module '%s' not present" % name.string)
 
     def getattr(self, name):
         if name == u'scope':
@@ -209,7 +209,7 @@ class Import(Object):
 @signature(ModuleScope, String)
 def reimport(scope, obj):
     if obj.string not in scope.cache:
-        raise Error(u"Cannot reimport, module not present")
+        raise OldError(u"Cannot reimport, module not present")
     mc = scope.cache[obj.string]
     mi = moduleinfo(mc.path)
     mi.default_config(mc.module, scope)
@@ -233,7 +233,7 @@ if sys.platform != "win32":
             return
         pid, status = os.waitpid(pid, 0)
         if status != 0:
-            raise Error(u"module compile failed: %s %s" % (cb_path.decode('utf-8'), src_path.decode('utf-8')))
+            raise OldError(u"module compile failed: %s %s" % (cb_path.decode('utf-8'), src_path.decode('utf-8')))
 else:
     def compile_module(cb_path, src_path):
         cb_path = pathobj.os_stringify(cb_path).encode('utf-8')
@@ -245,7 +245,7 @@ else:
         py_path = find_python_interpreter()
         status = os.spawnv(os.P_WAIT, py_path, [py_path, escape_arg(compiler_path), escape_arg(cb_path), escape_arg(src_path)])
         if status != 0:
-            raise Error(u"module compile failed: %s %s" % (cb_path.decode('utf-8'), src_path.decode('utf-8')))
+            raise OldError(u"module compile failed: %s %s" % (cb_path.decode('utf-8'), src_path.decode('utf-8')))
 
     def find_python_interpreter():
         pths = os.environ.get("PATH").split(";")

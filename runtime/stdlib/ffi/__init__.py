@@ -41,24 +41,36 @@ class Library(Object):
         try:
             pointer = rdynload.dlsym(self.lib, cname)
         except KeyError, e:
-            raise Error(u"Not in the library: " + name)
+            raise OldError(u"Not in the library: " + name)
         self.namespace[name] = handle = Handle(self, name, pointer, ctype)
         return handle
 
 @Library.instantiator
-def _(argv):
-    if len(argv) < 1:
-        raise Error(u"library requires at least a path name")
-    name = argument(argv, 0, String)
-    apispec = argv[1] if len(argv) > 1 else null
+@signature(String, Object, optional=1)
+def _(name, apispec):
+    apispec = null if apispec is None else apispec
     path = rffi.str2charp(as_cstring(name))
     try:
         lib = rdynload.dlopen(path)
     except rdynload.DLOpenError, e:
-        raise Error(u"Unable to load library: " + name.string)# + e.msg.decode('utf-8'))
+        raise OldError(u"Unable to load library: " + name.string)# + e.msg.decode('utf-8'))
     finally:
         lltype.free(path, flavor='raw')
     return Library(name.string, apispec, lib)
+
+#def _(argv):
+#    if len(argv) < 1:
+#        raise OldError(u"library requires at least a path name")
+#    name = argument(argv, 0, String)
+#    apispec = argv[1] if len(argv) > 1 else null
+#    path = rffi.str2charp(as_cstring(name))
+#    try:
+#        lib = rdynload.dlopen(path)
+#    except rdynload.DLOpenError, e:
+#        raise OldError(u"Unable to load library: " + name.string)# + e.msg.decode('utf-8'))
+#    finally:
+#        lltype.free(path, flavor='raw')
+#    return Library(name.string, apispec, lib)
 
 class Handle(Object):
     def __init__(self, library, name, pointer, ctype):
@@ -70,7 +82,7 @@ class Handle(Object):
     def call(self, argv):
         if isinstance(self.ctype, CFunc):
             return self.ctype.ccall(self.pointer, argv)
-        raise Error(u"cannot call " + self.ctype.repr())
+        raise OldError(u"cannot call " + self.ctype.repr())
 
     def repr(self):
         return u"<handle %s from %s>" % (self.name, self.library.name)
@@ -109,23 +121,25 @@ def cast(obj, ctype):
     if isinstance(obj, Integer) and isinstance(ctype, Pointer):
         return Mem(ctype, rffi.cast(rffi.VOIDP, obj.value))
 
-    raise Error(u"Can cast memory locations only")
+    raise OldError(u"Can cast memory locations only")
 
 @builtin
-def sizeof(argv):
-    ctype = argument(argv, 0, Type)
-    if len(argv) >= 2:
-        n = argument(argv, 1, Integer)
-        size = simple.sizeof_a(ctype, n.value)
+@signature(Type, Integer, optional=1)
+def sizeof(ctype, count):
+    if count:
+        size = simple.sizeof_a(ctype, count.value)
     else:
         size = simple.sizeof(ctype)
     return Integer(size)
 
 @builtin
-def malloc(argv):
-    ctype = argument(argv, 0, Type)
-    if len(argv) >= 2:
-        n = argument(argv, 1, Integer).value
+@signature(Type, Integer, optional=1)
+def malloc(ctype, count):
+#    ctype = argument(argv, 0, Type)
+    #if len(argv) >= 2:
+    if count:
+        n = count.value
+        #n = argument(argv, 1, Integer).value
         size = simple.sizeof_a(ctype, n)
     else:
         n = 1
@@ -134,10 +148,13 @@ def malloc(argv):
     return Mem(systemv.Pointer(ctype), pointer, n)
 
 @builtin
-def automem(argv):
-    ctype = argument(argv, 0, Type)
-    if len(argv) >= 2:
-        n = argument(argv, 1, Integer).value
+@signature(Type, Integer, optional=1)
+def automem(ctype, count):
+#    ctype = argument(argv, 0, Type)
+#    if len(argv) >= 2:
+#        n = argument(argv, 1, Integer).value
+    if count:
+        n = count.value
         size = simple.sizeof_a(ctype, n)
     else:
         n = 1
@@ -146,8 +163,9 @@ def automem(argv):
     return systemv.AutoMem(systemv.Pointer(ctype), pointer, n)
 
 @builtin
-def free(argv):
-    mem = argument(argv, 0, Mem)
+@signature(Mem)
+def free(mem):
+    #mem = argument(argv, 0, Mem)
     lltype.free(mem.pointer, flavor='raw')
     mem.pointer = rffi.cast(rffi.VOIDP, 0)
     return null
@@ -155,8 +173,9 @@ def free(argv):
 c_ubytep = systemv.Pointer(systemv.types[u"ubyte"])
 
 @builtin
-def ref(argv):
-    mem = argument(argv, 0, Object)
+@signature(Object)
+def ref(mem):
+    #mem = argument(argv, 0, Object)
     if isinstance(mem, Mem):
         size = simple.sizeof(mem.ctype)
         ctype = mem.ctype
@@ -164,7 +183,7 @@ def ref(argv):
         size = rffi.sizeof(rffi.VOIDP)
         ctype = c_ubytep
     else:
-        raise Error(u"expected object that can be converted to c-object")
+        raise OldError(u"expected object that can be converted to c-object")
     pointer = lltype.malloc(rffi.VOIDP.TO, size, flavor='raw')
     result = systemv.AutoMem(systemv.Pointer(ctype), pointer, 1)
     ctype.store(pointer, mem)
