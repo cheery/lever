@@ -95,12 +95,15 @@ while true
     break
 
 try
-    not_present_here()
+    try
+        not_present_here()
+    except Error as x
+        print("got", interface(x), ":", x)
+        print("and traceback:", x.traceback)
+        print("we could raise it again..")
+        raise x
 except Error as x
-    print("got", interface(x), ":", x)
-    print("and traceback:", x.traceback)
-    print("lets raise it again")
-    raise x
+    print("..or we could just exit")
 
 # primitives available (int,float,string,list)
 # locals/globals available
