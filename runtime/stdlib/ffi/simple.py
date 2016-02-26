@@ -1,6 +1,6 @@
 from rpython.rlib import jit_libffi, clibffi, unroll
 from rpython.rtyper.lltypesystem import rffi, lltype
-from space import OldError, Object, Integer, Float, to_float, to_int
+from space import unwind, LTypeError, Object, Integer, Float, to_float, to_int
 # Simple, platform independent concepts are put up
 # here, so they won't take space elsewhere.
 
@@ -17,7 +17,7 @@ def align(x, a):
 def sizeof(tp):
     assert isinstance(tp, Type)
     if tp.size == 0 or tp.align == 0:
-        raise OldError(u"cannot determine size of opaque type")
+        raise unwind(LTypeError(u"cannot determine size of opaque type"))
     return tp.size
 
 # This is something rpython's allocator is doing, and
@@ -26,7 +26,7 @@ def sizeof(tp):
 def sizeof_a(tp, n):
     assert isinstance(tp, Type)
     if tp.size == 0 or tp.align == 0:
-        raise OldError(u"cannot determine size of opaque type")
+        raise unwind(LTypeError(u"cannot determine size of opaque type"))
     if tp.parameter is not None:
         return tp.size + sizeof(tp.parameter)*n
     else:
@@ -47,23 +47,23 @@ class Signed(Type):
             if self.size == rffi.sizeof(rtype):
                 return clibffi.cast_type_to_ffitype(rtype)
         else:
-            assert False, "undefined ffi type"
+            raise unwind(LTypeError(u"undefined ffi type: %s" % self.repr()))
 
     def load(self, offset):
         for rtype in signed_types:
             if self.size == rffi.sizeof(rtype):
                 return Integer(rffi.cast(rffi.LONG, rffi.cast(rffi.CArrayPtr(rtype), offset)[0]))
         else:
-            assert False, "undefined ffi type"
+            raise unwind(LTypeError(u"undefined ffi type: %s" % self.repr()))
 
-    def store(self, offset, value):
+    def store(self, pool, offset, value):
         for rtype in signed_types:
             if self.size == rffi.sizeof(rtype):
                 pnt = rffi.cast(rffi.CArrayPtr(rtype), offset)
                 pnt[0] = rffi.cast(rtype, to_int(value))
                 break
         else:
-            assert False, "undefined ffi type"
+            raise unwind(LTypeError(u"undefined ffi type: %s" % self.repr()))
         return value
 
     def typecheck(self, other):
@@ -87,23 +87,23 @@ class Unsigned(Type):
             if self.size == rffi.sizeof(rtype):
                 return clibffi.cast_type_to_ffitype(rtype)
         else:
-            assert False, "undefined ffi type"
+            raise unwind(LTypeError(u"undefined ffi type: %s" % self.repr()))
 
     def load(self, offset):
         for rtype in unsigned_types:
             if self.size == rffi.sizeof(rtype):
                 return Integer(rffi.cast(rffi.LONG, rffi.cast(rffi.CArrayPtr(rtype), offset)[0]))
         else:
-            assert False, "undefined ffi type"
+            raise unwind(LTypeError(u"undefined ffi type: %s" % self.repr()))
 
-    def store(self, offset, value):
+    def store(self, pool, offset, value):
         for rtype in unsigned_types:
             if self.size == rffi.sizeof(rtype):
                 pnt = rffi.cast(rffi.CArrayPtr(rtype), offset)
                 pnt[0] = rffi.cast(rtype, to_int(value))
                 break
         else:
-            assert False, "undefined ffi type"
+            raise unwind(LTypeError(u"undefined ffi type: %s" % self.repr()))
         return value
 
     def repr(self):
@@ -126,16 +126,16 @@ class Floating(Type):
             if self.size == rffi.sizeof(rtype):
                 return clibffi.cast_type_to_ffitype(rtype)
         else:
-            assert False, "undefined ffi type"
+            raise unwind(LTypeError(u"undefined ffi type: %s" % self.repr()))
 
     def load(self, offset):
         for rtype in floating_types:
             if self.size == rffi.sizeof(rtype):
                 return Float(rffi.cast(rffi.DOUBLE, rffi.cast(rffi.CArrayPtr(rtype), offset)[0]))
         else:
-            assert False, "undefined ffi type"
+            raise unwind(LTypeError(u"undefined ffi type: %s" % self.repr()))
 
-    def store(self, offset, value):
+    def store(self, pool, offset, value):
         number = to_float(value)
         for rtype in floating_types:
             if self.size == rffi.sizeof(rtype):
@@ -143,7 +143,7 @@ class Floating(Type):
                 pnt[0] = rffi.cast(rtype, number)
                 break
         else:
-            assert False, "undefined ffi type"
+            raise unwind(LTypeError(u"undefined ffi type: %s" % self.repr()))
         return value
 
     def repr(self):

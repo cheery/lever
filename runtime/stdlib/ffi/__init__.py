@@ -41,7 +41,7 @@ class Library(Object):
         try:
             pointer = rdynload.dlsym(self.lib, cname)
         except KeyError, e:
-            raise OldError(u"Not in the library: " + name)
+            return Object.getattr(self, name)
         self.namespace[name] = handle = Handle(self, name, pointer, ctype)
         return handle
 
@@ -53,24 +53,18 @@ def _(name, apispec):
     try:
         lib = rdynload.dlopen(path)
     except rdynload.DLOpenError, e:
-        raise OldError(u"Unable to load library: " + name.string)# + e.msg.decode('utf-8'))
+        raise unwind(LLoadError(name))
+        #raise OldError(u"Unable to load library: " + name.string)# + e.msg.decode('utf-8'))
     finally:
         lltype.free(path, flavor='raw')
     return Library(name.string, apispec, lib)
 
-#def _(argv):
-#    if len(argv) < 1:
-#        raise OldError(u"library requires at least a path name")
-#    name = argument(argv, 0, String)
-#    apispec = argv[1] if len(argv) > 1 else null
-#    path = rffi.str2charp(as_cstring(name))
-#    try:
-#        lib = rdynload.dlopen(path)
-#    except rdynload.DLOpenError, e:
-#        raise OldError(u"Unable to load library: " + name.string)# + e.msg.decode('utf-8'))
-#    finally:
-#        lltype.free(path, flavor='raw')
-#    return Library(name.string, apispec, lib)
+class LLoadError(LException):
+    def __init__(self, name):
+        self.name = name
+
+    def repr(self):
+        return u"Unable to load library: %s" % self.name.repr()
 
 class Handle(Object):
     def __init__(self, library, name, pointer, ctype):
@@ -82,7 +76,7 @@ class Handle(Object):
     def call(self, argv):
         if isinstance(self.ctype, CFunc):
             return self.ctype.ccall(self.pointer, argv)
-        raise OldError(u"cannot call " + self.ctype.repr())
+        return Object.call(self, argv)
 
     def repr(self):
         return u"<handle %s from %s>" % (self.name, self.library.name)
@@ -100,6 +94,7 @@ module = Module(u'ffi', {
     u'unsigned': simple.Unsigned.interface,
     u'voidp': systemv.Pointer(null),
     u'wrap': Wrap.interface,
+    u'pool': systemv.Pool.interface,
 }, frozen=True)
 
 for name in systemv.types:
@@ -120,8 +115,7 @@ def cast(obj, ctype):
         return Mem(ctype, rffi.cast(rffi.VOIDP, obj.uint8data))
     if isinstance(obj, Integer) and isinstance(ctype, Pointer):
         return Mem(ctype, rffi.cast(rffi.VOIDP, obj.value))
-
-    raise OldError(u"Can cast memory locations only")
+    raise unwind(LTypeError(u"Can cast memory locations only"))
 
 @builtin
 @signature(Type, Integer, optional=1)
@@ -135,11 +129,8 @@ def sizeof(ctype, count):
 @builtin
 @signature(Type, Integer, optional=1)
 def malloc(ctype, count):
-#    ctype = argument(argv, 0, Type)
-    #if len(argv) >= 2:
     if count:
         n = count.value
-        #n = argument(argv, 1, Integer).value
         size = simple.sizeof_a(ctype, n)
     else:
         n = 1
@@ -150,9 +141,6 @@ def malloc(ctype, count):
 @builtin
 @signature(Type, Integer, optional=1)
 def automem(ctype, count):
-#    ctype = argument(argv, 0, Type)
-#    if len(argv) >= 2:
-#        n = argument(argv, 1, Integer).value
     if count:
         n = count.value
         size = simple.sizeof_a(ctype, n)
@@ -183,8 +171,8 @@ def ref(mem):
         size = rffi.sizeof(rffi.VOIDP)
         ctype = c_ubytep
     else:
-        raise OldError(u"expected object that can be converted to c-object")
+        raise unwind(LTypeError(u"expected object that can be converted to c-object"))
     pointer = lltype.malloc(rffi.VOIDP.TO, size, flavor='raw')
     result = systemv.AutoMem(systemv.Pointer(ctype), pointer, 1)
-    ctype.store(pointer, mem)
+    result.setattr(u"to", mem)
     return result

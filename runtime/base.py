@@ -194,4 +194,4 @@ def chdir(obj):
 @signature(Integer, optional=1)
 def exit(obj):
     status = 0 if obj is None else obj.value
-    raise unwind(SystemExitObject(status))
+    raise unwind(LSystemExit(status))

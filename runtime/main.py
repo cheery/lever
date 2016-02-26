@@ -76,7 +76,7 @@ def new_entry_point(config, default_lever_path=u''):
                     time.sleep(timeout - now)
         except space.Unwinder as unwinder:
             exception = unwinder.exception
-            if isinstance(exception, space.SystemExitObject):
+            if isinstance(exception, space.LSystemExit):
                 return int(exception.status)
             print_traceback(unwinder)
             return 1

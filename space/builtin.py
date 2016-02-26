@@ -27,10 +27,8 @@ def signature(*argtypes, **keywords):
         def fancy_frame(argv):
             args = ()
             L = len(argv)
-            if L < argc:
-                raise space.OldError(u"expected at least %d arguments, received %d" % (argc, L))
-            if L > topc and not variadic:
-                raise space.OldError(u"expected maximum %d arguments, received %d" % (topc, L))
+            if L < argc or (L > topc and not variadic):
+                raise space.unwind(space.LCallError(argc, topc, variadic, L))
             for i in argi:
                 arg = argv[i]
                 if isinstance(arg, argtypes[i]):
@@ -58,4 +56,4 @@ def signature(*argtypes, **keywords):
 # the signature when it is appropriate and drop back into expectations error
 # if expectations are violated.
 def expectations_error(index, name):
-    return space.OldError(u"expected arg:%d is %s" % (index, name))
+    raise space.unwind(space.LTypeError(u"expected arg:%d is %s" % (index, name)))

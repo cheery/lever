@@ -65,7 +65,7 @@ class Closure(space.Object):
         topc = self.function.topc
         L = len(argv)
         if L < argc:
-            raise space.OldError(u"closure expected at least %d arguments, received %d" % (argc, L))
+            raise space.unwind(space.LCallError(argc, topc, varargs, L))
         # We are using this trait.
         #if L > topc and not varargs:
         #    raise space.Error(u"too many arguments [%d], from %d to %d arguments allowed" % (L, argc, topc))
@@ -84,7 +84,7 @@ class Program(space.Object):
 
     def call(self, argv):
         if len(argv) != 1:
-            raise space.OldError(u"program expects module as an argument")
+            raise space.unwind(space.LCallError(1, 1, False, len(argv)))
         module = argv[0]
         assert isinstance(module, space.Module)
         entry = self.unit.functions[0]
@@ -167,7 +167,7 @@ def interpret(pc, block, regv, frame):
                 pc = ix+(rffi.r_ulong(block[pc])&255)
                 if opcode == opcode_of('assert'):
                     obj = regv.load(block[ix+0])
-                    raise space.unwind(space.AssertionErrorObject(obj))
+                    raise space.unwind(space.LAssertionError(obj))
                 elif opcode == opcode_of('raise'):
                     obj = regv.load(block[ix+0])
                     traceback = obj.getattr(u"traceback")
@@ -175,7 +175,7 @@ def interpret(pc, block, regv, frame):
                         traceback = space.List([])
                         obj.setattr(u"traceback", traceback)
                     elif not isinstance(traceback, space.List):
-                        raise space.unwind(space.Error(u"Expected null or list as .traceback: %s" % obj.repr()))
+                        raise space.unwind(space.LError(u"Expected null or list as .traceback: %s" % obj.repr()))
                     raise space.Unwinder(obj, traceback)
                 elif opcode == opcode_of('constant'):
                     regv.store(block[ix+0], unit.constants[block[ix+1]])
@@ -264,7 +264,9 @@ def interpret(pc, block, regv, frame):
                     else:
                         regv.store(block[ix+0], space.false)
                 else:
-                    raise space.OldError(u"unexpected instruction: " + optable.names.get(opcode, str(opcode)).decode('utf-8'))
+                    raise space.unwind(space.LInstructionError(
+                        optable.names.get(opcode, str(opcode)).decode('utf-8'),
+                        opcode))
             except space.Unwinder as unwinder:
                 for exc in excs:
                     if exc.start < pc <= exc.stop:
@@ -274,7 +276,7 @@ def interpret(pc, block, regv, frame):
                 else:
                     raise
     except StopIteration as stop:
-        unwinder = space.unwind(space.UncatchedStopIteration())
+        unwinder = space.unwind(space.LUncatchedStopIteration())
         unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.constants, frame.sourcemap))
         raise unwinder
     except space.Unwinder as unwinder:

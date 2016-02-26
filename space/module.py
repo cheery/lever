@@ -1,6 +1,5 @@
 from interface import Object, null
 from rpython.rlib import jit
-from errors import OldError
 import space
 
 class Cell:
@@ -58,14 +57,14 @@ class Module(Object):
 
     def setattr(self, name, value):
         if self.frozen:
-            raise OldError(u"module %s is frozen" % self.name)
+            raise space.unwind(space.LFrozenError(self))
         return self.setattr_force(name, value)
 
     def setattr_force(self, name, value):
         try:
             cell = jit.promote(self.lookup(name, assign=True))
             if isinstance(cell, FrozenCell):
-                raise OldError(u"cell %s is frozen" % name)
+                raise space.unwind(space.LFrozenError(self))
             elif isinstance(cell, MutableCell):
                 cell.slot = value
             else:
@@ -83,7 +82,7 @@ class Module(Object):
     # Utility for reimporting modules
     def clear(self):
         if self.frozen:
-            raise OldError(u"Cannot clear frozen module")
+            raise space.unwind(space.LFrozenError(self))
         for name, cell in self.cells.iteritems():
             if isinstance(MutableCell):
                 cell.slot = null

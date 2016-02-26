@@ -14,18 +14,20 @@ class Object:
                 cls.interface = Interface(
                     parent = cls.__bases__[0].interface,
                     name = re.sub("(.)([A-Z]+)", r"\1_\2", name).lower().decode('utf-8'))
+                if re.match("^L[A-Z]", name):
+                    cls.interface.name = name[1:].decode('utf-8')
 
     def call(self, argv):
-        raise space.OldError(u"cannot call " + self.repr())
+        raise space.unwind(space.LTypeError(u"cannot call " + self.repr()))
 
     def getitem(self, index):
-        raise space.OldError(u"cannot getitem " + self.repr())
+        raise space.unwind(space.LKeyError(self, index))
 
     def setitem(self, index, value):
-        raise space.OldError(u"cannot setitem " + self.repr())
+        raise space.unwind(space.LKeyError(self, index))
 
     def iter(self):
-        raise space.OldError(u"cannot iterate " + self.repr())
+        raise space.unwind(space.LTypeError(u"cannot iterate " + self.repr()))
 
     def listattr(self):
         listing = []
@@ -37,16 +39,16 @@ class Object:
         try:
             return BoundMethod(self, index, self.__class__.interface.methods[index])
         except KeyError as e:
-            raise space.OldError(u"%s not in %s" % (index, self.repr()))
+            raise space.unwind(space.LAttributeError(self, index))
 
     def setattr(self, index, value):
-        raise space.OldError(u"cannot set %s in %s" % (index, self.repr()))
+        raise space.unwind(space.LAttributeError(self, index))
 
     def callattr(self, name, argv):
         return self.getattr(name).call(argv)
 
     def contains(self, obj):
-        raise space.OldError(u"%s does not contain " % (self.repr(), obj.repr()))
+        raise space.unwind(space.LTypeError(u"%s cannot contain" % self.repr()))
 
     def repr(self):
         return u"<%s>" % space.get_interface(self).name
@@ -65,10 +67,29 @@ class Object:
         return fn
 
     @classmethod
+    def instantiator2(cls, decorator):
+        def _decorator_(fn):
+            fn = decorator(fn)
+            def _instantiate_wrapper_(interface, argv):
+                return fn(argv)
+            cls.interface.instantiate = _instantiate_wrapper_
+            return fn
+        return _decorator_
+
+    @classmethod
     def builtin_method(cls, fn):
         from builtin import Builtin
         builtin = Builtin(fn)
         cls.interface.methods[builtin.name] = builtin
+
+    @classmethod
+    def method(cls, name, decorator):
+        def _decarotar_(fn):
+            from builtin import Builtin
+            builtin = Builtin(decorator(fn), name)
+            cls.interface.methods[builtin.name] = builtin
+            return fn
+        return _decarotar_
 
 class Interface(Object):
     _immutable_fields_ = ['instantiate?', 'methods']
@@ -79,12 +100,14 @@ class Interface(Object):
         self.name = name
         self.instantiate = None
         self.methods = {}
+        if parent is not None:
+            self.methods.update(parent.methods)
 
     def call(self, argv):
         if self.instantiate is None:
             if self.name == u'null':
-                raise space.OldError(u"Cannot call null")
-            raise space.OldError(u"Cannot instantiate " + self.name)
+                raise space.unwind(space.LTypeError(u"cannot call null"))
+            raise space.unwind(space.LTypeError(u"cannot instantiate " + self.name))
         return self.instantiate(self, argv)
 
     def repr(self):
@@ -100,14 +123,14 @@ null.parent = null
 Object.interface = Interface(null, u"object")
 
 class BoundMethod(Object):
-    def __init__(self, obj, name, method):
+    def __init__(self, obj, name, methodfn):
         self.obj = obj
         self.name = name
-        self.method = method
+        self.methodfn = methodfn
 
     def call(self, argv):
         argv.insert(0, self.obj)
-        return self.method.call(argv)
+        return self.methodfn.call(argv)
 
     def repr(self):
         return u"%s.%s" % (self.obj.repr(), self.name)

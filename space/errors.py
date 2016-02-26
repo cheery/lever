@@ -10,7 +10,7 @@ class Unwinder(Exception):
         self.traceback = traceback
 
 # The exceptions themselves must be able to hold traceback.
-class ExceptionObject(Object):
+class LException(Object):
     def getattr(self, name):
         if name == u"traceback":
             return self.traceback
@@ -20,45 +20,92 @@ class ExceptionObject(Object):
         if name == u"traceback":
             self.traceback = value
         return Object.setattr(self, name, value)
-ExceptionObject.interface.name = u"Exception"
 
-class Error(ExceptionObject):
+class LError(LException):
     def __init__(self, message):
         self.message = message
         self.traceback = null
 
     def repr(self):
         return self.message
-Error.interface.name = u"Error"
 
-class AssertionErrorObject(ExceptionObject):
+class LAssertionError(LException):
     def __init__(self, thing):
         self.thing = thing
         self.traceback = null
 
     def repr(self):
         return self.thing.repr()
-AssertionErrorObject.interface.name = u"AssertionError"
 
-class SystemExitObject(ExceptionObject):
+class LSystemExit(LException):
     def __init__(self, status):
         self.status = status
 
     def repr(self):
         return u"%d" % self.status
-SystemExitObject.interface.name = u"SystemExit"
 
-class UncatchedStopIteration(ExceptionObject):
+class LUncatchedStopIteration(LException):
     def __init__(self):
         self.traceback = null
 
     def repr(self):
         return u""
-UncatchedStopIteration.interface.name = u"UncatchedStopIteration"
+
+class LAttributeError(LException):
+    def __init__(self, obj, name):
+        self.traceback = null
+        self.obj = obj
+        self.name = name
+
+    def repr(self):
+        return u"%s.%s" % (self.obj.repr(), self.name)
+
+class LKeyError(LException):
+    def __init__(self, obj, key):
+        self.traceback = null
+        self.obj = obj
+        self.key = key
+
+    def repr(self):
+        return u"%s[%s]" % (self.obj.repr(), self.key.repr())
+
+class LTypeError(LException):
+    def __init__(self, message):
+        self.message = message
+
+    def repr(self):
+        return self.message
+
+class LFrozenError(LException):
+    def __init__(self, obj):
+        self.obj = obj
+
+    def repr(self):
+        return u"%s is frozen" % self.obj.repr()
+
+class LCallError(LException):
+    def __init__(self, min, max, variadic, got):
+        self.min = min
+        self.max = max
+        self.variadic = variadic
+        self.got = got
+
+    def repr(self):
+        if self.got < self.min:
+            return u"expected at least %d arguments, received %d" % (self.min, self.got)
+        return u"expected maximum %d arguments, received %d" % (self.max, self.got)
+
+class LInstructionError(LException):
+    def __init__(self, name, opcode):
+        self.name = name
+        self.opcode = opcode
+
+    def repr(self):
+        return u"unexpected instruction: " + self.name
 
 # Legacy handling for errors.
 def OldError(message):
-    return unwind(Error(message))
+    return unwind(LError(message))
 
 # convenience function to produce a valid unwinder.
 # Note that you don't want to pass user tracebacks with this thing.
@@ -68,8 +115,15 @@ def unwind(exc):
 
 # This is used to plug them into base module
 all_errors = [
-    Error,
-    AssertionErrorObject,
-    SystemExitObject,
-    UncatchedStopIteration,
+    LError,
+    LException,
+    LAssertionError,
+    LSystemExit,
+    LUncatchedStopIteration,
+    LAttributeError,
+    LKeyError,
+    LTypeError,
+    LFrozenError,
+    LCallError,
+    LInstructionError,
 ]
