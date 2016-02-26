@@ -158,6 +158,8 @@ class Pointer(Type):
     def store(self, pool, offset, value):
         if value is null:
             pointer = lltype.nullptr(rffi.VOIDP.TO)
+            ptr = rffi.cast(rffi.VOIDPP, offset)
+            ptr[0] = pointer
         elif isinstance(value, Mem):
             pool_mark_object(pool, value)
             # It could be worthwhile to typecheck the ctype here.
@@ -518,22 +520,20 @@ class PoolPointer:
 
     def free(self):
         lltype.free(self.pointer, flavor='raw')
+        self.pointer = rffi.cast(rffi.VOIDP, 0)
 
 class AutoPoolPointer(PoolPointer):
     @rgc.must_be_light_finalizer
     def __del__(self):
-        lltype.free(self.pointer, flavor='raw')
+        if self.pointer:
+            lltype.free(self.pointer, flavor='raw')
 
 class Pool(Object):
-    def __init__(self, mode=PoolPointer):
+    def __init__(self, autoclear=True, mode=PoolPointer):
+        self.autoclear = autoclear
         self.mode = mode
         self.pointers = []
         self.refs = []
-
-    def alloc(self, size):
-        pointer = lltype.malloc(rffi.VOIDP.TO, size, flavor='raw')
-        self.pointers.append(self.mode(pointer))
-        return pointer
 
     def mark(self, pointer):
         self.pointers.append(self.mode(pointer))
@@ -551,12 +551,12 @@ class Pool(Object):
         self.pointers = []
         self.refs = []
 
-@Pool.instantiator2(signature())
-def AutoPool_new():
-    return Pool(AutoPoolPointer)
+@Pool.instantiator2(signature(Boolean, optional=1))
+def AutoPool_new(autoclear):
+    return Pool((autoclear is None) or is_true(autoclear), AutoPoolPointer)
 
-@Pool.method(u"alloc", signature(Pool, Type, Integer, optional=1))
-def Pool_alloc(pool, ctype, count):
+@Pool.method(u"alloc", signature(Pool, Type, Integer, Boolean, optional=2))
+def Pool_alloc(pool, ctype, count, clear):
     if count:
         n = count.value
         size = sizeof_a(ctype, n)
@@ -564,6 +564,9 @@ def Pool_alloc(pool, ctype, count):
         n = 1
         size = sizeof(ctype)
     pointer = lltype.malloc(rffi.VOIDP.TO, size, flavor='raw')
+    pool.mark(pointer)
+    if (pool.autoclear and clear is None) or is_true(clear):
+        rffi.c_memset(pointer, 0, size)
     return Mem(Pointer(ctype), pointer, n, pool)
 
 @Pool.method(u"mark", signature(Pool, Object))
@@ -579,7 +582,11 @@ def Pool_free(pool):
 # Helpers that can be later associated to userspace -objects.
 def pool_alloc(pool, size):
     if isinstance(pool, Pool):
-        return pool.alloc(size)
+        pointer = lltype.malloc(rffi.VOIDP.TO, size, flavor='raw')
+        pool.mark(pointer)
+        if pool.autoclear:
+            rffi.c_memset(pointer, 0, size)
+        return pointer
     elif pool is None:
         raise unwind(LError(u"Would have to allocate to do this action"))
     else:

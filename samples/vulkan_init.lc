@@ -1,0 +1,19 @@
+# Minimal test to check if vulkan initializes.
+import api, ffi, fs
+
+vk = api.library("libvulkan.so")
+
+pool = ffi.pool()
+ci = pool.alloc(vk.InstanceCreateInfo, 1)
+ci.sType = vk.STRUCTURE_TYPE_INSTANCE_CREATE_INFO
+ci.enabledExtensionCount = 2
+ci.ppEnabledExtensionNames = ["VK_KHR_surface", "VK_KHR_xcb_surface"]
+instance = ffi.automem(vk.Instance, 1, true)
+result = vk.createInstance(ci, null, instance)
+if result != vk.SUCCESS
+    # I could throw exception if I had remembered to setup initializers
+    # for exception classes.. ohwell.
+    print("error: result=", result)
+    exit(1)
+pool.free()
+print("success")

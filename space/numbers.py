@@ -92,10 +92,10 @@ true = Boolean(True)
 false = Boolean(False)
 
 def is_true(flag):
-    return flag is not null and flag is not false
+    return flag is not null and flag is not false and flag is not None
 
 def is_false(flag):
-    return flag is null or flag is false
+    return flag is null or flag is false or flag is None
 
 def boolean(cond):
     return true if cond else false

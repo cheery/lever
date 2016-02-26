@@ -127,8 +127,8 @@ def sizeof(ctype, count):
     return Integer(size)
 
 @builtin
-@signature(Type, Integer, optional=1)
-def malloc(ctype, count):
+@signature(Type, Integer, Boolean, optional=2)
+def malloc(ctype, count, clear):
     if count:
         n = count.value
         size = simple.sizeof_a(ctype, n)
@@ -136,11 +136,13 @@ def malloc(ctype, count):
         n = 1
         size = simple.sizeof(ctype)
     pointer = lltype.malloc(rffi.VOIDP.TO, size, flavor='raw')
+    if is_true(clear):
+        rffi.c_memset(pointer, 0, size)
     return Mem(systemv.Pointer(ctype), pointer, n)
 
 @builtin
-@signature(Type, Integer, optional=1)
-def automem(ctype, count):
+@signature(Type, Integer, Boolean, optional=2)
+def automem(ctype, count, clear):
     if count:
         n = count.value
         size = simple.sizeof_a(ctype, n)
@@ -148,6 +150,8 @@ def automem(ctype, count):
         n = 1
         size = simple.sizeof(ctype)
     pointer = lltype.malloc(rffi.VOIDP.TO, size, flavor='raw')
+    if is_true(clear):
+        rffi.c_memset(pointer, 0, size)
     return systemv.AutoMem(systemv.Pointer(ctype), pointer, n)
 
 @builtin
@@ -156,6 +160,12 @@ def free(mem):
     #mem = argument(argv, 0, Mem)
     lltype.free(mem.pointer, flavor='raw')
     mem.pointer = rffi.cast(rffi.VOIDP, 0)
+    return null
+
+@builtin
+@signature(Mem, Integer, Integer)
+def memset(mem, num, count):
+    rffi.c_memset(mem.pointer, num.value, count.value)
     return null
 
 c_ubytep = systemv.Pointer(systemv.types[u"ubyte"])
