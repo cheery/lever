@@ -106,6 +106,9 @@ def post_with_variadic(env, loc, bindings, vararg):
     bindings[2] = vararg
     return bindings
 
+def post_blank_bindings(env, loc):
+    return [[], [], None]
+
 def post_optional(env, loc, optional):
     return [[], [optional], None]
 
@@ -454,6 +457,9 @@ def post_float(env, loc, num):
 
 def post_string(env, loc, string):
     return Code(loc, "constant", string.value)
+
+def post_implicit_string_pair(env, loc, string, expr):
+    return (Code(loc, "constant", string.value), expr)
 
 def post_list(env, loc, items):
     return Code(loc, "list", *items)

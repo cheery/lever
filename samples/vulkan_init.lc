@@ -2,18 +2,58 @@
 import api, ffi, fs
 
 vk = api.library("libvulkan.so")
+check = (result):
+    if result != vk.SUCCESS
+        # I could throw exception if I had remembered to setup initializers
+        # for exception classes.. ohwell.
+        print("error: result=", result)
+        exit(1)
 
-pool = ffi.pool()
-ci = pool.alloc(vk.InstanceCreateInfo, 1)
-ci.sType = vk.STRUCTURE_TYPE_INSTANCE_CREATE_INFO
-ci.enabledExtensionCount = 2
-ci.ppEnabledExtensionNames = ["VK_KHR_surface", "VK_KHR_xcb_surface"]
+ci = {
+    sType = vk.STRUCTURE_TYPE_INSTANCE_CREATE_INFO
+    enabledExtensionCount = 2
+    ppEnabledExtensionNames = ["VK_KHR_surface", "VK_KHR_xcb_surface"]
+}
 instance = ffi.automem(vk.Instance, 1, true)
-result = vk.createInstance(ci, null, instance)
-if result != vk.SUCCESS
-    # I could throw exception if I had remembered to setup initializers
-    # for exception classes.. ohwell.
-    print("error: result=", result)
+check(vk.createInstance(ci, null, instance))
+instance = instance.to
+
+count = ffi.automem(ffi.u32, 1, true)
+vk.enumeratePhysicalDevices(instance, count, null)
+devices = ffi.automem(vk.PhysicalDevice, count.to)
+vk.enumeratePhysicalDevices(instance, count, devices)
+if count.to <= 0
+    print("no vulkan device found")
+gpu = devices[0]
+gpuinfo = ffi.automem(vk.PhysicalDeviceProperties)
+vk.getPhysicalDeviceProperties(gpu, gpuinfo)
+#i = 0
+#while i < count.to
+#    gpuinfo = ffi.automem(vk.PhysicalDeviceProperties)
+#    vk.getPhysicalDeviceProperties(devices[i], gpuinfo)
+#    print("graphics device:", gpuinfo.deviceName)
+#    i += 1
+
+ci = {
+    sType = vk.STRUCTURE_TYPE_DEVICE_CREATE_INFO
+    queueCreateInfoCount = 1
+    pQueueCreateInfos = [
+        {
+            sType = vk.STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO
+            queueFamilyIndex = 0
+            queueCount = 1
+            pQueuePriorities = [1.0]
+        }
+    ]
+    enabledExtensionCount = 1
+    ppEnabledExtensionNames = ["VK_KHR_swapchain"]
+}
+dev = ffi.automem(vk.Device, 1, true)
+check(vk.createDevice(gpu, ci, null, dev))
+dev = dev.to
+
+if vk.deviceWaitIdle(dev) != vk.SUCCESS
+    print("fail")
     exit(1)
-pool.free()
+
 print("success")

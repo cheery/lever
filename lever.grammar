@@ -167,10 +167,12 @@ term =>
     function(bindings block):
         lp:"(" bindings rp:")" colon:":" block
     dict(pairs): lc:"{" pairs rc:"}"
+    dict(nl_pairs): lc:"{" nl_pairs rc:"}"
     lookup(escaped_keyword): lc:"{" escaped_keyword rc:"}"
     lookup(string): percent:"%" string
 
 bindings =>
+    blank_bindings:
     pass(optionals):
         optionals
     pass(optionals):
@@ -193,6 +195,14 @@ mandatorys =>
     append_mandatory(mandatorys symbol):
         mandatorys comma:"," symbol
 
+nl_pairs => pass(pairlines): indent pairlines dedent
+
+pairlines =>
+    first:           pair
+    append(lhs rhs): lhs=pairlines newline rhs=pair
+    first(pair):     pair comma:","
+    append(lhs rhs): lhs=pairlines newline rhs=pair comma:","
+
 pairs =>
     empty_list:
     pairs1
@@ -202,7 +212,9 @@ pairs1 =>
     first: pair
     append(lst pair): lst=pairs1 comma:"," pair
 
-pair => tuple(k v): k=expr colon:":" v=expr
+pair =>
+    tuple(k v): k=expr colon:":" v=expr
+    implicit_string_pair(k v): k=symbol assign_op:"=" v=expr
 
 escaped_keyword =>
     pass: kw_import:"import"

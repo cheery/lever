@@ -60,6 +60,10 @@ class Mem(Object):
                 #    return ctype.load(pointer)
                 #else:
                 #    raise OldError(u"no load supported for " + ctype.repr())
+            elif isinstance(ctype, Array):
+                if name == u"str" and ctype.ctype.size == 1:
+                    s = rffi.charp2str(rffi.cast(rffi.CCHARP, self.pointer))
+                    return String(s.decode('utf-8'))
             elif isinstance(ctype, Type):
                 if name == u"str" and ctype.size == 1:
                     s = rffi.charp2str(rffi.cast(rffi.CCHARP, self.pointer))
@@ -195,7 +199,12 @@ class Pointer(Type):
             for i, val in enumerate(value.contents):
                 mem.setitem(Integer(i), val)
         else:
-            raise unwind(LTypeError(u"cannot pointer store %s to %s" % (value.repr(), self.repr())))
+            pointer = pool_alloc(pool, sizeof(self.to))
+            ptr = rffi.cast(rffi.VOIDPP, offset)
+            ptr[0] = pointer
+            self.to.store(pool, pointer, value)
+        #else:
+        #    raise unwind(LTypeError(u"cannot pointer store %s to %s" % (value.repr(), self.repr())))
         return value
 
     def typecheck(self, other):
@@ -375,8 +384,6 @@ class Struct(Type):
                 raise unwind(LTypeError(u"parametric field in middle of a structure"))
             if ctype.parameter:
                 self.parameter = ctype.parameter
-            if ctype.align == 0:
-                print ctype, ctype.align
             offset = align(offset, ctype.align)
             self.offsets.append(offset)
             self.align = max(self.align, ctype.align)
@@ -400,6 +407,16 @@ class Struct(Type):
             if isinstance(ctype, Pointer) and ctype.to is self:
                 rffi.c_memcpy(offset, value.pointer, sizeof(self))
                 return value
+        if isinstance(value, Dict):
+            for key, obj in value.data.iteritems():
+                if not isinstance(key, String):
+                    raise unwind(LTypeError(u"dictionary fields must be string fields for struct.store to work"))
+                try:
+                    x, ctype = self.namespace[key.string]
+                except KeyError as k:
+                    raise unwind(LTypeError(u"%s not in %s" % (key.repr(), self.repr())))
+                ctype.store(pool, rffi.ptradd(offset, x), obj)
+            return value
         raise unwind(LTypeError(u"cannot struct store " + value.repr()))
  
     def repr(self):
@@ -455,6 +472,29 @@ class Union(Type):
         if self is other:
             return True
         return False
+
+    def load(self, offset):
+        pointer = lltype.malloc(rffi.VOIDP.TO, self.size, flavor='raw')
+        rffi.c_memcpy(pointer, offset, sizeof(self))
+        return AutoMem(Pointer(self), pointer, 1)
+
+    def store(self, pool, offset, value):
+        if isinstance(value, Mem):
+            ctype = value.ctype
+            if isinstance(ctype, Pointer) and ctype.to is self:
+                rffi.c_memcpy(offset, value.pointer, sizeof(self))
+                return value
+        if isinstance(value, Dict):
+            for key, obj in value.data.iteritems():
+                if not isinstance(key, String):
+                    raise unwind(LTypeError(u"dictionary fields must be string fields for union.store to work"))
+                try:
+                    x, ctype = self.namespace[key.string]
+                except KeyError as k:
+                    raise unwind(LTypeError(u"%s not in %s" % (key.repr(), self.repr())))
+                ctype.store(pool, rffi.ptradd(offset, x), obj)
+            return value
+        raise unwind(LTypeError(u"cannot union store " + value.repr()))
 
     def repr(self):
         names = []
@@ -520,12 +560,12 @@ class PoolPointer:
 
     def free(self):
         lltype.free(self.pointer, flavor='raw')
-        self.pointer = rffi.cast(rffi.VOIDP, 0)
+        self.pointer = lltype.nullptr(rffi.VOIDP.TO)
 
 class AutoPoolPointer(PoolPointer):
     @rgc.must_be_light_finalizer
     def __del__(self):
-        if self.pointer:
+        if self.pointer != lltype.nullptr(rffi.VOIDP.TO):
             lltype.free(self.pointer, flavor='raw')
 
 class Pool(Object):
