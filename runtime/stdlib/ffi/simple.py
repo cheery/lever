@@ -10,6 +10,18 @@ class Type(Object):
     size = 0  # These fields remain zero if it's an
     align = 0 # opaque type.
 
+    def cast_to_ffitype(self):
+        raise unwind(LTypeError(u".cast_to_ffitype method missing"))
+
+    def load(self, offset):
+        raise unwind(LTypeError(u".load method missing"))
+
+    def store(self, pool, offset, value):
+        raise unwind(LTypeError(u".store method missing"))
+
+    def typecheck(self, other):
+        return self is other
+
 # Many systems are sensitive to memory alignment
 def align(x, a):
     return x + (a - x % a) % a
@@ -153,3 +165,30 @@ class Floating(Type):
         if isinstance(other, Floating) and self.size == other.size:
             return True
         return False
+
+# The idea here is that you can shadow the ffi types
+# With your own classes or objects, changing their
+# behavior.
+class Shadow(Type):
+    def __init__(self, basetype, obj):
+        self.basetype = basetype
+        self.parameter = basetype.parameter
+        self.size = basetype.size
+        self.align = basetype.align
+        self.obj = obj
+
+    def cast_to_ffitype(self):
+        return self.basetype.cast_to_ffitype()
+
+    def load(self, offset):
+        value = self.basetype.load(offset)
+        return self.obj.callattr(u"load", [value])
+
+    def store(self, pool, offset, value):
+        value = self.obj.callattr(u"store", [value])
+        return self.basetype.store(pool, offset, value)
+
+def to_type(obj):
+    if isinstance(obj, Type):
+        return obj
+    return Shadow(to_type(obj.getattr(u"shadow")), obj)

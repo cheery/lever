@@ -70,10 +70,6 @@ class Mem(Object):
                     return String(s.decode('utf-8'))
                 elif name == u"to":
                     return ctype.load(self.pointer)
-            elif isinstance(ctype, Array):
-                if name == u"str" and ctype.ctype.size == 1:
-                    s = rffi.charp2str(rffi.cast(rffi.CCHARP, self.pointer))
-                    return String(s.decode('utf-8'))
         return Object.getattr(self, name)
 
     def setattr(self, name, value):
@@ -161,22 +157,19 @@ class Pointer(Type):
 
     def store(self, pool, offset, value):
         if value is null:
-            pointer = lltype.nullptr(rffi.VOIDP.TO)
             ptr = rffi.cast(rffi.VOIDPP, offset)
-            ptr[0] = pointer
+            ptr[0] = lltype.nullptr(rffi.VOIDP.TO)
         elif isinstance(value, Mem):
             pool_mark_object(pool, value)
             # It could be worthwhile to typecheck the ctype here.
             if not self.typecheck(value.ctype):
                 raise unwind(LTypeError(u"incompatible pointer store: %s = %s" % (self.repr(), value.ctype.repr())))
-            pointer = value.pointer
             ptr = rffi.cast(rffi.VOIDPP, offset)
-            ptr[0] = pointer
+            ptr[0] = value.pointer
         elif isinstance(value, Uint8Array):
             pool_mark_object(pool, value)
-            pointer = rffi.cast(rffi.VOIDP, value.uint8data)
             ptr = rffi.cast(rffi.VOIDPP, offset)
-            ptr[0] = pointer
+            ptr[0] = rffi.cast(rffi.VOIDP, value.uint8data)
         elif pool is None:
             raise unwind(LTypeError(u"cannot store other than memory references into non-pool-backed pointers"))
         elif isinstance(value, String):
@@ -192,12 +185,16 @@ class Pointer(Type):
         elif isinstance(value, List):
             # Won't possibly work in parametric objects.. hm.
             length = len(value.contents)
-            pointer = pool_alloc(pool, sizeof_a(self.to, length))
-            ptr = rffi.cast(rffi.VOIDPP, offset)
-            ptr[0] = pointer
-            mem = Mem(self, pointer, length, pool)
-            for i, val in enumerate(value.contents):
-                mem.setitem(Integer(i), val)
+            if length > 0:
+                pointer = pool_alloc(pool, sizeof_a(self.to, length))
+                ptr = rffi.cast(rffi.VOIDPP, offset)
+                ptr[0] = pointer
+                mem = Mem(self, pointer, length, pool)
+                for i, val in enumerate(value.contents):
+                    mem.setitem(Integer(i), val)
+            else:
+                ptr = rffi.cast(rffi.VOIDPP, offset)
+                ptr[0] = lltype.nullptr(rffi.VOIDP.TO)
         else:
             pointer = pool_alloc(pool, sizeof(self.to))
             ptr = rffi.cast(rffi.VOIDPP, offset)
@@ -335,15 +332,10 @@ class CFunc(Type):
 @CFunc.instantiator
 @signature(Object, List)
 def _(restype, argtypes_list):
-    if restype is not null and not isinstance(restype, Type):
-        raise unwind(LTypeError(u"expected type or null as restype, not " + restype.repr()))
     argtypes = []
     for argtype in argtypes_list.contents:
-        if isinstance(argtype, Type):
-            argtypes.append(argtype)
-        else:
-            raise unwind(LTypeError(u"expected type as argtype, not " + argtype.repr()))
-    return CFunc(restype, argtypes)
+        argtypes.append(to_type(argtype))
+    return CFunc(to_type(restype), argtypes)
 
 class Struct(Type):
     def __init__(self, fields=None, name=u''):
@@ -428,17 +420,13 @@ class Struct(Type):
         return u'<struct ' + u' '.join(names) + u'>'
 
 @Struct.instantiator
-@signature(Object)
+@signature(List)
 def _(fields_list):
-    if fields_list is null:
-        return Struct(None)
-    if not isinstance(fields_list, List):
-        raise unwind(LTypeError(u"expected a list"))
     fields = []
     for field in fields_list.contents:
         name = field.getitem(Integer(0))
-        ctype = field.getitem(Integer(1))
-        if not (isinstance(name, String) and isinstance(ctype, Type)):
+        ctype = to_type(field.getitem(Integer(1)))
+        if not isinstance(name, String):
             raise unwind(LTypeError(u"expected declaration format: [name, ctype]"))
         fields.append((name.string, ctype))
     return Struct(fields)
@@ -510,8 +498,8 @@ def _(fields_list):
     fields = []
     for field in fields_list.contents:
         name = field.getitem(Integer(0))
-        ctype = field.getitem(Integer(1))
-        if not (isinstance(name, String) and isinstance(ctype, Type)):
+        ctype = to_type(field.getitem(Integer(1)))
+        if not isinstance(name, String):
             raise unwind(LTypeError(u"expected declaration format: [name, ctype]"))
         fields.append((name.string, ctype))
     return Union(fields)
@@ -528,6 +516,7 @@ class Array(Type):
         else:
             self.size = sizeof(ctype) * length
         self.align = ctype.align
+        self.length = length
 
     def cast_to_ffitype(self):
         return self.ctype.cast_to_ffitype()
@@ -543,16 +532,25 @@ class Array(Type):
         raise OldError(u"array load notimpl")
 
     def store(self, pool, offset, value):
-        raise OldError(u"Array store notimpl")
+        if self.length == 0:
+            raise OldError(u"Array length=0 store notimpl")
+        elif isinstance(value, List):
+            length = len(value.contents)
+            if length != self.length:
+                raise unwind(LTypeError(u"Array length [%d] = [%d] must match" % (self.length, length)))
+            for i, val in enumerate(value.contents):
+                self.ctype.store(pool, rffi.ptradd(offset, i*sizeof(self.ctype)), val)
+            return value
+        raise OldError(u"array store for %s notimpl" % value.repr())
 
     def repr(self):
         return u'<array ' + self.ctype.repr() + u'>'
 
 @Array.instantiator
-@signature(Type, Integer, optional=1)
+@signature(Object, Integer, optional=1)
 def _(ctype, n):
     n = 0 if n is None else n.value
-    return Array(ctype, n)
+    return Array(to_type(ctype), n)
 
 class PoolPointer:
     def __init__(self, pointer):

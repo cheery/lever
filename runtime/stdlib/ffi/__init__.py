@@ -1,8 +1,9 @@
 from rpython.rlib import rdynload, objectmodel
 from rpython.rtyper.lltypesystem import rffi, lltype
-from simple import Type
+from simple import Type, to_type
 from space import *
 from systemv import Mem, Pointer, CFunc, Struct, Union, Array
+from bitmask import Bitmask
 import simple
 import systemv
 
@@ -83,6 +84,7 @@ class Handle(Object):
 
 module = Module(u'ffi', {
     u'array': systemv.Array.interface,
+    u'bitmask': Bitmask.interface,
     u'cfunc': CFunc.interface,
     u'handle': Handle.interface,
     u'library': Library.interface,
@@ -105,8 +107,9 @@ def builtin(fn):
     return fn
 
 @builtin
-@signature(Object, Type)
+@signature(Object, Object)
 def cast(obj, ctype):
+    ctype = to_type(ctype)
     if isinstance(obj, Handle):
         return Handle(obj.library, obj.name, obj.pointer, ctype)
     if isinstance(obj, Mem):
@@ -118,8 +121,9 @@ def cast(obj, ctype):
     raise unwind(LTypeError(u"Can cast memory locations only"))
 
 @builtin
-@signature(Type, Integer, optional=1)
+@signature(Object, Integer, optional=1)
 def sizeof(ctype, count):
+    ctype = to_type(ctype)
     if count:
         size = simple.sizeof_a(ctype, count.value)
     else:
@@ -127,8 +131,9 @@ def sizeof(ctype, count):
     return Integer(size)
 
 @builtin
-@signature(Type, Integer, Boolean, optional=2)
+@signature(Object, Integer, Boolean, optional=2)
 def malloc(ctype, count, clear):
+    ctype = to_type(ctype)
     if count:
         n = count.value
         size = simple.sizeof_a(ctype, n)
@@ -141,8 +146,9 @@ def malloc(ctype, count, clear):
     return Mem(systemv.Pointer(ctype), pointer, n)
 
 @builtin
-@signature(Type, Integer, Boolean, optional=2)
+@signature(Object, Integer, Boolean, optional=2)
 def automem(ctype, count, clear):
+    ctype = to_type(ctype)
     if count:
         n = count.value
         size = simple.sizeof_a(ctype, n)

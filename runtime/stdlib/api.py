@@ -27,7 +27,7 @@ def get_header(path):
     return pathobj.concat(conf.headers_dir, path)
 
 class Api(Object):
-    def __init__(self, constants, types, variables, dependencies):
+    def __init__(self, constants, types, variables, dependencies, decorator):
         self.cache = {}
         self.typecache = {}
         self.constants = constants
@@ -35,6 +35,7 @@ class Api(Object):
         self.variables = variables
         self.dependencies = dependencies
         self.cycle_catch = {}
+        self.decorator = decorator
 
     def getitem(self, name):
         if not isinstance(name, String):
@@ -79,11 +80,19 @@ class Api(Object):
             if u"." in name.string and self.dependencies is not None:
                 namespace, name = name.string.split(u".", 1)
                 return self.dependencies.getitem(String(namespace)).getattr(name)
-            raise OldError(name.repr() + u" not in API")
+            raise unwind(LKeyError(self, name))
         else:
             return self.build_ctype(u"<unnamed>", name)
 
     def build_ctype(self, name, decl):
+        if isinstance(decl, String):
+            return self.lookup_type(decl)
+        if self.decorator is not None:
+            return ffi.to_type(self.decorator.call([self, String(name), decl]))
+        else:
+            return self.build_ctype_raw(name, decl)
+
+    def build_ctype_raw(self, name, decl):
         which = decl.getitem(String(u"type"))
         if isinstance(which, String) and which.string == u"cfunc":
             restype = decl.getitem(String(u'restype'))
@@ -123,6 +132,32 @@ class Api(Object):
         if isinstance(which, String) and which.string == u"pointer":
             to = self.lookup_type(decl.getitem(String(u'to')))
             return ffi.Pointer(to)
+        if isinstance(which, String) and which.string == u"enum":
+            ctype = self.lookup_type(decl.getitem(String(u'ctype')))
+            constants = decl.getitem(String(u"constants"))
+            if not isinstance(constants, Dict):
+                raise unwind(LTypeError(name + u": expected constant table to be dictionary"))
+            table = {}
+            for name_, const in constants.data.iteritems():
+                if not isinstance(name_, String):
+                    raise unwind(LTypeError(name + u": expected constants table key to be string"))
+                if not isinstance(const, Integer):
+                    raise unwind(LTypeError(name + u": expected constants table value to be integer"))
+                table[name_.string] = const.value
+            return ffi.Bitmask(ffi.to_type(ctype), table, multichoice=False)
+        if isinstance(which, String) and which.string == u"bitmask":
+            ctype = self.lookup_type(decl.getitem(String(u'ctype')))
+            constants = decl.getitem(String(u"constants"))
+            if not isinstance(constants, Dict):
+                raise unwind(LTypeError(name + u": expected constant table to be dictionary"))
+            table = {}
+            for name_, const in constants.data.iteritems():
+                if not isinstance(name_, String):
+                    raise unwind(LTypeError(name + u": expected constants table key to be string"))
+                if not isinstance(const, Integer):
+                    raise unwind(LTypeError(name + u": expected constants table value to be integer"))
+                table[name_.string] = const.value
+            return ffi.Bitmask(ffi.to_type(ctype), table, multichoice=True)
         raise OldError(name + u": no ctype builder for " + which.repr())
 
     def parse_fields(self, name, fields_list):
@@ -136,6 +171,15 @@ class Api(Object):
             ctype = self.lookup_type(field.getitem(Integer(1)))
             fields.append((field_name.string, ctype))
         return fields
+
+# I'm not sure how this method should be called.
+@Api.method(u"build_type", signature(Api, String, Object))
+def api_build_type(api, name, obj):
+    return api.build_ctype_raw(name.string, obj)
+
+@Api.method(u"lookup_type", signature(Api, Object))
+def api_lookup_type(api, obj):
+    return api.lookup_type(obj)
 
 class FuncLibrary(Object):
     def __init__(self, api, func):
@@ -155,6 +199,8 @@ class FuncLibrary(Object):
         res = self.func.call([String(cname)])
         if isinstance(res, ffi.Mem):
             return ffi.Mem(ctype, res.pointer, 1)
+        elif res is null:
+            raise unwind(LAttributeError(self, name))
         else:
             raise OldError(u"expected memory object, not %s" % res.repr())
 
@@ -199,37 +245,21 @@ def open(argv):
     return library(argv)
 
 @builtin
-@signature(String, Object, Object, optional=2)
-def library(path, func, dependencies):
+@signature(String, Object, Object, Object, optional=3)
+def library(path, func, dependencies, decorator):
     path = path.string
     if path.endswith(u".so") or path.endswith(u".json") or path.endswith(u".dll"):
         path = path.rsplit(u'.', 1)[0]
     json_path = pathobj.parse(path + u".json")
     so_path = path + u"." + platform.so_ext.decode('utf-8')
-    api = open_api(json_path, dependencies)
+    api = open_api(json_path, dependencies, decorator)
     if func is not None:
         return FuncLibrary(api, func)
     return ffi.Library.interface.call([String(so_path), api])
 
-#@builtin
-#def library(argv):
-#    if len(argv) < 1:
-#        raise OldError(u"expected at least 1 argument for api.open")
-#    path = argument(argv, 0, String).string
-#    if path.endswith(u".so") or path.endswith(u".json") or path.endswith(u".dll"):
-#        path = path.rsplit(u'.', 1)[0]
-#    json_path = pathobj.parse(path + u".json")
-#    so_path = path + u"." + platform.so_ext.decode('utf-8')
-#    dependencies = None
-#    if len(argv) >= 3 and argv[2] != null:
-#        dependencies = argv[2]
-#    if len(argv) >= 2 and argv[1] != null:
-#        return FuncLibrary(open_api(json_path, dependencies), argv[1])
-#    return ffi.Library.interface.call([String(so_path), open_api(json_path, dependencies)])
-
 @builtin
-@signature(Object, Object)
-def open_nobind(path, dependencies):
+@signature(Object, Object, Object, optional=1)
+def open_nobind(path, dependencies, decorator):
     path = pathobj.to_path(path)
     basename = path.getattr(u"basename")
     if isinstance(basename, String):
@@ -237,9 +267,9 @@ def open_nobind(path, dependencies):
             path.setattr(
                 u"basename",
                 String(basename.string + u".json"))
-    return open_api(path, dependencies)
+    return open_api(path, dependencies, decorator)
 
-def open_api(json_path, dependencies):
+def open_api(json_path, dependencies, decorator):
     path = get_header(json_path)
     try:
         apispec = json.read_file([path])
@@ -249,5 +279,6 @@ def open_api(json_path, dependencies):
         apispec.getitem(String(u"constants")),
         apispec.getitem(String(u"types")),
         apispec.getitem(String(u"variables")),
-        dependencies)
+        dependencies,
+        decorator)
     return api

@@ -1,0 +1,68 @@
+import api, ffi
+
+vkstruct = exnihilo()
+setattr(vkstruct, "+init", (self, shadow, defaults, aliases, autoarrays):
+    self.shadow = shadow
+    self.defaults = defaults
+    self.aliases = aliases
+    self.autoarrays = autoarrays
+)
+vkstruct.load = (self, result):
+    return result
+vkstruct.store = (self, obj):
+    if isinstance(obj, dict)
+        block = dict(self.defaults)
+        for key in obj
+            val = obj[key]
+            if key in self.autoarrays
+                auto = self.autoarrays[key]
+                lengthfield = auto[0]
+                pointerfield = auto[1]
+                L = val.length
+                # TODO: Add TypeError here.
+                # note that behavior here is undefined if you give in length field explicitly.
+                # but the same thing happens with the pointer field.
+                if L != block.get(lengthfield, L)
+                    print("inconsistent struct length field:", lengthfield)
+                    exit(1) # yeah.. should fix. :)
+                block[lengthfield] = L
+                block[pointerfield] = val
+            else
+                key = self.aliases.get(key, key)
+                block[key] = val
+        return block
+    return obj
+# Pardon, my language didn't have class notation when I made this.
+vkstruct = class(vkstruct, object, "vkstruct")
+
+vkdecorator = (api, name, desc):
+    if desc["type"] == "struct"
+        defaults = desc["defaults"]
+        aliases = desc["aliases"]
+        autoarrays = desc["autoarrays"]
+        return vkstruct(api.build_type(name, desc), defaults, aliases, autoarrays)
+    if desc["type"] == "cfunc"
+        if desc["restype"] == "Result"
+            restype = checker
+            argtypes = []
+            for argtype in desc["argtypes"]
+                argtypes.append(api.lookup_type(argtype))
+            return ffi.cfunc(restype, argtypes)
+    return api.build_type(name, desc)
+
+lib = api.open_nobind("libvulkan.json", null, vkdecorator)
+
+checker = exnihilo()
+checker.shadow = lib.lookup_type("Result")
+checker.load = (result):
+    if result.value < 0
+        # TODO: add VulkanError that inherits from Error here.
+        # I could throw exception if I had setup initializers
+        # for exception classes.. ohwell.
+        print("error: result=", result)
+        exit(1)
+    return result
+checker.store = (value):
+    return value
+
+vk = ffi.library("libvulkan.so", lib)

@@ -101,6 +101,7 @@
     "ENABLE": 1, 
     "ENOMEM": 0, 
     "FALSE": 0, 
+    "FILESYSTEM_UNIX": 1, 
     "FINGERDOWN": 1792, 
     "FINGERMOTION": 1794, 
     "FINGERUP": 1793, 
@@ -131,6 +132,7 @@
     "GL_CONTEXT_ROBUST_ACCESS_FLAG": 4, 
     "GL_DEPTH_SIZE": 6, 
     "GL_DOUBLEBUFFER": 5, 
+    "GL_FRAMEBUFFER_SRGB_CAPABLE": 23, 
     "GL_GREEN_SIZE": 1, 
     "GL_MULTISAMPLEBUFFERS": 13, 
     "GL_MULTISAMPLESAMPLES": 14, 
@@ -169,6 +171,7 @@
     "HAT_RIGHTDOWN": 6, 
     "HAT_RIGHTUP": 3, 
     "HAT_UP": 1, 
+    "HINT_ACCELEROMETER_AS_JOYSTICK": "SDL_ACCELEROMETER_AS_JOYSTICK", 
     "HINT_ALLOW_TOPMOST": "SDL_ALLOW_TOPMOST", 
     "HINT_DEFAULT": 0, 
     "HINT_FRAMEBUFFER_ACCELERATION": "SDL_FRAMEBUFFER_ACCELERATION", 
@@ -176,15 +179,23 @@
     "HINT_GRAB_KEYBOARD": "SDL_GRAB_KEYBOARD", 
     "HINT_IDLE_TIMER_DISABLED": "SDL_IOS_IDLE_TIMER_DISABLED", 
     "HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS": "SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS", 
+    "HINT_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK": "SDL_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK", 
+    "HINT_MOUSE_RELATIVE_MODE_WARP": "SDL_MOUSE_RELATIVE_MODE_WARP", 
     "HINT_NORMAL": 1, 
     "HINT_ORIENTATIONS": "SDL_IOS_ORIENTATIONS", 
     "HINT_OVERRIDE": 2, 
+    "HINT_RENDER_DIRECT3D_THREADSAFE": "SDL_RENDER_DIRECT3D_THREADSAFE", 
     "HINT_RENDER_DRIVER": "SDL_RENDER_DRIVER", 
     "HINT_RENDER_OPENGL_SHADERS": "SDL_RENDER_OPENGL_SHADERS", 
     "HINT_RENDER_SCALE_QUALITY": "SDL_RENDER_SCALE_QUALITY", 
     "HINT_RENDER_VSYNC": "SDL_RENDER_VSYNC", 
     "HINT_TIMER_RESOLUTION": "SDL_TIMER_RESOLUTION", 
+    "HINT_VIDEO_ALLOW_SCREENSAVER": "SDL_VIDEO_ALLOW_SCREENSAVER", 
+    "HINT_VIDEO_HIGHDPI_DISABLED": "SDL_VIDEO_HIGHDPI_DISABLED", 
+    "HINT_VIDEO_MAC_FULLSCREEN_SPACES": "SDL_VIDEO_MAC_FULLSCREEN_SPACES", 
     "HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS": "SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS", 
+    "HINT_VIDEO_WINDOW_SHARE_PIXEL_FORMAT": "SDL_VIDEO_WINDOW_SHARE_PIXEL_FORMAT", 
+    "HINT_VIDEO_WIN_D3DCOMPILER": "SDL_VIDEO_WIN_D3DCOMPILER", 
     "HINT_VIDEO_X11_XINERAMA": "SDL_VIDEO_X11_XINERAMA", 
     "HINT_VIDEO_X11_XRANDR": "SDL_VIDEO_X11_XRANDR", 
     "HINT_VIDEO_X11_XVIDMODE": "SDL_VIDEO_X11_XVIDMODE", 
@@ -204,7 +215,7 @@
     "INIT_TIMER": 1, 
     "INIT_VIDEO": 32, 
     "INPUT_LINUXEV": 1, 
-    "INPUT_TSLIB": 1, 
+    "INPUT_LINUXKD": 1, 
     "JOYAXISMOTION": 1536, 
     "JOYBALLMOTION": 1537, 
     "JOYBUTTONDOWN": 1539, 
@@ -267,6 +278,7 @@
     "MOUSEWHEEL": 1027, 
     "MULTIGESTURE": 2050, 
     "MUTEX_TIMEDOUT": 1, 
+    "NULL_WHILE_LOOP_CONDITION": 0, 
     "NUM_LOG_PRIORITIES": 7, 
     "NUM_SCANCODES": 512, 
     "NUM_SYSTEM_CURSORS": 12, 
@@ -288,7 +300,7 @@
     "PACKEDORDER_RGBX": 2, 
     "PACKEDORDER_XBGR": 5, 
     "PACKEDORDER_XRGB": 1, 
-    "PATCHLEVEL": 0, 
+    "PATCHLEVEL": 2, 
     "PEEKEVENT": 1, 
     "PIXELFORMAT_ABGR1555": 359862274, 
     "PIXELFORMAT_ABGR4444": 359796738, 
@@ -353,6 +365,7 @@
     "RENDERER_PRESENTVSYNC": 4, 
     "RENDERER_SOFTWARE": 1, 
     "RENDERER_TARGETTEXTURE": 8, 
+    "RENDER_TARGETS_RESET": 8192, 
     "RLEACCEL": 2, 
     "RWOPS_JNIFILE": 3, 
     "RWOPS_MEMORY": 4, 
@@ -615,6 +628,14 @@
     "SYSTEM_CURSOR_WAIT": 2, 
     "SYSTEM_CURSOR_WAITARROW": 4, 
     "SYSWMEVENT": 513, 
+    "SYSWM_COCOA": 4, 
+    "SYSWM_DIRECTFB": 3, 
+    "SYSWM_MIR": 7, 
+    "SYSWM_UIKIT": 5, 
+    "SYSWM_UNKNOWN": 0, 
+    "SYSWM_WAYLAND": 6, 
+    "SYSWM_WINDOWS": 1, 
+    "SYSWM_X11": 2, 
     "TEXTEDITING": 770, 
     "TEXTEDITINGEVENT_TEXT_SIZE": 32, 
     "TEXTINPUT": 771, 
@@ -636,7 +657,13 @@
     "UNSUPPORTED": 4, 
     "USEREVENT": 32768, 
     "VIDEO_DRIVER_DUMMY": 1, 
+    "VIDEO_DRIVER_MIR": 1, 
+    "VIDEO_DRIVER_MIR_DYNAMIC": "libmirclient.so.8", 
+    "VIDEO_DRIVER_MIR_DYNAMIC_XKBCOMMON": "libxkbcommon.so.0", 
+    "VIDEO_DRIVER_WAYLAND": 1, 
+    "VIDEO_DRIVER_WAYLAND_QT_TOUCH": 1, 
     "VIDEO_DRIVER_X11": 1, 
+    "VIDEO_DRIVER_X11_CONST_PARAM_XDATA32": 1, 
     "VIDEO_DRIVER_X11_CONST_PARAM_XEXTADDDISPLAY": 1, 
     "VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM": 1, 
     "VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS": 1, 
@@ -649,8 +676,11 @@
     "VIDEO_DRIVER_X11_XSHAPE": 1, 
     "VIDEO_DRIVER_X11_XVIDMODE": 1, 
     "VIDEO_OPENGL": 1, 
+    "VIDEO_OPENGL_EGL": 1, 
+    "VIDEO_OPENGL_ES2": 1, 
     "VIDEO_OPENGL_GLX": 1, 
     "VIDEO_RENDER_OGL": 1, 
+    "VIDEO_RENDER_OGL_ES2": 1, 
     "WINDOWEVENT": 512, 
     "WINDOWEVENT_CLOSE": 14, 
     "WINDOWEVENT_ENTER": 10, 
@@ -669,6 +699,7 @@
     "WINDOWEVENT_SIZE_CHANGED": 6, 
     "WINDOWPOS_CENTERED_MASK": 805240832, 
     "WINDOWPOS_UNDEFINED_MASK": 536805376, 
+    "WINDOW_ALLOW_HIGHDPI": 8192, 
     "WINDOW_BORDERLESS": 16, 
     "WINDOW_FOREIGN": 2048, 
     "WINDOW_FULLSCREEN": 1, 
@@ -941,6 +972,9 @@
       "type": "struct"
     }, 
     "Cursor": {
+      "type": "opaque"
+    }, 
+    "Display": {
       "type": "opaque"
     }, 
     "DisplayMode": {
@@ -1960,11 +1994,11 @@
           "ubyte"
         ], 
         [
-          "padding1", 
+          "clicks", 
           "ubyte"
         ], 
         [
-          "padding2", 
+          "padding1", 
           "ubyte"
         ], 
         [
@@ -2503,8 +2537,159 @@
       ], 
       "type": "struct"
     }, 
+    "SysWMinfo": {
+      "fields": [
+        [
+          "version", 
+          "version"
+        ], 
+        [
+          "subsystem", 
+          "int"
+        ], 
+        [
+          "info", 
+          {
+            "fields": [
+              [
+                "x11", 
+                {
+                  "fields": [
+                    [
+                      "display", 
+                      "Display*"
+                    ], 
+                    [
+                      "window", 
+                      "ulong"
+                    ]
+                  ], 
+                  "type": "struct"
+                }
+              ], 
+              [
+                "wl", 
+                {
+                  "fields": [
+                    [
+                      "display", 
+                      {
+                        "to": {
+                          "to": {
+                            "type": "opaque"
+                          }, 
+                          "type": "pointer"
+                        }, 
+                        "type": "pointer"
+                      }
+                    ], 
+                    [
+                      "surface", 
+                      {
+                        "to": {
+                          "to": {
+                            "type": "opaque"
+                          }, 
+                          "type": "pointer"
+                        }, 
+                        "type": "pointer"
+                      }
+                    ], 
+                    [
+                      "shell_surface", 
+                      {
+                        "to": {
+                          "to": {
+                            "type": "opaque"
+                          }, 
+                          "type": "pointer"
+                        }, 
+                        "type": "pointer"
+                      }
+                    ]
+                  ], 
+                  "type": "struct"
+                }
+              ], 
+              [
+                "mir", 
+                {
+                  "fields": [
+                    [
+                      "connection", 
+                      {
+                        "to": {
+                          "to": {
+                            "type": "opaque"
+                          }, 
+                          "type": "pointer"
+                        }, 
+                        "type": "pointer"
+                      }
+                    ], 
+                    [
+                      "surface", 
+                      {
+                        "to": {
+                          "to": {
+                            "type": "opaque"
+                          }, 
+                          "type": "pointer"
+                        }, 
+                        "type": "pointer"
+                      }
+                    ]
+                  ], 
+                  "type": "struct"
+                }
+              ], 
+              [
+                "dummy", 
+                "int"
+              ]
+            ], 
+            "type": "union"
+          }
+        ]
+      ], 
+      "type": "struct"
+    }, 
     "SysWMmsg": {
-      "type": "opaque"
+      "fields": [
+        [
+          "version", 
+          "version"
+        ], 
+        [
+          "subsystem", 
+          "int"
+        ], 
+        [
+          "msg", 
+          {
+            "fields": [
+              [
+                "x11", 
+                {
+                  "fields": [
+                    [
+                      "event", 
+                      "XEvent"
+                    ]
+                  ], 
+                  "type": "struct"
+                }
+              ], 
+              [
+                "dummy", 
+                "int"
+              ]
+            ], 
+            "type": "union"
+          }
+        ]
+      ], 
+      "type": "struct"
     }, 
     "TextEditingEvent": {
       "fields": [
@@ -2707,6 +2892,1544 @@
       ], 
       "type": "struct"
     }, 
+    "XAnyEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XButtonEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "root", 
+          "ulong"
+        ], 
+        [
+          "subwindow", 
+          "ulong"
+        ], 
+        [
+          "time", 
+          "ulong"
+        ], 
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ], 
+        [
+          "x_root", 
+          "int"
+        ], 
+        [
+          "y_root", 
+          "int"
+        ], 
+        [
+          "state", 
+          "uint"
+        ], 
+        [
+          "button", 
+          "uint"
+        ], 
+        [
+          "same_screen", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XCirculateEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "event", 
+          "ulong"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "place", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XCirculateRequestEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "parent", 
+          "ulong"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "place", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XClientMessageEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "message_type", 
+          "ulong"
+        ], 
+        [
+          "format", 
+          "int"
+        ], 
+        [
+          "data", 
+          {
+            "fields": [
+              [
+                "b", 
+                {
+                  "ctype": "ubyte", 
+                  "length": 20, 
+                  "type": "array"
+                }
+              ], 
+              [
+                "s", 
+                {
+                  "ctype": "short", 
+                  "length": 10, 
+                  "type": "array"
+                }
+              ], 
+              [
+                "l", 
+                {
+                  "ctype": "long", 
+                  "length": 5, 
+                  "type": "array"
+                }
+              ]
+            ], 
+            "type": "union"
+          }
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XColormapEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "colormap", 
+          "ulong"
+        ], 
+        [
+          "new", 
+          "int"
+        ], 
+        [
+          "state", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XConfigureEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "event", 
+          "ulong"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ], 
+        [
+          "width", 
+          "int"
+        ], 
+        [
+          "height", 
+          "int"
+        ], 
+        [
+          "border_width", 
+          "int"
+        ], 
+        [
+          "above", 
+          "ulong"
+        ], 
+        [
+          "override_redirect", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XConfigureRequestEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "parent", 
+          "ulong"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ], 
+        [
+          "width", 
+          "int"
+        ], 
+        [
+          "height", 
+          "int"
+        ], 
+        [
+          "border_width", 
+          "int"
+        ], 
+        [
+          "above", 
+          "ulong"
+        ], 
+        [
+          "detail", 
+          "int"
+        ], 
+        [
+          "value_mask", 
+          "ulong"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XCreateWindowEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "parent", 
+          "ulong"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ], 
+        [
+          "width", 
+          "int"
+        ], 
+        [
+          "height", 
+          "int"
+        ], 
+        [
+          "border_width", 
+          "int"
+        ], 
+        [
+          "override_redirect", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XCrossingEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "root", 
+          "ulong"
+        ], 
+        [
+          "subwindow", 
+          "ulong"
+        ], 
+        [
+          "time", 
+          "ulong"
+        ], 
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ], 
+        [
+          "x_root", 
+          "int"
+        ], 
+        [
+          "y_root", 
+          "int"
+        ], 
+        [
+          "mode", 
+          "int"
+        ], 
+        [
+          "detail", 
+          "int"
+        ], 
+        [
+          "same_screen", 
+          "int"
+        ], 
+        [
+          "focus", 
+          "int"
+        ], 
+        [
+          "state", 
+          "uint"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XDestroyWindowEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "event", 
+          "ulong"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XErrorEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "resourceid", 
+          "ulong"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "error_code", 
+          "ubyte"
+        ], 
+        [
+          "request_code", 
+          "ubyte"
+        ], 
+        [
+          "minor_code", 
+          "ubyte"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "xany", 
+          "XAnyEvent"
+        ], 
+        [
+          "xkey", 
+          "XKeyEvent"
+        ], 
+        [
+          "xbutton", 
+          "XButtonEvent"
+        ], 
+        [
+          "xmotion", 
+          "XMotionEvent"
+        ], 
+        [
+          "xcrossing", 
+          "XCrossingEvent"
+        ], 
+        [
+          "xfocus", 
+          "XFocusChangeEvent"
+        ], 
+        [
+          "xexpose", 
+          "XExposeEvent"
+        ], 
+        [
+          "xgraphicsexpose", 
+          "XGraphicsExposeEvent"
+        ], 
+        [
+          "xnoexpose", 
+          "XNoExposeEvent"
+        ], 
+        [
+          "xvisibility", 
+          "XVisibilityEvent"
+        ], 
+        [
+          "xcreatewindow", 
+          "XCreateWindowEvent"
+        ], 
+        [
+          "xdestroywindow", 
+          "XDestroyWindowEvent"
+        ], 
+        [
+          "xunmap", 
+          "XUnmapEvent"
+        ], 
+        [
+          "xmap", 
+          "XMapEvent"
+        ], 
+        [
+          "xmaprequest", 
+          "XMapRequestEvent"
+        ], 
+        [
+          "xreparent", 
+          "XReparentEvent"
+        ], 
+        [
+          "xconfigure", 
+          "XConfigureEvent"
+        ], 
+        [
+          "xgravity", 
+          "XGravityEvent"
+        ], 
+        [
+          "xresizerequest", 
+          "XResizeRequestEvent"
+        ], 
+        [
+          "xconfigurerequest", 
+          "XConfigureRequestEvent"
+        ], 
+        [
+          "xcirculate", 
+          "XCirculateEvent"
+        ], 
+        [
+          "xcirculaterequest", 
+          "XCirculateRequestEvent"
+        ], 
+        [
+          "xproperty", 
+          "XPropertyEvent"
+        ], 
+        [
+          "xselectionclear", 
+          "XSelectionClearEvent"
+        ], 
+        [
+          "xselectionrequest", 
+          "XSelectionRequestEvent"
+        ], 
+        [
+          "xselection", 
+          "XSelectionEvent"
+        ], 
+        [
+          "xcolormap", 
+          "XColormapEvent"
+        ], 
+        [
+          "xclient", 
+          "XClientMessageEvent"
+        ], 
+        [
+          "xmapping", 
+          "XMappingEvent"
+        ], 
+        [
+          "xerror", 
+          "XErrorEvent"
+        ], 
+        [
+          "xkeymap", 
+          "XKeymapEvent"
+        ], 
+        [
+          "xgeneric", 
+          "XGenericEvent"
+        ], 
+        [
+          "xcookie", 
+          "XGenericEventCookie"
+        ], 
+        [
+          "pad", 
+          {
+            "ctype": "long", 
+            "length": 24, 
+            "type": "array"
+          }
+        ]
+      ], 
+      "type": "union"
+    }, 
+    "XExposeEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ], 
+        [
+          "width", 
+          "int"
+        ], 
+        [
+          "height", 
+          "int"
+        ], 
+        [
+          "count", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XFocusChangeEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "mode", 
+          "int"
+        ], 
+        [
+          "detail", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XGenericEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "extension", 
+          "int"
+        ], 
+        [
+          "evtype", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XGenericEventCookie": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "extension", 
+          "int"
+        ], 
+        [
+          "evtype", 
+          "int"
+        ], 
+        [
+          "cookie", 
+          "uint"
+        ], 
+        [
+          "data", 
+          "void*"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XGraphicsExposeEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "drawable", 
+          "ulong"
+        ], 
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ], 
+        [
+          "width", 
+          "int"
+        ], 
+        [
+          "height", 
+          "int"
+        ], 
+        [
+          "count", 
+          "int"
+        ], 
+        [
+          "major_code", 
+          "int"
+        ], 
+        [
+          "minor_code", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XGravityEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "event", 
+          "ulong"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XKeyEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "root", 
+          "ulong"
+        ], 
+        [
+          "subwindow", 
+          "ulong"
+        ], 
+        [
+          "time", 
+          "ulong"
+        ], 
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ], 
+        [
+          "x_root", 
+          "int"
+        ], 
+        [
+          "y_root", 
+          "int"
+        ], 
+        [
+          "state", 
+          "uint"
+        ], 
+        [
+          "keycode", 
+          "uint"
+        ], 
+        [
+          "same_screen", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XKeymapEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "key_vector", 
+          {
+            "ctype": "ubyte", 
+            "length": 32, 
+            "type": "array"
+          }
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XMapEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "event", 
+          "ulong"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "override_redirect", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XMapRequestEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "parent", 
+          "ulong"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XMappingEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "request", 
+          "int"
+        ], 
+        [
+          "first_keycode", 
+          "int"
+        ], 
+        [
+          "count", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XMotionEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "root", 
+          "ulong"
+        ], 
+        [
+          "subwindow", 
+          "ulong"
+        ], 
+        [
+          "time", 
+          "ulong"
+        ], 
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ], 
+        [
+          "x_root", 
+          "int"
+        ], 
+        [
+          "y_root", 
+          "int"
+        ], 
+        [
+          "state", 
+          "uint"
+        ], 
+        [
+          "is_hint", 
+          "ubyte"
+        ], 
+        [
+          "same_screen", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XNoExposeEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "drawable", 
+          "ulong"
+        ], 
+        [
+          "major_code", 
+          "int"
+        ], 
+        [
+          "minor_code", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XPropertyEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "atom", 
+          "ulong"
+        ], 
+        [
+          "time", 
+          "ulong"
+        ], 
+        [
+          "state", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XReparentEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "event", 
+          "ulong"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "parent", 
+          "ulong"
+        ], 
+        [
+          "x", 
+          "int"
+        ], 
+        [
+          "y", 
+          "int"
+        ], 
+        [
+          "override_redirect", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XResizeRequestEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "width", 
+          "int"
+        ], 
+        [
+          "height", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XSelectionClearEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "selection", 
+          "ulong"
+        ], 
+        [
+          "time", 
+          "ulong"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XSelectionEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "requestor", 
+          "ulong"
+        ], 
+        [
+          "selection", 
+          "ulong"
+        ], 
+        [
+          "target", 
+          "ulong"
+        ], 
+        [
+          "property", 
+          "ulong"
+        ], 
+        [
+          "time", 
+          "ulong"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XSelectionRequestEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "owner", 
+          "ulong"
+        ], 
+        [
+          "requestor", 
+          "ulong"
+        ], 
+        [
+          "selection", 
+          "ulong"
+        ], 
+        [
+          "target", 
+          "ulong"
+        ], 
+        [
+          "property", 
+          "ulong"
+        ], 
+        [
+          "time", 
+          "ulong"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XUnmapEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "event", 
+          "ulong"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "from_configure", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "XVisibilityEvent": {
+      "fields": [
+        [
+          "type", 
+          "int"
+        ], 
+        [
+          "serial", 
+          "ulong"
+        ], 
+        [
+          "send_event", 
+          "int"
+        ], 
+        [
+          "display", 
+          "Display*"
+        ], 
+        [
+          "window", 
+          "ulong"
+        ], 
+        [
+          "state", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
     "assert_data": {
       "fields": [
         [
@@ -2736,6 +4459,15 @@
         [
           "next", 
           "assert_data**"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "atomic_t": {
+      "fields": [
+        [
+          "value", 
+          "int"
         ]
       ], 
       "type": "struct"
@@ -2843,6 +4575,66 @@
         "vararg": false
       }
     }, 
+    "AtomicAdd": {
+      "name": "SDL_AtomicAdd", 
+      "type": {
+        "argtypes": [
+          "atomic_t*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AtomicCAS": {
+      "name": "SDL_AtomicCAS", 
+      "type": {
+        "argtypes": [
+          "atomic_t*", 
+          "int", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AtomicCASPtr": {
+      "name": "SDL_AtomicCASPtr", 
+      "type": {
+        "argtypes": [
+          "void**", 
+          "void*", 
+          "void*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AtomicGet": {
+      "name": "SDL_AtomicGet", 
+      "type": {
+        "argtypes": [
+          "atomic_t*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AtomicGetPtr": {
+      "name": "SDL_AtomicGetPtr", 
+      "type": {
+        "argtypes": [
+          "void**"
+        ], 
+        "restype": "void*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "AtomicLock": {
       "name": "SDL_AtomicLock", 
       "type": {
@@ -2850,6 +4642,30 @@
           "int*"
         ], 
         "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AtomicSet": {
+      "name": "SDL_AtomicSet", 
+      "type": {
+        "argtypes": [
+          "atomic_t*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "AtomicSetPtr": {
+      "name": "SDL_AtomicSetPtr", 
+      "type": {
+        "argtypes": [
+          "void**", 
+          "void*"
+        ], 
+        "restype": "void*", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -3379,6 +5195,17 @@
         "vararg": false
       }
     }, 
+    "DetachThread": {
+      "name": "SDL_DetachThread", 
+      "type": {
+        "argtypes": [
+          "Thread*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "DisableScreenSaver": {
       "name": "SDL_DisableScreenSaver", 
       "type": {
@@ -3638,6 +5465,19 @@
         "vararg": false
       }
     }, 
+    "GL_GetDrawableSize": {
+      "name": "SDL_GL_GetDrawableSize", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "int*", 
+          "int*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "GL_GetProcAddress": {
       "name": "SDL_GL_GetProcAddress", 
       "type": {
@@ -3677,6 +5517,15 @@
           "void*"
         ], 
         "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GL_ResetAttributes": {
+      "name": "SDL_GL_ResetAttributes", 
+      "type": {
+        "argtypes": [], 
+        "restype": "void", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -3740,6 +5589,18 @@
       "type": {
         "argtypes": [
           "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GameControllerAddMappingsFromRW": {
+      "name": "SDL_GameControllerAddMappingsFromRW", 
+      "type": {
+        "argtypes": [
+          "RWops*", 
+          "int"
         ], 
         "restype": "int", 
         "type": "cfunc", 
@@ -3946,6 +5807,17 @@
         "vararg": false
       }
     }, 
+    "GetAssertionHandler": {
+      "name": "SDL_GetAssertionHandler", 
+      "type": {
+        "argtypes": [
+          "void**"
+        ], 
+        "restype": "AssertionHandler", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "GetAssertionReport": {
       "name": "SDL_GetAssertionReport", 
       "type": {
@@ -3994,6 +5866,15 @@
       "type": {
         "argtypes": [], 
         "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetBasePath": {
+      "name": "SDL_GetBasePath", 
+      "type": {
+        "argtypes": [], 
+        "restype": "ubyte*", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -4097,6 +5978,15 @@
       "type": {
         "argtypes": [], 
         "restype": "Cursor*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetDefaultAssertionHandler": {
+      "name": "SDL_GetDefaultAssertionHandler", 
+      "type": {
+        "argtypes": [], 
+        "restype": "AssertionHandler", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -4401,6 +6291,18 @@
         "vararg": false
       }
     }, 
+    "GetPrefPath": {
+      "name": "SDL_GetPrefPath", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
+          "ubyte*"
+        ], 
+        "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "GetRGB": {
       "name": "SDL_GetRGB", 
       "type": {
@@ -4623,6 +6525,15 @@
           "ubyte*", 
           "ubyte*"
         ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetSystemRAM": {
+      "name": "SDL_GetSystemRAM", 
+      "type": {
+        "argtypes": [], 
         "restype": "int", 
         "type": "cfunc", 
         "vararg": false
@@ -4927,6 +6838,18 @@
           "Window*"
         ], 
         "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetWindowWMInfo": {
+      "name": "SDL_GetWindowWMInfo", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "SysWMinfo*"
+        ], 
+        "restype": "int", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -5241,6 +7164,15 @@
     }, 
     "Has3DNow": {
       "name": "SDL_Has3DNow", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "HasAVX": {
+      "name": "SDL_HasAVX", 
       "type": {
         "argtypes": [], 
         "restype": "int", 
@@ -7627,6 +9559,24 @@
         "vararg": false
       }
     }, 
+    "UpdateYUVTexture": {
+      "name": "SDL_UpdateYUVTexture", 
+      "type": {
+        "argtypes": [
+          "Texture*", 
+          "Rect*", 
+          "ubyte*", 
+          "int", 
+          "ubyte*", 
+          "int", 
+          "ubyte*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "UpperBlit": {
       "name": "SDL_UpperBlit", 
       "type": {
@@ -7825,6 +9775,28 @@
           "int"
         ], 
         "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "acos": {
+      "name": "SDL_acos", 
+      "type": {
+        "argtypes": [
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "asin": {
+      "name": "SDL_asin", 
+      "type": {
+        "argtypes": [
+          "double"
+        ], 
+        "restype": "double", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -8621,6 +10593,19 @@
         "argtypes": [
           "ubyte*", 
           "size_t", 
+          "ubyte*", 
+          "va_list"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "vsscanf": {
+      "name": "SDL_vsscanf", 
+      "type": {
+        "argtypes": [
+          "ubyte*", 
           "ubyte*", 
           "va_list"
         ], 
