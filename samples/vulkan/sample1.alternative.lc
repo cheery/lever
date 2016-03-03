@@ -73,14 +73,9 @@ main = ():
     queue = queue.to
 
     command_pool = new_command_pool(dev, {
-        flags = "RESET_COMMAND_BUFFER_BIT"
+#        flags = "RESET_COMMAND_BUFFER_BIT"
         queueFamilyIndex = queueIndex
     })
-
-    buffer = command_pool.allocate({
-        level = "PRIMARY"
-        commandBufferCount = 1
-    }).to
 
     render_pass = ffi.automem(vk.RenderPass)
     vk.createRenderPass(dev, {
@@ -109,45 +104,6 @@ main = ():
         ]
     }, null, render_pass)
     render_pass = render_pass.to
-
-    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR = 1000001002
-    VK_STRUCTURE_TYPE_PRESENT_INFO_KHR = 1000001001
-
-    swapchain.subresource_range = {
-        aspectMask = "COLOR_BIT"
-        baseMipLevel = 0
-        levelCount = 1
-        baseArrayLayer = 0
-        layerCount = 1
-    }
-    swapchain.views = []
-    swapchain.fences = []
-    swapchain.framebuffers = []
-    for image in swapchain.images
-        image_view = create_image_view(dev, {
-            image = image
-            viewType = "2D"
-            format = swapchain.format
-            components = {r = "R", g = "G", b = "B", a = "A"}
-            subresourceRange = swapchain.subresource_range
-        })
-        swapchain.views.append(image_view)
-
-        fence = ffi.automem(vk.Fence)
-        vk.createFence(dev, {flags = "SIGNALED_BIT"}, null, fence)
-        fence = fence.to
-        swapchain.fences.append(fence)
-
-        framebuffer = ffi.automem(vk.Framebuffer)
-        vk.createFramebuffer(dev, {
-            renderPass = render_pass
-            attachments = [image_view]
-            width = swapchain.width
-            height = swapchain.height
-            layers = 1
-        }, null, framebuffer)
-        framebuffer = framebuffer.to
-        swapchain.framebuffers.append(framebuffer)
 
     descset_layout = ffi.automem(vk.DescriptorSetLayout)
     vk.createDescriptorSetLayout(dev, {
@@ -371,21 +327,51 @@ main = ():
     vk.createGraphicsPipelines(dev, pipeline_cache, 1, [pipeline_info], null, pipeline)
     pipeline = pipeline.to
 
-    frame_statistics = []
-    last_image = 0
-    render = ():
-        # This is lazy. It means we can't continue before the previous frame has been submitted.
-        # Need to check with performance counter later, whether this is sufficient
-        if vk.getFenceStatus(dev, swapchain.fences[last_image]).NOT_READY
-            return null
+    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR = 1000001002
+    VK_STRUCTURE_TYPE_PRESENT_INFO_KHR = 1000001001
 
-        current_image = ffi.automem(ffi.u32)
-        vk.acquireNextImageKHR(dev, swapchain.id, 0xFFFFFFFFFFFFFFFF, image_acquired, null, current_image)
-        current_image = current_image.to
+    swapchain.subresource_range = {
+        aspectMask = "COLOR_BIT"
+        baseMipLevel = 0
+        levelCount = 1
+        baseArrayLayer = 0
+        layerCount = 1
+    }
+    swapchain.views = []
+    swapchain.fences = []
+    swapchain.framebuffers = []
+    swapchain.commandbuffers = []
+    for image in swapchain.images
+        image_view = create_image_view(dev, {
+            image = image
+            viewType = "2D"
+            format = swapchain.format
+            components = {r = "R", g = "G", b = "B", a = "A"}
+            subresourceRange = swapchain.subresource_range
+        })
+        swapchain.views.append(image_view)
 
-        frame_begin = time()
-        vk.resetFences(dev, 1, [swapchain.fences[current_image]])
-        vk.beginCommandBuffer(buffer, {flags = "ONE_TIME_SUBMIT_BIT"})
+        fence = ffi.automem(vk.Fence)
+        vk.createFence(dev, {flags = "SIGNALED_BIT"}, null, fence)
+        fence = fence.to
+        swapchain.fences.append(fence)
+
+        framebuffer = ffi.automem(vk.Framebuffer)
+        vk.createFramebuffer(dev, {
+            renderPass = render_pass
+            attachments = [image_view]
+            width = swapchain.width
+            height = swapchain.height
+            layers = 1
+        }, null, framebuffer)
+        framebuffer = framebuffer.to
+        swapchain.framebuffers.append(framebuffer)
+
+        buffer = command_pool.allocate({
+            level = "PRIMARY"
+            commandBufferCount = 1
+        }).to
+        vk.beginCommandBuffer(buffer, {})
         vk.cmdPipelineBarrier(buffer, 
             "ALL_GRAPHICS_BIT",
             "COLOR_ATTACHMENT_OUTPUT_BIT",
@@ -399,20 +385,15 @@ main = ():
                 newLayout = "COLOR_ATTACHMENT_OPTIMAL"
                 srcQueueFamilyIndex = queueIndex
                 dstQueueFamilyIndex = queueIndex
-                image = swapchain.images[current_image]
+                image = image
                 subresourceRange = swapchain.subresource_range
             }])
         vk.cmdBeginRenderPass(buffer, {
             renderPass = render_pass
-            framebuffer = swapchain.framebuffers[current_image]
+            framebuffer = framebuffer
             renderArea = {offset = {x = 0, y = 0}, extent = resolution}
             clearValues = [
-                {color = {float32 = [
-                    sin(time()) * 0.5 + 0.5,
-                    sin(time() + 2*pi * 1 / 3) * 0.5 + 0.5,
-                    sin(time() + 2*pi * 2 / 3) * 0.5 + 0.5,
-                    1.0
-                ]}}
+                {color = {float32 = [0.5, 0.5, 0.5, 1.0]}}
             ]
         }, "INLINE")
         vk.cmdBindPipeline(buffer, "GRAPHICS", pipeline)
@@ -435,13 +416,29 @@ main = ():
                 newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
                 srcQueueFamilyIndex = queueIndex
                 dstQueueFamilyIndex = queueIndex
-                image = swapchain.images[current_image]
+                image = image
                 subresourceRange = swapchain.subresource_range
             }])
         vk.endCommandBuffer(buffer)
+        swapchain.commandbuffers.append(buffer)
+
+    frame_statistics = []
+    last_image = 0
+    render = ():
+        # This is lazy. It means we can't continue before the previous frame has been submitted.
+        # Need to check with performance counter later, whether this is sufficient
+        if vk.getFenceStatus(dev, swapchain.fences[last_image]).NOT_READY
+            return null
+
+        current_image = ffi.automem(ffi.u32)
+        vk.acquireNextImageKHR(dev, swapchain.id, 0xFFFFFFFFFFFFFFFF, image_acquired, null, current_image)
+        current_image = current_image.to
+
+        frame_begin = time()
+        vk.resetFences(dev, 1, [swapchain.fences[current_image]])
         vk.queueSubmit(queue, 1, {
             waitSemaphores = [image_acquired]
-            commandBuffers = [buffer]
+            commandBuffers = [swapchain.commandbuffers[current_image]]
             signalSemaphores = [rendering_done]
         }, swapchain.fences[current_image])
         frame_end = time()
@@ -466,6 +463,7 @@ main = ():
             avg /= frame_statistics.length
             print("best:", best, "worst:", worst, "avg:", avg)
             frame_statistics := []
+
 
     event = ffi.automem(sdl.Event)
     running = true
