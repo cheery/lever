@@ -130,7 +130,12 @@ class Api(Object):
             else:
                 raise OldError(name + u": incorrect length value: %s" % length.repr())
         if isinstance(which, String) and which.string == u"pointer":
-            to = self.lookup_type(decl.getitem(String(u'to')))
+            to_obj = decl.getitem(String(u'to'))
+            # A little hack to name common opaque pointers.
+            if isinstance(to_obj, Dict):
+                to = self.build_ctype(name, to_obj)
+            else:
+                to = self.lookup_type(to_obj)
             return ffi.Pointer(to)
         if isinstance(which, String) and which.string == u"enum":
             ctype = self.lookup_type(decl.getitem(String(u'ctype')))

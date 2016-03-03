@@ -1,6 +1,6 @@
 from rpython.rlib import jit_libffi, clibffi, unroll
 from rpython.rtyper.lltypesystem import rffi, lltype
-from space import unwind, LTypeError, Object, Integer, Float, to_float, to_int
+from space import unwind, LTypeError, Object, Integer, Float, to_float, to_int, String
 # Simple, platform independent concepts are put up
 # here, so they won't take space elsewhere.
 
@@ -13,7 +13,7 @@ class Type(Object):
     def cast_to_ffitype(self):
         raise unwind(LTypeError(u".cast_to_ffitype method missing"))
 
-    def load(self, offset):
+    def load(self, offset, copy):
         raise unwind(LTypeError(u".load method missing"))
 
     def store(self, pool, offset, value):
@@ -21,6 +21,17 @@ class Type(Object):
 
     def typecheck(self, other):
         return self is other
+
+    def on_getattr(self, mem, name):
+        if name == u"to":
+            return self.load(mem.pointer, False)
+        if name == u"str" and self.size == 1:
+            s = rffi.charp2str(rffi.cast(rffi.CCHARP, mem.pointer))
+            return String(s.decode('utf-8'))
+        raise Object.getattr(mem, name)
+
+    def on_setattr(self, mem, name, value):
+        raise Object.setattr(mem, name, value)
 
 # Many systems are sensitive to memory alignment
 def align(x, a):
@@ -61,7 +72,7 @@ class Signed(Type):
         else:
             raise unwind(LTypeError(u"undefined ffi type: %s" % self.repr()))
 
-    def load(self, offset):
+    def load(self, offset, copy):
         for rtype in signed_types:
             if self.size == rffi.sizeof(rtype):
                 return Integer(rffi.cast(rffi.LONG, rffi.cast(rffi.CArrayPtr(rtype), offset)[0]))
@@ -101,7 +112,7 @@ class Unsigned(Type):
         else:
             raise unwind(LTypeError(u"undefined ffi type: %s" % self.repr()))
 
-    def load(self, offset):
+    def load(self, offset, copy):
         for rtype in unsigned_types:
             if self.size == rffi.sizeof(rtype):
                 return Integer(rffi.cast(rffi.LONG, rffi.cast(rffi.CArrayPtr(rtype), offset)[0]))
@@ -140,7 +151,7 @@ class Floating(Type):
         else:
             raise unwind(LTypeError(u"undefined ffi type: %s" % self.repr()))
 
-    def load(self, offset):
+    def load(self, offset, copy):
         for rtype in floating_types:
             if self.size == rffi.sizeof(rtype):
                 return Float(rffi.cast(rffi.DOUBLE, rffi.cast(rffi.CArrayPtr(rtype), offset)[0]))
@@ -180,13 +191,19 @@ class Shadow(Type):
     def cast_to_ffitype(self):
         return self.basetype.cast_to_ffitype()
 
-    def load(self, offset):
-        value = self.basetype.load(offset)
+    def load(self, offset, copy):
+        value = self.basetype.load(offset, copy)
         return self.obj.callattr(u"load", [value])
 
     def store(self, pool, offset, value):
         value = self.obj.callattr(u"store", [value])
         return self.basetype.store(pool, offset, value)
+
+    def on_getattr(self, mem, name):
+        return self.basetype.on_getattr(mem, name)
+
+    def on_setattr(self, mem, name, value):
+        return self.basetype.on_setattr(mem, name, value)
 
 def to_type(obj):
     if isinstance(obj, Type):

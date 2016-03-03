@@ -44,8 +44,9 @@ class List(Object):
         return Object.getattr(self, name)
 
     def contains(self, item):
-        if item in self.contents:
-            return True
+        for obj in self.contents:
+            if obj.eq(item):
+                return True
         return False
     
     def getitem(self, index):
@@ -70,7 +71,7 @@ class List(Object):
         out = []
         for item in self.contents:
             out.append(item.repr())
-        return u'[' + u' '.join(out) + u']'
+        return u'[' + u', '.join(out) + u']'
 
 @List.builtin_method
 @signature(List, Object)

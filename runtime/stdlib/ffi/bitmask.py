@@ -20,8 +20,8 @@ class Bitmask(Type):
     def call(self, argv):
         return bitmask_call([self] + argv)
 
-    def load(self, offset):
-        value = self.basetype.load(offset)
+    def load(self, offset, copy):
+        value = self.basetype.load(offset, copy)
         if isinstance(value, Integer):
             return BitmaskValue(self, value.value)
         return value

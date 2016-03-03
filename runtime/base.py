@@ -195,3 +195,38 @@ def chdir(obj):
 def exit(obj):
     status = 0 if obj is None else obj.value
     raise unwind(LSystemExit(status))
+
+@builtin
+@signature(Integer, Integer, Integer, optional=2)
+def range_(start, stop, step):
+    if stop is None:
+        stop  = start.value
+        start = 0
+    else:
+        start = start.value
+        stop  = stop.value
+    if step is None:
+        step = 1
+    else:
+        step = step.value
+    if step == 0:
+        raise unwind(LTypeError(u"step==0"))
+    return Range(start, stop, step)
+
+class Range(Object):
+    def __init__(self, start, stop, step):
+        self.current = start
+        self.stop = stop
+        self.step = step
+        self.sign = +1 if step >= 0 else -1
+
+    def iter(self):
+        return self
+
+@Range.method(u"next", signature(Range))
+def Range_next(self):
+    if self.current*self.sign < self.stop*self.sign:
+        i = self.current
+        self.current += self.step
+        return Integer(i)
+    raise StopIteration()

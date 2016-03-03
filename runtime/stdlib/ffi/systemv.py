@@ -46,53 +46,23 @@ class Mem(Object):
         ctype = self.ctype
         if isinstance(ctype, Pointer):
             ctype = ctype.to
-            # or isinstance(tp, Array):
-            if isinstance(ctype, Struct) or isinstance(ctype, Union):
-                try:
-                    offset, ctype = ctype.namespace[name]
-                except KeyError as ke:
-                    return Object.getattr(self, name)
-                pointer = rffi.ptradd(self.pointer, offset)
-                if isinstance(ctype, Struct) or isinstance(ctype, Union) or isinstance(ctype, Array):
-                    return Mem(Pointer(ctype), pointer)
-                return ctype.load(pointer)
-                #elif isinstance(ctype, Signed) or isinstance(ctype, Unsigned) or isinstance(ctype, Floating) or isinstance(ctype, Pointer):
-                #    return ctype.load(pointer)
-                #else:
-                #    raise OldError(u"no load supported for " + ctype.repr())
-            elif isinstance(ctype, Array):
-                if name == u"str" and ctype.ctype.size == 1:
-                    s = rffi.charp2str(rffi.cast(rffi.CCHARP, self.pointer))
-                    return String(s.decode('utf-8'))
-            elif isinstance(ctype, Type):
-                if name == u"str" and ctype.size == 1:
-                    s = rffi.charp2str(rffi.cast(rffi.CCHARP, self.pointer))
-                    return String(s.decode('utf-8'))
-                elif name == u"to":
-                    return ctype.load(self.pointer)
+            if isinstance(ctype, Type):
+                return ctype.on_getattr(self, name)
         return Object.getattr(self, name)
 
     def setattr(self, name, value):
         ctype = self.ctype
         if isinstance(ctype, Pointer):
             ctype = ctype.to
-            if isinstance(ctype, Struct) or isinstance(ctype, Union):
-                try:
-                    offset, ctype = ctype.namespace[name]
-                except KeyError as ke:
-                    return Object.setattr(self, name, value)
-                pointer = rffi.ptradd(self.pointer, offset)
-                return ctype.store(self.pool, pointer, value)
-                #if isinstance(ctype, Signed) or isinstance(ctype, Unsigned) or isinstance(ctype, Floating) or isinstance(ctype, Pointer):
-                #else:
-                #    raise Exception(u"no store supported for " + ctype.repr())
-            elif name == u"to":
-                return ctype.store(self.pool, self.pointer, value)
+            if isinstance(ctype, Type):
+                return ctype.on_setattr(self, name, value)
         return Object.setattr(self, name, value)
 
     def getitem(self, index):
         if not isinstance(index, Integer):
             return Object.getitem(self, index)
+        # The getitem and setitem should be just like the getattr/setattr,
+        # But we didn't do shadowed arrays or plain types yet. :)
         index = index.value
         ctype = self.ctype
         if isinstance(ctype, Pointer):
@@ -104,7 +74,7 @@ class Mem(Object):
                 pointer = rffi.ptradd(self.pointer, ctype.size*index)
                 if isinstance(ctype, Struct) or isinstance(ctype, Union) or isinstance(ctype, Array):
                     return Mem(Pointer(ctype), pointer)
-                return ctype.load(pointer)
+                return ctype.load(pointer, False)
         return Object.getitem(self, Integer(index))
 
     def setitem(self, index, value):
@@ -134,11 +104,38 @@ class Mem(Object):
             name = u''
         return u"<%x %s>" % (rffi.cast(rffi.LONG, self.pointer), name)
 
+    def iter(self):
+        return MemIterator(self, self.length)
+
+class MemIterator(Object):
+    _immutable_fields_ = ['mem', 'length']
+    def __init__(self, mem, length):
+        self.mem = mem
+        self.index = 0
+        self.length = length
+
+@MemIterator.method(u"next", signature(MemIterator))
+def MemIterator_next(memi):
+    if memi.index < memi.length:
+        index = memi.index
+        memi.index += 1
+        return memi.mem.getitem(Integer(index))
+    raise StopIteration()
+
+def unroll_shadow(btype):
+    ctype = btype
+    while isinstance(ctype, Shadow):
+        ctype = ctype.basetype
+        if ctype is btype:
+            raise unwind(LTypeError(u"Recursive type definition"))
+    return ctype
+
 # GC-allocated variation of the above.
 class AutoMem(Mem):
     @rgc.must_be_light_finalizer
     def __del__(self):
         lltype.free(self.pointer, flavor='raw')
+        self.pointer = lltype.nullptr(rffi.VOIDP.TO)
 
 class Pointer(Type):
     size = rffi.sizeof(rffi.VOIDP)
@@ -149,7 +146,7 @@ class Pointer(Type):
     def cast_to_ffitype(self):
         return clibffi.ffi_type_pointer
 
-    def load(self, offset):
+    def load(self, offset, copy):
         pointer = rffi.cast(rffi.VOIDPP, offset)[0]
         if pointer == lltype.nullptr(rffi.VOIDP.TO):
             return null
@@ -298,7 +295,7 @@ class CFunc(Type):
             val = null
             if isinstance(self.restype, Type):
                 offset = rffi.ptradd(exc, cif.exchange_result)
-                val = self.restype.load(offset)
+                val = self.restype.load(offset, True)
         finally:
             lltype.free(exc, flavor='raw')
             pool.free_noreuse()
@@ -307,7 +304,7 @@ class CFunc(Type):
     def cast_to_ffitype(self):
         return clibffi.ffi_type_pointer
 
-    def load(self, offset):
+    def load(self, offset, copy):
         return Mem(self, rffi.cast(rffi.VOIDPP, offset)[0])
 
     def store(self, pool, offset, value):
@@ -388,10 +385,29 @@ class Struct(Type):
             return True
         return False
 
-    def load(self, offset):
-        pointer = lltype.malloc(rffi.VOIDP.TO, self.size, flavor='raw')
-        rffi.c_memcpy(pointer, offset, sizeof(self))
-        return AutoMem(Pointer(self), pointer, 1)
+    def on_getattr(self, mem, name):
+        try:
+            offset, ctype = self.namespace[name]
+        except KeyError as ke:
+            return Object.getattr(mem, name)
+        pointer = rffi.ptradd(mem.pointer, offset)
+        return ctype.load(pointer, False)
+
+    def on_setattr(self, mem, name, value):
+        try:
+            offset, ctype = self.namespace[name]
+        except KeyError as ke:
+            return Object.setattr(mem, name, value)
+        pointer = rffi.ptradd(mem.pointer, offset)
+        return ctype.store(mem.pool, pointer, value)
+
+    def load(self, offset, copy):
+        if copy:
+            pointer = lltype.malloc(rffi.VOIDP.TO, self.size, flavor='raw')
+            rffi.c_memcpy(pointer, offset, sizeof(self))
+            return AutoMem(Pointer(self), pointer, 1)
+        else:
+            return Mem(Pointer(self), offset, 1)
 
     def store(self, pool, offset, value):
         if isinstance(value, Mem):
@@ -461,10 +477,29 @@ class Union(Type):
             return True
         return False
 
-    def load(self, offset):
-        pointer = lltype.malloc(rffi.VOIDP.TO, self.size, flavor='raw')
-        rffi.c_memcpy(pointer, offset, sizeof(self))
-        return AutoMem(Pointer(self), pointer, 1)
+    def on_getattr(self, mem, name):
+        try:
+            offset, ctype = self.namespace[name]
+        except KeyError as ke:
+            return Object.getattr(mem, name)
+        pointer = rffi.ptradd(mem.pointer, offset)
+        return ctype.load(pointer, False)
+
+    def on_setattr(self, mem, name, value):
+        try:
+            offset, ctype = self.namespace[name]
+        except KeyError as ke:
+            return Object.setattr(mem, name, value)
+        pointer = rffi.ptradd(mem.pointer, offset)
+        return ctype.store(mem.pool, pointer, value)
+
+    def load(self, offset, copy):
+        if copy:
+            pointer = lltype.malloc(rffi.VOIDP.TO, self.size, flavor='raw')
+            rffi.c_memcpy(pointer, offset, sizeof(self))
+            return AutoMem(Pointer(self), pointer, 1)
+        else:
+            return Mem(Pointer(self), offset, 1)
 
     def store(self, pool, offset, value):
         if isinstance(value, Mem):
@@ -528,8 +563,25 @@ class Array(Type):
             return self.ctype.typecheck(other.ctype)
         return False
 
-    def load(self, offset):
-        raise OldError(u"array load notimpl")
+    def on_getattr(self, mem, name):
+        if name == u"str" and self.ctype.size == 1:
+            if self.length != 0:
+                s = rffi.charp2strn(rffi.cast(rffi.CCHARP, mem.pointer), int(self.length))
+            else:
+                s = rffi.charp2str(rffi.cast(rffi.CCHARP, mem.pointer))
+            return String(s.decode('utf-8'))
+        raise Object.getattr(mem, name)
+
+    def on_setattr(self, mem, name, value):
+        raise Object.setattr(mem, name, value)
+
+    def load(self, offset, copy):
+        if copy:
+            pointer = lltype.malloc(rffi.VOIDP.TO, self.size, flavor='raw')
+            rffi.c_memcpy(pointer, offset, sizeof(self))
+            return AutoMem(Pointer(self), pointer, 1)
+        else:
+            return Mem(Pointer(self), offset, 1)
 
     def store(self, pool, offset, value):
         if self.length == 0:
@@ -565,6 +617,7 @@ class AutoPoolPointer(PoolPointer):
     def __del__(self):
         if self.pointer != lltype.nullptr(rffi.VOIDP.TO):
             lltype.free(self.pointer, flavor='raw')
+            self.pointer = lltype.nullptr(rffi.VOIDP.TO)
 
 class Pool(Object):
     def __init__(self, autoclear=True, mode=PoolPointer):
