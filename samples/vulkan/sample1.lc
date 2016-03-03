@@ -396,8 +396,8 @@ main = ():
                 dstAccessMask = "COLOR_ATTACHMENT_WRITE_BIT"
                 oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
                 newLayout = "COLOR_ATTACHMENT_OPTIMAL"
-                srcQueueFamilyIndex = 0 # todo
-                dstQueueFamilyIndex = 0
+                srcQueueFamilyIndex = queueIndex
+                dstQueueFamilyIndex = queueIndex
                 image = swapchain.images[current_image]
                 subresourceRange = swapchain.subresource_range
             }])
@@ -432,8 +432,8 @@ main = ():
                 dstAccessMask = "MEMORY_READ_BIT"
                 oldLayout = "COLOR_ATTACHMENT_OPTIMAL"
                 newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-                srcQueueFamilyIndex = 0 # todo
-                dstQueueFamilyIndex = 0
+                srcQueueFamilyIndex = queueIndex
+                dstQueueFamilyIndex = queueIndex
                 image = swapchain.images[current_image]
                 subresourceRange = swapchain.subresource_range
             }])
