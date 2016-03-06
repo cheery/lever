@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python2
 """
     This script should help you out at setting up environment for pyllisp.
     If you run this script without arguments, it will just setup the environment.
