@@ -230,3 +230,15 @@ def Range_next(self):
         self.current += self.step
         return Integer(i)
     raise StopIteration()
+
+# TODO: Grab this one from runtime.stdlib.fs
+# input() is meant to be overridden when it makes sense.
+from rpython.rlib.rfile import create_stdio
+@builtin
+@signature(String, optional=1)
+def input_(obj):
+    stdin, stdout, stderr = create_stdio()
+    if obj is not None:
+        stdout.write(obj.string.encode('utf-8'))
+    line = stdin.readline().rstrip("\r\n")
+    return String(line.decode('utf-8'))
