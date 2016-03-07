@@ -18,6 +18,10 @@
 #
 #return test
 
+foo = (argv...):
+    print(argv)
+foo(1,2,3,4)
+
 test = :exnihilo()
     x = 40
     y = 20

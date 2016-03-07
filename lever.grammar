@@ -189,6 +189,8 @@ bindings =>
         optionals comma:","
     with_variadic(optionals symbol):
         optionals comma:"," symbol variadic:"..."
+    only_variadic(symbol):
+        symbol variadic:"..."
 
 optionals =>
     optional(optional): optional

@@ -148,6 +148,9 @@ def post_with_variadic(env, loc, bindings, vararg):
     bindings[2] = vararg
     return bindings
 
+def post_only_variadic(env, loc, vararg):
+    return [[], [], vararg]
+
 def post_blank_bindings(env, loc):
     return [[], [], None]
 
