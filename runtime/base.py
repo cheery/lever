@@ -3,7 +3,6 @@ from rpython.rtyper.lltypesystem import rffi
 from space import *
 import main
 import module_resolution
-import operators
 import os
 import pathobj
 #import stdlib

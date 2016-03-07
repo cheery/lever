@@ -1,4 +1,12 @@
-from space import *
+# We may want to invert many of these dependencies.
+from builtin import Builtin, signature, expectations_error
+from interface import Object, Interface, null
+from multimethod import Multimethod
+from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean
+from rpython.rlib.objectmodel import specialize, always_inline
+from string import String
+from listobject import List
+import space
 
 clamp = Multimethod(3)
 coerce = Multimethod(2)

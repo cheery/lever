@@ -12,6 +12,7 @@ from exnihilo import Exnihilo
 from customobject import CustomObject
 from rpython.rlib import jit
 from errors import *
+import operators
 
 def as_cstring(value):
     if isinstance(value, String):

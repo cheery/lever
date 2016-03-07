@@ -1,5 +1,4 @@
 from space import *
-import operators
 import os
 import sys
 

@@ -2,7 +2,6 @@ from math import sqrt, sin, cos, tan, pi, acos, asin, atan, atan2
 from rpython.rlib.rrandom import Random
 from rpython.rlib.rarithmetic import r_uint
 from space import *
-import operators
 import time
 
 length = Multimethod(1)
