@@ -18,19 +18,25 @@
 #
 #return test
 
+test = :exnihilo()
+    x = 40
+    y = 20
+    blonk = ():
+        x := 10
+        print("blonk")
 
-vec2 = exnihilo()
-setattr(vec2, "+init", (self, x, y):
-    self.x = x
-    self.y = y
-)
-setattr(vec2, "+iter", (self):
-    return iter([self.x, self.y])
-)
-setattr(vec2, "+repr", (self):
-    return "vec2(" ++ repr(self.x) ++ ", " ++ repr(self.y) ++ ")"
-)
-vec2 = class(vec2, object, "vec2")
+print(test, test.x)
+test.blonk()
+print(test, test.x)
+
+class vec2 : object
+    +init = (self, x, y):
+        self.x = x
+        self.y = y
+    +iter = (self):
+        return iter([self.x, self.y])
+    +repr = (self):
+        return "vec2(" ++ repr(self.x) ++ ", " ++ repr(self.y) ++ ")"
 
 a = vec2(0.5, 0.2)
 b = vec2(0.8, 0.4)
@@ -38,18 +44,25 @@ c = vec2(0.3, 0.6)
 
 %"+expr"[[vec2]] = (a):
     return a
+
 %"-expr"[[vec2]] = (a):
     return vec2(-a.x, -a.y)
+
 %"+"[[vec2, vec2]] = (a, b):
     return vec2(a.x+b.x, a.y+b.y)
+
 %"-"[[vec2, vec2]] = (a, b):
     return vec2(a.x-b.x, a.y-b.y)
+
 %"*"[[vec2, float]] = (a, b):
     return vec2(a.x*b, a.y*b)
+
 %"*"[[float, vec2]] = (a, b):
     return vec2(a*b.x, a*b.y)
+
 %"/"[[vec2, float]] = (a, b):
     return vec2(a.x/b, a.y/b)
+
 %"/"[[float, vec2]] = (a, b):
     return vec2(a/b.x, a/b.y)
 

@@ -16,17 +16,19 @@ def main():
         os.path.normpath(os.path.relpath(
             src_path, os.path.dirname(cb_path))).decode('utf-8'))
     functions = []
-    ctx = Context(closures = [[root, None]])
+
+    root_scope = Scope(None, 0, 0, 0, [])
+    ctx = Context(closures = [[root, root_scope]])
     for body, scope in ctx.closures:
         ctx.scope = scope
         ctx.block = entry = ctx.new_block()
         for cell in body:
             cell.visit(ctx)
         ctx.block.op(None, 'return', [ctx.block.op(None, 'getglob', [u"null"])])
-        flags  = scope.flags  if scope else 0
-        argc   = scope.argc   if scope else 0
-        topc   = scope.topc   if scope else 0
-        localv = scope.localv if scope else []
+        flags  = scope.flags
+        argc   = scope.argc
+        topc   = scope.topc
+        localv = scope.localv
         functions.append(
             backend.dump(flags, argc, topc, localv, entry,
                 consttab, location_id, debug))
@@ -61,6 +63,46 @@ class Scope(object):
         self.argc = argc
         self.topc = topc
         self.localv = localv
+        self.depthc = 1
+
+    def getloc(self, context, loc, name):
+        index = self.localv.index(name)
+        return context.block.op(loc, "getloc", [index])
+
+    def getupv(self, context, loc, depth, name):
+        index = self.localv.index(name)
+        return context.block.op(loc, "getupv", [depth, index])
+
+    def setloc(self, context, loc, name, value):
+        index = self.localv.index(name)
+        return context.block.op(loc, "setloc", [index, value])
+
+    def setupv(self, context, loc, depth, name, value):
+        index = self.localv.index(name)
+        return context.block.op(loc, "setupv", [depth, index, value])
+
+class ObjectScope(object):
+    def __init__(self, parent, parentindex, localv):
+        self.parent = parent
+        self.parentindex = parentindex
+        self.localv = localv
+        self.depthc = 0
+
+    def getloc(self, context, loc, name):
+        obj = context.block.op(loc, "getloc", [self.parentindex])
+        return context.block.op(loc, "getattr", [obj, name])
+
+    def getupv(self, context, loc, depth, name):
+        obj = context.block.op(loc, "getupv", [depth, self.parentindex])
+        return context.block.op(loc, "getattr", [obj, name])
+
+    def setloc(self, context, loc, name, value):
+        obj = context.block.op(loc, "getloc", [self.parentindex])
+        return context.block.op(loc, "setattr", [obj, name, value])
+
+    def setupv(self, context, loc, depth, name, value):
+        obj = context.block.op(loc, "getupv", [depth, self.parentindex])
+        return context.block.op(loc, "setattr", [obj, name, value])
 
 def post_function(env, loc, bindings, body):
     return Closure(loc, bindings, body)
@@ -123,13 +165,50 @@ def post_append_mandatory(env, loc, bindings, mandatory):
     bindings[0].append(mandatory)
     return bindings
 
+def post_scopegrabber(env, loc, expr, block):
+    return ScopeGrab(loc, expr, block)
+
+def post_class(env, loc, name, block):
+    grabber = Code(loc, "call", Getvar(loc, u"exnihilo"))
+    return Setvar(loc, "local", name.value,
+        Code(loc, "call", Getvar(loc, u"class"),
+            ScopeGrab(loc, grabber, block),
+            Getvar(loc, u"object"), # May result in weird behavior at times.
+            Code(loc, "constant", name.value)))
+
+def post_class_i(env, loc, name, base, block):
+    grabber = Code(loc, "call", Getvar(loc, u"exnihilo"))
+    return Setvar(loc, "local", name.value,
+        Code(loc, "call", Getvar(loc, u"class"),
+            ScopeGrab(loc, grabber, block),
+            base,
+            Code(loc, "constant", name.value)))
+
+class ScopeGrab(Cell):
+    def __init__(self, loc, expr, body):
+        self.loc = loc
+        self.expr = expr
+        self.body = body
+
+    def visit(self, context):
+        this = self.expr.visit(context)
+        parent = context.scope
+        parentindex = len(parent.localv)
+        parent.localv.append(u"grabbedscope")
+        context.block.op(self.loc, "setloc", [parentindex, this])
+        context.scope = ObjectScope(parent, parentindex, [])
+        for expr in self.body:
+            expr.visit(context)
+        context.scope = parent
+        return this
+
 def post_import(env, loc, names):
     import_fn = Getvar(loc, u"import")
     proc = []
     for name in names:
         cn = Code(loc, "constant", name.value)
         m = Code(loc, "call", import_fn, cn)
-        proc.append(Setvar(loc, "auto", name.value, m))
+        proc.append(Setvar(loc, "local", name.value, m))
     return Prog(proc)
 
 def post_try(env, loc, body, excepts):
@@ -394,8 +473,9 @@ def post_setitem(env, loc, base, indexer, statement):
            [base, indexer, statement],
            [2, 0, 1])
  
-def post_local_assign(env, loc, name, statement):
-    return Setvar(loc, "local", name.value, statement)
+def post_local_assign(env, loc, nametuple, statement):
+    name = u"".join(n.value for n in nametuple)
+    return Setvar(loc, "local", name, statement)
  
 def post_upvalue_assign(env, loc, name, statement):
     return Setvar(loc, "upvalue", name.value, statement)
@@ -557,15 +637,13 @@ class Getvar(Cell):
         scope = context.scope
         if scope:
             if self.name in scope.localv:
-                index = scope.localv.index(self.name)
-                return context.block.op(self.loc, "getloc", [index])
+                return scope.getloc(context, self.loc, self.name)
             depth = 0
             while scope.parent:
                 if self.name in scope.parent.localv:
-                    index = scope.parent.localv.index(self.name)
-                    return context.block.op(self.loc, "getupv", [depth, index])
+                    return scope.parent.getupv(context, self.loc, depth, self.name)
+                depth += scope.depthc
                 scope = scope.parent
-                depth += 1
         return context.block.op(self.loc, "getglob", [self.name])
 
 class Setvar(Cell):
@@ -581,21 +659,19 @@ class Setvar(Cell):
 
 def setvar(context, loc, flavor, name, value):
     scope = context.scope
-    if scope:
+    # The setvar doesn't write into the rootscope.
+    if scope.parent:
         if name in scope.localv and flavor != "upvalue":
-            index = scope.localv.index(name)
-            return context.block.op(loc, "setloc", [index, value])
+            return scope.setloc(context, loc, name, value)
         if flavor == "local":
             scope.localv.append(name)
-            index = scope.localv.index(name)
-            return context.block.op(loc, "setloc", [index, value])
+            return scope.setloc(context, loc, name, value)
         depth = 0
-        while scope.parent:
+        while scope.parent.parent:
             if name in scope.parent.localv:
-                index = scope.parent.localv.index(name)
-                return context.block.op(loc, "setupv", [depth, index, value])
+                return scope.parent.setupv(context, loc, depth, name, value)
+            depth += scope.depthc
             scope = scope.parent
-            depth += 1
     return context.block.op(loc, "setglob", [name, value])
 
 # TODO: LEVER_PATH most likely not set by lever itself. This will break.

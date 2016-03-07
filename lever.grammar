@@ -18,8 +18,8 @@ block_statement =>
         kw_if:"if" statement block otherwise
     while(statement block):
         kw_while:"while" statement block
-    local_assign(symbol block_statement):
-        symbol assign_op:"=" block_statement
+    local_assign(local_symbol block_statement):
+        local_symbol assign_op:"=" block_statement
     upvalue_assign(symbol block_statement):
         symbol upvalue_assign_op:":=" block_statement
     op_assign(slot op block_statement):
@@ -40,6 +40,14 @@ block_statement =>
         kw_break:"break"
     continue():
         kw_continue:"continue"
+    class(symbol block):
+        kw_class:"class" symbol block
+    class_i(symbol expr block):
+        kw_class:"class" symbol colon:":" expr block
+
+local_symbol =>
+    tuple: symbol
+    tuple: plus:"+" symbol
 
 slot =>
     lookup_slot: symbol
@@ -170,6 +178,8 @@ term =>
     dict(nl_pairs): lc:"{" nl_pairs rc:"}"
     lookup(escaped_keyword): lc:"{" escaped_keyword rc:"}"
     lookup(string): percent:"%" string
+    scopegrabber(expr block):
+        colon:":" expr block
 
 bindings =>
     blank_bindings:
