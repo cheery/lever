@@ -7,3 +7,5 @@ doc/_static
 doc/_templates
 *.cb
 *~
+.idea/
+lever
