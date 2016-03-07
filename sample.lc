@@ -29,7 +29,7 @@ print(test, test.x)
 test.blonk()
 print(test, test.x)
 
-class vec2 : object
+class vec2 extends object
     +init = (self, x, y):
         self.x = x
         self.y = y

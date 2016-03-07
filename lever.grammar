@@ -43,7 +43,7 @@ block_statement =>
     class(symbol block):
         kw_class:"class" symbol block
     class_i(symbol expr block):
-        kw_class:"class" symbol colon:":" expr block
+        kw_class:"class" symbol kw_extends:"extends" expr block
 
 local_symbol =>
     tuple: symbol
