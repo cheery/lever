@@ -160,6 +160,11 @@ def or_(a, b):
 
 @builtin
 @signature(Object)
+def len_(obj):
+    return obj.getattr(u'length')
+
+@builtin
+@signature(Object)
 def not_(a):
     return boolean(is_false(a))
 
