@@ -65,43 +65,46 @@ class Scope(object):
         self.localv = localv
         self.depthc = 1
 
-    def getloc(self, context, loc, name):
-        index = self.localv.index(name)
-        return context.block.op(loc, "getloc", [index])
+    # This ended up being not very clean.
+    def object_scope(self, context, loc, parent, val):
+        scope = ObjectScope(parent, self, [])
+        index = len(self.localv)
+        self.localv.append(scope)
+        context.block.op(loc, "setloc", [index, val])
+        return scope
 
-    def getupv(self, context, loc, depth, name):
-        index = self.localv.index(name)
-        return context.block.op(loc, "getupv", [depth, index])
+    def getvar(self, context, loc, depth, name):
+        if depth < 0:
+            index = self.localv.index(name)
+            return context.block.op(loc, "getloc", [index])
+        else:
+            index = self.localv.index(name)
+            return context.block.op(loc, "getupv", [depth, index])
 
-    def setloc(self, context, loc, name, value):
-        index = self.localv.index(name)
-        return context.block.op(loc, "setloc", [index, value])
-
-    def setupv(self, context, loc, depth, name, value):
-        index = self.localv.index(name)
-        return context.block.op(loc, "setupv", [depth, index, value])
+    def setvar(self, context, loc, depth, name, value):
+        if depth < 0:
+            index = self.localv.index(name)
+            return context.block.op(loc, "setloc", [index, value])
+        else:
+            index = self.localv.index(name)
+            return context.block.op(loc, "setupv", [depth, index, value])
 
 class ObjectScope(object):
-    def __init__(self, parent, parentindex, localv):
+    def __init__(self, parent, scope, localv):
         self.parent = parent
-        self.parentindex = parentindex
+        self.scope = scope
         self.localv = localv
         self.depthc = 0
 
-    def getloc(self, context, loc, name):
-        obj = context.block.op(loc, "getloc", [self.parentindex])
+    def object_scope(self, context, loc, parent, val):
+        return self.parent.object_scope(context, loc, parent, val)
+
+    def getvar(self, context, loc, depth, name):
+        obj = self.scope.getvar(context, loc, depth, self)
         return context.block.op(loc, "getattr", [obj, name])
 
-    def getupv(self, context, loc, depth, name):
-        obj = context.block.op(loc, "getupv", [depth, self.parentindex])
-        return context.block.op(loc, "getattr", [obj, name])
-
-    def setloc(self, context, loc, name, value):
-        obj = context.block.op(loc, "getloc", [self.parentindex])
-        return context.block.op(loc, "setattr", [obj, name, value])
-
-    def setupv(self, context, loc, depth, name, value):
-        obj = context.block.op(loc, "getupv", [depth, self.parentindex])
+    def setvar(self, context, loc, depth, name, value):
+        obj = self.scope.getvar(context, loc, depth, self)
         return context.block.op(loc, "setattr", [obj, name, value])
 
 def post_function(env, loc, bindings, body):
@@ -196,10 +199,7 @@ class ScopeGrab(Cell):
     def visit(self, context):
         this = self.expr.visit(context)
         parent = context.scope
-        parentindex = len(parent.localv)
-        parent.localv.append(u"grabbedscope")
-        context.block.op(self.loc, "setloc", [parentindex, this])
-        context.scope = ObjectScope(parent, parentindex, [])
+        context.scope = parent.object_scope(context, self.loc, parent, this)
         for expr in self.body:
             expr.visit(context)
         context.scope = parent
@@ -640,11 +640,11 @@ class Getvar(Cell):
         scope = context.scope
         if scope:
             if self.name in scope.localv:
-                return scope.getloc(context, self.loc, self.name)
-            depth = 0
+                return scope.getvar(context, self.loc, -1, self.name)
+            depth = scope.depthc - 1
             while scope.parent:
                 if self.name in scope.parent.localv:
-                    return scope.parent.getupv(context, self.loc, depth, self.name)
+                    return scope.parent.getvar(context, self.loc, depth, self.name)
                 depth += scope.depthc
                 scope = scope.parent
         return context.block.op(self.loc, "getglob", [self.name])
@@ -665,14 +665,14 @@ def setvar(context, loc, flavor, name, value):
     # The setvar doesn't write into the rootscope.
     if scope.parent:
         if name in scope.localv and flavor != "upvalue":
-            return scope.setloc(context, loc, name, value)
+            return scope.setvar(context, loc, -1, name, value)
         if flavor == "local":
             scope.localv.append(name)
-            return scope.setloc(context, loc, name, value)
-        depth = 0
+            return scope.setvar(context, loc, -1, name, value)
+        depth = scope.depthc - 1
         while scope.parent.parent:
             if name in scope.parent.localv:
-                return scope.parent.setupv(context, loc, depth, name, value)
+                return scope.parent.setvar(context, loc, depth, name, value)
             depth += scope.depthc
             scope = scope.parent
     return context.block.op(loc, "setglob", [name, value])
