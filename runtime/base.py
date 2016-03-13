@@ -114,16 +114,20 @@ def chr_(value):
 
 @builtin
 @signature(Object, Object)
-def isinstance_(value, which):
+def isinstance_(value, which_list):
+    if isinstance(which_list, List):
+        whichs = which_list.contents
+    else:
+        whichs = [which_list]
     interface = get_interface(value)
     while interface is not null:
-        if interface is which:
+        if interface in whichs:
             return true
         # There should be exactly one recursively defined interface.
         if interface.parent is interface:
             return false
         interface = interface.parent
-    return true
+    return false
  
 #def pyl_callattr(argv):
 #    assert len(argv) >= 2

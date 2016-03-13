@@ -309,10 +309,9 @@ def op_callv(regv, block, ix, pc):
 
 def extend_iter(seq, obj):
     it = obj.iter()
-    no_args = []
     while True:
         try:
-            seq.append(it.callattr(u"next", no_args))
+            seq.append(it.callattr(u"next", []))
         except StopIteration as _:
             return
 

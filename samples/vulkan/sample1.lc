@@ -1,89 +1,79 @@
 import vulkan, ffi, gc, api, fs
 
-vk = vulkan.vk
 sdl = api.library("libSDL2")
 
 main = ():
-    extensions = listInstanceExtensions()
+    extensions = vulkan.listInstanceExtensions()
 
-    enabledExtensions = ["VK_KHR_surface"]
+    enabledExtensionNames = ["VK_KHR_surface"]
     if "VK_KHR_xcb_surface" in extensions
         create_surface = create_xcb_surface
-        enabledExtensions.append("VK_KHR_xcb_surface")
+        enabledExtensionNames.append("VK_KHR_xcb_surface")
     else
         print("The app lacks swapchain instantiator for your platform.")
         exit(1)
-    instance = ffi.automem(vk.Instance)
-    vk.createInstance(
-        {
-            enabledExtensionNames = enabledExtensions
-        }, null, instance)
-    instance = instance.to
 
-    resolution = {width = 512, height = 512}
+    instance = vulkan.Instance({
+        enabledExtensionNames = enabledExtensionNames
+    })
+
+    screen = :exnihilo()
+        width = 512
+        height = 512
+        offset = {x = 0, y = 0}
+        extent = {width = width, height = height}
+        area = {offset=offset, extent=extent}
+        viewport = {x = 0, y = 0,
+            width = width, height = height,
+            minDepth = 0.0, maxDepth = 1.0}
+
     assert(sdl.Init(sdl.INIT_VIDEO) == 0, "SDL Init")
-    win = sdl.CreateWindow("Hello", 100, 100,
-        resolution["width"], resolution["height"], sdl.WINDOW_SHOWN)
+    win = sdl.CreateWindow("Hello", 0, 0,
+        screen.width, screen.height, sdl.WINDOW_SHOWN)
     assert(win, "SDL CreateWindow")
     surface = create_surface(instance, win)
 
     gpu = null
     queueIndex = null
-    info = ffi.automem(vk.PhysicalDeviceProperties)
-    for device in listPhysicalDevices(instance)
-        vk.getPhysicalDeviceProperties(device, info)
-        print("Physical device:", info.deviceName.str)
-        print("                ", info.deviceType)
+    for device in instance.listPhysicalDevices()
+        prop = device.getProperties()
         i = 0
-        for prop in listQueueProperties(device)
-            flags = prop.queueFlags
-            pSupported = ffi.automem(ffi.u32)
-            vk.getPhysicalDeviceSurfaceSupportKHR(device, i, surface, pSupported)
-            if pSupported.to == 0
+        for x in device.listQueueFamilyProperties()
+            if not device.getSurfaceSupport(i, surface)
                 continue
-            if flags.GRAPHICS_BIT# and flags.COMPUTE_BIT
+            if x.queueFlags.GRAPHICS_BIT
+                print("Device name:", prop.deviceName.str)
+                print("            ", prop.deviceType)
                 queueIndex = i
                 gpu = device
             i += 1
-    
-    print(gpu)
     if gpu == null
         print("Did not find a suitable GPU")
         exit(1)
 
-    dev = ffi.automem(vk.Device, 1, true)
-    vk.createDevice(gpu, {
+    print("found suitable GPU")
+
+    device = vulkan.Device(gpu, {
         enabledExtensionNames = ["VK_KHR_swapchain"]
         queueCreateInfos = [{
             queueFamilyIndex = queueIndex
-            queueCount = 1
             queuePriorities = [1.0]
         }]
-    }, null, dev)
-    dev = dev.to
+    })
+    queue = device.getQueue(0, 0)
+    swapchain = get_swapchain(device, surface, screen)
 
-    swapchain = get_swapchain(gpu, dev, surface, resolution)
-
-    image_acquired = new_semaphore(dev)
-    rendering_done = new_semaphore(dev)
-
-    ## Queue
-    queue = ffi.automem(vk.Queue)
-    vk.getDeviceQueue(dev, 0, 0, queue)
-    queue = queue.to
-
-    command_pool = new_command_pool(dev, {
+    command_pool = vulkan.CommandPool(device, {
         flags = "RESET_COMMAND_BUFFER_BIT"
         queueFamilyIndex = queueIndex
     })
 
-    buffer = command_pool.allocate({
-        level = "PRIMARY"
-        commandBufferCount = 1
-    }).to
+    image_acquired = vulkan.Semaphore(device)
+    rendering_done = vulkan.Semaphore(device)
 
-    render_pass = ffi.automem(vk.RenderPass)
-    vk.createRenderPass(dev, {
+    buffer = command_pool.allocate({level = "PRIMARY", commandBufferCount = 1})[0]
+
+    render_pass = vulkan.RenderPass(device, {
         attachments = [
             {
                 # These values will likely require adjustment.
@@ -107,214 +97,171 @@ main = ():
                 ]
             }
         ]
-    }, null, render_pass)
-    render_pass = render_pass.to
+    })
 
     VK_IMAGE_LAYOUT_PRESENT_SRC_KHR = 1000001002
-    VK_STRUCTURE_TYPE_PRESENT_INFO_KHR = 1000001001
 
-    swapchain.subresource_range = {
-        aspectMask = "COLOR_BIT"
-        baseMipLevel = 0
-        levelCount = 1
-        baseArrayLayer = 0
-        layerCount = 1
-    }
-    swapchain.views = []
-    swapchain.fences = []
-    swapchain.framebuffers = []
-    for image in swapchain.images
-        image_view = create_image_view(dev, {
-            image = image
-            viewType = "2D"
-            format = swapchain.format
-            components = {r = "R", g = "G", b = "B", a = "A"}
-            subresourceRange = swapchain.subresource_range
-        })
-        swapchain.views.append(image_view)
-
-        fence = ffi.automem(vk.Fence)
-        vk.createFence(dev, {flags = "SIGNALED_BIT"}, null, fence)
-        fence = fence.to
-        swapchain.fences.append(fence)
-
-        framebuffer = ffi.automem(vk.Framebuffer)
-        vk.createFramebuffer(dev, {
-            renderPass = render_pass
-            attachments = [image_view]
-            width = swapchain.width
-            height = swapchain.height
-            layers = 1
-        }, null, framebuffer)
-        framebuffer = framebuffer.to
-        swapchain.framebuffers.append(framebuffer)
-
-    descset_layout = ffi.automem(vk.DescriptorSetLayout)
-    vk.createDescriptorSetLayout(dev, {
+    descset_layout = vulkan.DescriptorSetLayout(device, {
         bindings = [{
             binding = 0
             descriptorType = "UNIFORM_BUFFER"
             descriptorCount = 1
             stageFlags = "VERTEX_BIT"
         }]
-    }, null, descset_layout)
-    descset_layout = descset_layout.to
+    })
 
-    pipeline_layout = ffi.automem(vk.PipelineLayout)
-    vk.createPipelineLayout(dev, {
+    pipeline_layout = vulkan.PipelineLayout(device, {
         flags = 0
         setLayouts = [descset_layout]
         pushConstantRanges = []
-    }, null, pipeline_layout)
-    pipeline_layout = pipeline_layout.to
+    })
 
     hostMemoryIndex = null
-    gpu_mem = ffi.automem(vk.PhysicalDeviceMemoryProperties)
-    vk.getPhysicalDeviceMemoryProperties(gpu, gpu_mem)
+    gpu_mem = device.physicalDevice.getMemoryProperties()
     for i in range(gpu_mem.memoryTypeCount)
         if gpu_mem.memoryTypes[i].propertyFlags.HOST_CACHED_BIT
             hostMemoryIndex = i
 
-    vertex_size = 8 * 1024
-    vertex_buffer = ffi.automem(vk.Buffer)
-    vk.createBuffer(dev, {size = vertex_size, usage = "VERTEX_BUFFER_BIT"}, null, vertex_buffer)
-    vertex_buffer = vertex_buffer.to
-    vertex_memreq = ffi.automem(vk.MemoryRequirements)
-    vk.getBufferMemoryRequirements(dev, vertex_buffer, vertex_memreq)
-    #print(vertex_memreq.size)
-    #print(vertex_memreq.alignment)
-    #print(vertex_memreq.memoryTypeBits)
-    vertex_memory = ffi.automem(vk.DeviceMemory)
-    vk.allocateMemory(dev, {
-        allocationSize=vertex_memreq.size
-        memoryTypeIndex = hostMemoryIndex
-    }, null, vertex_memory)
-    vertex_memory = vertex_memory.to
-    vk.bindBufferMemory(dev, vertex_buffer, vertex_memory, 0)
-    data = ffi.automem(ffi.pointer(ffi.float))
-    vk.mapMemory(dev, vertex_memory, 0, vertex_memreq.size, 0, data)
-    data = data.to
-    stuff = [
-        0.0, 0.0, 0.0, 1.0, 0.5, 0.5,
-        0.0, 1.0, 0.0, 0.5, 1.0, 0.5,
-        1.0, 0.0, 0.0, 0.5, 0.5, 1.0,
-        0.0, 1.0, 0.0, 0.5, 0.5, 1.0,
-        1.0, 1.0, 0.0, 0.5, 1.0, 1.0,
-        1.0, 0.0, 0.0, 1.0, 1.0, 0.5,
-    ]
-    i = 0
-    while i < stuff.length
-        data[i] = stuff[i]
-        i += 1
-    vk.unmapMemory(dev, vertex_memory)
+    vbo = :exnihilo()
+        size = 8 * 1024
+        buffer = vulkan.Buffer(device, {size = size, usage = "VERTEX_BUFFER_BIT"})
+        memreq = buffer.getMemoryRequirements()
+        print(memreq.size, memreq.alignment, memreq.memoryTypeBits)
+        mem = device.allocateMemory({
+            allocationSize = memreq.size
+            memoryTypeIndex = hostMemoryIndex
+        })
+        buffer.bindMemory(mem, 0)
 
-    uniform_size = 4 * 4 * ffi.sizeof(ffi.float)
-    uniform_buffer = ffi.automem(vk.Buffer)
-    vk.createBuffer(dev, {size = uniform_size, usage = "UNIFORM_BUFFER_BIT"}, null, uniform_buffer)
-    uniform_buffer = uniform_buffer.to
-    uniform_memreq = ffi.automem(vk.MemoryRequirements)
-    vk.getBufferMemoryRequirements(dev, uniform_buffer, uniform_memreq)
-    #print(uniform_memreq.size)
-    #print(uniform_memreq.alignment)
-    #print(uniform_memreq.memoryTypeBits)
-    uniform_memory = ffi.automem(vk.DeviceMemory)
-    vk.allocateMemory(dev, {
-        allocationSize=uniform_memreq.size
-        memoryTypeIndex = hostMemoryIndex
-    }, null, uniform_memory)
-    uniform_memory = uniform_memory.to
-    vk.bindBufferMemory(dev, uniform_buffer, uniform_memory, 0)
-    data = ffi.automem(ffi.pointer(ffi.float))
-    vk.mapMemory(dev, uniform_memory, 0, uniform_memreq.size, 0, data) # lets not use VK_WHOLE_SIZE
-    data = data.to
-    stuff = [
-        1.0, 0.0, 0.0, 0.0,
-        0.0, 1.0, 0.0, 0.0,
-        0.0, 0.0, 1.0, 0.0,
-       -0.2,-0.2, 0.0, 1.0]
-    i = 0
-    while i < stuff.length
-        data[i] = stuff[i]
-        i += 1
-    vk.unmapMemory(dev, uniform_memory)
+        data = mem.map(ffi.float, 0, memreq.size)
+        stuff = [
+            0.0, 0.0, 0.0, 1.0, 0.5, 0.5,
+            0.0, 1.0, 0.0, 0.5, 1.0, 0.5,
+            1.0, 0.0, 0.0, 0.5, 0.5, 1.0,
+            0.0, 1.0, 0.0, 0.5, 0.5, 1.0,
+            1.0, 1.0, 0.0, 0.5, 1.0, 1.0,
+            1.0, 0.0, 0.0, 1.0, 1.0, 0.5,
+        ]
+        i = 0
+        while i < stuff.length
+            data[i] = stuff[i]
+            i += 1
+        mem.unmap()
 
+    ubo = :exnihilo()
+        size = 2 * 4 * 4 * ffi.sizeof(ffi.float)
+        buffer = vulkan.Buffer(device, {size = size, usage = "UNIFORM_BUFFER_BIT"})
+        memreq = buffer.getMemoryRequirements()
+        print(memreq.size, memreq.alignment, memreq.memoryTypeBits)
+        mem = device.allocateMemory({
+            allocationSize = memreq.size
+            memoryTypeIndex = hostMemoryIndex
+        })
+        buffer.bindMemory(mem, 0)
 
-    descriptor_pool = ffi.automem(vk.DescriptorPool)
-    vk.createDescriptorPool(dev, {
+        data = mem.map(ffi.float, 0, memreq.size)
+        stuff = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+           -0.2,-0.2, 0.0, 1.0,
+
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0]
+        i = 0
+        while i < stuff.length
+            data[i] = stuff[i]
+            i += 1
+        mem.unmap()
+
+    descriptor_pool = vulkan.DescriptorPool(device, {
         maxSets = 1
         poolSizes = [
             {type = "UNIFORM_BUFFER", descriptorCount = 1}
         ]
-    }, null, descriptor_pool)
-    descriptor_pool = descriptor_pool.to
+    })
 
-    descset = ffi.automem(vk.DescriptorSet)
-    vk.allocateDescriptorSets(dev, {
+    descset = device.allocateDescriptorSets({
         descriptorPool = descriptor_pool
         setLayouts = [descset_layout]
-    }, descset)
-    descset = descset.to
-    
-    vk.updateDescriptorSets(dev, 1, [{
+    })[0]
+
+    device.updateDescriptorSets([{
         dstSet = descset
         dstBinding = 0
         dstArrayElement = 0
         descriptorType = "UNIFORM_BUFFER"
         descriptorCount = 1
         pBufferInfo = {
-            buffer = uniform_buffer
+            buffer = ubo.buffer
             offset = 0
-            range  = uniform_memreq.size
+            range  = ubo.memreq.size
         }
-    }], 0, null)
+    }], [])
+
+    swapchain.views = []
+    swapchain.fences = []
+    swapchain.framebuffers = []
+    for image in swapchain.images
+        view = vulkan.ImageView(device, {
+            image = image
+            viewType = "2D"
+            format = swapchain.format
+            components = {r = "R", g = "G", b = "B", a = "A"}
+            subresourceRange = swapchain.subresource_range
+        })
+        swapchain.views.append(view)
+
+        fence = vulkan.Fence(device, {flags = "SIGNALED_BIT"})
+        swapchain.fences.append(fence)
+
+        framebuffer = vulkan.Framebuffer(device, {
+            renderPass = render_pass
+            attachments = [view]
+            width = screen.width
+            height = screen.height
+            layers = 1
+        })
+        swapchain.framebuffers.append(framebuffer)
 
     vertex_blob = fs.read_file(dir ++ "vertex_shader.spv", "b")
-    vertex_shader = ffi.automem(vk.ShaderModule)
-    vk.createShaderModule(dev, {
+    vertex_shader = vulkan.ShaderModule(device, {
         codeSize = vertex_blob.length
         pCode = vertex_blob
-    }, null, vertex_shader)
-    vertex_shader = vertex_shader.to
+    })
 
     fragment_blob = fs.read_file(dir ++ "fragment_shader.spv", "b")
-    fragment_shader = ffi.automem(vk.ShaderModule)
-    vk.createShaderModule(dev, {
+    fragment_shader = vulkan.ShaderModule(device, {
         codeSize = fragment_blob.length
         pCode = fragment_blob
-    }, null, fragment_shader)
-    fragment_shader = fragment_shader.to
+    })
 
-    pipeline_cache = ffi.automem(vk.PipelineCache)
-    vk.createPipelineCache(dev, {}, null, pipeline_cache)
-    pipeline_cache = pipeline_cache.to
+    pipeline_cache = vulkan.PipelineCache(device, {})
 
-    pipeline = ffi.automem(vk.Pipeline)
-    pipeline_info = {
-        sType = "GRAPHICS_PIPELINE_CREATE_INFO"
+    pipeline = device.createGraphicsPipeline(pipeline_cache, {
         flags = 0
-        stageCount = 2
-        pStages = [
+        stages = [
             {
                 stage = "VERTEX_BIT"
                 module = vertex_shader
-                pName = "main"
+                name = "main"
             },
             {
                 stage = "FRAGMENT_BIT"
                 module = fragment_shader
-                pName = "main"
+                name = "main"
             }
         ]
-        pVertexInputState = {
+        vertexInputState = {
             flags = 0
-            vertexBindingDescriptionCount = 1
-            pVertexBindingDescriptions = [{
+            vertexBindingDescriptions = [{
                 binding = 0
                 stride = 6 * ffi.sizeof(ffi.float)
                 inputRate = "VERTEX"
             }]
-            vertexAttributeDescriptionCount = 2
-            pVertexAttributeDescriptions = [
+            vertexAttributeDescriptions = [
                 {
                     binding = 0
                     location = 0
@@ -329,29 +276,21 @@ main = ():
                 }
             ]
         }
-        pInputAssemblyState = {topology = "TRIANGLE_LIST"}
-        pViewportState = {
-            viewportCount = 1
-            pViewports = [{x = 0, y = 0, width = resolution["width"], height = resolution["height"], minDepth = 0.0, maxDepth = 1.0}]
-            scissorCount = 1
-            pScissors = [{
-                offset = {x = 0, y = 0}
-                extent = resolution
-            }]
+        inputAssemblyState = {topology = "TRIANGLE_LIST"}
+        viewportState = {
+            viewports = [screen.viewport]
+            scissors = [screen.area]
         }
-        pRasterizationState = {
+        rasterizationState = {
             polygonMode = "FILL"
-            cullMode = "BACK_BIT"
+            cullMode = 0
             frontFace = "COUNTER_CLOCKWISE"
         }
-        pMultisampleState = {
-            rasterizationSamples = "1_BIT"
-        }
-        pColorBlendState = {
+        multisampleState = {rasterizationSamples = "1_BIT"}
+        colorBlendState = {
             logicOpEnable = false
             logicOp = "CLEAR"
-            attachmentCount = 1
-            pAttachments = [{
+            attachments = [{
                 blendEnable = false
                 colorWriteMask = 0xf
                 srcColorBlendFactor = "ZERO"
@@ -361,51 +300,40 @@ main = ():
                 dstAlphaBlendFactor = "ZERO"
                 alphaBlendOp = "ADD"
             }]
-            #blendConstants = [0.0, 0.0, 0.0, 0.0]
+            blendConstants = [0.0, 0.0, 0.0, 0.0]
         }
-        pDynamicState = null
+        dynamicState = null
         layout = pipeline_layout
         renderPass = render_pass
         subpass = 0
-    }
-    vk.createGraphicsPipelines(dev, pipeline_cache, 1, [pipeline_info], null, pipeline)
-    pipeline = pipeline.to
+    })
 
     frame_statistics = []
     last_image = 0
     render = ():
         # This is lazy. It means we can't continue before the previous frame has been submitted.
         # Need to check with performance counter later, whether this is sufficient
-        if vk.getFenceStatus(dev, swapchain.fences[last_image]).NOT_READY
+        if swapchain.fences[last_image].getStatus().NOT_READY
             return null
-
-        current_image = ffi.automem(ffi.u32)
-        vk.acquireNextImageKHR(dev, swapchain.id, 0xFFFFFFFFFFFFFFFF, image_acquired, null, current_image)
-        current_image = current_image.to
-
+        current_image = device.acquireNextImage(swapchain, 0xFFFFFFFFFFFFFFFF, image_acquired)
         frame_begin = time()
-        vk.resetFences(dev, 1, [swapchain.fences[current_image]])
-        vk.beginCommandBuffer(buffer, {flags = "ONE_TIME_SUBMIT_BIT"})
-        vk.cmdPipelineBarrier(buffer, 
-            "ALL_GRAPHICS_BIT",
-            "COLOR_ATTACHMENT_OUTPUT_BIT",
-            0,
-            0, null,
-            0, null,
-            1, [{
-                srcAccessMask = "MEMORY_READ_BIT"
-                dstAccessMask = "COLOR_ATTACHMENT_WRITE_BIT"
-                oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-                newLayout = "COLOR_ATTACHMENT_OPTIMAL"
-                srcQueueFamilyIndex = queueIndex
-                dstQueueFamilyIndex = queueIndex
-                image = swapchain.images[current_image]
-                subresourceRange = swapchain.subresource_range
-            }])
-        vk.cmdBeginRenderPass(buffer, {
+        device.resetFences([swapchain.fences[current_image]])
+
+        buffer.begin({flags = "ONE_TIME_SUBMIT_BIT"})
+        buffer.pipelineBarrier("ALL_GRAPHICS_BIT", "COLOR_ATTACHMENT_OUTPUT_BIT", 0, [], [], [{
+            srcAccessMask = "MEMORY_READ_BIT"
+            dstAccessMask = "COLOR_ATTACHMENT_WRITE_BIT"
+            oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+            newLayout = "COLOR_ATTACHMENT_OPTIMAL"
+            srcQueueFamilyIndex = queueIndex
+            dstQueueFamilyIndex = queueIndex
+            image = swapchain.images[current_image]
+            subresourceRange = swapchain.subresource_range
+        }])
+        buffer.beginRenderPass({
             renderPass = render_pass
             framebuffer = swapchain.framebuffers[current_image]
-            renderArea = {offset = {x = 0, y = 0}, extent = resolution}
+            renderArea = screen.area
             clearValues = [
                 {color = {float32 = [
                     sin(time()) * 0.5 + 0.5,
@@ -415,47 +343,38 @@ main = ():
                 ]}}
             ]
         }, "INLINE")
-        vk.cmdBindPipeline(buffer, "GRAPHICS", pipeline)
-        vk.cmdBindDescriptorSets(buffer, "GRAPHICS", pipeline_layout, 0,
-            1, [descset],
-            0, null)
-        vk.cmdBindVertexBuffers(buffer, 0, 1, [vertex_buffer], [0])
-        vk.cmdDraw(buffer, 6, 1, 0, 0)
-        vk.cmdEndRenderPass(buffer)
-        vk.cmdPipelineBarrier(buffer, 
-            "COLOR_ATTACHMENT_OUTPUT_BIT",
-            "ALL_GRAPHICS_BIT",
-            0,
-            0, null,
-            0, null,
-            1, [{
-                srcAccessMask = "COLOR_ATTACHMENT_WRITE_BIT"
-                dstAccessMask = "MEMORY_READ_BIT"
-                oldLayout = "COLOR_ATTACHMENT_OPTIMAL"
-                newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-                srcQueueFamilyIndex = queueIndex
-                dstQueueFamilyIndex = queueIndex
-                image = swapchain.images[current_image]
-                subresourceRange = swapchain.subresource_range
-            }])
-        vk.endCommandBuffer(buffer)
-        vk.queueSubmit(queue, 1, {
+        buffer.bindPipeline("GRAPHICS", pipeline)
+        buffer.bindDescriptorSets("GRAPHICS", pipeline_layout, 0, [descset], [])
+        buffer.bindVertexBuffers(0, [vbo.buffer], [0])
+        buffer.draw(6, 1, 0, 0)
+        buffer.endRenderPass()
+        buffer.pipelineBarrier("COLOR_ATTACHMENT_OUTPUT_BIT", "ALL_GRAPHICS_BIT", 0, [], [], [{
+            srcAccessMask = "COLOR_ATTACHMENT_WRITE_BIT"
+            dstAccessMask = "MEMORY_READ_BIT"
+            oldLayout = "COLOR_ATTACHMENT_OPTIMAL"
+            newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+            srcQueueFamilyIndex = queueIndex
+            dstQueueFamilyIndex = queueIndex
+            image = swapchain.images[current_image]
+            subresourceRange = swapchain.subresource_range
+        }])
+        buffer.end()
+        queue.submit([{
             waitSemaphores = [image_acquired]
             commandBuffers = [buffer]
             signalSemaphores = [rendering_done]
-        }, swapchain.fences[current_image])
+        }], swapchain.fences[current_image])
         frame_end = time()
         frame_statistics.append(frame_end - frame_begin)
 
-        vk.queuePresentKHR(queue, {
-            sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR
+        queue.present({
             waitSemaphores = [rendering_done]
             swapchains = [swapchain.id]
             imageIndices = [current_image]
         })
         last_image := current_image
 
-        if frame_statistics.length >= 100
+        if frame_statistics.length >= 1000
             best  = 1.0
             worst = 0.0
             avg   = 0.0
@@ -467,6 +386,7 @@ main = ():
             print("best:", best, "worst:", worst, "avg:", avg)
             frame_statistics := []
 
+    print("ready to draw")
     event = ffi.automem(sdl.Event)
     running = true
     while running
@@ -476,60 +396,37 @@ main = ():
             if event.type == sdl.QUIT
                 running = false
 
-    vk.queueWaitIdle(queue)
+    queue.waitIdle()
+    device.waitIdle()
+
+    for obj in swapchain.fences ++ swapchain.framebuffers ++ swapchain.views
+        obj.destroy()
+    descriptor_pool.destroy()
+    descset_layout.destroy()
+    pipeline.destroy()
+    pipeline_layout.destroy()
+    pipeline_cache.destroy()
+    vbo.buffer.destroy()
+    vbo.mem.free()
+    ubo.buffer.destroy()
+    ubo.mem.free()
+    vertex_shader.destroy()
+    fragment_shader.destroy()
+    render_pass.destroy()
+    image_acquired.destroy()
+    rendering_done.destroy()
     command_pool.destroy()
-    #vk.freeDes(dev, descset, null)
-    vk.destroyDescriptorPool(dev, descriptor_pool, null)
-    vk.destroyDescriptorSetLayout(dev, descset_layout, null)
-    vk.destroyRenderPass(dev, render_pass, null)
-    for iw in swapchain.views
-        vk.destroyImageView(dev, iw, null)
-    for fb in swapchain.framebuffers
-        vk.destroyFramebuffer(dev, fb, null)
-    for fence in swapchain.fences
-        vk.destroyFence(dev, fence, null)
-    vk.destroyShaderModule(dev, vertex_shader, null)
-    vk.destroyShaderModule(dev, fragment_shader, null)
-    vk.destroyBuffer(dev, vertex_buffer, null)
-    vk.destroyBuffer(dev, uniform_buffer, null)
-    vk.freeMemory(dev, vertex_memory, null)
-    vk.freeMemory(dev, uniform_memory, null)
-    vk.destroyPipeline(dev, pipeline, null)
-    vk.destroyPipelineLayout(dev, pipeline_layout, null)
-    vk.destroyPipelineCache(dev, pipeline_cache, null)
-    vk.destroySemaphore(dev, image_acquired, null)
-    vk.destroySemaphore(dev, rendering_done, null)
     swapchain.destroy()
-    vk.destroySurfaceKHR(instance, surface, null)
-    vk.deviceWaitIdle(dev)
-    vk.destroyDevice(dev, null)
-    vk.destroyInstance(instance, null)
+    device.destroy()
+    surface.destroy()
+    instance.destroy()
+    print("quit")
 
-create_xcb_surface = (instance, win):
-    ## Window creation
-    info = ffi.automem(sdl.SysWMinfo)
-    info.version = {major=2, minor=0, patch=2}
-    assert(sdl.GetWindowWMInfo(win, info) != 0)
-
-    if info.subsystem == sdl.SYSWM_X11
-        VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR = 1000005000
-        surface = ffi.automem(vk.SurfaceKHR)
-        vk.createXcbSurfaceKHR(instance, {
-            sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR
-            connection = info.info.x11.display
-            window = ffi.cast(info.info.x11.window, ffi.voidp)
-        }, null, surface)
-        surface = surface.to
-    else
-        print("WSI for your system need to be implemented for this code to work.")
-        exit(1)
-    return surface
-
-get_swapchain = (gpu, dev, surface, resolution):
+get_swapchain = (device, surface, screen):
     imageUsage = "COLOR_ATTACHMENT_BIT"
+    gpu = device.physicalDevice
 
-    surfaceCap = ffi.automem(vk.SurfaceCapabilitiesKHR)
-    vk.getPhysicalDeviceSurfaceCapabilitiesKHR(gpu, surface, surfaceCap)
+    cap = gpu.getSurfaceCapabilities(surface)
     # uint32_t                         minImageCount;
     # uint32_t                         maxImageCount;
     # VkExtent2D                       currentExtent;
@@ -539,143 +436,77 @@ get_swapchain = (gpu, dev, surface, resolution):
     # VkSurfaceTransformFlagsKHR       supportedTransforms;
     # VkSurfaceTransformFlagBitsKHR    currentTransform;
     # VkCompositeAlphaFlagsKHR         supportedCompositeAlpha;
-    if not surfaceCap.currentTransform.IDENTITY_BIT_KHR
+    if not cap.currentTransform.IDENTITY_BIT_KHR
         print("Surface transform not desired")
         exit(1)
-    if not surfaceCap.supportedUsageFlags.COLOR_ATTACHMENT_BIT
+    if not cap.supportedUsageFlags.COLOR_ATTACHMENT_BIT
         print("Surface does not support the desired usage")
         exit(1)
 
     imageFormat = null
     colorSpace = null
-    formats = listSurfaceFormats(gpu, surface)
-    for m in formats
-        imageFormat = m.format
-        colorSpace = m.colorSpace
+    for prop in gpu.listSurfaceFormats(surface)
+        imageFormat = prop.format
+        colorSpace = prop.colorSpace
         break
 
     presentMode = "FIFO_KHR"
-    for mode in listSurfacePresentModes(gpu, surface)
+    for mode in gpu.listSurfacePresentModes(surface)
         continue
 
     format = "B8G8R8A8_UNORM" # hack, should enumerate the damn surface caps already.
     # Fourth temporary measure, no idea where this works.
-    VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR = 1000001000
-    swapchain = ffi.automem(vk.SwapchainKHR)
-    vk.createSwapchainKHR(dev, {
-            sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR
-            surface = surface
-            minImageCount = 2
-            imageFormat = imageFormat
-            imageColorSpace = colorSpace
-            imageExtent = resolution
-            imageUsage = imageUsage
-            preTransform = "IDENTITY_BIT_KHR" # ?
-            compositeAlpha = "OPAQUE_BIT_KHR"
-            imageArrayLayers = 1
-            imageSharingMode = "EXCLUSIVE"
-            #queueFamilyIndexCount = 0
-            #pQueueFamilyIndices = null
-            presentMode = presentMode
-            #oldSwapchain = null
-            clipped = true
-        }, null, swapchain)
-    swapchain = swapchain.to
+    swapchain = vulkan.Swapchain(device, {
+        surface = surface
+        minImageCount = 2
+        imageFormat = imageFormat
+        imageColorSpace = colorSpace
+        imageExtent = screen.extent
+        imageUsage = imageUsage
+        preTransform = "IDENTITY_BIT_KHR" # ?
+        compositeAlpha = "OPAQUE_BIT_KHR"
+        imageArrayLayers = 1
+        imageSharingMode = "EXCLUSIVE"
+        #queueFamilyIndexCount = 0
+        #pQueueFamilyIndices = null
+        presentMode = presentMode
+        #oldSwapchain = null
+        clipped = true
+    })
 
-    count = ffi.automem(ffi.u32)
-    vk.getSwapchainImagesKHR(dev, swapchain, count, null)
-    images = ffi.automem(vk.Image, count.to)
-    vk.getSwapchainImagesKHR(dev, swapchain, count, images)
-
-    obj = exnihilo()
-    obj.width = resolution["width"]
-    obj.height = resolution["height"]
-    obj.format = format
-    obj.id = swapchain
-    obj.surface = surface
-    obj._images = images
-    obj.images = list(images)
-    obj.destroy = ():
-        vk.destroySwapchainKHR(dev, swapchain, null)
-        return null
-    return obj
-
-new_semaphore = (dev, create_info={}):
-    semaphore = ffi.automem(vk.Semaphore)
-    vk.createSemaphore(dev, create_info, null, semaphore)
-    return semaphore.to
+    return :swapchain
+        screen = screen
+        images = swapchain.getImages()
+        format = format
+        surface = surface
+        subresource_range = {
+            aspectMask = "COLOR_BIT"
+            baseMipLevel = 0
+            levelCount = 1
+            baseArrayLayer = 0
+            layerCount = 1
+        }
 
 assert = (condition, message="assert"):
     if not condition
         print(message)
         exit(1)
 
-new_command_pool = (dev, create_info):
-    commandpool = ffi.automem(vk.CommandPool)
-    vk.createCommandPool(dev, create_info, null, commandpool)
-    obj = exnihilo()
-    obj.id = commandpool.to
-    obj.dev = dev
-    obj.allocate = (create_info):
-        create_info["commandPool"] = obj.id
-        buffers = ffi.automem(vk.CommandBuffer,
-            create_info["commandBufferCount"])
-        vk.allocateCommandBuffers(dev, create_info, buffers)
-        return buffers
-    obj.destroy = ():
-        vk.destroyCommandPool(dev, obj.id, null)
-    return obj
+create_xcb_surface = (instance, win):
+    info = ffi.automem(sdl.SysWMinfo)
+    info.version = {major=2, minor=0, patch=2}
+    assert(sdl.GetWindowWMInfo(win, info) != 0)
 
-create_image_view = (dev, create_info):
-    imageview = ffi.automem(vk.ImageView)
-    vk.createImageView(dev, create_info, null, imageview)
-    return imageview.to
-
-listInstanceExtensions = (name=null):
-    count = ffi.automem(ffi.u32, 1, true)
-    vk.enumerateInstanceExtensionProperties(name, count, null)
-    extensions = ffi.automem(vk.ExtensionProperties, count.to)
-    vk.enumerateInstanceExtensionProperties(name, count, extensions)
-    # May want to return the extension objects themselves..
-    result = []
-    for extension in extensions
-        result.append(extension.extensionName.str)
-    return result
-
-listDeviceExtensions = (device, name=null):
-    count = ffi.automem(ffi.u32, 1, true)
-    vk.enumerateDeviceExtensionProperties(device, name, count, null)
-    extensions = ffi.automem(vk.ExtensionProperties, count.to)
-    vk.enumerateDeviceExtensionProperties(device, name, count, extensions)
-    result = []
-    for extension in extensions
-        result.append(extension.extensionName.str)
-    return result
-
-listPhysicalDevices = (instance):
-    count = ffi.automem(ffi.u32, 1, true)
-    vk.enumeratePhysicalDevices(instance, count, null)
-    devices = ffi.automem(vk.PhysicalDevice, count.to, true)
-    vk.enumeratePhysicalDevices(instance, count, devices)
-    return devices
-
-listQueueProperties = (device):
-    count = ffi.automem(ffi.u32, 1)
-    vk.getPhysicalDeviceQueueFamilyProperties(device, count, null)
-    queues = ffi.automem(vk.QueueFamilyProperties, count.to)
-    vk.getPhysicalDeviceQueueFamilyProperties(device, count, queues)
-    return queues
-
-listSurfaceFormats = (gpu, surface):
-    count = ffi.automem(ffi.u32)
-    vk.getPhysicalDeviceSurfaceFormatsKHR(gpu, surface, count, null)
-    formats = ffi.automem(vk.SurfaceFormatKHR)
-    vk.getPhysicalDeviceSurfaceFormatsKHR(gpu, surface, count, formats)
-    return formats
-
-listSurfacePresentModes = (gpu, surface):
-    count = ffi.automem(ffi.u32)
-    vk.getPhysicalDeviceSurfacePresentModesKHR(gpu, surface, count, null)
-    modes = ffi.automem(vk.PresentModeKHR)
-    vk.getPhysicalDeviceSurfacePresentModesKHR(gpu, surface, count, modes)
-    return list(modes)
+    if info.subsystem == sdl.SYSWM_X11
+        VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR = 1000005000
+        surface = ffi.automem(vulkan.vk.SurfaceKHR)
+        vulkan.vk.createXcbSurfaceKHR(instance, {
+            sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR
+            connection = info.info.x11.display
+            window = ffi.cast(info.info.x11.window, ffi.voidp)
+        }, null, surface)
+        surface = surface.to
+    else
+        print("WSI for your system need to be implemented for this code to work.")
+        exit(1)
+    return vulkan.Surface(instance, surface)

@@ -1,48 +1,19 @@
 import vulkan, ffi
 
-vk = vulkan.vk
-
 main = ():
-    extensions = listInstanceExtensions()
+    extensions = vulkan.listInstanceExtensions()
+
     print(extensions)
     print("VK_KHR_xcb_surface" in extensions)
-    instance = ffi.automem(vk.Instance)
-    vk.createInstance(
-        {
-            enabledExtensionNames = ["VK_KHR_surface"]
-        }, null, instance)
-    instance = instance.to
 
+    instance = vulkan.Instance({
+        enabledExtensionNames = ["VK_KHR_surface"]
+    })
     print("Vulkan instance opened")
-    count = ffi.automem(ffi.u32, 1, true)
-    vk.enumeratePhysicalDevices(instance, count, null)
-    devices = ffi.automem(vk.PhysicalDevice, count.to, true)
-    vk.enumeratePhysicalDevices(instance, count, devices)
-    info = ffi.automem(vk.PhysicalDeviceProperties)
-    for device in devices
-        vk.getPhysicalDeviceProperties(device, info)
-        print("Physical device:", info.deviceName.str)
-        print(listDeviceExtensions(device))
 
-    vk.destroyInstance(instance, null)
+    for device in instance.listPhysicalDevices()
+        p = device.getProperties()
+        print("Device name:", p.deviceName.str)
+        print(device.listExtensions())
 
-listInstanceExtensions = (name=null):
-    count = ffi.automem(ffi.u32, 1, true)
-    vk.enumerateInstanceExtensionProperties(name, count, null)
-    extensions = ffi.automem(vk.ExtensionProperties, count.to)
-    vk.enumerateInstanceExtensionProperties(name, count, extensions)
-    # May want to return the extension objects themselves..
-    result = []
-    for extension in extensions
-        result.append(extension.extensionName.str)
-    return result
-
-listDeviceExtensions = (device, name=null):
-    count = ffi.automem(ffi.u32, 1, true)
-    vk.enumerateDeviceExtensionProperties(device, name, count, null)
-    extensions = ffi.automem(vk.ExtensionProperties, count.to)
-    vk.enumerateDeviceExtensionProperties(device, name, count, extensions)
-    result = []
-    for extension in extensions
-        result.append(extension.extensionName.str)
-    return result
+    instance.destroy()

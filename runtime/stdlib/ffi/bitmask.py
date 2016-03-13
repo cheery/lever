@@ -78,10 +78,9 @@ def to_bitmask_digit(bitmask, value):
     elif bitmask.multichoice:
         mask = 0
         it = value.iter()
-        no_args = []
-        while True:
-            item = it.callattr(u"next", no_args)
-            try:
+        try:
+            while True:
+                item = it.callattr(u"next", [])
                 if isinstance(item, String):
                     mask |= to_constant(bitmask, item.string)
                 elif isinstance(item, Integer):
@@ -90,8 +89,8 @@ def to_bitmask_digit(bitmask, value):
                     mask |= item.value
                 else:
                     raise unwind(LTypeError(u"enum cannot handle: " + item.repr()))
-            except StopIteration as _:
-                pass
+        except StopIteration as _:
+            pass
         return mask
     else:
         raise unwind(LTypeError(u"enum cannot handle: " + value.repr()))

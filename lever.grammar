@@ -40,10 +40,15 @@ block_statement =>
         kw_break:"break"
     continue():
         kw_continue:"continue"
-    class(symbol block):
-        kw_class:"class" symbol block
-    class_i(symbol expr block):
-        kw_class:"class" symbol kw_extends:"extends" expr block
+    class_pass(class_header):
+        kw_class:"class" class_header
+    class(class_header block):
+        kw_class:"class" class_header block
+
+class_header =>
+    class_header_1(symbol):      symbol
+    class_header_2(symbol expr): symbol kw_extends:"extends" expr
+
 
 local_symbol =>
     tuple: symbol

@@ -174,21 +174,22 @@ def post_append_mandatory(env, loc, bindings, mandatory):
 def post_scopegrabber(env, loc, expr, block):
     return ScopeGrab(loc, expr, block)
 
-def post_class(env, loc, name, block):
-    grabber = Code(loc, "call", Getvar(loc, u"exnihilo"))
-    return Setvar(loc, "local", name.value,
-        Code(loc, "call", Getvar(loc, u"class"),
-            ScopeGrab(loc, grabber, block),
-            Getvar(loc, u"object"), # May result in weird behavior at times.
-            Code(loc, "constant", name.value)))
+def post_class_pass(env, loc, (name, base)):
+    return post_class(env, loc, (name, base), [])
 
-def post_class_i(env, loc, name, base, block):
+def post_class(env, loc, (name, base), block):
     grabber = Code(loc, "call", Getvar(loc, u"exnihilo"))
-    return Setvar(loc, "local", name.value,
+    return Setvar(loc, "local", name,
         Code(loc, "call", Getvar(loc, u"class"),
             ScopeGrab(loc, grabber, block),
             base,
-            Code(loc, "constant", name.value)))
+            Code(loc, "constant", name)))
+
+def post_class_header_1(env, loc, name):
+    return (name.value, Getvar(loc, u"object")) # May result in weird behavior at times.
+
+def post_class_header_2(env, loc, name, base):
+    return (name.value, base)
 
 class ScopeGrab(Cell):
     def __init__(self, loc, expr, body):

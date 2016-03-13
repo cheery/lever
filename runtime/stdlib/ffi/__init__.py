@@ -174,6 +174,18 @@ def memset(mem, num, count):
     rffi.c_memset(mem.pointer, num.value, count.value)
     return null
 
+@builtin
+@signature(Mem, Object, Integer)
+def memcpy(dst, src, count):
+    if isinstance(src, Mem):
+        src_pointer = src.pointer
+    elif isinstance(src, Uint8Array):
+        src_pointer = rffi.cast(rffi.VOIDP, src.uint8data)
+    else:
+        raise unwind(LTypeError(u"expected mem or array"))
+    rffi.c_memcpy(dst.pointer, src_pointer, count.value)
+    return dst
+
 c_ubytep = systemv.Pointer(systemv.types[u"ubyte"])
 
 @builtin
