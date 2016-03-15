@@ -1,17 +1,10 @@
-import vulkan, ffi, gc, api, fs
+import vulkan, sdl2_wsi, ffi, gc, api, fs
 
 sdl = api.library("libSDL2")
 
 main = ():
     extensions = vulkan.listInstanceExtensions()
-
-    enabledExtensionNames = ["VK_KHR_surface"]
-    if "VK_KHR_xcb_surface" in extensions
-        create_surface = create_xcb_surface
-        enabledExtensionNames.append("VK_KHR_xcb_surface")
-    else
-        print("The app lacks swapchain instantiator for your platform.")
-        exit(1)
+    enabledExtensionNames = sdl2_wsi.required_extensions(extensions)
 
     instance = vulkan.Instance({
         enabledExtensionNames = enabledExtensionNames
@@ -31,7 +24,7 @@ main = ():
     win = sdl.CreateWindow("Hello", 0, 0,
         screen.width, screen.height, sdl.WINDOW_SHOWN)
     assert(win, "SDL CreateWindow")
-    surface = create_surface(instance, win)
+    surface = sdl2_wsi.create_surface(vulkan, sdl, instance, win)
 
     gpu = null
     queueIndex = null
@@ -491,22 +484,3 @@ assert = (condition, message="assert"):
     if not condition
         print(message)
         exit(1)
-
-create_xcb_surface = (instance, win):
-    info = ffi.automem(sdl.SysWMinfo)
-    info.version = {major=2, minor=0, patch=2}
-    assert(sdl.GetWindowWMInfo(win, info) != 0)
-
-    if info.subsystem == sdl.SYSWM_X11
-        VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR = 1000005000
-        surface = ffi.automem(vulkan.vk.SurfaceKHR)
-        vulkan.vk.createXcbSurfaceKHR(instance, {
-            sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR
-            connection = info.info.x11.display
-            window = ffi.cast(info.info.x11.window, ffi.voidp)
-        }, null, surface)
-        surface = surface.to
-    else
-        print("WSI for your system need to be implemented for this code to work.")
-        exit(1)
-    return vulkan.Surface(instance, surface)

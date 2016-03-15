@@ -1,39 +1,55 @@
 import api, ffi
 
-vkstruct = exnihilo()
-setattr(vkstruct, "+init", (self, shadow, defaults, aliases, autoarrays):
-    self.shadow = shadow
-    self.defaults = defaults
-    self.aliases = aliases
-    self.autoarrays = autoarrays
-)
-vkstruct.load = (self, result):
-    return result
-vkstruct.store = (self, obj):
-    if isinstance(obj, dict)
-        block = dict(self.defaults)
-        for key in obj
-            val = obj[key]
-            if key in self.autoarrays
-                auto = self.autoarrays[key]
-                lengthfield = auto[0]
-                pointerfield = auto[1]
-                L = val.length
-                # TODO: Add TypeError here.
-                # note that behavior here is undefined if you give in length field explicitly.
-                # but the same thing happens with the pointer field.
-                if L != block.get(lengthfield, L)
-                    print("inconsistent struct length field:", lengthfield)
-                    exit(1) # yeah.. should fix. :)
-                block[lengthfield] = L
-                block[pointerfield] = val
-            else
-                key = self.aliases.get(key, key)
-                block[key] = val
-        return block
-    return obj
-# Pardon, my language didn't have class notation when I made this.
-vkstruct = class(vkstruct, object, "vkstruct")
+class vkstruct
+    +init = (self, shadow, defaults, aliases, autoarrays):
+        self.shadow = shadow
+        self.defaults = defaults
+        self.aliases = aliases
+        self.autoarrays = autoarrays
+    load = (self, result):
+        return result
+    store = (self, obj):
+        if isinstance(obj, dict)
+            block = dict(self.defaults)
+            for key in obj
+                val = obj[key]
+                if key in self.autoarrays
+                    auto = self.autoarrays[key]
+                    lengthfield = auto[0]
+                    pointerfield = auto[1]
+                    L = val.length
+                    # TODO: Add TypeError here.
+                    # note that behavior here is undefined if you give in length field explicitly.
+                    # but the same thing happens with the pointer field.
+                    if L != block.get(lengthfield, L)
+                        print("inconsistent struct length field:", lengthfield)
+                        exit(1) # yeah.. should fix. :)
+                    block[lengthfield] = L
+                    block[pointerfield] = val
+                else
+                    key = self.aliases.get(key, key)
+                    block[key] = val
+            return block
+        return obj
+    +repr = (self):
+        return repr(self.shadow)
+
+class vkhandle
+    +init = (self, shadow, name):
+        self.shadow = shadow
+        self.name = name
+
+    load = (self, result):
+        return result
+
+    store = (self, obj):
+        if isinstance(obj, Handle)
+            return obj.id
+        else
+            return obj
+
+    +repr = (self):
+        return self.name
 
 vkdecorator = (api, name, desc):
     if desc["type"] == "struct"
@@ -48,6 +64,10 @@ vkdecorator = (api, name, desc):
             for argtype in desc["argtypes"]
                 argtypes.append(api.lookup_type(argtype))
             return ffi.cfunc(restype, argtypes)
+    if desc["type"] == "pointer"
+        to = desc["to"]
+        if isinstance(to, dict) and to["type"] == "opaque"
+            return vkhandle(api.build_type(name, desc), name)
     return api.build_type(name, desc)
 
 lib = api.open_nobind("libvulkan.json", null, vkdecorator)
@@ -66,3 +86,709 @@ checker.store = (value):
     return value
 
 vk = ffi.library("libvulkan.so", lib)
+
+
+listInstanceExtensions = (name=null):
+    result = []
+    for property in listInstanceExtensionProperties(name)
+        result.append(property.extensionName.str)
+    return result
+
+listInstanceExtensionProperties = (name=null):
+    count = ffi.automem(ffi.u32, 1, true)
+    vk.enumerateInstanceExtensionProperties(name, count, null)
+    extensions = ffi.automem(vk.ExtensionProperties, count.to)
+    vk.enumerateInstanceExtensionProperties(name, count, extensions)
+    return extensions
+
+class Handle
+
+class Instance extends Handle
+    +init = (self, create_info):
+        p_id = ffi.automem(vk.Instance)
+        vk.createInstance(create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyInstance(self, null)
+
+    listPhysicalDevices = (self):
+        count = ffi.automem(ffi.u32, 1, true)
+        vk.enumeratePhysicalDevices(self, count, null)
+        devices = ffi.automem(vk.PhysicalDevice, count.to, true)
+        vk.enumeratePhysicalDevices(self, count, devices)
+        result = []
+        for device in devices
+            result.append(PhysicalDevice(device))
+        return result
+
+    getProcAddr = (name):
+        return vk.getInstanceProcAddr(self, name)
+
+class PhysicalDevice extends Handle
+    +init = (self, id):
+        self.id = id
+
+# vk.enumerateDeviceLayerProperties
+# vk.enumerateInstanceLayerProperties
+# vk.getPhysicalDeviceDisplayPlanePropertiesKHR
+# vk.getPhysicalDeviceDisplayPropertiesKHR
+# vk.getPhysicalDeviceMirPresentationSupportKHR
+# vk.getPhysicalDeviceWaylandPresentationSupportKHR
+# vk.getPhysicalDeviceWin32PresentationSupportKHR
+# vk.getPhysicalDeviceXcbPresentationSupportKHR
+# vk.getPhysicalDeviceXlibPresentationSupportKHR
+
+    getSparseImageFormatProperties = (self, format, type, sasmples, usage, tiling):
+        count = ffi.automem(ffi.u32)
+        vk.getPhysicalDeviceSparseImageFormatProperties(self, format, type, samples, usage, tiling, count, null)
+        result = ffi.automem(vk.SparseImageFormatProperties, count.to)
+        vk.getPhysicalDeviceSparseImageFormatProperties(self, format, type, samples, usage, tiling, count, result)
+        return result
+
+    getFeatures = (self):
+        feat = ffi.automem(vk.PhysicalDeviceFeatures)
+        vk.getPhysicalDeviceFeatures(self, feat)
+        return feat
+
+    getProperties = (self):
+        info = ffi.automem(vk.PhysicalDeviceProperties)
+        vk.getPhysicalDeviceProperties(self, info)
+        return info
+
+    getSurfaceCapabilities = (self, surface):
+        cap = ffi.automem(vk.SurfaceCapabilitiesKHR)
+        vk.getPhysicalDeviceSurfaceCapabilitiesKHR(self, surface, cap)
+        return cap
+
+    getSurfaceSupport = (self, queueId, surface):
+        pSupported = ffi.automem(ffi.u32)
+        vk.getPhysicalDeviceSurfaceSupportKHR(self, queueId, surface, pSupported)
+        return pSupported.to != 0
+
+    getMemoryProperties = (self):
+        prop = ffi.automem(vk.PhysicalDeviceMemoryProperties)
+        vk.getPhysicalDeviceMemoryProperties(self, prop)
+        return prop
+
+    getFormatProperties = (self, format):
+        props = ffi.automem(vk.FormatProperties)
+        vk.getPhysicalDeviceFormatProperties(self, format, props)
+        return props
+
+    getImageFormatProperties = (self, format, type, tiling, usage, flags):
+        props = ffi.automem(vk.ImageFormatProperties)
+        vk.getPhysicalDeviceImageFormatProperties(self, format, type, tiling, usage, flags, props)
+        return props
+
+    listExtensions = (self, name=null):
+        result = []
+        for property in self.listExtensionProperties(name)
+            result.append(property.extensionName.str)
+        return result
+
+    listExtensionProperties = (self, name=null):
+        count = ffi.automem(ffi.u32, 1, true)
+        vk.enumerateDeviceExtensionProperties(self, name, count, null)
+        extensions = ffi.automem(vk.ExtensionProperties, count.to)
+        vk.enumerateDeviceExtensionProperties(self, name, count, extensions)
+        return extensions
+
+    listSurfaceFormats = (self, surface):
+        count = ffi.automem(ffi.u32)
+        vk.getPhysicalDeviceSurfaceFormatsKHR(self, surface, count, null)
+        formats = ffi.automem(vk.SurfaceFormatKHR, count.to)
+        vk.getPhysicalDeviceSurfaceFormatsKHR(self, surface, count, formats)
+        return formats
+
+    listSurfacePresentModes = (self, surface):
+        count = ffi.automem(ffi.u32)
+        vk.getPhysicalDeviceSurfacePresentModesKHR(self, surface, count, null)
+        modes = ffi.automem(vk.PresentModeKHR, count.to)
+        vk.getPhysicalDeviceSurfacePresentModesKHR(self, surface, count, modes)
+        return list(modes)
+
+    listQueueFamilyProperties = (self):
+        count = ffi.automem(ffi.u32, 1)
+        vk.getPhysicalDeviceQueueFamilyProperties(self, count, null)
+        queues = ffi.automem(vk.QueueFamilyProperties, count.to)
+        vk.getPhysicalDeviceQueueFamilyProperties(self, count, queues)
+        return queues
+
+class Device extends Handle
+    +init = (self, device, create_info):
+        self.physicalDevice = device
+        p_id = ffi.automem(vk.Device, 1, true)
+        vk.createDevice(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyDevice(self, null)
+
+    getQueue = (self, family, index):
+        queue = ffi.automem(vk.Queue)
+        vk.getDeviceQueue(self, family, index, queue)
+        return Queue(queue.to)
+
+    getProcAddr = (name):
+        return vk.getDeviceProcAddr(self, name)
+
+    allocateCommandBuffers = (self, create_info):
+        buffers = ffi.automem(vk.CommandBuffer, create_info["commandBufferCount"])
+        vk.allocateCommandBuffers(self, create_info, buffers)
+        result = []
+        for buffer in buffers
+            result.append(CommandBuffer(self, buffer))
+        return result
+
+    allocateMemory = (self, alloc_info):
+        memory = ffi.automem(vk.DeviceMemory)
+        vk.allocateMemory(self.id, alloc_info, null, memory)
+        return DeviceMemory(self, memory.to)
+
+    allocateDescriptorSets = (self, create_info):
+        sets = ffi.automem(vk.DescriptorSet, create_info["setLayouts"].length)
+        vk.allocateDescriptorSets(self, create_info, sets)
+        result = []
+        for set in sets
+            result.append(DescriptorSet(self, set))
+        return result
+
+    updateDescriptorSets = (self, writes, copys):
+        vk.updateDescriptorSets(self, writes.length, writes, copys.length, copys)
+        
+    freeDescriptorSets = (self, pool, sets):
+        vk.freeDescriptorSets(self, pool, sets.length, sets)
+
+    flushMappedMemoryRanges = (self, ranges):
+        vk.flushMappedMemoryRanges(self.id, ranges.length, ranges)
+
+    invalidateMappedMemoryRanges = (self, ranges):
+        vk.invalidateMappedMemoryRanges(self.id, ranges.length, ranges)
+
+    resetFences = (self, fences):
+        vk.resetFences(self, fences.length, fences)
+
+    waitForFences = (self, fences, waitAll, timeout):
+        vk.waitForFences(self, fences.length, fences, waitAll, timeout)
+
+    waitIdle = (self):
+        vk.deviceWaitIdle(self)
+
+    createComputePipeline = (self, cache, create_info):
+        return self.createComputePipelines(cache, [create_info])[0]
+
+    createComputePipelines = (self, cache, create_infos):
+        pipelines = ffi.automem(vk.Pipeline, create_infos.length)
+        vk.createComputePipelines(self, cache,
+            create_infos.length, create_infos, null, pipelines)
+        result = []
+        for pipeline in pipelines
+            result.append(Pipeline(self, pipeline))
+        return result
+
+    createGraphicsPipeline = (self, cache, create_info):
+        return self.createGraphicsPipelines(cache, [create_info])[0]
+
+    createGraphicsPipelines = (self, cache, create_infos):
+        pipelines = ffi.automem(vk.Pipeline, create_infos.length)
+        vk.createGraphicsPipelines(self, cache,
+            create_infos.length, create_infos, null, pipelines)
+        result = []
+        for pipeline in pipelines
+            result.append(Pipeline(self, pipeline))
+        return result
+
+    acquireNextImage = (self, swapchain, timeout, semaphore, fence=null):
+        image = ffi.automem(ffi.u32)
+        vk.acquireNextImageKHR(self, swapchain, timeout, semaphore, fence, image)
+        return image.to
+
+class DeviceMemory extends Handle
+    +init = (self, device, id):
+        self.device = device
+        self.id = id
+    
+    free = (self):
+        vk.freeMemory(self.device, self, null)
+
+    map = (self, ctype, offset, size, flags=0):
+        pp_data = ffi.automem(ffi.pointer(ctype))
+        vk.mapMemory(self.device, self, offset, size, flags, pp_data)
+        return pp_data.to
+
+    unmap = (self):
+        vk.unmapMemory(self.device, self)
+
+    getCommitment = (self):
+        p_bytes = ffi.automem(vk.DeviceSize)
+        vk.GetDeviceMemoryCommitment(self.device, self, p_bytes)
+        return p_bytes.to
+
+class CommandPool extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.CommandPool)
+        vk.createCommandPool(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    allocate = (self, create_info):
+        create_info["commandPool"] = self
+        return self.device.allocateCommandBuffers(create_info)
+
+    free = (self, buffers):
+        vk.freeCommandBuffers(self.device, self, buffers.length, buffers)
+
+    reset = (self, flags):
+        vk.resetCommandPool(self.device, self, flags)
+
+    destroy = (self):
+        vk.destroyCommandPool(self.device, self, null)
+
+class CommandBuffer extends Handle
+    +init = (self, pool, id):
+        self.pool = pool
+        self.id = id
+
+    begin = (self, begin_info):
+        vk.beginCommandBuffer(self, begin_info)
+
+    executeCommands = (self, commands):
+        vk.cmdExecuteCommands(self, commands.length, commands)
+
+    bindPipeline = (self, pipelineBindPoint, pipeline):
+        vk.cmdBindPipeline(self, pipelineBindPoint, pipeline)
+
+    bindDescriptorSets = (self, pipelineBindPoint, layout, firstSet, sets, dynamicOffsets):
+        vk.cmdBindDescriptorSets(self, pipelineBindPoint, layout, firstSet,
+            sets.length, sets, dynamicOffsets.length, dynamicOffsets)
+
+    pushConstants = (self, layout, stageFlags, offset, size, values):
+        vk.cmdPushConstants(self, layout, stageFlags, offset, size, values)
+
+    bindVertexBuffers = (self, firstBinding, buffers, offsets):
+        bindingCount = buffers.length
+        vk.cmdBindVertexBuffers(self, firstBinding, bindingCount, buffers, offsets)
+
+    bindIndexBuffer = (self, buffer, offset, indexType):
+        vk.cmdBindIndexBuffer(self, buffer, offset, indexType)
+
+    setViewport = (self, first, viewports):
+        vk.cmdSetViewport(self, first, viewports.length, viewports)
+
+    setScissor = (self, first, scissors):
+        vk.cmdSetScissor(self, first, scissors.length, scissors)
+
+    setDepthBounds = (self, min, max):
+        vk.cmdSetDepthBounds(self, min, max)
+
+    setLineWidth = (self, width):
+        vk.cmdSetLineWidth(self, width)
+
+    setDepthBias = (self, factor, clamp, slope):
+        vk.cmdSetDepthBias(self, factor, clamp, slope)
+
+    setStencilCompareMask = (self, faceMask, compareMask):
+        vk.cmdSetStencilCompareMask(self, faceMask, compareMask)
+
+    setStencilWriteMask = (self, faceMask, writeMask):
+        vk.cmdSetStencilWriteMask(self, faceMask, writeMask)
+
+    setStencilReference = (self, faceMask, reference):
+        vk.cmdSetStencilReference(self, faceMask, reference)
+
+    setBlendConstants = (self, constants):
+        vk.cmdSetBlendConstants(self, constants)
+
+    draw = (self, vertexCount, instanceCount, firstVertex, firstInstance):
+        vk.cmdDraw(self, vertexCount, instanceCount, firstVertex, firstInstance)
+
+    drawIndexed = (self, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance):
+        vk.cmdDrawIndexed(self, indexCount, instanceCount, firstIndex, vertexOffset, firstInstance)
+
+    drawIndirect = (self, buffer, offset, drawCount, stride):
+        vk.cmdDrawIndirect(self, buffer, offset, drawCount, stride)
+
+    drawIndexedIndirect = (self, buffer, offset, drawCount, stride):
+        vk.cmdDrawIndexedIndirect(self, buffer, offset, drawCount, stride)
+
+    dispatch = (self, x, y, z):
+        vk.cmdDispatch(self, x, y, z)
+
+    dispatchIndirect = (self, buffer, offset):
+        vk.cmdDispatchIndirect(self, buffer, offset)
+    
+    # copyBuffer
+    # copyImage
+    # blitImage
+    # copyBufferToImage
+    # copyImageToBuffer
+    # updateBuffer
+    # fillBuffer
+    # clearColorImage
+    # clearDepthStencilImage
+    # resolveImage
+
+    # clearAttachments
+    setEvent = (self, event, stageMask):
+        vk.cmdSetEvent(self, event, stageMask)
+    resetEvent = (self, event, stageMask):
+        vk.cmdResetEvent(self, event, stageMask)
+    waitEvents = (self, events, srcStageMask, dstStageMask, barriers, bufferBarriers, imageBarriers):
+        vk.cmdWaitEvents(self,
+            events.length, events,
+            srcStageMask, dstStageMask,
+            barriers.length, barriers,
+            bufferBarriers.length, bufferBarriers,
+            imageBarriers.length, imageBarriers)
+    pipelineBarrier = (self, srcStageMask, dstStageMask, dependencyFlags, barriers, bufferBarriers, imageBarriers):
+        vk.cmdPipelineBarrier(self,
+            srcStageMask, dstStageMask, dependencyFlags,
+            barriers.length, barriers,
+            bufferBarriers.length, bufferBarriers,
+            imageBarriers.length, imageBarriers)
+
+    # beginQuery
+      # vk.cmdBeginQuery
+    # endQuery
+      # vk.cmdEndQuery
+    # copyQueryPoolResults
+      # vk.cmdCopyQueryPoolResults
+    # writeTimestamp
+      # vk.cmdWriteTimestamp
+    # resetQueryPool
+      # vk.cmdResetQueryPool
+
+# vk.cmdBlitImage
+# vk.cmdClearAttachments
+# vk.cmdClearColorImage
+# vk.cmdClearDepthStencilImage
+# vk.cmdCopyBuffer
+# vk.cmdCopyBufferToImage
+# vk.cmdCopyImage
+# vk.cmdCopyImageToBuffer
+# vk.cmdFillBuffer
+# vk.cmdResolveImage
+# vk.cmdUpdateBuffer
+
+    beginRenderPass = (self, begin_info, contents):
+        vk.cmdBeginRenderPass(self, begin_info, contents)
+    nextSubpass = (self, contents):
+        vk.cmdNextSubpass(self, contents)
+    endRenderPass = (self):
+        vk.cmdEndRenderPass(self)
+
+    end = (self):
+        vk.endCommandBuffer(self)
+
+    reset = (self, flags):
+        vk.resetCommandBuffer(self, flags)
+
+    free = (self):
+        self.pool.free([self])
+
+class Surface extends Handle
+    +init = (self, instance, id):
+        self.instance = instance
+        self.id = id
+
+    destroy = (self):
+        vk.destroySurfaceKHR(self.instance, self, null)
+
+VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR = 1000001000
+class Swapchain extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.SwapchainKHR)
+        create_info["sType"] = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR
+        vk.createSwapchainKHR(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroySwapchainKHR(self.device, self, null)
+
+    getImages = (self):
+        result = []
+        count = ffi.automem(ffi.u32)
+        vk.getSwapchainImagesKHR(self.device, self, count, null)
+        images = ffi.automem(vk.Image, count.to)
+        vk.getSwapchainImagesKHR(self.device, self, count, images)
+        for image in images
+            result.append(Image(self.device, image))
+        return result
+        
+VK_STRUCTURE_TYPE_PRESENT_INFO_KHR = 1000001001
+class Queue extends Handle
+    +init = (self, id):
+        self.id = id
+
+    bindSparse = (self, binds, fence=null):
+        return vk.queueBindSparse(self, binds.length, binds, fence)
+
+    submit = (self, submits, fence=null):
+        return vk.queueSubmit(self, submits.length, submits, fence)
+
+    present = (self, present_info):
+        present_info["sType"] = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR
+        return vk.queuePresentKHR(self, present_info)
+
+    waitIdle = (self):
+        return vk.queueWaitIdle(self)
+
+class Image extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        if isinstance(create_info, ffi.mem)
+            self.id = create_info
+        else
+            p_id = ffi.automem(vk.Image)
+            vk.createImage(device, create_info, null, p_id)
+            self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyImage(self.device, self, null)
+
+    getMemoryRequirements = (self):
+        p_req = ffi.automem(vk.MemoryRequirements)
+        vk.getImageMemoryRequirements(self.device, self, p_req)
+        return p_req
+
+    getSparseMemoryRequirements = (self):
+        count = ffi.automem(ffi.u32)
+        vk.getImageSparseMemoryRequirements(self.device, self, count, null)
+        reqs = ffi.automem(vk.SparseImageMemoryRequirements, count.to)
+        vk.getImageSparseMemoryRequirements(self.device, self, count, reqs)
+        return reqs
+
+    bindMemory = (self, memory, offset):
+        vk.bindImageMemory(self.device, self, memory, offset)
+
+    getSubresourceLayout = (self, subresource):
+        pLayout = ffi.automem(vk.SubresourceLayout)
+        vk.getImageSubresourceLayout(self.device, self, subresource, pLayout)
+        return pLayout
+
+class ImageView extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.ImageView)
+        vk.createImageView(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyImageView(self.device, self, null)
+
+class Buffer extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        if isinstance(create_info, ffi.mem)
+            self.id = create_info
+        else
+            p_id = ffi.automem(vk.Buffer)
+            vk.createBuffer(device, create_info, null, p_id)
+            self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyBuffer(self.device, self, null)
+
+    getMemoryRequirements = (self):
+        p_req = ffi.automem(vk.MemoryRequirements)
+        vk.getBufferMemoryRequirements(self.device.id, self.id, p_req)
+        return p_req
+    
+    bindMemory = (self, memory, offset):
+        vk.bindBufferMemory(self.device.id, self.id, memory.id, offset)
+
+    destroy = (self):
+        vk.destroyBuffer(self.device.id, self.id, null)
+
+class BufferView extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.BufferView)
+        vk.createBufferView(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyBufferView(self.device, self, null)
+
+class RenderPass extends Handle
+    +init = (self, device, create_info={}):
+        self.device = device
+        p_id = ffi.automem(vk.RenderPass)
+        vk.createRenderPass(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyRenderPass(self.device, self, null)
+
+    getRenderAreaGranularity = (self):
+        result = ffi.automem(vk.Extent2D)
+        vk.getRenderAreaGranularity(self.device, self, result)
+        return result
+
+class Framebuffer extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.Framebuffer)
+        vk.createFramebuffer(device, create_info, null, p_id)
+        self.id = p_id.to
+    
+    destroy = (self):
+        vk.destroyFramebuffer(self.device, self, null)
+
+class DescriptorSetLayout extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.DescriptorSetLayout)
+        vk.createDescriptorSetLayout(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyDescriptorSetLayout(self.device, self, null)
+
+class DescriptorSet extends Handle
+    +init = (self, device, id):
+        self.device = device
+        self.id = id
+
+class DescriptorPool extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.DescriptorPool)
+        vk.createDescriptorPool(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyDescriptorPool(self.device, self, null)
+
+    reset = (self, flags):
+        vk.resetDescriptorPool(self.device, self, flags)
+
+class PipelineLayout extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.PipelineLayout)
+        vk.createPipelineLayout(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyPipelineLayout(self.device, self, null)
+
+class Fence extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.Fence)
+        vk.createFence(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyFence(self.device.id, self, null)
+
+    getStatus = (self):
+        return vk.getFenceStatus(self.device.id, self)
+
+class ShaderModule extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.ShaderModule)
+        vk.createShaderModule(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyShaderModule(self.device, self, null)
+
+class Semaphore extends Handle
+    +init = (self, device, create_info={}):
+        self.device = device
+        p_id = ffi.automem(vk.Semaphore)
+        vk.createSemaphore(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroySemaphore(self.device, self, null)
+
+class Event extends Handle
+    +init = (self, device, create_info={}):
+        self.device = device
+        p_id = ffi.automem(vk.Event)
+        vk.createEvent(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyEvent(self.device, self, null)
+
+    getStatus = (self):
+        return vk.getEventStatus(self.device, self)
+
+    set = (self):
+        vk.setEvent(self.device, event)
+
+    reset = (self):
+        vk.resetEvent(self.device, event)
+
+class Pipeline extends Handle
+    +init = (self, device, id):
+        self.device = device
+        self.id = id
+
+    destroy = (self):
+        vk.destroyPipeline(self.device, self, null)
+
+class PipelineCache extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.PipelineCache)
+        vk.createPipelineCache(device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyPipelineCache(self.device, self, null)
+
+    merge = (self, caches):
+        vk.mergePipelineCaches(self.device, self, caches.length, caches)
+
+    getData = (self):
+        count = ffi.automem(ffi.size_t)
+        vk.getPipelineCacheData(self.device, self, count, null)
+        data = ffi.automem(ffi.u8, count.to)
+        vk.getPipelineCacheData(self.device, self, count, data)
+        return data
+
+class Sampler extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.Sampler)
+        vk.createSampler(device, create_info, null, p_id)
+        self.id = p_id
+
+    destroy = (self):
+        vk.destroySampler(self.device, self, null)
+
+class QueryPool extends Handle
+    +init = (self, device, create_info):
+        self.device = device
+        p_id = ffi.automem(vk.QueryPool)
+        vk.createQueryPool(self.device, create_info, null, p_id)
+        self.id = p_id.to
+
+    destroy = (self):
+        vk.destroyQueryPool(self.device, self, null)
+# vk.getQueryPoolResults
+
+# vk.createAndroidSurfaceKHR
+# vk.createDisplayModeKHR
+# vk.createDisplayPlaneSurfaceKHR
+# vk.createMirSurfaceKHR
+# vk.createSharedSwapchainsKHR
+# vk.createWaylandSurfaceKHR
+# vk.createWin32SurfaceKHR
+# vk.createXcbSurfaceKHR
+# vk.createXlibSurfaceKHR
+# vk.getDisplayModePropertiesKHR
+# vk.getDisplayPlaneCapabilitiesKHR
+# vk.getDisplayPlaneSupportedDisplaysKHR
+
+# vk.createDebugReportCallbackEXT
+# vk.debugReportMessageEXT
+# vk.destroyDebugReportCallbackEXT
