@@ -1,5 +1,5 @@
 from space import *
-from runtime import pathobj
+import pathobj
 import os, sys
 
 module = Module(u'process', {}, frozen=True)
@@ -32,11 +32,18 @@ else:
         argv = []
         for arg in args.contents:
             if isinstance(arg, pathobj.Path):
-                argv.append(pathobj.os_stringify(arg).encode('utf-8'))
+                x = pathobj.os_stringify(arg).encode('utf-8')
             else:
-                argv.append(as_cstring(arg))
+                x = as_cstring(arg)
+            # TODO: There is some odd chance for either of these to 
+            # resolve into null. It is incorrect. Investigate later if
+            # still relevant then.
+            assert x is not None
+            argv.append(x)
         pid = os.fork()
         if pid == 0:
+            # TODO: There is some odd chance for either...
+            assert path is not None
             os.execv(path, argv)
             return null
         return Integer(pid)

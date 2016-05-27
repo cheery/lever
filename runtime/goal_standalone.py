@@ -1,7 +1,7 @@
 from rpython.rlib.objectmodel import we_are_translated, keepalive_until_here
-from runtime.util import STDIN, STDOUT, STDERR, read_file, write
-from runtime.stdlib import api
-from runtime import main
+from util import STDIN, STDOUT, STDERR, read_file, write
+from stdlib import api
+import main
 import space
 import sys, os
 

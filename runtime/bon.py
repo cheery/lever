@@ -8,7 +8,7 @@ from space import *
 from rpython.rlib import rfile
 from rpython.rlib.rstruct import ieee
 from rpython.rtyper.lltypesystem import rffi
-from runtime import pathobj
+import pathobj
 import os
 
 #types = {}

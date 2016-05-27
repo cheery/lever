@@ -1,5 +1,5 @@
 from rpython.translator.platform import platform
-from runtime import pathobj
+import pathobj
 from space import *
 import ffi
 import json, os

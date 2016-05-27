@@ -1,6 +1,6 @@
 from rpython.rlib import rfile
 from rpython.rtyper.lltypesystem import rffi, lltype
-from runtime import pathobj
+import pathobj
 from space import *
 import os
 

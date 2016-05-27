@@ -262,7 +262,7 @@ def Range_next(self):
         return Integer(i)
     raise StopIteration()
 
-# TODO: Grab this one from runtime.stdlib.fs
+# TODO: Grab this one from stdlib.fs
 # input() is meant to be overridden when it makes sense.
 from rpython.rlib.rfile import create_stdio
 @builtin

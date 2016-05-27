@@ -17,7 +17,7 @@ try:
 except IndexError as _:
     print("First, read the README.md, after that run setup.py")
     sys.exit(1)
-main_py_path = os.path.join(lever_path, 'main.py')
+main_py_path = os.path.join(lever_path, 'runtime', 'goal_standalone.py')
 os.environ['PYTHONPATH'] = pythonpath
 try:
     check_call(['python', main_py_path] + sys.argv[1:])

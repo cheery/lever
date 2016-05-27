@@ -46,9 +46,9 @@ def compiling_commands():
     os.environ['PYTHONPATH'] = pypy_src_dir
     rpython_bin = os.path.join(pypy_src_dir, 'rpython', 'bin', 'rpython')
     if len(sys.argv) > 1 and sys.argv[1] == 'compile':
-        check_call(['python', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 main.py".split(' '))
+        check_call(['python', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 runtime/goal_standalone.py".split(' '))
     if len(sys.argv) > 1 and sys.argv[1] == 'compile-nojit':
-        check_call(['python', rpython_bin] + "--gc=incminimark main.py".split(' '))
+        check_call(['python', rpython_bin] + "--gc=incminimark runtime/goal_standalone.py".split(' '))
 #    if len(sys.argv) > 1 and sys.argv[1] == 'compile-stm':
 #        os.environ['PYTHONPATH'] = "pypy-stm"
 #        check_call("python pypy-stm/rpython/bin/rpython --translation-jit --opt=2 --stm main.py".split(' '))

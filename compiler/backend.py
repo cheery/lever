@@ -1,6 +1,6 @@
 # Everything that ends up into the binary goes through the
 # backend.
-from evaluator import optable
+from runtime.evaluator import optable
 
 def new_block(exc):
     if exc:

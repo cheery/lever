@@ -1,7 +1,7 @@
 # Just the JSON decoder, because I only need a decoder for now.
 from rpython.rlib.unicodedata import unicodedb_6_2_0 as unicodedb
-from runtime import util
-from runtime.stdlib import fs
+import util
+from stdlib import fs
 from space import *
 import space
 
