@@ -114,6 +114,9 @@ class MemIterator(Object):
         self.index = 0
         self.length = length
 
+    def iter(self):
+        return self
+
 @MemIterator.method(u"next", signature(MemIterator))
 def MemIterator_next(memi):
     if memi.index < memi.length:

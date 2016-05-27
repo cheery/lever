@@ -9,7 +9,7 @@ from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_t
 from string import String
 from uint8array import Uint8Array, to_uint8array
 from exnihilo import Exnihilo
-from customobject import CustomObject
+from customobject import CustomObject, Property
 from rpython.rlib import jit
 from errors import *
 import operators

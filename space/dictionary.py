@@ -3,7 +3,6 @@ from rpython.rlib.objectmodel import compute_hash, r_dict
 from interface import Object
 from listobject import List
 from numbers import Integer
-from errors import OldError
 import space
 
 def eq_fn(this, other):
@@ -23,11 +22,16 @@ class Dict(Object):
             return True
         return False
 
+    def getattr(self, name):
+        if name == u'length':
+            return Integer(len(self.data))
+        return Object.getattr(self, name)
+
     def getitem(self, index):
         try:
             return self.data[index]
-        except KeyError as error:
-            raise OldError(u"key %s not in %s" % (index.repr(), self.repr()))
+        except KeyError as _:
+            raise space.unwind(space.LKeyError(self, index))
 
     def setitem(self, index, value):
         self.data[index] = value
@@ -73,6 +77,9 @@ class KeyIterator(Object):
     def __init__(self, iterator):
         self.iterator = iterator
 
+    def iter(self):
+        return self
+
 @KeyIterator.builtin_method
 @signature(KeyIterator)
 def next(self):
@@ -82,6 +89,9 @@ class ItemIterator(Object):
     _immutable_fields_ = ['iterator']
     def __init__(self, iterator):
         self.iterator = iterator
+
+    def iter(self):
+        return self
 
 @ItemIterator.builtin_method
 @signature(ItemIterator)
@@ -93,6 +103,9 @@ class ValueIterator(Object):
     _immutable_fields_ = ['iterator']
     def __init__(self, iterator):
         self.iterator = iterator
+
+    def iter(self):
+        return self
 
 @ValueIterator.builtin_method
 @signature(ValueIterator)

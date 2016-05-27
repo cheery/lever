@@ -26,6 +26,7 @@ module = Module(u'base', {
     u'true': true,
     u'false': false,
     u'path': pathobj.Path.interface,
+    u'property': Property.interface,
 }, frozen=True)
 
 # we may later want to do the same for the stuff you see above.
@@ -73,8 +74,30 @@ def iter_(obj):
 
 @builtin
 @signature(Object)
+def hash_(obj):
+    return Integer(obj.hash())
+
+@builtin
+@signature(Object)
 def repr_(obj):
     return String(obj.repr())
+
+@builtin
+@signature(List)
+def reversed_(obj):
+    return ReversedListIterator(reversed(obj.contents))
+
+class ReversedListIterator(Object):
+    _immutable_fields_ = ['iterator']
+    def __init__(self, iterator):
+        self.iterator = iterator
+
+    def iter(self):
+        return self
+
+@ReversedListIterator.method(u"next", signature(ReversedListIterator))
+def ReversedListIterator_next(self):
+    return self.iterator.next()
   
 @builtin
 @signature(Object, Object)

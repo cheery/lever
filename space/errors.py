@@ -69,6 +69,15 @@ class LKeyError(LException):
     def repr(self):
         return u"%s[%s]" % (self.obj.repr(), self.key.repr())
 
+class LValueError(LException):
+    def __init__(self, obj, value):
+        self.traceback = null
+        self.obj = obj
+        self.value = value
+
+    def repr(self):
+        return u"%s in %s" % (self.value.repr(), self.obj.repr())
+
 class LTypeError(LException):
     def __init__(self, message):
         self.message = message
@@ -122,6 +131,7 @@ all_errors = [
     LUncatchedStopIteration,
     LAttributeError,
     LKeyError,
+    LValueError,
     LTypeError,
     LFrozenError,
     LCallError,

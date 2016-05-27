@@ -1,5 +1,7 @@
+from builtin import signature
+import operators
 import space
-from interface import Object, BoundMethod
+from interface import Object, BoundMethod, null
 from errors import OldError
 
 class CustomObject(Object):
@@ -46,12 +48,23 @@ class CustomObject(Object):
             return self.cells[index]
         except KeyError as e:
             try:
-                return BoundMethod(self, index, self.custom_interface.methods[index])
+                method = self.custom_interface.methods[index]
             except KeyError as e:
-                raise OldError(u"%s not in %s" % (index, self.repr()))
+                return Object.getattr(self, index)
+            if isinstance(method, Property):
+                return method.getter.call([self])
+            else:
+                return BoundMethod(self, index, method)
 
     def setattr(self, index, value): # TODO: figure out something that makes sense here.
+        try:
+            method = self.custom_interface.methods[index]
+            if isinstance(method, Property):
+                return method.setter.call([self, value])
+        except KeyError as e:
+            pass
         self.cells[index] = value
+        return value
 
     def contains(self, obj):
         try:
@@ -83,7 +96,7 @@ class CustomObject(Object):
             return int(result.value)
 
     def eq(self, other): # TODO: improve this.
-        return Object.eq(self, other)
+        return space.is_true(operators.eq.call([self, other]))
 
 def instantiate(interface, argv):
     obj = CustomObject(interface, {})
@@ -95,3 +108,28 @@ def instantiate(interface, argv):
         method.call([obj] + argv)
     return obj
 CustomObject.interface.instantiate = instantiate
+
+class Property(Object):
+    def __init__(self):
+        self.getter = null
+        self.setter = null
+
+    def getattr(self, name):
+        if name == u"get":
+            return self.getter
+        if name == u"set":
+            return self.setter
+        return Object.getattr(self, name)
+
+    def setattr(self, name, value):
+        if name == u"get":
+            self.getter = value
+            return value
+        if name == u"set":
+            self.setter = value
+            return value
+        return Object.setattr(self, name, value)
+
+@Property.instantiator2(signature())
+def Property_instantiate():
+    return Property()

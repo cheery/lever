@@ -36,6 +36,9 @@ class String(Object):
             raise space.OldError(u"index out of range")
         return String(self.string[index.value])
 
+    def iter(self):
+        return StringIterator(iter(self.string))
+
 @String.builtin_method
 @signature(String)
 def is_alpha(string):
@@ -77,3 +80,15 @@ def is_space(string):
         if not unicodedb.isspace(ord(ch)):
             return space.false
     return space.true
+
+class StringIterator(Object):
+    _immutable_fields_ = ['iterator']
+    def __init__(self, iterator):
+        self.iterator = iterator
+
+    def iter(self):
+        return self
+    
+@StringIterator.method(u"next", signature(StringIterator))
+def StringIterator_next(self):
+    return String(self.iterator.next())

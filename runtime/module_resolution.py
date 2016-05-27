@@ -41,6 +41,9 @@ class ScopeIterator(Object):
     def __init__(self, iterator):
         self.iterator = iterator
 
+    def iter(self):
+        return self
+
 @ScopeIterator.builtin_method
 @signature(ScopeIterator)
 def next(self):
