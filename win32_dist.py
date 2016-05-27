@@ -1,5 +1,5 @@
 """
-    This script creates a distribution for lever
+    This script creates a win32 distribution for lever
 """
 import os, shutil, sys, zipfile
 if not os.path.exists("lever.exe"):
@@ -41,9 +41,12 @@ include("lever.grammar")
 include("VERSION")
 include_dir("app")
 include_dir("lib")
+
+# These will be removed soon
 include_dir("evaluator")
 include_dir("compiler")
 include("compile.py")
+
 include_dir("samples")
 include_dir("headers")
 include("LICENSE.md", "LICENSE.lever.txt")
