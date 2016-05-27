@@ -1,10 +1,10 @@
 #!/usr/bin/env python2
 """
-    This script should help you out at setting up environment for pyllisp.
-    If you run this script without arguments, it will just setup the environment.
-    Run it with 'compile' -argument, eg. "./setup.py compile" and it also compiles
-    the pyllisp. Though that will take some time to finish.
-    If you're in hurry, just run "./setup.py"
+    This script should help setting up environment for lever.
+    Run it without arguments, and it just setups the environment.
+    Run it with 'compile' -argument, eg. "./setup.py compile" and it compiles.
+
+    Compiling takes some time to finish.
 """
 from subprocess import call, check_call
 from urllib import urlopen
@@ -16,49 +16,50 @@ import sys
 import glob
 import os
 
-cmd_depends = "pkg-config gcc make bzip2".split(' ')
-depends = "libffi zlib sqlite3 ncurses expat libssl".split(' ')
+pypy_src_url = 'https://bitbucket.org/pypy/pypy/downloads/pypy-5.1.1-src'
+pypy_src_dir = 'pypy-5.1.1-src'
+
+command_depends = "pkg-config gcc make bzip2".split(' ')
+library_depends = "libffi zlib sqlite3 ncurses expat libssl".split(' ')
 
 devnull = open(os.devnull, 'w')
 def linux_main():
-    for cmd in cmd_depends:
+    for cmd in command_depends:
         if call([cmd, '--version'], stdout=devnull, stderr=devnull) != 0:
-            return troubleshoot(cmd)
-    for dependency in depends:
+            return linux_troubleshoot(cmd)
+    for dependency in library_depends:
         if call(['pkg-config', '--exists', dependency]) != 0:
-            return troubleshoot(dependency)
-    download_and_extract('pypy-4.0.1-src', 'https://bitbucket.org/pypy/pypy/downloads/pypy-4.0.1-src.tar.bz2')
+            return linux_troubleshoot(dependency)
+    linux_download_and_extract(pypy_src_dir, pypy_src_url + '.tar.bz2')
     compiling_commands()
 
 def windows_main():
-    if not os.path.exists("pypy-4.0.1-src"):
-        print "Windows? BLERG!"
-        url = urlopen('https://bitbucket.org/pypy/pypy/downloads/pypy-4.0.1-src.zip')
+    if not os.path.exists(pypy_src_dir):
+        url = urlopen(pypy_src_url + '.zip')
         zipfile = ZipFile(StringIO(url.read()))
         zipfile.extractall()
+        print("Note that windows support for lever is nonstardard low-quality.")
+        print("Experienced computer operator is required after this point.")
     compiling_commands()
 
 def compiling_commands():
+    os.environ['PYTHONPATH'] = pypy_src_dir
+    rpython_bin = os.path.join(pypy_src_dir, 'rpython', 'bin', 'rpython')
     if len(sys.argv) > 1 and sys.argv[1] == 'compile':
-        os.environ['PYTHONPATH'] = "pypy-4.0.1-src"
-        check_call("python pypy-4.0.1-src/rpython/bin/rpython --translation-jit --gc=incminimark --opt=2 main.py".split(' '))
-    if len(sys.argv) > 1 and sys.argv[1] == 'compile-stm':
-        os.environ['PYTHONPATH'] = "pypy-stm"
-        check_call("python pypy-stm/rpython/bin/rpython --translation-jit --opt=2 --stm main.py".split(' '))
+        check_call(['python', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 main.py".split(' '))
     if len(sys.argv) > 1 and sys.argv[1] == 'compile-nojit':
-        os.environ['PYTHONPATH'] = "pypy-4.0.1-src"
-        check_call("python pypy-4.0.1-src/rpython/bin/rpython --gc=incminimark main.py".split(' '))
-    if len(sys.argv) > 1 and sys.argv[1] == 'default':
-        os.environ['PYTHONPATH'] = "pypy"
-        check_call("python pypy/rpython/bin/rpython --gc=incminimark main.py".split(' '))
+        check_call(['python', rpython_bin] + "--gc=incminimark main.py".split(' '))
+#    if len(sys.argv) > 1 and sys.argv[1] == 'compile-stm':
+#        os.environ['PYTHONPATH'] = "pypy-stm"
+#        check_call("python pypy-stm/rpython/bin/rpython --translation-jit --opt=2 --stm main.py".split(' '))
 
 #--continuation --gc=incminimark --gcrootfinder=shadowstack --opt=2
 
-def is_env_64bit():
-    return platform.machine().endswith('64')
+#def is_env_64bit():
+#    return platform.machine().endswith('64')
 
-def troubleshoot(item):
-    print("Lever dependencies to compile or run:")
+def linux_troubleshoot(item):
+    print("Dependencies to compile or run:")
     print(' '.join(cmd_depends + depends))
     print()
     print("{} is missing".format(item))
@@ -72,7 +73,7 @@ def troubleshoot(item):
     else:
         sys.exit(1)
 
-def download_and_extract(target, archive):
+def linux_download_and_extract(target, archive):
     if not os.path.exists(target):
         if len(glob.glob(target + '.tar.bz2')) == 0:
             check_call(['wget', archive])
@@ -85,15 +86,6 @@ def download_and_extract(target, archive):
 #else:
 #    target = 'pypy-c-jit'
 #    archive = 'pypy-c-jit-latest-linux.tar.bz2'
-#
-#def download_and_extract_old(target, archive):
-#    if not os.path.exists(target):
-#        if len(glob.glob(archive)) == 0:
-#            check_call("wget http://buildbot.pypy.org/nightly/trunk/{}".format(archive).split(' '))
-#        check_call(["tar", "-xf", archive])
-#        dirs = filter(os.path.isdir, glob.glob('pypy-c-jit-*'))
-#        assert len(dirs) == 1, "found more than 1 directory matching 'pypy-c-jit-', not sure what to do."
-#        os.rename(dirs[0], target)
 
 if __name__=='__main__':
     system = platform.system()

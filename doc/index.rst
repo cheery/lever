@@ -6,13 +6,20 @@
 Welcome to Lever's documentation
 ================================
 
-0.6.0 will be the next release of the Lever programming language. This documentation
-is incomplete.
+This documentation is for version 0.8.0 of the Lever programming language.
+Runtime contect-specific documentation is being planned, and the current
+documentation format works as a crutch until the runtime documentation works.
 
-Stable releases will come with complete documentation. For most things not
-described here, I advice you to `join the irc channel set up for the community`_.
+Lever is considered as one-man-language. There is only one active maintainer
+that is also the only user of the language. Maybe if you're reading this,
+things could change. 
 
-.. _join the irc channel set up for the community: http://webchat.freenode.net/?randomnick=1&channels=%23lever&prompt=1
+IRC community channel
+=====================
+
+Lever has a `IRC channel set up for community discussion`_.
+
+.. _IRC channel set up for community discussion: http://webchat.freenode.net/?randomnick=1&channels=%23lever&prompt=1
 
 Contents:
 
@@ -24,56 +31,57 @@ Contents:
 Installing Lever
 ================
 
-There are some things that may need explicit platform support and I'll be busy
-coding the first programs in the language. Therefore I only promise that Linux
-version runs.
+With a small maintainer-base, Lever requires some effort to install&use. It is
+easiest to install on debian-based systems such as Ubuntu. 
 
-At maximum there will be a release for the SteamOS, so you have to compile this
-yourself. If you happen to be a person doing packaging for a distribution, please
-provide your contact info so that I can assist you out and help keep the packaging
-updated effortlessly.
+One time I actually wanted users for Lever. Then I realised I wouldn't do
+anything with them. I'm happy as long as I got a good language. If you really
+want to use Lever, you got to see some shit first.
+
+If you happen to be a person doing packaging for a distribution, please provide
+your contact so that author can assist you out and help keep the packaging
+updated and recent.
+
+For nonexpert Windows users there is no support path here. You guys can stop
+reading.
 
 Obtain the source code
 ----------------------
 
-Easiest way to obtain Lever source code is to use git. Git also helps
-tremendously if you later decide to contribute to lever. To download yourself a
-repository you can contribute to, do::
+First you have to obtain Lever source code.
+
+Git should be used because it enables quick transmission contributions and
+patches. This git command lets you obtain the source::
 
     git clone https://github.com/cheery/lever
-
-At any time, you may also download an archive snapshot of the repository and extract::
-
-    wget https://github.com/cheery/lever/archive/master.zip
-    unzip master.zip
 
 Compiling instructions
 ----------------------
 
-Fortunately the compiling will only take few minutes and it's easy. I have set up a
-script to compile lever. Here's how to invoke it from a terminal::
+Compiling takes some time. I have set up some scripts to compile lever. Here's
+how to invoke them when you're in the root directory of the project::
 
-    cd lever
     python setup.py compile
 
-If you're on debian based system, it prompts to install what you need to compile it.
-Otherwise you are adviced to provide the missing dependencies yourself. The script
-won't attempt to proceed if it cannot find the needed libraries.
+On Linux it's easy to check dependencies, so this script won't attempt to proceed
+if it cannot find the needed libraries. It won't check for versions though.
 
-The compiling results with the executable. For now the run.py -script can be
-used to run any of the examples. Here's how to run one of the samples::
+Compiling gives you an executable "lever". You can use it to run any of the
+examples. Here's how you can run one of the samples::
 
-    python run.py samples/ticktock.lc
+    ./lever samples/ticktock.lc
+
+Lever attempts to resolve library path to where it is located. This behavior can
+be changed by patching Lever.
 
 Languages present in Lever runtime
 ==================================
 
-Lever currently uses python for scripts and for compiling from source code to
-bytecode. Though it is its own language.
+Lever uses python for short development scripts and as a bootstrap language for
+compiling the bytecode compiler to bytecode.
 
-The interpreter is written in RPython. From there it is translated into native
-machine code and a matching JIT compiler is generated.
-
+The runtime is in RPython. It is translated into native machine code and
+a JIT compiler.
 
 Lever syntax & grammar
 ======================

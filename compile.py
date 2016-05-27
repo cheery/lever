@@ -513,7 +513,7 @@ def post_in(env, loc, lhs, rhs):
     return CodeM(loc, 'contains', [rhs, lhs], [1, 0])
 
 def post_not_in(env, loc, lhs, rhs):
-    return CodeM(loc, 'not', CodeM(loc, 'contains', [rhs, lhs], [1, 0]))
+    return Code(loc, 'not', CodeM(loc, 'contains', [rhs, lhs], [1, 0]))
 
 def post_binary(env, loc, lhs, op, rhs):
     return CodeM(loc, 'call', [Getvar(loc, op.value), lhs, rhs], [1,2,0])
