@@ -7,6 +7,13 @@ import space
 u16_array = lltype.GcArray(rffi.USHORT)
 
 def from_object(obj):
+    if as_i(obj.getitem(space.String(u"version"))) != 0:
+        raise space.unwind(space.LError(u"bytecode version=0 required"))
+
+    sources_list = obj.getitem(space.String(u"sources"))
+    assert isinstance(sources_list, space.List)
+    sources = sources_list.contents
+
     constants_list = obj.getitem(space.String(u"constants"))
     assert isinstance(constants_list, space.List)
     constants = constants_list.contents
@@ -15,21 +22,21 @@ def from_object(obj):
     functions_list = obj.getitem(space.String(u"functions"))
     assert isinstance(functions_list, space.List)
     for function_list in functions_list.contents:
-        flags = as_i( function_list.getitem(space.Integer(0)) )
-        regc = as_i( function_list.getitem(space.Integer(1)) )
-        argc = rffi.r_ulong(as_i( function_list.getitem(space.Integer(2))))
-        topc = rffi.r_ulong(as_i( function_list.getitem(space.Integer(3))))
-        localc = as_i( function_list.getitem(space.Integer(4)) )
-        block_list = function_list.getitem(space.Integer(5))
-        sourcemap = function_list.getitem(space.Integer(6))
-        exc_table = function_list.getitem(space.Integer(7))
+        flags = as_i( function_list.getitem(space.String(u"flags")))
+        regc = as_i( function_list.getitem(space.String(u"regc")))
+        argc = rffi.r_ulong(as_i( function_list.getitem(space.String(u"argc"))))
+        topc = rffi.r_ulong(as_i( function_list.getitem(space.String(u"topc"))))
+        localc = as_i( function_list.getitem(space.String(u"localc")))
+        block_list = function_list.getitem(space.String(u"code"))
+        sourcemap = function_list.getitem(space.String(u"sourcemap"))
+        exc_table = function_list.getitem(space.String(u"exceptions"))
         assert isinstance(exc_table, space.List)
-        assert isinstance(block_list, space.List)
-        block = lltype.malloc(u16_array, len(block_list.contents))
-        i = 0
-        for n in block_list.contents:
-            block[i] = rffi.r_ushort( as_i(n) )
-            i += 1
+        assert isinstance(block_list, space.Uint8Array)
+        block = lltype.malloc(u16_array, block_list.length/2)
+        for i in range(block_list.length/2):
+            a = rffi.r_long(block_list.uint8data[i*2+0])
+            b = rffi.r_long(block_list.uint8data[i*2+1])
+            block[i] = rffi.r_ushort((a << 8) | b)
         excs = []
         for n in exc_table.contents:
             excs.append(Exc(
@@ -39,7 +46,7 @@ def from_object(obj):
                 rffi.r_ulong(as_i(n.getitem(space.Integer(3)))),
             ))
         functions.append(Function(flags, regc, argc, topc, localc, block, sourcemap, excs[:]))
-    return Program(Unit(constants[:], functions[:]))
+    return Program(Unit(constants[:], functions[:], sources[:]))
 
 class Exc:
     _immutable_fields_ = ['start', 'stop', 'label', 'reg']
@@ -50,7 +57,8 @@ class Exc:
         self.reg = reg
 
 def as_i(obj):
-    assert isinstance(obj, space.Integer)
+    if not isinstance(obj, space.Integer):
+        raise space.unwind(space.LTypeError(u"expected integer"))
     return obj.value
 
 class Closure(space.Object):
@@ -93,10 +101,11 @@ class Program(space.Object):
         return interpret(0, entry.block, regv, frame)
 
 class Unit:
-    _immutable_fields_ = ['constants[*]', 'functions[*]']
-    def __init__(self, constants, functions):
+    _immutable_fields_ = ['constants[*]', 'functions[*]', 'sources[*]']
+    def __init__(self, constants, functions, sources):
         self.constants = constants
         self.functions = functions
+        self.sources = sources
         for function in functions:
             function.unit = self
 
@@ -165,6 +174,7 @@ def interpret(pc, block, regv, frame):
                 opcode = rffi.r_ulong(block[pc])>>8
                 ix = pc+1
                 pc = ix+(rffi.r_ulong(block[pc])&255)
+                #print optable.dec[opcode][0]
                 if opcode == opcode_of('assert'):
                     obj = regv.load(block[ix+0])
                     raise space.unwind(space.LAssertionError(obj))
@@ -268,26 +278,29 @@ def interpret(pc, block, regv, frame):
                         optable.names.get(opcode, str(opcode)).decode('utf-8'),
                         opcode))
             except space.Unwinder as unwinder:
+                #print "exception detected, doing unwinds", pc, unwinder.exception.repr()
                 for exc in excs:
+                    #print exc.start, exc.stop, exc.label, exc.reg
                     if exc.start < pc <= exc.stop:
                         regv.store(exc.reg, unwinder.exception)
                         pc = exc.label
+                        #print "exception handler found"
                         break
                 else:
                     raise
     except StopIteration as stop:
         unwinder = space.unwind(space.LUncatchedStopIteration())
-        unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.constants, frame.sourcemap))
+        unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.sources, frame.sourcemap))
         raise unwinder
     except space.Unwinder as unwinder:
-        unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.constants, frame.sourcemap))
+        unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.sources, frame.sourcemap))
         raise
     return space.null
 
 class TraceEntry(space.Object):
-    def __init__(self, pc, constants, sourcemap):
+    def __init__(self, pc, sources, sourcemap):
         self.pc = pc
-        self.constants = constants
+        self.sources = sources
         self.sourcemap = sourcemap
 
 @jit.unroll_safe

@@ -12,9 +12,7 @@ def main():
     root = parser.from_file(globals(), env, src_path, as_unicode=True)
 
     consttab = backend.ConstantTable()
-    location_id = consttab.get(
-        os.path.normpath(os.path.relpath(
-            src_path, os.path.dirname(cb_path))).decode('utf-8'))
+    location_id = 0
     functions = []
 
     root_scope = Scope(None, 0, 0, 0, [])
@@ -33,7 +31,13 @@ def main():
             backend.dump(flags, argc, topc, localv, entry,
                 consttab, location_id, debug))
     with open(cb_path, 'wb') as fd:
-        bon.dump(fd, {u'functions': functions, u'constants': consttab.constants})
+        bon.dump(fd, {
+            u'functions': functions,
+            u'constants': consttab.constants,
+            u'sources': [
+                os.path.normpath(os.path.relpath(src_path, os.path.dirname(cb_path))).decode('utf-8')],
+            u'version': 0,
+        })
 
 class Context(object):
     def __init__(self, closures):

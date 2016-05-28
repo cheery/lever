@@ -35,15 +35,11 @@ else:
                 x = pathobj.os_stringify(arg).encode('utf-8')
             else:
                 x = as_cstring(arg)
-            # TODO: There is some odd chance for either of these to 
-            # resolve into null. It is incorrect. Investigate later if
-            # still relevant then.
-            assert x is not None
+            assert '\x00' not in x
             argv.append(x)
         pid = os.fork()
         if pid == 0:
-            # TODO: There is some odd chance for either...
-            assert path is not None
+            assert '\x00' not in path
             os.execv(path, argv)
             return null
         return Integer(pid)

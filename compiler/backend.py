@@ -89,7 +89,7 @@ def dump(flags, argc, topc, localv, entry_block, consttab, location_id, debug):
             block.extend(encode_op(op, consttab))
     exceptions = find_exception_ranges(blocks, len(block))
     block = []
-    sourcemap = []
+    sourcemap = SourcemapBuilder()
     for bb in blocks:
         if debug:
             print "block {}".format(bb.index)
@@ -101,20 +101,22 @@ def dump(flags, argc, topc, localv, entry_block, consttab, location_id, debug):
                 print "  {1} := {0} {2}".format(op.opname.ljust(12), op.index, ', '.join(map(repr_oparg, op.args)))
             codes = list(encode_op(op, consttab))
             block.extend(codes)
-            sourceloc = [
-                location_id,
-                #(consttab.get(op.loc.path) if op.loc else -1),
+            sourcemap.add(len(codes), location_id,
                 op.loc[0].col if op.loc else 0,
                 op.loc[0].lno if op.loc else 0,
                 op.loc[1].col if op.loc else -1,
-                op.loc[1].lno if op.loc else -1
-            ]
-            if len(sourcemap) > 0 and sourcemap[-1][1:] == sourceloc:
-                sourcemap[-1][0] += len(codes)
-            else:
-                sourcemap.append([len(codes)] + sourceloc)
+                op.loc[1].lno if op.loc else -1)
     localc = len(localv)
-    return flags, tmpc, argc, topc, localc, block, sourcemap, exceptions
+    return {
+        u"flags": flags,
+        u"regc": tmpc,
+        u"argc": argc,
+        u"topc": topc,
+        u"localc": localc,
+        u"code": ''.join(map(enc_u16, block)),
+        u"sourcemap": sourcemap.get(),
+        u"exceptions": exceptions,
+    }
 
 def find_exception_ranges(blocks, finish):
     exceptions = []
@@ -320,3 +322,39 @@ class ConstantTable(object):
         self.constants.append(const)
         self.table[key] = len(self.table)
         return self.table[key]
+
+# If this was where it is used, it'd look complicated.
+class SourcemapBuilder(object):
+    def __init__(self):
+        self.buf = ''
+        self.count = 0
+        self.entry = ''
+
+    def add(self, count, location_id, col0, lno0, col1, lno1):
+        entry = ''.join((
+            enc_vlq(location_id),
+            enc_vlq(col0),
+            enc_vlq(lno0),
+            enc_vlq(col1),
+            enc_vlq(lno1)))
+        if entry != self.entry:
+            self.buf = self.get()
+            self.entry = entry
+            self.count = count
+        else:
+            self.count += count
+
+    def get(self):
+        if self.count > 0:
+            return self.buf + enc_vlq(self.count) + self.entry
+        return self.buf
+
+def enc_vlq(v):
+    out = [chr(v & 0x7F)]
+    while v >= 0x80:
+        v >>= 7
+        out.append(chr(0x80 | v & 0x7F))
+    return ''.join(reversed(out))
+
+def enc_u16(v):
+    return chr(v >> 8) + chr(v & 255)

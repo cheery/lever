@@ -1,4 +1,5 @@
 from rpython.rlib.objectmodel import we_are_translated, keepalive_until_here
+from rpython.rtyper.lltypesystem import rffi
 #from rpython.rlib.rthread import ThreadLocalReference
 #from rpython.rlib import rgc
 from stdlib import api # XXX: perhaps give every module an init?
@@ -253,30 +254,46 @@ def print_traceback(unwinder):
         if not isinstance(entry, TraceEntry):
             continue
         pc = entry.pc
-        constants = entry.constants
+        sources = entry.sources
         sourcemap = entry.sourcemap
-        name, col0, lno0, col1, lno1 = pc_location(pc, constants, sourcemap)
+        name, col0, lno0, col1, lno1 = pc_location(pc, sources, sourcemap)
         out += u"    %s: %d,%d : %d,%d\n" % (name.repr(), lno0, col0, lno1, col1)
     out += u"\033[31m"
     out += space.get_interface(unwinder.exception).name
     out += u":\033[0m"
     write(STDERR, out + u" " + unwinder.exception.repr() + u"\n")
 
-def pc_location(pc, constants, sourcemap):
-    if not isinstance(sourcemap, space.List):
+def pc_location(pc, sources, sourcemap):
+    if not isinstance(sourcemap, space.Uint8Array):
         return space.String(u"<no sourcemap>"), 0, 0, -1, -1
-    for cell in sourcemap.contents:
-        count = sourcemap_getitem_int(cell, 0)
-        if pc <= count:
-            const = sourcemap_getitem_int(cell, 1)
-            col0 = sourcemap_getitem_int(cell, 2)
-            lno0 = sourcemap_getitem_int(cell, 3)
-            col1 = sourcemap_getitem_int(cell, 4)
-            lno1 = sourcemap_getitem_int(cell, 5)
-            return constants[const], col0, lno0, col1, lno1
+    i = 0
+    while i < sourcemap.length:
+        i, count = sourcemap_dec_vlq(sourcemap, i)
+        i, file_id = sourcemap_dec_vlq(sourcemap, i)
+        i, col0 = sourcemap_dec_vlq(sourcemap, i)
+        i, lno0 = sourcemap_dec_vlq(sourcemap, i)
+        i, col1 = sourcemap_dec_vlq(sourcemap, i)
+        i, lno1 = sourcemap_dec_vlq(sourcemap, i)
+        if pc <= count and file_id < len(sources):
+            return sources[file_id], col0, lno0, col1, lno1
         else:
             pc -= count
     return space.String(u"<over sourcemap>"), 0, 0, -1, -1
+
+def sourcemap_dec_vlq(sourcemap, i):
+    i, ubyte = sourcemap_nextbyte(sourcemap, i)
+    output = 0
+    while ubyte & 0x80:
+        output |= ubyte & 0x7F
+        output <<= 7
+        i, ubyte = sourcemap_nextbyte(sourcemap, i)
+    output |= ubyte
+    return i, output
+
+def sourcemap_nextbyte(sourcemap, i):
+    if i < sourcemap.length:
+        return i+1, rffi.r_long(sourcemap.uint8data[i])
+    return i, 0
 
 def sourcemap_getitem_int(cell, index):
     item = cell.getitem(space.Integer(index))

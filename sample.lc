@@ -113,13 +113,14 @@ while true
 
 try
     try
+        print("trying to raise error")
         not_present_here()
-    except Error as x
+    except Exception as x
         print("got", interface(x), ":", x)
         print("and traceback:", x.traceback)
         print("we could raise it again..")
         raise x
-except Error as x
+except Exception as x
     print("..or we could just exit")
 
 # primitives available (int,float,string,list)
