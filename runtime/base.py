@@ -1,6 +1,7 @@
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi
 from space import *
+from evaluator.loader import from_object
 import main
 import module_resolution
 import os
@@ -27,7 +28,13 @@ module = Module(u'base', {
     u'false': false,
     u'path': pathobj.Path.interface,
     u'property': Property.interface,
+    u'Uint8Array': Uint8Array.interface,
 }, frozen=True)
+
+@Module.instantiator
+@signature(String, Module, optional=1)
+def module_instantiate(name, extends):
+    return Module(name.string, {}, extends)
 
 # we may later want to do the same for the stuff you see above.
 for error in all_errors:
@@ -43,6 +50,11 @@ def builtin(fn):
     name = fn.__name__.rstrip('_').decode('utf-8')
     module.setattr_force(name, Builtin(fn, name))
     return fn
+
+@builtin
+@signature(Object, Object)
+def exec_(program, module):
+    return from_object(program).call([module])
 
 @builtin
 def class_(argv):

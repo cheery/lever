@@ -10,35 +10,26 @@ def from_object(obj):
     if as_i(obj.getitem(space.String(u"version"))) != 0:
         raise space.unwind(space.LError(u"bytecode version=0 required"))
 
-    sources_list = obj.getitem(space.String(u"sources"))
-    assert isinstance(sources_list, space.List)
-    sources = sources_list.contents
-
-    constants_list = obj.getitem(space.String(u"constants"))
-    assert isinstance(constants_list, space.List)
-    constants = constants_list.contents
+    sources = as_list(obj.getitem(space.String(u"sources")))
+    constants = as_list(obj.getitem(space.String(u"constants")))
 
     functions = []
-    functions_list = obj.getitem(space.String(u"functions"))
-    assert isinstance(functions_list, space.List)
-    for function_list in functions_list.contents:
+    for function_list in as_list(obj.getitem(space.String(u"functions"))):
         flags = as_i( function_list.getitem(space.String(u"flags")))
         regc = as_i( function_list.getitem(space.String(u"regc")))
         argc = rffi.r_ulong(as_i( function_list.getitem(space.String(u"argc"))))
         topc = rffi.r_ulong(as_i( function_list.getitem(space.String(u"topc"))))
         localc = as_i( function_list.getitem(space.String(u"localc")))
-        block_list = function_list.getitem(space.String(u"code"))
+        block_list = as_u8a(function_list.getitem(space.String(u"code")))
         sourcemap = function_list.getitem(space.String(u"sourcemap"))
-        exc_table = function_list.getitem(space.String(u"exceptions"))
-        assert isinstance(exc_table, space.List)
-        assert isinstance(block_list, space.Uint8Array)
+        exc_table = as_list(function_list.getitem(space.String(u"exceptions")))
         block = lltype.malloc(u16_array, block_list.length/2)
         for i in range(block_list.length/2):
             a = rffi.r_long(block_list.uint8data[i*2+0])
             b = rffi.r_long(block_list.uint8data[i*2+1])
             block[i] = rffi.r_ushort((a << 8) | b)
         excs = []
-        for n in exc_table.contents:
+        for n in exc_table:
             excs.append(Exc(
                 rffi.r_ulong(as_i(n.getitem(space.Integer(0)))),
                 rffi.r_ulong(as_i(n.getitem(space.Integer(1)))),
@@ -55,6 +46,16 @@ class Exc:
         self.stop = stop
         self.label = label
         self.reg = reg
+
+def as_list(obj):
+    if not isinstance(obj, space.List):
+        raise space.unwind(space.LTypeError(u"expected list"))
+    return obj.contents
+
+def as_u8a(obj):
+    if not isinstance(obj, space.Uint8Array):
+        raise space.unwind(space.LTypeError(u"expected uint8array"))
+    return obj
 
 def as_i(obj):
     if not isinstance(obj, space.Integer):
