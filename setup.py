@@ -16,8 +16,8 @@ import sys
 import glob
 import os
 
-pypy_src_url = 'https://bitbucket.org/pypy/pypy/downloads/pypy-5.1.1-src'
-pypy_src_dir = 'pypy-5.1.1-src'
+pypy_src_url = 'https://bitbucket.org/pypy/pypy/downloads/pypy2-v5.3.1-src'
+pypy_src_dir = 'pypy2-v5.3.1-src'
 
 command_depends = "pkg-config gcc make bzip2".split(' ')
 library_depends = "libffi zlib sqlite3 ncurses expat libssl".split(' ')

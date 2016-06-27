@@ -229,7 +229,7 @@ if sys.platform != "win32":
         app_dir = os.environ.get('LEVER_PATH')
         if app_dir is None:
             app_dir = ''
-        compiler_path = os.path.join(app_dir, "compiler", "compile.py")
+        compiler_path = os.path.join(app_dir, "compiler/compile.py")
         pid = os.fork()
         if pid == 0:
             os.execv(compiler_path, [compiler_path, cb_path, src_path])
@@ -244,7 +244,7 @@ else:
         app_dir = os.environ.get('LEVER_PATH')
         if app_dir is None:
             app_dir = ''
-        compiler_path = os.path.join(app_dir, "compiler", "compile.py")
+        compiler_path = os.path.join(app_dir, "compiler/compile.py")
         py_path = find_python_interpreter()
         status = os.spawnv(os.P_WAIT, py_path, [py_path, escape_arg(compiler_path), escape_arg(cb_path), escape_arg(src_path)])
         if status != 0:
