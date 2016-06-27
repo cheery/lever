@@ -45,7 +45,6 @@ include_dir("lib")
 # These will be removed soon
 include_dir("evaluator")
 include_dir("compiler")
-include("compile.py")
 
 include_dir("samples")
 include_dir("headers")

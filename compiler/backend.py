@@ -1,6 +1,13 @@
 # Everything that ends up into the binary goes through the
 # backend.
-from runtime.evaluator import optable
+import new, os
+
+# Frees the compiler to be independent from the runtime.
+# It is no longer required for compiler to sit outside its location.
+optable = new.module("optable")
+LEVER_PATH = os.environ.get("LEVER_PATH", "")
+execfile(os.path.join(LEVER_PATH, "runtime/evaluator/optable.py"),
+    optable.__dict__)
 
 def new_block(exc):
     if exc:

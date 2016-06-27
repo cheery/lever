@@ -682,7 +682,8 @@ def setvar(context, loc, flavor, name, value):
             scope = scope.parent
     return context.block.op(loc, "setglob", [name, value])
 
-# TODO: LEVER_PATH most likely not set by lever itself. This will break.
+# Thanks to this, python-based-compiler doesn't need to have anything to
+# do with the remaining runtime of lever.
 lever_path = os.environ.get('LEVER_PATH', '')
 parser = grammarlang.load({}, os.path.join(lever_path, 'lever.grammar'))
 
