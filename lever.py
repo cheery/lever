@@ -13,7 +13,7 @@ import platform
 
 lever_path = os.path.dirname(os.path.realpath(sys.argv[0]))
 try:
-    pythonpath = sorted(glob("pypy-*-src"))[-1]
+    pythonpath = sorted(glob("pypy2-*-src"))[-1]
 except IndexError as _:
     print("First, read the README.md, after that run setup.py")
     sys.exit(1)

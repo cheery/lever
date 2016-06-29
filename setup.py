@@ -47,11 +47,28 @@ def compiling_commands():
     rpython_bin = os.path.join(pypy_src_dir, 'rpython', 'bin', 'rpython')
     if len(sys.argv) > 1 and sys.argv[1] == 'compile':
         check_call(['python', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 runtime/goal_standalone.py".split(' '))
+        compile_libraries()
     if len(sys.argv) > 1 and sys.argv[1] == 'compile-nojit':
         check_call(['python', rpython_bin] + "--gc=incminimark runtime/goal_standalone.py".split(' '))
+        compile_libraries()
+    if len(sys.argv) > 1 and sys.argv[1] == 'compile-lib':
+        compile_libraries()
 #    if len(sys.argv) > 1 and sys.argv[1] == 'compile-stm':
 #        os.environ['PYTHONPATH'] = "pypy-stm"
 #        check_call("python pypy-stm/rpython/bin/rpython --translation-jit --opt=2 --stm main.py".split(' '))
+
+def compile_libraries():
+    from compiler import compile
+    print("Compiling libraries for lever")
+    for dirname, subdirs, files in os.walk("lib"):
+        for name in files:
+            if name.endswith(".lc"):
+                lc_name = os.path.join(dirname, name)
+                cb_name = re.sub(".lc$", ".lc.cb", lc_name)
+                try:
+                    compile.compile_file(cb_name, lc_name)
+                except Exception as e:
+                    print("{}:{}".format(lc_name, e))
 
 #--continuation --gc=incminimark --gcrootfinder=shadowstack --opt=2
 

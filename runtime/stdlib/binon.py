@@ -18,25 +18,25 @@ def write_file(pathname, data):
 
 def dump(fd, data):
     tp = get_interface(data)
-    if tp is Integer:
+    if tp is Integer.interface:
         fd.write(chr(0))
         wlong(fd, data)
-    elif tp is Float:
+    elif tp is Float.interface:
         fd.write(chr(1))
         wdouble(fd, data)
-    elif tp is String:
+    elif tp is String.interface:
         fd.write(chr(2))
         wstring(fd, data)
-    elif tp is List:
+    elif tp is List.interface:
         fd.write(chr(3))
         wlist(fd, data)
-    elif tp is Dict:
+    elif tp is Dict.interface:
         fd.write(chr(4))
         wdict(fd, data)
-    elif tp is Uint8Array:
+    elif tp is Uint8Array.interface:
         fd.write(chr(5))
         wbytes(fd, data)
-    elif tp is Boolean:
+    elif tp is Boolean.interface:
         fd.write(chr(6))
         wboolean(fd, data)
     elif tp is null:
@@ -121,7 +121,7 @@ module = Module(u'binon', {
     u"read_file": Builtin(
         signature(Object)(open_file),
         u"read_file"),
-#    u"write_file": Builtin(
-#        signature(Object, Object)(write_file),
-#        u"write_file"),
+    u"write_file": Builtin(
+        signature(Object, Object)(write_file),
+        u"write_file"),
 }, frozen=True)

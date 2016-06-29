@@ -1,5 +1,5 @@
 #!/usr/bin/env python2
-from compiler import bon, backend, grammarlang
+import bon, backend, grammarlang
 import os
 import sys
 
@@ -7,6 +7,9 @@ def main():
     assert len(sys.argv) == 3
     cb_path = sys.argv[1]
     src_path = sys.argv[2]
+    compile_file(cb_path, src_path)
+
+def compile_file(cb_path, src_path):
     debug = os.environ.get('VERBOSE', False)
     env = None
     root = parser.from_file(globals(), env, src_path, as_unicode=True)

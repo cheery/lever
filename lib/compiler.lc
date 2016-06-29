@@ -1,0 +1,17 @@
+import process
+
+# Proper implementation would set LEVER_PATH
+# and this script would just work.
+compile_file = (dst, src):
+    python_path = process.which("python")
+    pid = process.spawnv(python_path, [
+        python_path,
+        dir ++ "../compiler/compile.py",
+        dst, src
+    ])
+    status = process.waitpid(pid)
+    if status != 0
+        raise Exception("compile failed")
+
+# But since it's going to be replaced by standalone compiler soon,
+# It's probably not important.

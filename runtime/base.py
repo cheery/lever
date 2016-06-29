@@ -31,6 +31,8 @@ module = Module(u'base', {
     u'Uint8Array': Uint8Array.interface,
 }, frozen=True)
 
+module.setattr_force(u"base_module", module)
+
 @Module.instantiator
 @signature(String, Module, optional=1)
 def module_instantiate(name, extends):

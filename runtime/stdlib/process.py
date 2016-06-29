@@ -1,3 +1,4 @@
+from rpython.rlib import rstring
 from space import *
 import pathobj
 import os, sys
@@ -13,36 +14,34 @@ if sys.platform == "win32":
     @builtin
     @signature(Object, List)
     def spawnv(path, args): 
-        pathname = pathobj.to_path(path)
-        path = pathobj.os_stringify(pathname).encode('utf-8')
-        argv = []
-        for arg in args.contents:
-            if isinstance(arg, pathobj.Path):
-                argv.append(pathobj.os_stringify(arg).encode('utf-8'))
-            else:
-                argv.append(as_cstring(arg))
+        path, argv = build_path_args(path, args)
         pid = os.spawnv(os.P_NOWAIT, path, argv)
         return Integer(pid)
 else:
     @builtin
     @signature(Object, List)
     def spawnv(path, args): 
-        pathname = pathobj.to_path(path)
-        path = pathobj.os_stringify(pathname).encode('utf-8')
-        argv = []
-        for arg in args.contents:
-            if isinstance(arg, pathobj.Path):
-                x = pathobj.os_stringify(arg).encode('utf-8')
-            else:
-                x = as_cstring(arg)
-            assert '\x00' not in x
-            argv.append(x)
+        path, argv = build_path_args(path, args)
         pid = os.fork()
         if pid == 0:
-            assert '\x00' not in path
             os.execv(path, argv)
-            return null
         return Integer(pid)
+
+def build_path_args(path, args):
+    pathname = pathobj.to_path(path)
+    path = pathobj.os_stringify(pathname).encode('utf-8')
+    if '\x00' in path:
+        raise OldError(u"NUL byte in spawnv path string")
+    argv = []
+    for arg in args.contents:
+        if isinstance(arg, pathobj.Path):
+            a = pathobj.os_stringify(arg).encode('utf-8')
+        else:
+            a = as_cstring(arg)
+        if '\x00' in a:
+            raise OldError(u"NUL byte in spawnv arg string")
+        argv.append(rstring.assert_str0(a))
+    return rstring.assert_str0(path), argv
 
 @builtin
 @signature(Integer)
