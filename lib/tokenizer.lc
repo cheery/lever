@@ -1,0 +1,148 @@
+import fs
+
+read_file = (path, table={}):
+    stream = TextStream(fs.read_file(path))
+    tokens = []
+    while stream.filled
+        token = next_token(stream, table)
+        if token
+            tokens.append(token)
+    return tokens
+
+next_token = (stream, table):
+    while stream.filled and stream.is_space()
+        stream.advance()
+    if not stream.filled
+        return null
+    if stream.current == "#"
+        while stream.filled and stream.current != "\n"
+            stream.advance()
+        return next_token(stream, table)
+    start = stream.position
+    if stream.is_sym()
+        string = stream.advance()
+        while stream.is_sym() or stream.is_digit()
+            string ++= stream.advance()
+        name = table.get(string, 'symbol')
+        return Literal(start, stream.position, name, string)
+    elif stream.is_digit()
+        string = stream.advance()
+        if string == '0' and stream.filled and stream.current == 'x'
+            stream.advance()
+            string = ""
+            while stream.is_digit(16)
+                string ++= stream.advance()
+            return Literal(start, stream.position, "hex", string)
+        while stream.is_digit()
+            string ++= stream.advance()
+        if stream.filled and stream.current == "."
+            string ++= stream.advance()
+            while stream.is_digit()
+                string ++= stream.advance()
+            return Literal(start, stream.position, "float", string)
+        # todo: support whole floating point notation.
+        return Literal(start, stream.position, "int", string)
+    elif stream.current == "'" or stream.current == '"'
+        terminal = stream.advance()
+        string = ""
+        while stream.filled and stream.current != terminal
+            if stream.current == '\\'
+                stream.advance()
+                string ++= escape_sequence(stream)
+            else
+                string ++= stream.advance()
+        if not stream.filled
+            raise SyntaxError(start, stream.position, "Broken string literal")
+        stream.advance()
+        return Literal(start, stream.position, "string", string)
+    elif stream.current in table
+        string = stream.advance()
+        while stream.filled and string ++ stream.current in table
+            string ++= stream.advance()
+        name = table[string]
+        return Literal(start, stream.position, name, string)
+    else
+        string = stream.advance()
+        return Literal(start, stream.position, "symbol", string)
+
+escape_sequence = (stream):
+    if stream.current in escape_sequences
+        return chr(escape_sequences[stream.advance()])
+    string = stream.advance()
+    #\xhh The character whose numerical value is given by hh interpreted as a hexadecimal number
+    if string == 'x'
+        code = stream.get_digit(16) ++ stream.get_digit(16)
+        if string.length == 2
+            return chr(int(string, 16))
+        return "\\x" ++ code
+    #\nnn The character whose numerical value is given by nnn interpreted as an octal number
+    if string.is_digit(8)
+        string ++= stream.get_digit(8) ++ stream.get_digit(8)
+        if string.length == 3
+            return chr(int(string, 8))
+    return "\\" ++ string
+
+escape_sequences = {"a": 0x07, "b": 0x08, "f": 0x0C, "n": 0x0A, "r": 0x0D, "t": 0x09, "v": 0x0B, "\\": 0x5C, "'": 0x27, "\"": 0x22, "?": 0x3F}
+
+class Literal
+    +init = (self, start, stop, name, string):
+        self.start = start
+        self.stop = stop
+        self.name = name
+        self.string = string
+
+    +repr = (self):
+        return "<literal " ++ repr(self.string) ++ ">"
+
+class TextStream
+    +init = (self, source, index=0, col=0, lno=1):
+        self.source = source
+        self.index = index
+        self.col = col
+        self.lno = lno
+
+    current = property()
+    current.get = (self):
+        return self.source[self.index]
+
+    filled = property()
+    filled.get = (self):
+        return self.index < self.source.length
+
+    position = property()
+    position.get = (self):
+        return Position(self.col, self.lno)
+
+    advance = (self):
+        ch = self.current
+        self.index += 1
+        self.col += 1
+        if ch == "\n"
+            self.lno += 1
+            self.col = 0
+        return ch
+
+    is_sym = (self):
+        if self.filled
+            return self.current.is_alpha() or self.current == "_"
+        return false
+
+    is_digit = (self, base=10):
+        if self.filled
+            return self.current.is_digit(base)
+        return false
+
+    is_space = (self):
+        if self.filled
+            return self.current.is_space()
+        return false
+
+    get_digit = (self, base=10):
+        if self.is_digit(base)
+            return self.advance()
+        return ""
+
+class Position
+    +init = (self, col, lno):
+        self.col = col
+        self.lno = lno
