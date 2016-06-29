@@ -1,0 +1,106 @@
+import chartparser
+import tokenizer
+
+Nonterminal = chartparser.Nonterminal
+Terminal = chartparser.Terminal
+Rule = chartparser.Rule
+
+file = Nonterminal("file")
+rule = Nonterminal("rule")
+production = Nonterminal("production")
+productions = Nonterminal("productions")
+term = Nonterminal("term")
+block = Nonterminal("block")
+fnname = Nonterminal("fnname")
+
+terminals = {}
+new_terminal = (name):
+    terminals[name] = terminal = Terminal(name)
+    return terminal
+indent = new_terminal("indent")
+dedent = new_terminal("dedent")
+newline = new_terminal("newline")
+string = new_terminal("string")
+symbol = new_terminal("symbol")
+arrow = new_terminal("=>")
+lc = new_terminal("{")
+rc = new_terminal("}")
+skip = new_terminal("%")
+grab = new_terminal("^")
+
+grammar = [
+    Rule(file, [rule]),
+    Rule(file, [file, newline, rule]),
+    Rule(rule, [symbol, arrow, production]),
+    Rule(rule, [symbol, arrow, block]),
+    Rule(block, [indent, productions, dedent]),
+    Rule(productions, [production]),
+    Rule(productions, [productions, newline, production]),
+    Rule(production, [production, term]),
+    Rule(production, [term]),
+    Rule(term, [skip, symbol]),
+    Rule(term, [grab, symbol]),
+    Rule(term, [skip, string]),
+    Rule(term, [grab, string]),
+    Rule(term, [string]),
+    Rule(term, [symbol]),
+    Rule(term, [fnname, lc, rc]),
+    Rule(term, [fnname, lc, production, rc]),
+    Rule(fnname, [symbol]),
+    Rule(fnname, []),
+]
+
+table = {
+    "{": "{",
+    "}": "}",
+    "%": "%",
+    "^": "^",
+    "=": "=",
+    "=>": "=>",
+}
+
+new_parser = chartparser.preprocess(grammar, file)
+
+parser = new_parser()
+tokens = tokenizer.read_file("lever-0.8.0.grammar", table)
+indent_stack = []
+indent_level = tokens[0].start.col
+line = tokens[0].start.lno
+for token in tokens
+    if line < token.start.lno
+        while token.start.col < indent_level and parser.expecting(dedent)
+            start = token.start
+            parser.step(dedent, tokenizer.Literal(start, start, 'dedent', ''))
+            indent_level = indent_stack.pop()
+        if token.start.col < indent_level
+            raise SyntaxError("Uneven indent at line " ++ repr(token.start.lno))
+        if token.start.col == indent_level and parser.expecting(newline)
+            start = token.start
+            parser.step(newline, tokenizer.Literal(start, start, 'newline', ''))
+        if token.start.col > indent_level and parser.expecting(indent)
+            start = token.start
+            parser.step(indent, tokenizer.Literal(start, start, 'indent', ''))
+            indent_stack.append(indent_level)
+            indent_level = token.start.col
+        line = token.stop.lno
+    terminal = terminals[token.name]
+    if not parser.expecting(terminal)
+        print("expected some of:")
+        for t in parser.expect
+            print("    " ++ t.name)
+        print("Got " ++ terminal.name)# ++ ", expected some of " ++ ", ".join(parser.expect))
+        print("Location: " ++ repr(token.start.lno) ++ ":" ++ repr(token.start.col))
+        raise SyntaxError()
+    parser.step(terminal, token)
+while parser.expecting(dedent)
+    stop = token.stop
+    parser.step(dedent, tokenizer.Literal(stop, stop, 'dedent', ''))
+print("accepted?", parser.accepted)
+#    print(parser.traverse(
+#        ((x, a):
+#            return a
+#        ),
+#        ((x):
+#            return ""
+#        )
+#    ))

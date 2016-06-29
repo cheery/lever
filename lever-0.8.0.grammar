@@ -1,0 +1,201 @@
+# This file describes & implements the syntax for the lever language.
+
+# The grammar language is quite simple.
+# It resolves into context-free-grammars annotated with call patterns.
+# You can define a function that should evaluate with xxx{...}
+# Alternating right-hand-side rules are separated by newline.
+# Function is called with the stuff that is grabbed from inside the
+# parentheses.
+# Every word may be grabbed or skipped by default.
+# Keywords and recognized symbols denoted with "" are skipped by default.
+# ^ prefix may force a grab.
+# % prefix may force a skip.
+
+file =>
+    empty_list {}
+    statements
+
+block =>
+    {%indent statements %dedent}
+
+statements =>
+    first  {block_statement}
+    append {statements %newline block_statement}
+
+block_statement =>
+    statement
+    return {"return" statement}
+    if     {"if"     statement block otherwise}
+    while  {"while"  statement block otherwise}
+    local_assign   {local_symbol      "="  block_statement}
+    upvalue_assign {symbol            ":=" block_statement}
+    op_assign      {slot op           ":=" block_statement}
+    setitem        {expr "[" expr "]" "="  block_statement}
+    setattr        {expr "." symbol   "="  block_statement}
+    for      {"for" symbol "in" statement block}
+    import   {"import" symbols_list}
+    try      {"try" block excepts}
+    raise    {"raise" statement}
+    break    {"break"}
+    continue {"continue"}
+    class_pass {"class" class_header}
+    class      {"class" class_header block}
+
+class_header =>
+    class_header_1 {symbol}
+    class_header_2 {symbol "extends" expr}
+
+local_symbol =>
+    tuple {symbol}
+    tuple {^"+" symbol}
+
+slot =>
+    lookup_slot {symbol}
+    attr_slot   {expr "." symbol}
+    item_slot   {expr "[" expr "]"}
+
+otherwise =>
+    done {}
+    elif {%newline "elif" statement block otherwise}
+    else {%newline "else" block}
+
+excepts =>
+    first  {except}
+    append {excepts except}
+
+statement =>
+    expr
+
+expr =>
+    expr3
+    or {expr3 "or" expr}
+
+expr3 =>
+    expr5
+    and {expr5 "and" expr3}
+
+expr5 =>
+    expr8
+    not {"not" expr8}
+
+expr8 =>
+    expr10
+    in     {expr10 "in" expr10}
+    not_in {expr10 "not" "in" expr10}
+    binary {expr10 ^"<" expr10}
+    binary {expr10 ^">" expr10}
+    binary {expr10 ^"==" expr10}
+    binary {expr10 ^"!=" expr10}
+    binary {expr10 ^"<=" expr10}
+    binary {expr10 ^">=" expr10}
+
+expr10 =>
+    expr20
+    binary {expr10 ^"|" expr20}
+
+expr20 =>
+    expr30
+    binary {expr20 ^"^" expr30}
+
+expr30 =>
+    expr50
+    binary {expr30 ^"&" expr50}
+
+expr50 =>
+    expr100
+    binary {expr50 ^"<<" expr100}
+    binary {expr50 ^">>" expr100}
+
+expr100 =>
+    expr200
+    binary {expr100 ^"++" expr200}
+    binary {expr100 ^"+" expr200}
+    binary {expr100 ^"-" expr200}
+
+expr200 =>
+    prefix
+    binary {expr200 ^"*" prefix}
+    binary {expr200 ^"/" prefix}
+    binary {expr200 ^"%" prefix}
+
+prefix =>
+    postfix
+    prefix {^"+" postfix}
+    prefix {^"-" postfix}
+
+op => ["|", "^", "&", "<<", ">>", "++", "+", "-", "%", "/", "*"]
+
+# here we should still have bitwise not
+
+postfix =>
+    term
+    call  {postfix "(" arguments ")"}
+    callv {postfix "(" arguments "..." ")"}
+    getitem {postfix "[" expr "]"}
+    getattr {postfix "." symbol}
+
+arguments =>
+    empty_list {}
+    arguments1
+    pass {arguments1 ","}
+
+term =>
+    lookup {symbol}
+    int    {int}
+    hex    {hex}
+    float  {float}
+    string {string}
+    expr     {"(" expr ")"}
+    list     {"[" arguments "]"}
+    function {"(" bindings ")" ":" block}
+    dict     {"{" pairs "}"}
+    dict     {"{" nl_pairs "}"}
+    lookup   {"{" escaped_keyword "}"}
+    lookup   {"%" string}
+    scopegrabber {":" expr block}
+
+bindings =>
+    blank_bindings {}
+    optionals
+    optionals ","
+    with_variadic {optionals "," symbol "..."}
+    only_variadic {symbol "..."}
+
+optionals =>
+    optional {optional}
+    append_optional {optionals "," optional}
+    mandatorys
+
+optional =>
+    tuple {symbol "=" expr}
+
+mandatorys =>
+    mandatory {symbol}
+    append_mandatory {mandatorys comma:"," symbol}
+
+nl_pairs => %indent pairlines %dedent
+
+pairlines =>
+    first  {pair}
+    append {pairlines %newline pair}
+    first  {pair ","}
+    append {pairlines %newline pair ","}
+
+pairs =>
+    empty_list {}
+    pairs1
+    pairs1 ","
+
+pairs1 =>
+    first  {pair}
+    append {pairs1 "," pair}
+
+pair =>
+    tuple {expr ":" expr}
+    implicit_string_pair {symbol "=" expr}
+
+escaped_keyword => ["import", "and", "or", "not"]
+
+symbols_list =>
+    first  {symbol}
+    append {symbols_list "," symbol}
