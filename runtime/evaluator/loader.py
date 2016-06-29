@@ -63,10 +63,11 @@ def as_i(obj):
     return obj.value
 
 class Closure(space.Object):
-    _immutable_fields_ = ['parent', 'function']
+    _immutable_fields_ = ['parent', 'function', 'doc']
     def __init__(self, frame, function):
         self.frame = frame
         self.function = function
+        self.doc = space.null
 
     def call(self, argv):
         varargs = self.function.flags & 1 == 1
@@ -85,6 +86,24 @@ class Closure(space.Object):
             frame.local[topc] = space.List(argv[min(topc, L):])
         regv = new_register_array(self.function.regc)
         return interpret(0, self.function.block, regv, frame)
+
+    def getattr(self, name):
+        if name == u"doc":
+            return self.doc
+        else:
+            return space.Object.getattr(self, name)
+
+    def setattr(self, name, value):
+        if name == u"doc":
+            self.doc = value
+            return space.null
+        else:
+            return space.Object.setattr(self, name, value)
+
+    def listattr(self):
+        listing = space.Object.listattr(self)
+        listing.append(space.String(u"doc"))
+        return listing
 
 class Program(space.Object):
     _immutable_fields_ = ['unit']

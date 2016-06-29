@@ -4,12 +4,24 @@ import space
 
 class Builtin(Object):
     _immutable_fields_ = ['func']
-    def __init__(self, func, name=None):
+    def __init__(self, func, name=None, doc=null):
         self.func = func
         self.name = name if name is not None else func.__name__.decode('utf-8')
+        self.doc = doc
 
     def call(self, argv):
         return self.func(argv)
+
+    def getattr(self, name):
+        if name == u"doc":
+            return self.doc
+        else:
+            return Object.getattr(self, name)
+
+    def listattr(self):
+        listing = Object.listattr(self)
+        listing.add(u"doc")
+        return listing
     
     def repr(self):
         return u"<builtin %s>" % self.name

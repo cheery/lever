@@ -74,6 +74,7 @@ root_module = ModuleScope(pathobj.parse(u"builtin:/"), frozen=True)
 for py_module in stdlib.import_all_modules():
     p = pathobj.concat(root_module.local, pathobj.parse(py_module.module.name))
     root_module.setcache(p, py_module.module, 0.0)
+root_module.setcache(pathobj.parse(u"builtin:/" + base.module.name), base.module, 0.0)
 
 def start(main_script):
     assert isinstance(main_script, String)

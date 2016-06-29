@@ -3,7 +3,6 @@ from rpython.rtyper.lltypesystem import rffi
 from space import *
 from evaluator.loader import from_object
 import main
-import module_resolution
 import os
 import pathobj
 #import stdlib
@@ -30,8 +29,6 @@ module = Module(u'base', {
     u'property': Property.interface,
     u'Uint8Array': Uint8Array.interface,
 }, frozen=True)
-
-module.setattr_force(u"base_module", module)
 
 @Module.instantiator
 @signature(String, Module, optional=1)

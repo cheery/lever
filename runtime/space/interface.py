@@ -92,7 +92,7 @@ class Object:
         return _decarotar_
 
 class Interface(Object):
-    _immutable_fields_ = ['instantiate?', 'methods']
+    _immutable_fields_ = ['instantiate?', 'methods', 'doc']
     # Should add possibility to freeze the interface?
     def __init__(self, parent, name):
         assert isinstance(name, unicode)
@@ -102,6 +102,7 @@ class Interface(Object):
         self.methods = {}
         if parent is not None:
             self.methods.update(parent.methods)
+        self.doc = None
 
     def call(self, argv):
         if self.instantiate is None:
@@ -112,6 +113,24 @@ class Interface(Object):
 
     def repr(self):
         return self.name
+
+    def getattr(self, name):
+        if name == u"doc":
+            return null if self.doc is None else self.doc
+        else:
+            return Object.getattr(self, name)
+
+    def setattr(self, name, value):
+        if name == u"doc":
+            self.doc = value
+            return null
+        else:
+            return Object.setattr(self, name, value)
+
+    def listattr(self):
+        listing = Object.listattr(self)
+        listing.append(space.String(u"doc"))
+        return listing
 
 Interface.interface = Interface(None, u"interface")
 Interface.interface.parent = Interface.interface
