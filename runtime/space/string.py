@@ -40,6 +40,21 @@ class String(Object):
         return StringIterator(iter(self.string))
 
 @String.builtin_method
+@signature(String, Object)
+def join(string, seq):
+    strings = []
+    it = seq.iter()
+    while True:
+        try:
+            x = it.callattr(u"next", [])
+            if not isinstance(x, String):
+                raise space.OldError(u".join expects strings")
+            strings.append(x.string)
+        except StopIteration as _:
+            break
+    return String(string.string.join(strings))
+
+@String.builtin_method
 @signature(String)
 def is_alpha(string):
     for ch in string.string:
