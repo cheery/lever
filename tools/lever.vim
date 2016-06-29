@@ -7,7 +7,7 @@ if exists("b:current_syntax")
     finish
 endif
 
-syn keyword leverKeyword if elif else while import from return for in as break continue raise try except
+syn keyword leverKeyword if elif else while import from return for in as break continue raise try except and or not
 syn keyword leverBoolean true false
 
 syn match   leverNumberError	"\<0[xX]\x*[g-zG-Z]\+\x*[lL]\=\>" display
@@ -33,8 +33,8 @@ syn match   leverNumber		"\<\d\+\.\d*\%([eE][+-]\=\d\+\)\=[jJ]\=" display
 syn keyword leverTodo contained TODO FIXME XXX NOTE
 syn match leverComment "#.*$" contains=leverTodo
 
-syn region leverString start=+"+ end=+"+ skip=+\\"+
-syn region leverString start=+'+ end=+'+ skip=+\\'+
+syn region leverString start=/"/ skip=/\\./ end=/"/
+syn region leverString start=/'/ skip=/\\./ end=/'/
 
 let b:current_syntax = "lever"
 
