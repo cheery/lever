@@ -1,0 +1,440 @@
+main = ():
+    s = Nonterminal('s')
+    a = Nonterminal('a')
+    b = Nonterminal('b')
+    x = Terminal('x')
+
+    terminals = {"x": x}
+
+    accept = s
+    user_grammar = [
+        Rule(s, [s, a]),
+        Rule(s, []),
+        Rule(a, [x])
+    ]
+
+    parser = preprocess(user_grammar, accept)()
+    input_string = "xxxxxx"
+    for token in input_string
+        parser.step(terminals[token], token)
+    print("accepted?", parser.accepted)
+    print("expecting X?", parser.expecting(x))
+    print(parser.traverse(
+        ((x, a):
+            return a
+        ),
+        ((x):
+            return ""
+        )
+    ))
+
+preprocess = (user_grammar, default_accept):
+    nullable = find_nullable(user_grammar)
+    grammar = {}
+    blankset = {}
+    for rule in build_nnf(user_grammar, nullable)
+        if rule.rhs.length == 0
+            try
+                blankset[rule.lhs].append(rule.annotation.rule)
+            except KeyError as _
+                blankset[rule.lhs] = [rule.annotation.rule]
+        else
+            try
+                grammar[rule.lhs].append(rule)
+            except KeyError as _
+                grammar[rule.lhs] = [rule]
+
+    new_parser = (accept=default_accept):
+        parser = Parser(grammar, accept, [])
+        # In an earley parser that uses NNF, empty input is a special case, that is taken care of here.
+        if accept in nullable
+            for rule in user_grammar
+                if rule.lhs == accept and all_nullable(rule.rhs, nullable)
+                    present = []
+                    for x in rule.rhs
+                        present.append(false)
+                    # TODO: improve this to handle this special case directly via null_symbol, rather like this.
+                    parser.output.append(Rule(accept, [], NNF(rule, present)))
+        # The first chart column
+        transitions = {}
+        nodes = {}
+        current = []
+        prediction(current, nodes, grammar, 0, accept)
+        for eim in current
+            prediction(current, nodes, grammar, 0, eim.postdot())
+            cache_transitions(transitions, eim, null)
+        parser.chart.append(transitions)
+        return parser
+    return :Preprocessed(new_parser)
+        blankset = blankset
+        nullable = nullable
+
+find_nullable = (grammar):
+    # TODO: add sets to the language.
+    #nullable = set()
+    nullable = []
+    queue = []
+    new_nullable = (symbol):
+        if symbol not in nullable
+            #nullable.add(symbol)
+            nullable.append(symbol)
+            queue.append(symbol)
+    inverse_lookup = {}
+    new_lookup = (index, symbol):
+        try
+            inverse_lookup[symbol].append(index)
+        except KeyError as _
+            inverse_lookup[symbol] = [index]
+    nonterminals = []
+    nonnullables = []
+    for rule in grammar
+        if rule.rhs.length == 0
+            new_nullable(rule.lhs)
+        elif all_nonterminals(rule.rhs)
+            index = nonnullables.length
+            for x in rule.rhs
+                if x != rule.lhs
+                    new_lookup(index, x)
+            nonterminals.append(rule.lhs)
+            nonnullables.append(sum_nonrec(rule))
+    for n in queue
+        for i in inverse_lookup.get(n, [])
+            nonnullables[i] -= 1
+            if nonnullables[i] == 0
+                new_nullable(nonterminals[i])
+    return nullable
+
+all_nonterminals = (rhs):
+    for x in rhs
+        if not isinstance(x, Nonterminal)
+            return false
+    return true
+
+all_nullable = (rhs, nullable):
+    for x in rhs
+        if x not in nullable
+            return false
+    return true
+
+sum_nonrec = (rule):
+    s = 0
+    for x in rule.rhs
+        s += (x != rule.lhs)
+    return s
+
+build_nnf = (grammar, nullable):
+    result = []
+    for rule in grammar
+        order = 0
+        for x in rule.rhs
+            order += (x in nullable)
+        for i in range(1 << order)
+            result.append(nihilist_rule(rule, i, nullable))
+    return result
+
+nihilist_rule = (rule, index, nullable):
+    present = []
+    rhs = []
+    for symbol in rule.rhs
+        shift = true
+        if symbol in nullable
+            if index & 1 == 0
+                shift = false
+            index >>= 1
+        present.append(shift)
+        if shift
+            rhs.append(symbol)
+    return Rule(rule.lhs, rhs, NNF(rule, present))
+
+class Preprocessed
+    +init = (self, function):
+        self.function = function
+
+    +call = (self, args...):
+        return self.function(args...)
+
+class Parser
+    +init = (self, grammar, accept, output):
+        self.chart = []
+        self.grammar = grammar
+        self.accept = accept
+        self.output = output
+
+    step = (self, term, token):
+        # completions proceed in non-deterministic manner, until
+        # everything has been completed.
+        current = []
+        transitions = {}
+        nodes = {}
+        location = self.chart.length
+        output = []
+        bottom = SPPF(location-1, location, token, null)
+        for trans in self.chart[location-1][term]
+            shift_eim(current, nodes, trans.eim, location, trans.cc, bottom)
+        for eim in current
+            # reduction
+            cc = nodes[eim]
+            if eim.is_completed()
+                for before in self.chart[eim.origin].get(eim.rule.lhs, [])
+                    shift_eim(current, nodes, before.eim, location, before.cc, cc)
+                if eim.rule.lhs == self.accept and eim.origin == 0
+                    output.append(cc)
+            prediction(current, nodes, self.grammar, location, eim.postdot())
+            cache_transitions(transitions, eim, cc)
+        self.chart.append(transitions)
+        self.output = output
+ 
+    accepted = :property()
+        get = (self):
+            return self.output.length > 0
+
+    expect = :property()
+        get = (self):
+            return self.chart[self.chart.length - 1].keys()
+ 
+    expecting = (self, symbol):
+        return symbol in self.chart[self.chart.length - 1]
+ 
+    traverse = (self, postorder_callback, blank_callback, resolve_ambiguity=self.default_ambiguity_resolution):
+        if self.output.length > 1
+            sppf = resolve_ambiguity(null, self.output)
+        else
+            sppf = self.output[0]
+        return traverse_sppf(sppf, postorder_callback, blank_callback, resolve_ambiguity)
+
+    default_ambiguity_resolution = (self, sppf):
+        raise Exception(sppf)
+
+prediction = (current, nodes, grammar, location, postdot):
+    if isinstance(postdot, Nonterminal)
+        for rule in grammar.get(postdot, [])
+            eim = EIM(rule, 0, location)
+            if eim not in nodes
+                nodes[eim] = null
+                current.append(eim)
+
+cache_transitions = (transitions, eim, cc):
+    postdot = eim.postdot()
+    if not eim.is_completed()
+        trans = :exnihilo()
+            eim = eim
+            cc = cc
+        try
+            transitions[postdot].append(trans)
+        except KeyError as _
+            transitions[postdot] = [trans]
+
+shift_eim = (current, nodes, eim, location, bb, cc):
+    eim = eim.next()
+    try
+        sppf = nodes[eim]
+        sppf.insert(bb, cc)
+    except KeyError as _
+        nodes[eim] = sppf = SPPF(eim.origin, location, eim.rule, Link(bb, cc))
+        current.append(eim)
+
+traverse_sppf = (sppf, postorder_callback, blank_callback, resolve_ambiguity):
+    rcount = 1
+    sstack = []
+    rstack = []
+    stack = [sppf]
+    while stack.length > 0
+        sppf = stack.pop()
+        if sppf.is_leaf()
+            sstack.append(sppf.cell)
+            rcount -= 1
+        else
+            result = sppf.single()
+            if result == null
+                result = resolve_ambiguity(sppf)
+            rstack.append(:exnihilo()
+                rcount = rcount - 1
+                rlen = result.length
+                sppf = sppf
+            )
+            rcount = len(result)
+            stack.extend(reversed(result))
+        while rcount == 0 and len(rstack) > 0
+            s = rstack.pop()
+            rcount = s.rcount
+            rlen = s.rlen
+            sppf = s.sppf
+            a = []
+            for i in range(rlen)
+                a.append(sstack.pop(sstack.length+i-rlen))
+            sstack.append(postorder_callback(expand(sppf.cell, blank_callback, iter(a))...))
+    #assert len(sstack) == 1
+    return sstack[0]
+
+expand = (cell, blank_callback, seq):
+    if isinstance(cell.annotation, NNF)
+        nnf = cell.annotation
+        result = []
+        i = 0
+        for p in nnf.present
+            if p
+                result.append(seq.next())
+            else
+                result.append(blank_callback(nnf.rule.rhs[i]))
+            i += 1
+        return [nnf.rule, result]
+    return [cell, list(seq)]
+
+class Rule
+    +init = (self, lhs, rhs, annotation=null):
+        self.lhs = lhs
+        self.rhs = rhs
+        self.annotation = annotation
+
+    +repr = (self):
+        out = repr(self.lhs) ++ " -> " ++ repr_spaces(self.rhs)
+        return out
+
+repr_spaces = (seq, space=" "):
+    out = ""
+    for item in seq
+        if out.length > 0
+            out ++= space
+        out ++= repr(item)
+    return out
+
+## Nihilist normal form
+class NNF
+    +init = (self, rule, present):
+        self.rule = rule
+        self.present = present          # tells which fields are present.
+
+# Earlier I did not separate terminals from
+# non-terminals because it was not strictly
+# necessary. That turned out to confuse
+# when designing grammars.
+class Terminal
+    +init = (self, name):
+        self.name = name
+
+    +repr = (self):
+        return "T" ++ self.name
+
+class Nonterminal
+    +init = (self, name):
+        self.name = name
+
+    +repr = (self):
+        return self.name
+##    def __repr__(self):
+##        return "{!s}".format(self.name)
+
+class EIM
+    +init = (self, rule, pos, origin):
+        self.rule = rule
+        self.pos = pos
+        self.origin = origin
+#        assert 0 <= pos <= len(rule)
+
+    postdot = (self):
+        if self.pos < self.rule.rhs.length
+            return self.rule.rhs[self.pos]
+        return null
+
+    next = (self):
+        if self.postdot()
+            return EIM(self.rule, self.pos + 1, self.origin)
+        return null
+
+    penult = (self):
+        if self.pos + 1 == self.rule.length
+            return self.postdot()
+
+    is_predicted = (self):
+        return self.pos == 0
+
+    is_confirmed = (self):
+        return self.pos > 0
+
+    is_completed = (self):
+        return self.pos == self.rule.rhs.length
+
+    +hash = (self):
+        return hash([self.rule, self.pos, self.origin])
+
+#    # TODO: String formatting
+#    #    if isinstance(self.rule, Rule):
+#    #    lhs = repr(self.rule.lhs)
+#    #    pre = ' '.join(map(repr, self.rule.rhs[:self.pos]))
+#    #    pos = ' '.join(map(repr, self.rule.rhs[self.pos:]))
+#    #    return "{} -> {} * {} : {}".format(lhs, pre, pos, self.origin)
+#    #    return object.__repr__(self)
+#
+%"=="[[EIM, EIM]] = (a, b):
+    if a.rule != b.rule
+        return false
+    if a.origin != b.origin
+        return false
+    if a.pos != b.pos
+        return false
+    return true
+    
+class SPPF # Shared packed parse forest
+    +init = (self, start, stop, cell, link):
+        self.start = start
+        self.stop = stop
+        self.cell = cell
+        self.link = link
+
+    is_leaf = (self):
+        return self.link == null
+
+    insert = (self, left, right):
+        if self.link == null
+            self.link = Link(left, right)
+            return self.link
+        link = self.link
+        while true
+            if link.left == left and link.right == right
+                return link
+            if link.link == null
+                link.link = Link(left, right)
+                return link.link
+            link = link.link
+
+    single = (self):
+        result = []
+        link = self.link
+        while link.left
+            if link.link
+                return null
+            result.append(link.right)
+            link = link.left.link
+        result.append(link.right)
+        result.reverse()
+        return result
+
+    +iter = (self):
+        # TODO: should probably be incremental?
+        output = []
+        finger = []
+        # To produce all parses, the sppf is fingered through.
+        link = self.link
+        while finger.length > 0 and link
+            while link.left
+                finger.append(link)
+                link = link.left.link
+            # Now the link contains the head, while the tail is in the finger list.
+            while link
+                result = [link.right]
+                for x in reversed(finger)
+                    result.append(x.right)
+                output.append(result)
+                link = link.link
+            # Now some portion of the finger is already iterated, and should be removed.
+            while finger.length > 0 and not link
+                link = finger.pop().link
+
+## TODO: add string formatter to lever
+## return "[{}:{}] {}".format(self.start, self.stop, self.cell)
+
+class Link
+    +init = (self, left, right, link=null):
+        self.left = left
+        self.right = right
+        self.link = link

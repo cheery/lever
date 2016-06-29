@@ -20,7 +20,7 @@ class Builtin(Object):
 
     def listattr(self):
         listing = Object.listattr(self)
-        listing.add(u"doc")
+        listing.append(space.String(u"doc"))
         return listing
     
     def repr(self):

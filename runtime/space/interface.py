@@ -117,7 +117,9 @@ class Interface(Object):
     def getattr(self, name):
         if name == u"doc":
             return null if self.doc is None else self.doc
-        else:
+        try:
+            return self.__class__.interface.methods[name]
+        except KeyError as e:
             return Object.getattr(self, name)
 
     def setattr(self, name, value):
@@ -130,6 +132,8 @@ class Interface(Object):
     def listattr(self):
         listing = Object.listattr(self)
         listing.append(space.String(u"doc"))
+        for methodname in self.methods:
+            listing.append(space.String(methodname))
         return listing
 
 Interface.interface = Interface(None, u"interface")
@@ -150,6 +154,15 @@ class BoundMethod(Object):
     def call(self, argv):
         argv.insert(0, self.obj)
         return self.methodfn.call(argv)
+
+    def getattr(self, name):
+        return self.methodfn.getattr(name)
+
+    def setattr(self, name, value):
+        return self.methodfn.setattr(name, value)
+
+    def listattr(self):
+        return self.methodfn.listattr()
 
     def repr(self):
         return u"%s.%s" % (self.obj.repr(), self.name)
