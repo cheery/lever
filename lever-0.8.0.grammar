@@ -6,8 +6,8 @@
 # Alternating right-hand-side rules are separated by newline.
 # Function is called with the stuff that is grabbed from inside the
 # parentheses.
-# Every word may be grabbed or skipped by default.
-# Keywords and recognized symbols denoted with "" are skipped by default.
+# Nonterminals and symbolic terminals are grabbed by default.
+# Keywords denoted with "" are skipped by default.
 # ^ prefix may force a grab.
 # % prefix may force a skip.
 

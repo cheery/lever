@@ -53,6 +53,8 @@ class_header =>
 local_symbol =>
     tuple: symbol
     tuple: plus:"+" symbol
+    tuple(string):
+        percent:"%" string
 
 slot =>
     lookup_slot: symbol

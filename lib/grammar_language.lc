@@ -10,6 +10,11 @@ main = ():
         language.table.nonterminal("file"))
     for rule in language.grammar
         print(rule)
+    # You can prefix a string to use it as a symbol.
+    # Therefore using scoped objects to build action table
+    # will not require workarounds in notating the grammar.
+    actions = :exnihilo()
+        %"return" = 123
 
 read_file = (filename):
     tokens = tokenizer.read_file(filename, language.table.keywords)
