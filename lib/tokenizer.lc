@@ -95,7 +95,7 @@ class Literal
         self.string = string
 
     +repr = (self):
-        return "<literal " ++ repr(self.string) ++ ">"
+        return "<literal " ++ repr(self.name) ++ " " ++ repr(self.string) ++ ">"
 
 class TextStream
     +init = (self, source, index=0, col=0, lno=1):

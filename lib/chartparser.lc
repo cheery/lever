@@ -1,3 +1,5 @@
+import tokenizer
+
 main = ():
     s = Nonterminal('s')
     a = Nonterminal('a')
@@ -415,7 +417,7 @@ class SPPF # Shared packed parse forest
         finger = []
         # To produce all parses, the sppf is fingered through.
         link = self.link
-        while finger.length > 0 and link
+        while finger.length > 0 or link
             while link.left
                 finger.append(link)
                 link = link.left.link
@@ -429,6 +431,7 @@ class SPPF # Shared packed parse forest
             # Now some portion of the finger is already iterated, and should be removed.
             while finger.length > 0 and not link
                 link = finger.pop().link
+        return iter(output)
 
 ## TODO: add string formatter to lever
 ## return "[{}:{}] {}".format(self.start, self.stop, self.cell)
@@ -438,3 +441,40 @@ class Link
         self.left = left
         self.right = right
         self.link = link
+
+# There's no certain place where this should sit. But
+# it's relevant with chartparser so it sits here now.
+class IndentParser
+    +init = (self, pos=tokenizer.Position(0, 1), indent=null, dedent=null, newline=null):
+        self.stack = []
+        self.level = pos.col
+        self.line = pos.lno
+        self.indent = indent
+        self.dedent = dedent
+        self.newline = newline
+
+    step = (self, parser, pos):
+        if self.line < pos.lno
+            while pos.col < self.level and parser.expecting(self.dedent)
+                parser.step(self.dedent,
+                    tokenizer.Literal(pos, pos, "dedent", ""))
+                self.level = self.stack.pop()
+            if pos.col < self.level
+                raise SyntaxError("Uneven indent at line " ++ repr(pos.lno))
+            if pos.col == self.level and parser.expecting(self.newline)
+                parser.step(self.newline,
+                    tokenizer.Literal(pos, pos, "newline", ""))
+            if pos.col > self.level and parser.expecting(self.indent)
+                parser.step(self.indent,
+                    tokenizer.Literal(pos, pos, "indent", ""))
+                self.stack.append(self.level)
+                self.level = pos.col
+            self.line = pos.lno
+
+    # Most languages have a bug if this function returns false.
+    finish = (self, parser, pos):
+        while self.stack.length > 0 and parser.expecting(self.dedent)
+            parser.step(self.dedent,
+                tokenizer.Literal(pos, pos, "dedent", ""))
+            self.level = self.stack.pop()
+        return self.stack.length == 0

@@ -1,106 +1,273 @@
 import chartparser
 import tokenizer
 
-Nonterminal = chartparser.Nonterminal
-Terminal = chartparser.Terminal
-Rule = chartparser.Rule
+# Serves as an example of use. Once you do this, you may proceed to
+# use the grammar just like how this module uses its own parsing table.
+main = ():
+    language = read_file("lever-0.8.0.grammar")
+    language.new_parser = chartparser.preprocess(
+        language.grammar,
+        language.table.nonterminal("file"))
+    for rule in language.grammar
+        print(rule)
 
-file = Nonterminal("file")
-rule = Nonterminal("rule")
-production = Nonterminal("production")
-productions = Nonterminal("productions")
-term = Nonterminal("term")
-block = Nonterminal("block")
-fnname = Nonterminal("fnname")
+read_file = (filename):
+    tokens = tokenizer.read_file(filename, language.table.keywords)
+    return read_tokens(tokens)
 
-terminals = {}
-new_terminal = (name):
-    terminals[name] = terminal = Terminal(name)
-    return terminal
-indent = new_terminal("indent")
-dedent = new_terminal("dedent")
-newline = new_terminal("newline")
-string = new_terminal("string")
-symbol = new_terminal("symbol")
-arrow = new_terminal("=>")
-lc = new_terminal("{")
-rc = new_terminal("}")
-skip = new_terminal("%")
-grab = new_terminal("^")
+read_string = (string):
+    tokens = tokenizer.read_string(string, language.table.keywords)
+    return read_tokens(tokens)
 
-grammar = [
-    Rule(file, [rule]),
-    Rule(file, [file, newline, rule]),
-    Rule(rule, [symbol, arrow, production]),
-    Rule(rule, [symbol, arrow, block]),
-    Rule(block, [indent, productions, dedent]),
-    Rule(productions, [production]),
-    Rule(productions, [productions, newline, production]),
-    Rule(production, [production, term]),
-    Rule(production, [term]),
-    Rule(term, [skip, symbol]),
-    Rule(term, [grab, symbol]),
-    Rule(term, [skip, string]),
-    Rule(term, [grab, string]),
-    Rule(term, [string]),
-    Rule(term, [symbol]),
-    Rule(term, [fnname, lc, rc]),
-    Rule(term, [fnname, lc, production, rc]),
-    Rule(fnname, [symbol]),
-    Rule(fnname, []),
-]
-
-table = {
-    "{": "{",
-    "}": "}",
-    "%": "%",
-    "^": "^",
-    "=": "=",
-    "=>": "=>",
-}
-
-new_parser = chartparser.preprocess(grammar, file)
-
-parser = new_parser()
-tokens = tokenizer.read_file("lever-0.8.0.grammar", table)
-indent_stack = []
-indent_level = tokens[0].start.col
-line = tokens[0].start.lno
-for token in tokens
-    if line < token.start.lno
-        while token.start.col < indent_level and parser.expecting(dedent)
-            start = token.start
-            parser.step(dedent, tokenizer.Literal(start, start, 'dedent', ''))
-            indent_level = indent_stack.pop()
-        if token.start.col < indent_level
-            raise SyntaxError("Uneven indent at line " ++ repr(token.start.lno))
-        if token.start.col == indent_level and parser.expecting(newline)
-            start = token.start
-            parser.step(newline, tokenizer.Literal(start, start, 'newline', ''))
-        if token.start.col > indent_level and parser.expecting(indent)
-            start = token.start
-            parser.step(indent, tokenizer.Literal(start, start, 'indent', ''))
-            indent_stack.append(indent_level)
-            indent_level = token.start.col
-        line = token.stop.lno
-    terminal = terminals[token.name]
-    if not parser.expecting(terminal)
+read_tokens = (tokens):
+    parser = language.new_parser()
+    indent = :chartparser.IndentParser(tokens[0].start)
+        indent = language.table.terminal("indent")
+        dedent = language.table.terminal("dedent")
+        newline = language.table.terminal("newline")
+    for token in tokens
+        indent.step(parser, token.start)
+        terminal = language.table.terminal(token.name)
+        if not parser.expecting(terminal)
+            print("expected some of:")
+            for t in parser.expect
+                print("    " ++ t.name)
+            print("Got " ++ repr(token))# ++ ", expected some of " ++ ", ".join(parser.expect))
+            print("Location: " ++ repr(token.start.lno) ++ ":" ++ repr(token.start.col))
+            raise SyntaxError()
+        parser.step(terminal, token)
+    indent.finish(parser, token.stop)
+    if not parser.accepted
         print("expected some of:")
         for t in parser.expect
             print("    " ++ t.name)
-        print("Got " ++ terminal.name)# ++ ", expected some of " ++ ", ".join(parser.expect))
-        print("Location: " ++ repr(token.start.lno) ++ ":" ++ repr(token.start.col))
+        print("At EOF")
         raise SyntaxError()
-    parser.step(terminal, token)
-while parser.expecting(dedent)
-    stop = token.stop
-    parser.step(dedent, tokenizer.Literal(stop, stop, 'dedent', ''))
-print("accepted?", parser.accepted)
-#    print(parser.traverse(
-#        ((x, a):
-#            return a
-#        ),
-#        ((x):
-#            return ""
-#        )
-#    ))
+    table = SymbolTable()
+    for t in ["indent", "dedent", "newline", "string", "symbol", "int", "hex", "float"]
+        table.terminal(t)
+    argl = [table]
+    post = (rule, args):
+        return rule.annotation(parser_actions, args, argl)
+    blank_lhs = (x): # Not used in this grammar.
+        return null
+    return :exnihilo()
+        table = table
+        grammar = parser.traverse(post, blank_lhs)
+
+build_language = ():
+    table = SymbolTable()
+    Rule = chartparser.Rule
+
+    file = table.nonterminal("file")
+    rule = table.nonterminal("rule")
+    production = table.nonterminal("production")
+    productions = table.nonterminal("productions")
+    inline_productions = table.nonterminal("inline_productions")
+    term = table.nonterminal("term")
+    block = table.nonterminal("block")
+
+    indent = table.terminal("indent")
+    dedent = table.terminal("dedent")
+    newline = table.terminal("newline")
+    string = table.terminal("string")
+    symbol = table.terminal("symbol")
+
+    arrow = table.keyword("=>")
+    comma = table.keyword(",")
+    lc = table.keyword("{")
+    rc = table.keyword("}")
+    lb = table.keyword("[")
+    rb = table.keyword("]")
+    skip = table.keyword("%")
+    grab = table.keyword("^")
+
+    grammar = [
+        Rule(file, [rule],
+            Grab(0)),
+        Rule(file, [file, newline, rule],
+            Command("extend", [Grab(0), Grab(2)])),
+        Rule(rule, [symbol, arrow, production],
+            Command("rule", [Grab(0), Command("first", [Grab(2)])])),
+        Rule(rule, [symbol, arrow, block],
+            Command("rule", [Grab(0), Grab(2)])),
+        Rule(rule, [symbol, arrow, lb, inline_productions, rb],
+            Command("rule", [Grab(0), Grab(3)])),
+        Rule(block, [indent, productions, dedent],
+            Grab(1)),
+        Rule(productions, [lb, inline_productions, rb],
+            Grab(1)),
+        Rule(productions, [production],
+            Command("first", [Grab(0)])),
+        Rule(productions, [productions, newline, production],
+            Command("append", [Grab(0), Grab(2)])),
+        Rule(production, [production, term],
+            Command("append", [Grab(0), Grab(1)])),
+        Rule(production, [term],
+            Command("first", [Grab(0)])),
+        Rule(production, [lc, production, rc],
+            Grab(1)),
+        Rule(production, [lc, rc],
+            Command("empty", [])),
+        Rule(inline_productions, [production],
+            Command("first", [Grab(0)])),
+        Rule(inline_productions, [inline_productions, comma, production],
+            Command("append", [Grab(0), Grab(2)])),
+        Rule(term, [skip, symbol],
+            Command("skip", [Command("symbol", [Grab(1)])])),
+        Rule(term, [grab, symbol],
+            Command("grab", [Command("symbol", [Grab(1)])])),
+        Rule(term, [skip, string],
+            Command("skip", [Command("string", [Grab(1)])])),
+        Rule(term, [grab, string],
+            Command("grab", [Command("string", [Grab(1)])])),
+        Rule(term, [string],
+            Command("skip", [Command("string", [Grab(0)])])),
+        Rule(term, [symbol],
+            Command("grab", [Command("symbol", [Grab(0)])])),
+        Rule(term, [symbol, lc, rc],
+            Command("command", [Grab(0)])),
+        Rule(term, [symbol, lc, production, rc],
+            Command("command", [Grab(0), Grab(2)])),
+    ]
+    return :exnihilo()
+        grammar = grammar
+        table = table
+        new_parser = chartparser.preprocess(grammar, file)
+
+parser_actions = :exnihilo()
+    command = (table, symbol, arg=[]):
+        return :exnihilo()
+            name = "command"
+            command = symbol.string
+            arg = arg
+    first = (table, item):
+        return [item]
+    append = (table, items, item):
+        items.append(item)
+        return items
+    extend = (table, items, item):
+        items.extend(item)
+        return items
+    skip = (table, arg):
+        return :exnihilo()
+            name = "skip"
+            arg = arg
+    grab = (table, arg):
+        return :exnihilo()
+            name = "grab"
+            arg = arg
+    symbol = (table, token):
+        return table.nonterminal(token.string)
+    string = (table, token):
+        return table.keyword(token.string)
+    rule = (table, symbol, productions):
+        lhs = table.nonterminal(symbol.string)
+        result = []
+        for production in productions
+            result.append(make_rule(lhs, production))
+        return result
+
+make_rule = (lhs, production):
+    rhs = []
+    annotation = make_command(rhs, null, production)
+    print(rhs, annotation)
+    return chartparser.Rule(lhs, rhs, annotation)
+
+make_command = (rhs, command, production):
+    clist = []
+    for prod in production
+        if prod.name == 'skip'
+            rhs.append(prod.arg)
+        elif prod.name == 'grab'
+            clist.append(Grab(rhs.length))
+            rhs.append(prod.arg)
+        elif prod.name == 'command'
+            clist.append(make_command(rhs, prod.command, prod.arg))
+        else
+            raise Error(repr(prod.name))
+    if command
+        return Command(command, clist)
+    elif clist.length == 0
+        return blank
+    elif clist.length == 1
+        return clist[0]
+    else
+        return Group(clist)
+
+class Grab
+    +init = (self, index):
+        self.index = index
+
+    +call = (self, actions, args, argl):
+        return args[self.index]
+
+class Command
+    +init = (self, name, args):
+        self.name = name
+        self.args = args
+
+    +call = (self, actions, args, argl):
+        action = getattr(actions, self.name)
+        argv = list(argl)
+        for arg in self.args
+            argv.append(arg(actions, args, argl))
+        return action(argv...)
+
+blank = (actions, args, argl):
+    return null
+
+class Group
+    +init = (self, args):
+        self.args = args
+
+    +call = (self, actions, args, argl):
+        group = []
+        for arg in self.args
+            group.append(arg(actions, args, argl))
+        return group
+
+class SymbolTable
+    +init = (self, terminals={}, nonterminals={}, keywords={}):
+        self.terminals = terminals
+        self.nonterminals = nonterminals
+        self.keywords = keywords
+
+    terminal = (self, name):
+        try
+            return self.terminals[name]
+        except KeyError as _
+            self.terminals[name] = s = chartparser.Terminal(name)
+            return s
+
+    nonterminal = (self, name):
+        try
+            return self.terminals[name]
+        except KeyError as _
+            try
+                return self.nonterminals[name]
+            except KeyError as _
+                self.nonterminals[name] = s = chartparser.Nonterminal(name)
+                return s
+
+    keyword = (self, name, smear=default_smear):
+        if name not in self.keywords
+            for keyword in smear(name)
+                self.keywords[keyword] = keyword
+        return self.terminal(name)
+
+# The tokenizer we use requires symbol-keywords to be
+# smeared in order for them to be recognized.
+# But if we do the same for textual keywords, it will result in a mess.
+default_smear = (keyword):
+    for ch in keyword
+        if ch.is_alpha()
+            return [keyword]
+    result = []
+    prefix = []
+    for ch in keyword
+        prefix.append(ch)
+        result.append("".join(prefix))
+    return result
+
+language = build_language()
