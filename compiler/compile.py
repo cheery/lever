@@ -378,8 +378,8 @@ class Or(Cell):
         context.block.op(self.loc, 'cond', [lhs, exit, other])
         context.block = other
         rhs = self.rhs.visit(context)
-        other.op(self.loc, 'move', [lhs, rhs])
-        other.op(self.loc, 'jump', [exit])
+        context.block.op(self.loc, 'move', [lhs, rhs])
+        context.block.op(self.loc, 'jump', [exit])
         context.block = exit
         return lhs
 
@@ -396,8 +396,8 @@ class And(Cell):
         context.block.op(self.loc, 'cond', [lhs, other, exit])
         context.block = other
         rhs = self.rhs.visit(context)
-        other.op(self.loc, 'move', [lhs, rhs])
-        other.op(self.loc, 'jump', [exit])
+        context.block.op(self.loc, 'move', [lhs, rhs])
+        context.block.op(self.loc, 'jump', [exit])
         context.block = exit
         return lhs
 

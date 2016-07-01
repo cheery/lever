@@ -1,0 +1,47 @@
+import tokenizer
+import chartparser
+import grammar_language
+
+language = grammar_language.read_file("lever-0.8.0.grammar")
+language.new_parser = chartparser.preprocess(
+    language.grammar,
+    language.table.nonterminal("file"))
+for rule in language.grammar
+    print(rule)
+
+actions = exnihilo()
+
+main = ():
+    tokens = tokenizer.read_file("sample.lc", language.table.keywords)
+    parser = language.new_parser()
+    indent = :chartparser.IndentParser(tokens[0].start)
+        indent = language.table.terminal("indent")
+        dedent = language.table.terminal("dedent")
+        newline = language.table.terminal("newline")
+    for token in tokens
+        indent.step(parser, token.start)
+        terminal = language.table.terminal(token.name)
+        if not parser.expecting(terminal)
+            print("expected some of:")
+            for t in parser.expect
+                print("    " ++ t.name)
+            print("Got " ++ repr(token))# ++ ", expected some of " ++ ", ".join(parser.expect))
+            print("Location: " ++ repr(token.start.lno) ++ ":" ++ repr(token.start.col))
+            raise SyntaxError()
+        parser.step(terminal, token)
+    indent.finish(parser, token.stop)
+    if not parser.accepted
+        print("expected some of:")
+        for t in parser.expect
+            print("    " ++ t.name)
+        print("At EOF")
+        raise SyntaxError()
+    post = grammar_language.invoker(actions)
+    blank_lhs = (x): # Not used in this grammar.
+        return null
+    #parser.traverse(post, blank_lhs)
+
+    #compile_file("sample.lc.cb", "sample.lc")
+
+compile_file = (cb_path, lc_path):
+    raise "not working"

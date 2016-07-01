@@ -49,16 +49,19 @@ read_tokens = (tokens):
         print("At EOF")
         raise SyntaxError()
     table = SymbolTable()
+    # Some of the nonterminals are speudonyms to terminals. 
     for t in ["indent", "dedent", "newline", "string", "symbol", "int", "hex", "float"]
-        table.terminal(t)
-    argl = [table]
-    post = (rule, args):
-        return rule.annotation(parser_actions, args, argl)
+        table.nonterminals[t] = table.terminal(t)
+    post = invoker(actions, table)
     blank_lhs = (x): # Not used in this grammar.
         return null
     return :exnihilo()
         table = table
         grammar = parser.traverse(post, blank_lhs)
+
+invoker = (actions, argl...):
+    return (rule, args):
+        return rule.annotation(actions, args, argl)
 
 build_language = ():
     table = SymbolTable()
@@ -140,7 +143,7 @@ build_language = ():
         table = table
         new_parser = chartparser.preprocess(grammar, file)
 
-parser_actions = :exnihilo()
+actions = :exnihilo()
     command = (table, symbol, arg=[]):
         return :exnihilo()
             name = "command"
@@ -176,7 +179,6 @@ parser_actions = :exnihilo()
 make_rule = (lhs, production):
     rhs = []
     annotation = make_command(rhs, null, production)
-    print(rhs, annotation)
     return chartparser.Rule(lhs, rhs, annotation)
 
 make_command = (rhs, command, production):
@@ -247,19 +249,25 @@ class SymbolTable
 
     nonterminal = (self, name):
         try
-            return self.terminals[name]
+            return self.nonterminals[name]
         except KeyError as _
-            try
-                return self.nonterminals[name]
-            except KeyError as _
-                self.nonterminals[name] = s = chartparser.Nonterminal(name)
-                return s
+            self.nonterminals[name] = s = chartparser.Nonterminal(name)
+            return s
+
+    symbol = (self, name):
+        self.symbols[name] = t = self.terminal(name)
+        return t
 
     keyword = (self, name, smear=default_smear):
+        # Parsing would break down if some of speudonymous terminals were used as
+        # keywords in a language. Most of them aren't very "sexy" keywordy names, so
+        # I wouldn't expect them to be used. But...
+        # Prefixing keywords will prevent the problem from ever appearing.
+        # Besides it makes the repr(Rule(...)) tiny little bit more readable.
         if name not in self.keywords
             for keyword in smear(name)
-                self.keywords[keyword] = keyword
-        return self.terminal(name)
+                self.keywords[keyword] = "kw " ++ keyword
+        return self.terminal("kw " ++ name)
 
 # The tokenizer we use requires symbol-keywords to be
 # smeared in order for them to be recognized.

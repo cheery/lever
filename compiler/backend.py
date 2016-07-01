@@ -105,7 +105,10 @@ def dump(flags, argc, topc, localv, entry_block, consttab, location_id, debug):
             if isinstance(op, Exc):
                 continue
             if debug:
-                print "  {1} := {0} {2}".format(op.opname.ljust(12), op.index, ', '.join(map(repr_oparg, op.args)))
+                if op.has_result:
+                    print "  {1} := {0} {2}".format(op.opname.ljust(12), op.index, ', '.join(map(repr_oparg, op.args)))
+                else:
+                    print "       {0} {1}".format(op.opname.ljust(12),           ', '.join(map(repr_oparg, op.args)))
             codes = list(encode_op(op, consttab))
             block.extend(codes)
             sourcemap.add(len(codes), location_id,

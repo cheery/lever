@@ -29,7 +29,7 @@ block_statement =>
     while  {"while"  statement block otherwise}
     local_assign   {local_symbol      "="  block_statement}
     upvalue_assign {symbol            ":=" block_statement}
-    op_assign      {slot op           ":=" block_statement}
+    op_assign      {slot op           "="  block_statement}
     setitem        {expr "[" expr "]" "="  block_statement}
     setattr        {expr "." symbol   "="  block_statement}
     for      {"for" symbol "in" statement block}
@@ -48,6 +48,7 @@ class_header =>
 local_symbol =>
     tuple {symbol}
     tuple {^"+" symbol}
+    tuple {"%" symbol}
 
 slot =>
     lookup_slot {symbol}
@@ -62,6 +63,9 @@ otherwise =>
 excepts =>
     first  {except}
     append {excepts except}
+
+except =>
+    except {"except" expr "as" symbol block}
 
 statement =>
     expr
@@ -139,6 +143,10 @@ arguments =>
     arguments1
     pass {arguments1 ","}
 
+arguments1 =>
+    first  {expr}
+    append {arguments1 "," expr}
+
 term =>
     lookup {symbol}
     int    {int}
@@ -171,7 +179,7 @@ optional =>
 
 mandatorys =>
     mandatory {symbol}
-    append_mandatory {mandatorys comma:"," symbol}
+    append_mandatory {mandatorys "," symbol}
 
 nl_pairs => %indent pairlines %dedent
 
