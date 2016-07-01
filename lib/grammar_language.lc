@@ -118,9 +118,9 @@ build_language = ():
         Rule(production, [lc, rc],
             Command("empty", [])),
         Rule(inline_productions, [production],
-            Command("first", [Grab(0)])),
+            Command("first", [Command("force_grab", [Grab(0)])])),
         Rule(inline_productions, [inline_productions, comma, production],
-            Command("append", [Grab(0), Grab(2)])),
+            Command("append", [Grab(0), Command("force_grab", [Grab(2)])])),
         Rule(term, [skip, symbol],
             Command("skip", [Command("symbol", [Grab(1)])])),
         Rule(term, [grab, symbol],
@@ -175,6 +175,11 @@ actions = :exnihilo()
         for production in productions
             result.append(make_rule(lhs, production))
         return result
+    force_grab = (table, productions):
+        for cell in productions
+            if cell.name == "skip"
+                cell.name = "grab"
+        return productions
 
 make_rule = (lhs, production):
     rhs = []
