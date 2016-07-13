@@ -28,6 +28,7 @@ module = Module(u'base', {
     u'path': pathobj.Path.interface,
     u'property': Property.interface,
     u'Uint8Array': Uint8Array.interface,
+    u'set': Set.interface,
 }, frozen=True)
 
 @Module.instantiator

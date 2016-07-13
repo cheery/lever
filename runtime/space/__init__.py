@@ -11,6 +11,7 @@ from uint8array import Uint8Array, to_uint8array
 from exnihilo import Exnihilo
 from customobject import CustomObject, Property
 from rpython.rlib import jit
+from setobject import Set
 from errors import *
 import operators
 

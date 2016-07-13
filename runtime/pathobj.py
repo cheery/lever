@@ -1,3 +1,4 @@
+from rpython.rlib import rstring
 from space import *
 import os
 import sys
@@ -300,7 +301,7 @@ def stringify(path, nt=False):
             if len(path.pathseq) > 0:
                 string += u"/"
         string += stringify_pathseq(path.pathseq, nt)
-        return string
+        return rstring.assert_str0(string)
     elif isinstance(prefix, PosixPrefix):
         if prefix.is_absolute:
             string = stringify_pathseq([u""] + path.pathseq, nt)
@@ -312,7 +313,7 @@ def stringify(path, nt=False):
             string = u"."
         if prefix.label != u"":
             string = prefix.label + u":" + string
-        return string
+        return rstring.assert_str0(string)
     else:
         raise OldError(u"custom prefix passed to stringification [corruption]")
 

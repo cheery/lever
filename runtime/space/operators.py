@@ -6,6 +6,8 @@ from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_t
 from rpython.rlib.objectmodel import specialize, always_inline
 from string import String
 from listobject import List
+from setobject import Set
+import setobject
 import space
 
 clamp = Multimethod(3)
@@ -101,8 +103,6 @@ def _(a, b):
 def _(a, b):
     return List([a, Float(float(b.value))])
 
-# Not actual implementations of these functions
-# All of these will be multimethods
 @lt.multimethod_s(Integer, Integer)
 def cmp_lt(a, b):
     return boolean(a.value < b.value)
@@ -192,3 +192,40 @@ def _(a, b):
 def _(a, b):
     return List(a.contents + b.contents)
 
+@lt.multimethod_s(Set, Set)
+def cmp_lt(a, b):
+    t = setobject.Set_is_superset(b, a)
+    if space.is_true(t) and len(a._set) != len(b._set):
+        return space.true
+    return space.false
+
+@gt.multimethod_s(Set, Set)
+def cmp_gt(a, b):
+    t = setobject.Set_is_superset(a, b)
+    if space.is_true(t) and len(a._set) != len(b._set):
+        return space.true
+    return space.false
+
+@le.multimethod_s(Set, Set)
+def cmp_le(a, b):
+    return setobject.Set_is_superset(b, a)
+
+@ge.multimethod_s(Set, Set)
+def cmp_ge(a, b):
+    return setobject.Set_is_superset(a, b)
+
+@or_.multimethod_s(Set, Set)
+def _(a, b):
+    return setobject.Set_union(a, [b])
+
+@and_.multimethod_s(Set, Set)
+def _(a, b):
+    return setobject.Set_intersection(a, [b])
+
+@sub.multimethod_s(Set, Set)
+def _(a, b):
+    return setobject.Set_difference(a, [b])
+
+@xor.multimethod_s(Set, Set)
+def _(a, b):
+    return setobject.Set_symmetric_difference(a, b)
