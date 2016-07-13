@@ -49,7 +49,7 @@ arguments =>
 
 special => special(symbol string): symbol colon:":" string
 """
-from parser import Parser, Rule
+from lever_parser import Parser, Rule
 import sys
 
 symboltab = {

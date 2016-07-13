@@ -40,7 +40,7 @@ read_tokens = (tokens):
             print("Got " ++ repr(token))# ++ ", expected some of " ++ ", ".join(parser.expect))
             print("Location: " ++ repr(token.start.lno) ++ ":" ++ repr(token.start.col))
             raise SyntaxError()
-        parser.step(terminal, token)
+        parser.step(terminal, token, token.start, token.stop)
     indent.finish(parser, token.stop)
     if not parser.accepted
         print("expected some of:")
@@ -60,7 +60,7 @@ read_tokens = (tokens):
         grammar = parser.traverse(post, blank_lhs)
 
 invoker = (actions, argl...):
-    return (rule, args):
+    return (rule, args, start, stop):
         return rule.annotation(actions, args, argl)
 
 build_language = ():

@@ -46,9 +46,9 @@ class_header =>
     class_header_2 {symbol "extends" expr}
 
 local_symbol =>
-    tuple {symbol}
-    tuple {^"+" symbol}
-    tuple {"%" symbol}
+    {symbol}
+    {^"+" symbol}
+    {"%" symbol}
 
 slot =>
     lookup_slot {symbol}
@@ -175,7 +175,7 @@ optionals =>
     mandatorys
 
 optional =>
-    tuple {symbol "=" expr}
+    {symbol "=" expr}
 
 mandatorys =>
     mandatory {symbol}
@@ -199,7 +199,7 @@ pairs1 =>
     append {pairs1 "," pair}
 
 pair =>
-    tuple {expr ":" expr}
+    {expr ":" expr}
     implicit_string_pair {symbol "=" expr}
 
 escaped_keyword => ["import", "and", "or", "not"]

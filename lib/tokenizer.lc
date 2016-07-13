@@ -148,3 +148,6 @@ class Position
     +init = (self, col, lno):
         self.col = col
         self.lno = lno
+
+    +repr = (self):
+        return "<Position " ++ repr(self.lno) ++ ":" ++ repr(self.col) ++ ">"

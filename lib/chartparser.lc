@@ -162,7 +162,7 @@ class Parser
         self.accept = accept
         self.output = output
 
-    step = (self, term, token):
+    step = (self, term, token, start=null, stop=null):
         # completions proceed in non-deterministic manner, until
         # everything has been completed.
         current = []
@@ -170,15 +170,15 @@ class Parser
         nodes = {}
         location = self.chart.length
         output = []
-        bottom = SPPF(location-1, location, token, null)
+        bottom = SPPF(start, stop, token, null)
         for trans in self.chart[location-1][term]
-            shift_eim(current, nodes, trans.eim, location, trans.cc, bottom)
+            shift_eim(current, nodes, trans.eim, trans.cc, bottom)
         for eim in current
             # reduction
             cc = nodes[eim]
             if eim.is_completed()
                 for before in self.chart[eim.origin].get(eim.rule.lhs, [])
-                    shift_eim(current, nodes, before.eim, location, before.cc, cc)
+                    shift_eim(current, nodes, before.eim, before.cc, cc)
                 if eim.rule.lhs == self.accept and eim.origin == 0
                     output.append(cc)
             prediction(current, nodes, self.grammar, location, eim.postdot())
@@ -226,13 +226,17 @@ cache_transitions = (transitions, eim, cc):
         except KeyError as _
             transitions[postdot] = [trans]
 
-shift_eim = (current, nodes, eim, location, bb, cc):
+shift_eim = (current, nodes, eim, bb, cc):
     eim = eim.next()
     try
         sppf = nodes[eim]
         sppf.insert(bb, cc)
     except KeyError as _
-        nodes[eim] = sppf = SPPF(eim.origin, location, eim.rule, Link(bb, cc))
+        if bb
+            start = bb.start
+        else
+            start = cc.start
+        nodes[eim] = sppf = SPPF(start, cc.stop, eim.rule, Link(bb, cc))
         current.append(eim)
 
 traverse_sppf = (sppf, postorder_callback, blank_callback, resolve_ambiguity):
@@ -264,11 +268,12 @@ traverse_sppf = (sppf, postorder_callback, blank_callback, resolve_ambiguity):
             a = []
             for i in range(rlen)
                 a.append(sstack.pop(sstack.length+i-rlen))
-            sstack.append(postorder_callback(expand(sppf.cell, blank_callback, iter(a))...))
+            sstack.append(postorder_callback(expand(
+                sppf.start, sppf.stop, sppf.cell, blank_callback, iter(a))...))
     #assert len(sstack) == 1
     return sstack[0]
 
-expand = (cell, blank_callback, seq):
+expand = (start, stop, cell, blank_callback, seq):
     if isinstance(cell.annotation, NNF)
         nnf = cell.annotation
         result = []
@@ -279,8 +284,8 @@ expand = (cell, blank_callback, seq):
             else
                 result.append(blank_callback(nnf.rule.rhs[i]))
             i += 1
-        return [nnf.rule, result]
-    return [cell, list(seq)]
+        return [nnf.rule, result, start, stop]
+    return [cell, list(seq), start, stop]
 
 class Rule
     +init = (self, lhs, rhs, annotation=null):
