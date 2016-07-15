@@ -38,17 +38,17 @@ block_statement =>
     raise    {"raise" statement}
     break    {"break"}
     continue {"continue"}
-    class_pass {"class" class_header}
-    class      {"class" class_header block}
+    class    {"class" class_header}
+    class    {"class" class_header block}
 
 class_header =>
-    class_header_1 {symbol}
-    class_header_2 {symbol "extends" expr}
+    class_header {symbol}
+    class_header {symbol "extends" expr}
 
 local_symbol =>
-    {symbol}
-    {^"+" symbol}
-    {"%" symbol}
+    str_join {symbol}
+    str_join {^"+" symbol}
+    str_join {"%" symbol}
 
 slot =>
     lookup_slot {symbol}
@@ -149,11 +149,11 @@ arguments1 =>
 
 term =>
     lookup {symbol}
-    int    {int}
-    hex    {hex}
+    int {int}
+    hex {hex}
     float  {float}
     string {string}
-    expr     {"(" expr ")"}
+    pass     {"(" expr ")"}
     list     {"[" arguments "]"}
     function {"(" bindings ")" ":" block}
     dict     {"{" pairs "}"}
@@ -200,7 +200,7 @@ pairs1 =>
 
 pair =>
     {expr ":" expr}
-    implicit_string_pair {symbol "=" expr}
+    {string {symbol} "=" expr}
 
 escaped_keyword => ["import", "and", "or", "not"]
 

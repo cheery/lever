@@ -135,9 +135,25 @@ def cmp_le(a, b):
 def cmp_ge(a, b):
     return boolean(a.number >= b.number)
 
+@lt.multimethod_s(String, String)
+def _(a, b):
+    return boolean(a.string < b.string)
+
+@gt.multimethod_s(String, String)
+def _(a, b):
+    return boolean(a.string > b.string)
+
+@le.multimethod_s(String, String)
+def _(a, b):
+    return boolean(a.string <= b.string)
+
+@ge.multimethod_s(String, String)
+def _(a, b):
+    return boolean(a.string >= b.string)
+
 @signature(Object, Object)
 def ne_default(a, b):
-    return boolean(a != b)
+    return boolean(is_false(eq.call([a, b])))
 ne.default = Builtin(ne_default)
 
 @ne.multimethod_s(Integer, Integer)
@@ -150,7 +166,7 @@ def _(a, b):
 
 @ne.multimethod_s(String, String)
 def _(a, b):
-    return boolean(not a.eq(b))
+    return boolean(a.string != b.string)
 
 @signature(Object, Object)
 def eq_default(a, b):
@@ -167,7 +183,16 @@ def _(a, b):
 
 @eq.multimethod_s(String, String)
 def _(a, b):
-    return boolean(a.eq(b))
+    return boolean(a.string == b.string)
+
+@eq.multimethod_s(List, List)
+def _(a, b):
+    if len(a.contents) != len(b.contents):
+        return false
+    for i in range(0, len(a.contents)):
+        if is_false(eq.call([a.contents[i], b.contents[i]])):
+            return false
+    return true
 
 @neg.multimethod_s(Integer)
 def _(a):

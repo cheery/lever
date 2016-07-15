@@ -1,3 +1,4 @@
+from builtin import signature
 from interface import Object
 from rpython.rlib.objectmodel import compute_hash
 from rpython.rtyper.lltypesystem import rffi, lltype
@@ -51,3 +52,35 @@ class Uint8Array(Object):
 
 def to_uint8array(cstring):
     return Uint8Array(rffi.cast(rffi.UCHARP, rffi.str2charp(cstring)), len(cstring))
+
+@Uint8Array.instantiator
+@signature(Object)
+def _(obj):
+    if isinstance(obj, space.Integer):
+        return Uint8Array(lltype.malloc(rffi.UCHARP.TO, obj.value, flavor='raw'), obj.value)
+    if isinstance(obj, space.List):
+        length = len(obj.contents)
+        array = Uint8Array(lltype.malloc(rffi.UCHARP.TO, length, flavor='raw'), length)
+        for i in range(0, length):
+            x = obj.contents[i]
+            if isinstance(x, space.Integer):
+                array.uint8data[i] = rffi.r_uchar(x.value)
+            else:
+                raise space.OldError(u"Value of incorrect type: " + x.repr())
+        return array
+    it = obj.iter()
+    out = []
+    try:
+        while True:
+            x = it.callattr(u"next", [])
+            if isinstance(x, space.Integer):
+                out.append(rffi.r_uchar(x.value))
+            else:
+                raise space.OldError(u"Value of incorrect type: " + x.repr())
+    except StopIteration as stop:
+        pass
+    length = len(out)
+    uint8data = lltype.malloc(rffi.UCHARP.TO, length, flavor='raw')
+    for i in range(0, length):
+        uint8data[i] = out[i]
+    return Uint8Array(uint8data, length)

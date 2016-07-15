@@ -11,6 +11,8 @@ for opname, (opcode, has_result, pattern, variadic) in optable.enc.items():
     pattern = List([from_cstring(pat) for pat in pattern])
     if variadic is not None:
         variadic = from_cstring(variadic)
+    else:
+        variadic = null
     enc.setitem(opname, List([opcode, has_result, pattern, variadic]))
     dec.setitem(opcode, List([opname, has_result, pattern, variadic]))
 
