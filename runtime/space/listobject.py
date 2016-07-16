@@ -119,7 +119,6 @@ def List_pop(self, index):
 def List_index(self, obj):
     for index, item in enumerate(self.contents):
         if item.eq(obj):
-            self.contents.pop(index)
             return Integer(index)
     raise space.unwind(space.LValueError(self, obj))
 
