@@ -45,7 +45,7 @@ main = ():
     functions = []
 
     grammar_language.invoker(actions)
-    blank_lhs = (x): # Not used in this grammar.
+    blank_lhs = (x): # Not used often in this grammar.
         return null
     rootdef = :exnihilo()
         body = parser.traverse(post, blank_lhs)
@@ -96,7 +96,7 @@ actions = :exnihilo()
     scopegrabber = (expr, block):
         return ScopeGrab(expr, block)
 
-    call = (callee, args):
+    call = (callee, args=[]):
         return Code("call", callee, args...)
     callv = (callee, args):
         return Code("callv", callee, args...)
@@ -222,7 +222,7 @@ actions = :exnihilo()
             name = name.string
             base = base
 
-    function = (bindings, body):
+    function = (bindings=blank_bindings(), body=[]):
         return Closure(bindings, body)
     with_variadic = (bindings, vararg):
         bindings.variadic = vararg
@@ -339,48 +339,46 @@ class Scope
         self.topc = topc
         self.localv = localv
         self.depthc = 1
-#
-#    # This ended up being not very clean.
-#    def object_scope(self, context, loc, parent, val):
-#        scope = ObjectScope(parent, self, [])
-#        index = len(self.localv)
-#        self.localv.append(scope)
-#        context.block.op(loc, "setloc", [index, val])
-#        return scope
-#
-#    def getvar(self, context, loc, depth, name):
-#        if depth < 0:
-#            index = self.localv.index(name)
-#            return context.block.op(loc, "getloc", [index])
-#        else:
-#            index = self.localv.index(name)
-#            return context.block.op(loc, "getupv", [depth, index])
-#
-#    def setvar(self, context, loc, depth, name, value):
-#        if depth < 0:
-#            index = self.localv.index(name)
-#            return context.block.op(loc, "setloc", [index, value])
-#        else:
-#            index = self.localv.index(name)
-#            return context.block.op(loc, "setupv", [depth, index, value])
 
-#class ObjectScope(object):
-#    def __init__(self, parent, scope, localv):
-#        self.parent = parent
-#        self.scope = scope
-#        self.localv = localv
-#        self.depthc = 0
-#
-#    def object_scope(self, context, loc, parent, val):
-#        return self.parent.object_scope(context, loc, parent, val)
-#
-#    def getvar(self, context, loc, depth, name):
-#        obj = self.scope.getvar(context, loc, depth, self)
-#        return context.block.op(loc, "getattr", [obj, name])
-#
-#    def setvar(self, context, loc, depth, name, value):
-#        obj = self.scope.getvar(context, loc, depth, self)
-#        return context.block.op(loc, "setattr", [obj, name, value])
+    # This ended up being not very clean. But afterwards not sure why.
+    # It may be because the localv will obtain ObjectScope -object here.
+    object_scope = (self, context, val, parent=self):
+        context.op("setloc", self.localv.length, val)
+        scope = ObjectScope(parent, self, [])
+        self.localv.append(scope)
+        return scope
+
+    getvar = (self, context, depth, name):
+        index = self.localv.index(name)
+        if depth < 0
+            return context.op("getloc", index)
+        else
+            return context.op("getupv", depth, index)
+
+    setvar = (self, context, depth, name, value):
+        index = self.localv.index(name)
+        if depth < 0
+            return context.op("setloc", index, value)
+        else
+            return context.op("setupv", depth, index, value)
+
+class ObjectScope
+    +init = (self, parent, scope, localv):
+        self.parent = parent
+        self.scope = scope
+        self.localv = localv
+        self.depthc = 0
+
+    object_scope = (self, context, val, parent=self):
+        return self.parent.object_scope(context, val, parent)
+
+    getvar = (self, context, depth, name):
+        obj = self.scope.getvar(context, depth, self)
+        return context.op("getattr", obj, name)
+
+    setvar = (self, context, depth, name, value):
+        obj = self.scope.getvar(context, depth, self)
+        return context.op("setattr", obj, name, value)
 
 class Cell
     +init = (self, visit):
@@ -498,20 +496,19 @@ class Jumper extends Cell
     visit = (self, context, noret=false):
         return context.op("jump", [self.blockfn(context)])
 
-# class ScopeGrab(Cell):
-#     def __init__(self, loc, expr, body):
-#         self.loc = loc
-#         self.expr = expr
-#         self.body = body
-# 
-#     def visit(self, context):
-#         this = self.expr.visit(context)
-#         parent = context.scope
-#         context.scope = parent.object_scope(context, self.loc, parent, this)
-#         for expr in self.body:
-#             expr.visit(context)
-#         context.scope = parent
-#         return this
+class ScopeGrab extends Cell
+    +init = (self, expr, body):
+        self.expr = expr
+        self.body = body
+
+    visit = (self, context, noret=false):
+        this = self.expr.visit(context)
+        parent = context.scope
+        context.scope = parent.object_scope(context, this)
+        for expr in self.body
+            expr.visit(context, true)
+        context.scope = parent
+        return this
 
 #class ForBlock(Cell):
 #    def __init__(self, loc, bind, iterator, body):
@@ -674,33 +671,32 @@ class Getvar extends Cell
                 scope = scope.parent
         return context.op("getglob", self.name)
 
-#class Setvar(Cell):
-#    def __init__(self, loc, flavor, name, value):
-#        self.loc = loc
-#        self.flavor = flavor # local, auto, upvalue
-#        self.name = name
-#        self.value = value
-#
-#    def visit(self, context):
-#        value = self.value.visit(context)
-#        return setvar(context, self.loc, self.flavor, self.name, value)
-#
-#def setvar(context, loc, flavor, name, value):
-#    scope = context.scope
-#    # The setvar doesn't write into the rootscope.
-#    if scope.parent:
-#        if name in scope.localv and flavor != "upvalue":
-#            return scope.setvar(context, loc, -1, name, value)
-#        if flavor == "local":
-#            scope.localv.append(name)
-#            return scope.setvar(context, loc, -1, name, value)
-#        depth = scope.depthc - 1
-#        while scope.parent.parent:
-#            if name in scope.parent.localv:
-#                return scope.parent.setvar(context, loc, depth, name, value)
-#            depth += scope.depthc
-#            scope = scope.parent
-#    return context.block.op(loc, "setglob", [name, value])
+class Setvar extends Cell
+    +init = (self, flavor, name, value):
+        self.flavor = flavor # local, auto, upvalue
+        self.name = name
+        self.value = value
+
+    visit = (self, context, noret=false):
+        value = self.value.visit(context)
+        return setvar(context, self.flavor, self.name, value)
+
+setvar = (context, flavor, name, value):
+    scope = context.scope
+    # The setvar doesn't write into the rootscope.
+    if scope.parent
+        if name in scope.localv and flavor != "upvalue"
+            return scope.setvar(context, -1, name, value)
+        if flavor == "local"
+            scope.localv.append(name)
+            return scope.setvar(context, -1, name, value)
+        depth = scope.depthc - 1
+        while scope.parent.parent
+            if name in scope.parent.localv
+                return scope.parent.setvar(context, depth, name, value)
+            depth += scope.depthc
+            scope = scope.parent
+    return context.op("setglob", name, value)
 
 dump = (flags, argc, topc, localv, entry_block, consttab):
     blocks = reverse_postorder(entry_block)

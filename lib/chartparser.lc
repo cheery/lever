@@ -461,17 +461,14 @@ class IndentParser
     step = (self, parser, pos):
         if self.line < pos.lno
             while pos.col < self.level and parser.expecting(self.dedent)
-                parser.step(self.dedent,
-                    tokenizer.Literal(pos, pos, "dedent", ""))
+                parser.step(self.dedent, null, pos, pos)
                 self.level = self.stack.pop()
             if pos.col < self.level
                 raise SyntaxError("Uneven indent at line " ++ repr(pos.lno))
             if pos.col == self.level and parser.expecting(self.newline)
-                parser.step(self.newline,
-                    tokenizer.Literal(pos, pos, "newline", ""))
+                parser.step(self.newline, null, pos, pos)
             if pos.col > self.level and parser.expecting(self.indent)
-                parser.step(self.indent,
-                    tokenizer.Literal(pos, pos, "indent", ""))
+                parser.step(self.indent, null, pos, pos)
                 self.stack.append(self.level)
                 self.level = pos.col
             self.line = pos.lno
@@ -479,7 +476,6 @@ class IndentParser
     # Most languages have a bug if this function returns false.
     finish = (self, parser, pos):
         while self.stack.length > 0 and parser.expecting(self.dedent)
-            parser.step(self.dedent,
-                tokenizer.Literal(pos, pos, "dedent", ""))
+            parser.step(self.dedent, null, pos, pos)
             self.level = self.stack.pop()
         return self.stack.length == 0
