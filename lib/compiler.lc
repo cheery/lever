@@ -5,7 +5,7 @@ import optable
 import base
 import binon
 
-language = grammar_language.read_file("lever-0.8.0.grammar")
+language = grammar_language.read_file(dir ++ "../lever-0.8.0.grammar")
 language.new_parser = chartparser.preprocess(
     language.grammar,
     language.table.nonterminal("file"))

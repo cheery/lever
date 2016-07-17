@@ -7,4 +7,4 @@ print("LEVER 0.8.0")
 while true
     string = input(">> ")
     code = compiler.read_string(string, "console")
-    print(exec(code, console))
+    print(repr(exec(code, console)))
