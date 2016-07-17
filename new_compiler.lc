@@ -3,6 +3,7 @@ import chartparser
 import grammar_language
 import optable
 import base
+import binon
 
 language = grammar_language.read_file("lever-0.8.0.grammar")
 language.new_parser = chartparser.preprocess(
@@ -10,7 +11,25 @@ language.new_parser = chartparser.preprocess(
     language.table.nonterminal("file"))
 
 main = ():
-    tokens = tokenizer.read_file("sample.lc", language.table.keywords)
+    code = read_file("sample.lc", "sample.lc")
+    this = module("sample", base)
+    exec(code, this)
+
+    compile_file("sample.lc.cb", "sample.lc")
+
+compile_file = (cb_path, lc_path):
+    code = read_file(lc_path, path(lc_path).relpath(cb_path).to_string())
+    binon.write_file(cb_path, code)
+
+read_file = (path, source=null):
+    tokens = tokenizer.read_file(path, language.table.keywords)
+    return read_tokens(tokens, source)
+
+read_string = (string, source=null):
+    tokens = tokenizer.read_string(string, language.table.keywords)
+    return read_tokens(tokens, source)
+
+read_tokens = (tokens, source=null):
     parser = language.new_parser()
     indent = :chartparser.IndentParser(tokens[0].start)
         indent = language.table.terminal("indent")
@@ -63,18 +82,10 @@ main = ():
     code = {
         "functions": functions,
         "constants": consttab.constants,
-        "sources": [
-            "sample.lc" # normpath(relpath(lc, cb))
-        ],
+        "sources": [source],
         "version": 0
     }
-    this = module("sample", base)
-    exec(code, this)
-
-    #compile_file("sample.lc.cb", "sample.lc")
-
-compile_file = (cb_path, lc_path):
-    raise "not working"
+    return code
 
 actions = :exnihilo()
     lookup = (symbol):
@@ -133,7 +144,7 @@ actions = :exnihilo()
         return Setvar("upvalue", name.string, statement)
     op_assign = (slot, op, statement):
         return slot.setslot(Code("call",
-            Getvar(op.string), getslot(), statement))
+            Getvar(op.string), slot.getslot(), statement))
 
     lookup_slot = (name):
         return :exnihilo()
@@ -155,20 +166,20 @@ actions = :exnihilo()
                 return Code("getitem", base, indexer)
             setslot = (expr):
                 return CodeM("setitem",
-                    [base, indexer, value],
+                    [base, indexer, expr],
                     [2, 0, 1])
 
     %"return" = (expr):
         return Code("return", expr)
     %"raise" = (expr):
         return Code("raise", expr)
-    %"break" = (expr):
+    %"break" = ():
         return Jumper((context):
-            context.loop.brk
+            return context.loop.brk
         )
-    %"continue" = (expr):
+    %"continue" = ():
         return Jumper((context):
-            context.loop.cont
+            return context.loop.cont
         )
 
     %"try" = (body, excepts):
@@ -179,15 +190,15 @@ actions = :exnihilo()
     %"while" = (cond, body):
         return While(cond, body)
     %"for" = (bind, iterator, body):
-        return ForBlock(bind, iterator, body)
+        return For(bind, iterator, body)
 
-    %"if" = (cond, body, otherwise):
+    %"if" = (cond, body=[], otherwise=done()):
         otherwise.conds.insert(0, [cond, body])
         return Cond(otherwise.conds, otherwise.body)
-    %"elif" = (cond, body, otherwise):
+    %"elif" = (cond, body=[], otherwise=done()):
         otherwise.conds.insert(0, [cond, body])
         return otherwise
-    %"else" = (cond, body):
+    %"else" = (body=[]):
         return :exnihilo()
             conds = []
             body = body
@@ -215,7 +226,7 @@ actions = :exnihilo()
         return Setvar("local", header.name,
             Code("call", Getvar("class"),
                 ScopeGrab(grabber, block),
-                base,
+                header.base,
                 Code("constant", header.name)))
     class_header = (name, base = Getvar("object")):
         return :exnihilo()
@@ -239,23 +250,20 @@ actions = :exnihilo()
             opts = []
     optional = (var, expr):
         return :exnihilo()
-            variadic = null
-            args = []
-            opts = [
-                :exnihilo()
-                    var = var
-                    expr = expr
-            ]
+            var = var
+            expr = expr
     mandatory = (var):
         return :exnihilo()
             variadic = null
             args = [var]
             opts = []
-    append_optional = (bindings, var, expr):
-        bindings.opts.append(:exnihilo()
-            var = var
-            expr = expr
-        )
+    first_optional = (opt):
+        return :exnihilo()
+            variadic = null
+            args = []
+            opts = [opt]
+    append_optional = (bindings, opt):
+        bindings.opts.append(opt)
         return bindings
     append_mandatory = (bindings, var):
         bindings.args.append(var)
@@ -329,7 +337,7 @@ class Context
         return Block([], succ, self.exc) # TODO: add set(succ)
 
     op = (self, name, args...):
-        return self.block.op(self.origin, name, args)
+        return self.block.op(self.origin, name, args...)
 
 class Scope
     +init = (self, parent, flags, argc, topc, localv):
@@ -494,7 +502,8 @@ class Jumper extends Cell
         self.blockfn = blockfn
 
     visit = (self, context, noret=false):
-        return context.op("jump", [self.blockfn(context)])
+        label = self.blockfn(context)
+        return context.op("jump", label)
 
 class ScopeGrab extends Cell
     +init = (self, expr, body):
@@ -510,149 +519,145 @@ class ScopeGrab extends Cell
         context.scope = parent
         return this
 
-#class ForBlock(Cell):
-#    def __init__(self, loc, bind, iterator, body):
-#        self.loc = loc
-#        self.bind = bind
-#        self.iterator = iterator
-#        self.body = body
-#
-#    def visit(self, context):
-#        exit = context.new_block()
-#        result = context.block.op(self.loc, 'getglob', [u"null"])
-#        iter = self.iterator.visit(context)
-#        iter = context.block.op(self.loc, 'iter', [iter])
-#        #context.block.op(self.loc, 'iterstop', [exit])
-#        repeat = label_this_point(self.loc, context, context.block)
-#        context.push_loop(repeat, exit)
-#
-#        context.block = repeat
-#        value = context.block.op(self.loc, 'next', [iter, exit])
-#        setvar(context, self.loc, 'local', self.bind.value, value)
-#        val = None
-#        for expr in self.body:
-#            val = expr.visit(context)
-#        if val is not None and val.has_result:
-#            context.block.op(self.loc, 'move', [result, val])
-#        context.block.op(self.loc, 'jump', [repeat])
-#        
-#        context.block = exit
-#        context.pop_loop()
-#        #context.block.op(self.loc, 'iterstop', [iterstop])
-#        return result
-#class WhileBlock(Cell):
-#    def __init__(self, loc, cond, body):
-#        self.loc = loc
-#        self.cond = cond
-#        self.body = body
-#
-#    def visit(self, context):
-#        result = context.block.op(self.loc, 'getglob', [u"null"])
-#        cont = label_this_point(self.loc, context, context.block)
-#        exit = context.new_block()
-#        byes = context.new_block()
-#        context.push_loop(cont, exit)
-#
-#        context.block = cont
-#        cond = self.cond.visit(context)
-#        context.block.op(self.loc, 'cond', [cond, byes, exit])
-#
-#        context.block = byes
-#        val = None
-#        for expr in self.body:
-#            val = expr.visit(context)
-#        if val is not None and val.has_result:
-#            context.block.op(self.loc, 'move', [result, val])
-#        context.block.op(self.loc, 'jump', [cont])
-#
-#        context.block = exit
-#        context.pop_loop()
-#        return result
-#class Or(Cell):
-#    def __init__(self, loc, lhs, rhs):
-#        self.loc = loc
-#        self.lhs = lhs
-#        self.rhs = rhs
-#
-#    def visit(self, context):
-#        exit = context.new_block()
-#        other = context.new_block()
-#        lhs = self.lhs.visit(context)
-#        context.block.op(self.loc, 'cond', [lhs, exit, other])
-#        context.block = other
-#        rhs = self.rhs.visit(context)
-#        context.block.op(self.loc, 'move', [lhs, rhs])
-#        context.block.op(self.loc, 'jump', [exit])
-#        context.block = exit
-#        return lhs
-#
-#class And(Cell):
-#    def __init__(self, loc, lhs, rhs):
-#        self.loc = loc
-#        self.lhs = lhs
-#        self.rhs = rhs
-#
-#    def visit(self, context):
-#        exit = context.new_block()
-#        other = context.new_block()
-#        lhs = self.lhs.visit(context)
-#        context.block.op(self.loc, 'cond', [lhs, other, exit])
-#        context.block = other
-#        rhs = self.rhs.visit(context)
-#        context.block.op(self.loc, 'move', [lhs, rhs])
-#        context.block.op(self.loc, 'jump', [exit])
-#        context.block = exit
-#        return lhs
-#
-#class Cond(Cell):
-#    def __init__(self, cond, otherwise):
-#        self.cond = cond
-#        self.otherwise = otherwise
-#        for line in cond:
-#            assert len(line) == 3, line
-#
-#    def visit(self, context):
-#        exit = context.new_block()
-#        result = context.block.op(None, 'getglob', [u'null'])
-#        branch = None
-#        for loc, cond, body in self.cond:
-#            if branch:
-#                context.block = bno = context.new_block()
-#                blabel, bloc, bcond, byes = branch
-#                blabel.op(bloc, 'cond', [bcond, byes, bno])
-#            cond = cond.visit(context)
-#            label = context.block
-#            context.block = byes = context.new_block()
-#            val = None
-#            for cell in body:
-#                val = cell.visit(context)
-#            if val is not None and val.has_result:
-#                context.block.op(loc, 'move', [result, val])
-#            context.block.op(loc, 'jump', [exit])
-#            branch = label, loc, cond, byes
-#        if self.otherwise:
-#            context.block = bno = context.new_block()
-#            blabel, bloc, bcond, byes = branch
-#            blabel.op(bloc, 'cond', [bcond, byes, bno])
-#            val = None
-#            for cell in self.otherwise:
-#                val = cell.visit(context)
-#            if val is not None and val.has_result:
-#                context.block.op(bloc, 'move', [result, val])
-#            context.block.op(bloc, 'jump', [exit])
-#            label1 = context.block
-#        else:
-#            blabel, bloc, bcond, byes = branch
-#            blabel.op(bloc, 'cond', [bcond, byes, exit])
-#        context.block = exit
-#        return result
-# 
-#def label_this_point(loc, context, block):
-#    if len(block) == 0:
-#        return block
-#    label = context.new_block()
-#    block.op(loc, 'jump', [label])
-#    return label
+class For extends Cell
+    +init = (self, bind, iterator, body):
+        self.bind = bind
+        self.iterator = iterator
+        self.body = body
+
+    visit = (self, context, noret=false):
+        exit = context.new_block()
+        result = context.op("getglob", "null")
+        iter = self.iterator.visit(context)
+        iter = context.op("iter", iter)
+        repeat = label_this_point(context, context.block)
+        context.push_loop(repeat, exit)
+
+        context.block = repeat
+        value = context.op("next", iter, exit)
+        setvar(context, "local", self.bind.string, value)
+        val = Prog(self.body).visit(context)
+        if val and val.has_result
+            context.op("move", result, val)
+        context.op("jump", repeat)
+        context.block = exit
+        context.pop_loop()
+        return result
+
+class While extends Cell 
+    +init = (self, cond, body):
+        self.cond = cond
+        self.body = body
+
+    visit = (self, context, noret=false):
+        result = context.op("getglob", "null")
+        cont = label_this_point(context, context.block)
+        exit = context.new_block()
+        byes = context.new_block()
+        context.push_loop(cont, exit)
+
+        context.block = cont
+        cond = self.cond.visit(context)
+        context.op('cond', cond, byes, exit)
+
+        context.block = byes
+        val = Prog(self.body).visit(context)
+        if val and val.has_result
+            context.op("move", result, val)
+        context.op("jump", cont)
+    
+        context.block = exit
+        context.pop_loop()
+        return result
+
+class Or extends Cell
+    +init = (self, lhs, rhs):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    visit = (self, context, noret=false):
+        exit = context.new_block()
+        other = context.new_block()
+        lhs = self.lhs.visit(context)
+        context.op("cond", lhs, exit, other)
+        context.block = other
+        rhs = self.rhs.visit(context)
+        context.op('move', lhs, rhs)
+        context.op('jump', exit)
+        context.block = exit
+        return lhs
+
+class And extends Cell
+    +init = (self, lhs, rhs):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    visit = (self, context, noret=false):
+        exit = context.new_block()
+        other = context.new_block()
+        lhs = self.lhs.visit(context)
+        context.op("cond", lhs, other, exit)
+        context.block = other
+        rhs = self.rhs.visit(context)
+        context.op("move", lhs, rhs)
+        context.op("jump", exit)
+        context.block = exit
+        return lhs
+
+class Cond extends Cell
+    +init = (self, cond, otherwise):
+        self.cond = cond
+        self.otherwise = otherwise
+
+    visit = (self, context, noret=false):
+        exit = context.new_block()
+        result = context.op("getglob", "null")
+        branch = null
+        for cell in self.cond
+            cond = cell[0]
+            body = cell[1]
+            if branch
+                context.block = bno = context.new_block()
+                blabel = branch.blabel
+                bcond = branch.bcond
+                byes = branch.byes
+                blabel.op(context.origin, "cond", bcond, byes, bno)
+            cond = cond.visit(context)
+            label = context.block
+            context.block = byes = context.new_block()
+            val = Prog(body).visit(context)
+            if val and val.has_result
+                context.op("move", result, val)
+            context.op("jump", exit)
+            branch = :exnihilo()
+                blabel = label
+                bcond = cond
+                byes = byes
+        if self.otherwise
+            context.block = bno = context.new_block()
+            blabel = branch.blabel
+            bcond = branch.bcond
+            byes = branch.byes
+            blabel.op(context.origin, "cond", bcond, byes, bno)
+            val = Prog(self.otherwise).visit(context)
+            if val and val.has_result
+                context.op("move", result, val)
+            context.op("jump", exit)
+            label1 = context.block
+        else
+            blabel = branch.blabel
+            bcond = branch.bcond
+            byes = branch.byes
+            blabel.op(context.origin, "cond", bcond, byes, exit)
+        context.block = exit
+        return result
+
+label_this_point = (context, block):
+    if block.length == 0
+        return block
+    label = context.new_block()
+    block.op(context.origin, 'jump', label)
+    return label
 
 class Getvar extends Cell
     +init = (self, name):
@@ -667,7 +672,7 @@ class Getvar extends Cell
             while scope.parent
                 if self.name in scope.parent.localv
                     return scope.parent.getvar(context, self.loc, depth, self.name)
-                depth += scope.depthc
+                depth += scope.parent.depthc
                 scope = scope.parent
         return context.op("getglob", self.name)
 
@@ -972,7 +977,7 @@ class Block
             if isinstance(succ, Block)
                 self.succ.append(succ) # TODO: "add"
 
-    op = (self, loc, opname, args):
+    op = (self, loc, opname, args...):
         op = Op(loc, opname, args)
         self.append(op)
         return op

@@ -653,7 +653,7 @@ class Getvar(Cell):
             while scope.parent:
                 if self.name in scope.parent.localv:
                     return scope.parent.getvar(context, self.loc, depth, self.name)
-                depth += scope.depthc
+                depth += scope.parent.depthc
                 scope = scope.parent
         return context.block.op(self.loc, "getglob", [self.name])
 

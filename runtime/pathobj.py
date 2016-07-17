@@ -100,6 +100,32 @@ class Path(Object):
         if L > 0 and self.pathseq[L-1] == u"":
             self.pathseq.pop()
 
+@Path.method(u"relpath", signature(Path, Object, optional=1))
+def Path_relpath(dst, rel):
+    if rel:
+        rel = abspath(to_path(rel))
+    else:
+        rel = getcwd()
+    if isinstance(rel.prefix, PosixPrefix) and isinstance(dst.prefix, PosixPrefix):
+        if dst.prefix.label != rel.prefix.label and dst.prefix.label != u"":
+            return dst
+        dst = concat(rel, dst)
+        C = min(len(dst.pathseq), len(rel.pathseq))
+        for i in range(C):
+            if dst.pathseq[i] != rel.pathseq[i]:
+                C = i
+                break
+        result = []
+        for n in range(C, len(rel.pathseq)):
+            result.append(u"..")
+        for m in range(C, len(dst.pathseq)):
+            result.append(dst.pathseq[m])
+        return Path(PosixPrefix(u"", False), result)
+    if isinstance(rel.prefix, PosixPrefix) and isinstance(dst.prefix, URLPrefix):
+        return dst
+    else:
+        raise OldError(u"Path_relpath: missing feature, file an issue or implementn")
+
 @Path.builtin_method
 @signature(Path, String)
 def push(path, seq):
@@ -115,6 +141,10 @@ def push(path, seq):
 @signature(Path)
 def get_os_path(path):
     return String(os_stringify(path))
+
+@Path.method(u"to_string", signature(Path))
+def Path_to_string(path):
+    return String(stringify(path))
 
 @Path.instantiator
 @signature(Object)
@@ -348,6 +378,8 @@ def directory(path):
     return path
 
 def abspath(path):
+    if is_absolute(path):
+        return path
     return concat(getcwd(), path)
 
 # nt stands for "non-technology"

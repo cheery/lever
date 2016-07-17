@@ -141,7 +141,7 @@ postfix =>
 arguments =>
     empty_list {}
     arguments1
-    pass {arguments1 ","}
+    {arguments1 ","}
 
 arguments1 =>
     first  {expr}
@@ -153,7 +153,7 @@ term =>
     hex {hex}
     float  {float}
     string {string}
-    pass     {"(" expr ")"}
+    {"(" expr ")"}
     list     {"[" arguments "]"}
     function {"(" bindings ")" ":" block}
     dict     {"{" pairs "}"}
@@ -170,12 +170,12 @@ bindings =>
     only_variadic {symbol "..."}
 
 optionals =>
-    optional {optional}
+    first_optional {optional}
     append_optional {optionals "," optional}
     mandatorys
 
 optional =>
-    {symbol "=" expr}
+    optional {symbol "=" expr}
 
 mandatorys =>
     mandatory {symbol}
