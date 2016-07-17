@@ -1,0 +1,10 @@
+import compiler
+import base
+
+console = module("console", base)
+
+print("LEVER 0.8.0")
+while true
+    string = input(">> ")
+    code = compiler.read_string(string, "console")
+    print(exec(code, console))
