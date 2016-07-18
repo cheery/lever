@@ -77,7 +77,7 @@ def compile_libraries():
 
 def linux_troubleshoot(item):
     print("Dependencies to compile or run:")
-    print(' '.join(cmd_depends + depends))
+    print(' '.join(command_depends + library_depends))
     print()
     print("{} is missing".format(item))
     if re.search("ubuntu|debian", platform.platform(), re.IGNORECASE):
