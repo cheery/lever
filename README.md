@@ -22,6 +22,12 @@
 
 You may need to install some system packages to run the remaining samples on Linux. On freshly installed Ubuntu I needed libsdl2-dev and libsdl2-image-dev to get the examples running.
 
+### Compile remarks
+
+Compiling lever from sources can take up to 3GB of memory until it finishes.
+
+If you find out you're memory constrained, you may want to try compile with `./setup.py compile-nojit`. Compiling Lever without JIT will require considerably less memory (500M).
+
 ## Contribution or Use
 
 If you got excited about something you tried out with lever, you may be interested in forking the project. When you do it via github it will inform me of the forks. I may merge in contributions that increase the quality of the project.
