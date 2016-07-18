@@ -449,10 +449,11 @@ def clamp(x, low, high):
 
 # This may move into stdlib module eventually, possibly.
 random = Random()
+masklower = r_ulonglong(0xffffffff)
 
+# This code might break again if r_ulonglong is treated as 32-bit int.
 def init_random():
     n = r_ulonglong(time.time())
-    masklower = r_ulonglong(0xffffffff)
     key = []
     while n > 0:
         key.append(r_uint(n & masklower))
