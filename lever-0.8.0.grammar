@@ -48,7 +48,7 @@ class_header =>
 local_symbol =>
     str_join {symbol}
     str_join {^"+" symbol}
-    str_join {"%" symbol}
+    str_join {"%" string}
 
 slot =>
     lookup_slot {symbol}

@@ -259,9 +259,10 @@ class SymbolTable
             self.nonterminals[name] = s = chartparser.Nonterminal(name)
             return s
 
-    symbol = (self, name):
-        self.symbols[name] = t = self.terminal(name)
-        return t
+    #TODO: remove
+    #symbol = (self, name):
+    #   self.symbols[name] = t = self.terminal(name)
+    #   return t
 
     keyword = (self, name, smear=default_smear):
         # Parsing would break down if some of speudonymous terminals were used as

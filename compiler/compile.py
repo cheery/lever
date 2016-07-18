@@ -11,8 +11,7 @@ def main():
 
 def compile_file(cb_path, src_path):
     debug = os.environ.get('VERBOSE', False)
-    env = None
-    root = parser.from_file(globals(), env, src_path, as_unicode=True)
+    root = parser.from_file(globals(), [None], src_path, as_unicode=True)
 
     consttab = backend.ConstantTable()
     location_id = 0
@@ -164,8 +163,11 @@ def post_only_variadic(env, loc, vararg):
 def post_blank_bindings(env, loc):
     return [[], [], None]
 
-def post_optional(env, loc, optional):
+def post_first_optional(env, loc, optional):
     return [[], [optional], None]
+
+def post_optional(env, loc, name, expr):
+    return name, expr
 
 def post_mandatory(env, loc, mandatory):
     return [[mandatory], [], None]
@@ -192,11 +194,10 @@ def post_class(env, loc, (name, base), block):
             base,
             Code(loc, "constant", name)))
 
-def post_class_header_1(env, loc, name):
-    return (name.value, Getvar(loc, u"object")) # May result in weird behavior at times.
-
-def post_class_header_2(env, loc, name, base):
-    return (name.value, base)
+def post_class_header(env, loc, name, base=None):
+    if base is None:
+        base = Getvar(loc, u"object") # May result in weird behavior at times.
+    return name.value, base
 
 class ScopeGrab(Cell):
     def __init__(self, loc, expr, body):
@@ -484,9 +485,11 @@ def post_setitem(env, loc, base, indexer, statement):
            [base, indexer, statement],
            [2, 0, 1])
  
-def post_local_assign(env, loc, nametuple, statement):
-    name = u"".join(n.value for n in nametuple)
+def post_local_assign(env, loc, name, statement):
     return Setvar(loc, "local", name, statement)
+
+def post_str_join(env, loc, *names):
+    return u"".join(n.value for n in names)
  
 def post_upvalue_assign(env, loc, name, statement):
     return Setvar(loc, "upvalue", name.value, statement)
@@ -688,6 +691,6 @@ def setvar(context, loc, flavor, name, value):
 # Thanks to this, python-based-compiler doesn't need to have anything to
 # do with the remaining runtime of lever.
 lever_path = os.environ.get('LEVER_PATH', '')
-parser = grammarlang.load({}, os.path.join(lever_path, 'lever.grammar'))
+parser = grammarlang.load({}, os.path.join(lever_path, 'lever-0.8.0.grammar'))
 
 if __name__=='__main__': main()
