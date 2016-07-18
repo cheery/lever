@@ -1,6 +1,6 @@
 from math import sqrt, sin, cos, tan, pi, acos, asin, atan, atan2
 from rpython.rlib.rrandom import Random
-from rpython.rlib.rarithmetic import r_uint
+from rpython.rlib.rarithmetic import r_uint, r_ulonglong
 from space import *
 import time
 
@@ -451,11 +451,11 @@ def clamp(x, low, high):
 random = Random()
 
 def init_random():
+    n = r_ulonglong(time.time())
+    masklower = r_ulonglong(0xffffffff)
     key = []
-    n = int(time.time())
-    masklower = r_uint(0xffffffff)
     while n > 0:
-        key.append(n & masklower)
+        key.append(r_uint(n & masklower))
         n >>= 32
     if len(key) == 0:
         key.append(r_uint(0))

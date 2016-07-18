@@ -183,10 +183,7 @@ def post_append_mandatory(env, loc, bindings, mandatory):
 def post_scopegrabber(env, loc, expr, block):
     return ScopeGrab(loc, expr, block)
 
-def post_class_pass(env, loc, (name, base)):
-    return post_class(env, loc, (name, base), [])
-
-def post_class(env, loc, (name, base), block):
+def post_class(env, loc, (name, base), block=()):
     grabber = Code(loc, "call", Getvar(loc, u"exnihilo"))
     return Setvar(loc, "local", name,
         Code(loc, "call", Getvar(loc, u"class"),

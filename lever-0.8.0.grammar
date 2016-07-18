@@ -26,7 +26,7 @@ block_statement =>
     statement
     return {"return" statement}
     if     {"if"     statement block otherwise}
-    while  {"while"  statement block otherwise}
+    while  {"while"  statement block}
     local_assign   {local_symbol      "="  block_statement}
     upvalue_assign {symbol            ":=" block_statement}
     op_assign      {slot op           "="  block_statement}
