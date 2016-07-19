@@ -1,0 +1,315 @@
+When editing this file, tw=80, possibly set wrap
+
+                                                              goal_standalone.py
+
+runtime/goal_standalone.py is a file instructing rpython how to compile Lever.
+
+Lever builds upon a runtime written in RPython. It functions and behaves like
+python code, but has been constrained such that it can be translated into native
+executable.
+
+RPython originates from the PyPy -project. There it is used to translate python
+written python interpreter into native machine code. It is capable of generating
+a JIT compiler for an interpreter while it translates. Various annotations in
+RPython code controls how the JIT compiler operates.
+
+The author of RPython code does not need to worry about maintaining rules for
+garbage collection. Translator takes care of inserting the necessary guards and
+safety handles for the collectors.
+
+When it is translated, the lever runtime is first imported by python
+interpreter. The interpreter turns it into function objects and the entry
+function is passed down to RPython. RPython starts annotating and specializing
+the code according to the rules described on their documentation.
+
+
+
+                                                                         base.py
+
+base is a module in Lever. Many files in the runtime participate to building
+it. It forms a default environment for modules.
+
+The base environment contains lot of functionality.
+The following is being inserted into base in base.py:
+
+    dict
+    module
+    exnihilo
+    object
+    list
+    multimethod(arity:int)
+    float
+    int
+    bool
+    str
+    null
+    true
+    false
+    path
+    property
+    Uint8Array
+    set
+    exec(program:dict, module)
+    class(methods:exnihilo, parent:interface, name:str)
+    interface(object)
+    iter(object)
+    hash(object)
+    repr(object)
+    reversed(object)
+    getitem(object, index, value)
+    setitem(object, index)
+    listattr(object)
+    getattr(obj, name)
+    setattr(obj, name, value)
+    ord(string)
+    chr(value)
+    isinstance(obj, interface/interfaces)
+    print(values...)
+    and(a, b)
+    or(a, b)
+    len(obj) # small func for .length, slightly pointless.
+    not(a)
+    encode_utf8(a:str)
+    decode_utf8(a:Uint8Array)
+    time()
+    getcwd()
+    chdir(path)
+    exit(status:int=0)
+    range()
+          start, stop, step
+          start, stop
+          stop,
+    input(prompt)
+    print_traceback(exception)
+
+Additionally base.py adds errors, operators and vector arithmetic objects
+into base.
+
+Base module is described in builtin modules, and therefore can be imported.
+
+
+
+                                                                          bon.py
+                                                                 stdlib/binon.py
+
+Originally called bon, binon is a binary object notation used by Lever. It is
+simple to decode and can be extended with custom encodings specific to Lever.
+
+Lever parsing tends to be heavy and take its time, so it is important that the
+compiled bytecode can be stored as files and reused between programs. Lever is
+using binon to cache bytecode.
+
+It is desired that binon isn't Lever specific format. It's meant to evolve along
+Lever to interesting usecases, but there's no desire to lock it down to Lever
+after it matures.
+
+Glancing through the runtime, there's also json reader present, which is similar
+to binon in many aspects. So binon is sort of an oddball. Also the use of binon
+is restricted to files that aren't likely used by other software for now. 
+
+Binon uses network byte endian (big endian).
+
+Binon doesn't define an identifying header, but it is being defined in units:
+    T -- 8-bit unsigned integer tag
+    8 -- 8-bit unsigned integer
+    32 -- 32-bit unsigned integer
+    long -- [ T] =0
+            Variable-length quantity integer.
+            0x40 bit in the first byte denotes sign of the integer. 
+            If 0x80 bit is set, there's additional digit.
+            If 0x80 bit is unset, it is the last digit.
+            the value is multiplied with the sign to make encoding easy.
+    double -- [ T] =1
+              run-off-the-mill IEEE floating point number.
+              8 bytes wide
+    string -- [ T] =2
+              [32] length of the string in bytes
+              [..] the string represented in utf-8 encoding.
+    list -- [ T] =3
+            [32] how many items in the list
+            items of the list encoded with tagged units.
+
+    dict -- [ T] =4
+            [32] how many pairs in the dict
+            key,value pairs encoded with tagged units.
+    bytes -- [ T] =5
+             [32] how many bytes in the array.
+                  encodes to Uint8Array
+                  Currently only reason why used instead of json.
+    boolean -- [ T] =6
+               [ 8] If 0x00, false
+                    If 0x01, true
+                    Other values are interpreted as true.
+    null -- [ T] =7
+
+Binon object may consist of any tagged unit.
+
+The format is exposed to whole runtime as a standard library. You can import it
+and get access to following functions:
+
+    read_file(path:Object)
+    write_file(path:Object, data:Object)
+
+Writer not protected or designed to handle cyclic data structures.
+
+
+
+                                                                continuations.py
+
+Mechanism to implement continuations are provided by RPython. Last time I
+checked the STM-version of pypy had them disabled, so continuations prevent
+testing of STM with lever.
+
+RPython stacklets are the easiest way to crash or break things, so there's the
+continuations.py wrapper that ensures the interface is used correct.
+
+This abstraction also makes it simpler to implement greenlets, those are the
+actual representation of continuations in Lever.
+
+A continuation object is bit like an evil mirror. Execution flow that creates
+one gets trapped inside the continuation and a new execution takes its place.
+
+Execution flow may switch places between an another execution trapped into the
+continuation. If execution ends, and it is not the original, it must return a
+continuation. The execution in that continuation takes its place and the
+continuation becomes empty.
+
+This sinister sounding control flow construct allows ordinary control flow to
+wait for a value.
+
+The advantage is that we don't need to break otherwise synchronous control flow
+into callbacks, and there's no need to implement duplicate forms of control
+flow with promises, or need to abuse iterators and generators for what
+they weren't intended for.
+
+Continuations add some challenges to working with resources such as file
+descriptors. This kind of feature dissonance seem to be a recurring theme
+across whole Lever. 
+
+                                                           evaluator/__init__.py
+                                                             evaluator/loader.py
+                                                            evaluator/optable.py
+                                                         evaluator/sourcemaps.py
+                                                                         main.py
+                                                            module_resolution.py
+                                                                      pathobj.py
+                                                                space/builtin.py
+                                                           space/customobject.py
+                                                             space/dictionary.py
+                                                                 space/errors.py
+                                                               space/exnihilo.py
+                                                               space/__init__.py
+                                                              space/interface.py
+                                                             space/listobject.py
+                                                                 space/module.py
+                                                            space/multimethod.py
+                                                                space/numbers.py
+                                                              space/operators.py
+                                                              space/setobject.py
+                                                                 space/string.py
+                                                             space/uint8array.py
+                                                                   stdlib/api.py
+                                                           stdlib/ffi/bitmask.py
+                                                          stdlib/ffi/__init__.py
+                                                            stdlib/ffi/simple.py
+                                                           stdlib/ffi/systemv.py
+                                                                    stdlib/fs.py
+                                                                    stdlib/gc.py
+                                                              stdlib/__init__.py
+                                                                  stdlib/json.py
+                                                               stdlib/optable.py
+                                                              stdlib/platform.py
+                                                               stdlib/process.py
+
+
+                                                                         util.py
+
+Lot of things seem to fall into place in Lever, eventually. When they don't,
+they end up to the util.py At 1.0.0 this file might be empty or not be there.
+
+
+
+                                                                   vectormath.py
+
+Interactive graphics, music.. VR... It seems inevitable that the runtime needs
+to deal with vector arithmetic. It would also eventually have to make it very
+fast.
+
+Therefore we have some vector arithmetic, and it's defined and pushed into the
+base module! The functionality here isn't complete, but it is already
+sufficient. There are some OpenGL 4 demos in the samples directory.
+
+Main reason why this code is in base module is that I were not sure how
+"from x import ..." should function exactly. It, again, presents dissonance
+case for reloadable modules. This is one method to leave stale marks from
+earlier modules into the runtime.
+
+Vectormath also holds some randomizing functions and trigonometry functions.
+It's steering on the limit of containing gunk. Possibly some of these features
+have to be separated into modules later.
+
+vec3, quat, mat4 are iterable and all have .length
+
+The vectormath.py introduce the following values into base module:
+
+    vec3(x=0, y=0, z=0)
+    quat(x=0, y=0, z=0, w=1)
+
+    quat.to_mat4(position:vec3=vec3())
+    quat.invert()
+    axisangle(axis:vec3, angle:float)
+    mat4(values...)
+    mat4.transpose()
+    mat4.invert()
+    mat4.adjoint()
+    mat4.determinant()
+    mat4.rotate_vec3(vec3)
+    mat4.translate(vec3)
+    mat4.scale(vec3)
+    random()
+    random_circle()
+    random_sphere()
+    sin(float)
+    cos(float)
+    tan(float)
+    asin(float)
+    acos(float)
+    atan(float)
+    atan2(y, x)
+    sqrt(float)
+    projection_matrix(fovy_radians, aspect, znear, zfar)
+    left
+    right
+    up
+    down
+    forward
+    backward
+    length(value)
+    dot(a, b)
+    cross(a, b)
+    normalize(a)
+    pi
+    tau
+
+Vectormath introduce the following functions as multimethods:
+
+    vec3 + vec3
+    vec3 - vec3
+    vec3 * float
+    float * vec3
+    vec3 / float
+    float / vec3
+    length(vec3)
+    dot(vec3, vec3)
+    cross(vec3, vec3)
+    normalize(vec3)
+    -vec3
+    -quat
+    +vec3
+    +quat
+    quat * quat
+    quat * vec3
+    mat4 * vec3
+    mat4 * mat4
+    clamp(float, float, float)
+    clamp(int, int, int)
