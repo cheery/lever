@@ -563,5 +563,6 @@ by_symbol = {
     u"tan":       tan_,
     u"sqrt":      sqrt_,
     u"pi":        Float(pi),
+    u"tau":       Float(pi*2),
     u"projection_matrix": projection_matrix,
 }

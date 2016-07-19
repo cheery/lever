@@ -186,7 +186,6 @@ Continuations add some challenges to working with resources such as file
 descriptors. This kind of feature dissonance seem to be a recurring theme
 across whole Lever. 
 
-                                                           evaluator/__init__.py
                                                              evaluator/loader.py
                                                             evaluator/optable.py
                                                          evaluator/sourcemaps.py

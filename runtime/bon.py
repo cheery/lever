@@ -93,9 +93,9 @@ decoder[5] = rbytes
 
 def rboolean(fd):
     if fd.read(1)[0] == '\x00':
-        return true
-    else:
         return false
+    else:
+        return true
 
 decoder[6] = rboolean
 
