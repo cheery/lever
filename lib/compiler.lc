@@ -333,11 +333,11 @@ class Context
         self.loop = self.loop_stack.pop()
 
     new_block = (self):
-        succ = []
+        succ = set()
         if self.exc
-            for x in exc.trace()
-                succ.append(x.block)
-        return Block([], succ, self.exc) # TODO: add set(succ)
+            for x in self.exc.trace()
+                succ.add(x.block)
+        return Block([], succ, self.exc)
 
     op = (self, name, args...):
         return self.block.op(self.origin, name, args...)
@@ -662,6 +662,48 @@ label_this_point = (context, block):
     block.op(context.origin, 'jump', label)
     return label
 
+class Try extends Cell
+    +init = (self, body, excepts):
+        self.body = body
+        self.excepts = excepts
+
+    visit = (self, context, noret=false):
+        result = context.op("getglob", "null")
+        exit = context.new_block()
+        context.exc = exc = Exc(context.new_block(), context.exc)
+        # populating try block
+        try_block = context.new_block()
+        context.op("jump", try_block)
+        context.block = try_block
+        val = Prog(self.body).visit(context)
+        if val and val.has_result
+            context.op("move", result, val)
+        context.op("jump", exit)
+        # populating exception block
+        context.exc = exc.parent
+        context.block = exc.block
+        ins = context.op('getglob', "isinstance")
+        for exl in self.excepts
+            expr = exl[0]
+            name = exl[1]
+            body = exl[2]
+            this = context.new_block()
+            next = context.new_block()
+            which = expr.visit(context)
+            cond = context.op('call', ins, exc, which)
+            context.op('cond', cond, this, next)
+            context.block = this
+            setvar(context, 'local', name, exc)
+            val = Prog(body).visit(context)
+            if val and val.has_result
+                context.op('move', result, val)
+            context.op('jump', exit)
+            context.block = next
+        context.op('raise', exc)
+        # done
+        context.block = exit
+        return result
+
 class Getvar extends Cell
     +init = (self, name):
         self.name = name
@@ -978,7 +1020,7 @@ class Block
         self.contents.append(op)
         for succ in op
             if isinstance(succ, Block)
-                self.succ.append(succ) # TODO: "add"
+                self.succ.add(succ)
 
     op = (self, loc, opname, args...):
         op = Op(loc, opname, args)
