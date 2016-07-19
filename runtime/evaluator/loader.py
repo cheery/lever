@@ -1,6 +1,7 @@
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi, lltype
+from sourcemaps import TraceEntry
 import optable
 import space
 
@@ -75,7 +76,12 @@ class Closure(space.Object):
         topc = self.function.topc
         L = len(argv)
         if L < argc:
-            raise space.unwind(space.LCallError(argc, topc, varargs, L))
+            # The pc=0 refers to the function itself. This entry
+            # is really helpful when trying to determine the origin of a CallError.
+            head_entry = TraceEntry(rffi.r_long(0), self.function.unit.sources, self.function.sourcemap)
+            unwinder = space.unwind(space.LCallError(argc, topc, varargs, L))
+            unwinder.traceback.contents.append(head_entry)
+            raise unwinder
         # We are using this trait.
         #if L > topc and not varargs:
         #    raise space.Error(u"too many arguments [%d], from %d to %d arguments allowed" % (L, argc, topc))
@@ -316,12 +322,6 @@ def interpret(pc, block, regv, frame):
         unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.sources, frame.sourcemap))
         raise
     return space.null
-
-class TraceEntry(space.Object):
-    def __init__(self, pc, sources, sourcemap):
-        self.pc = pc
-        self.sources = sources
-        self.sourcemap = sourcemap
 
 @jit.unroll_safe
 def op_call(regv, block, ix, pc):

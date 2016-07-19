@@ -2,6 +2,8 @@ from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi
 from space import *
 from evaluator.loader import from_object
+from evaluator.sourcemaps import TraceEntry
+from util import STDIN, STDOUT, STDERR, read_file, write
 import main
 import os
 import pathobj
@@ -285,3 +287,21 @@ def input_(obj):
         stdout.write(obj.string.encode('utf-8'))
     line = stdin.readline().rstrip("\r\n")
     return String(line.decode('utf-8'))
+
+def print_traceback(exception):
+    traceback = exception.getattr(u"traceback")
+    if not isinstance(traceback, space.List):
+        raise space.unwind(space.LError(u"Expected null or list as .traceback: %s" % traceback.repr()))
+    out = u""
+    if len(traceback.contents) > 0:
+        out = u"\033[31mTraceback:\033[36m\n"
+    for entry in reversed(traceback.contents):
+        if not isinstance(entry, TraceEntry):
+            continue
+        name, col0, lno0, col1, lno1 = entry.pc_location()
+        out += u"    %s: %d,%d : %d,%d\n" % (name.repr(), lno0, col0, lno1, col1)
+    out += u"\033[31m"
+    out += space.get_interface(exception).name
+    out += u":\033[0m"
+    write(STDERR, out + u" " + exception.repr() + u"\n")
+builtin(signature(Object)(print_traceback))

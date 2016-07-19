@@ -1,4 +1,6 @@
+from builtin import signature
 from interface import Object, null
+from string import String
 import space
 # To have custom exceptions, we resort to having an unwinder.
 class Unwinder(Exception):
@@ -19,6 +21,7 @@ class LException(Object):
     def setattr(self, name, value):
         if name == u"traceback":
             self.traceback = value
+            return null
         return Object.setattr(self, name, value)
 
 class LError(LException):
@@ -26,8 +29,18 @@ class LError(LException):
         self.message = message
         self.traceback = null
 
+    def getattr(self, name):
+        if name == u"message":
+            return space.String(self.message)
+        return LException.getattr(self, name)
+
     def repr(self):
         return self.message
+
+@LError.instantiator
+@signature(String)
+def _(message):
+    return LError(message.string)
 
 class LAssertionError(LException):
     def __init__(self, thing):
@@ -36,6 +49,11 @@ class LAssertionError(LException):
 
     def repr(self):
         return self.thing.repr()
+
+@LAssertionError.instantiator
+@signature(Object)
+def _(thing):
+    return LAssertionError(thing)
 
 class LSystemExit(LException):
     def __init__(self, status):
@@ -60,6 +78,11 @@ class LAttributeError(LException):
     def repr(self):
         return u"%s.%s" % (self.obj.repr(), self.name)
 
+@LAttributeError.instantiator
+@signature(Object, String)
+def _(obj, name):
+    return LAttributeError(obj, name.string)
+
 class LKeyError(LException):
     def __init__(self, obj, key):
         self.traceback = null
@@ -68,6 +91,11 @@ class LKeyError(LException):
 
     def repr(self):
         return u"%s[%s]" % (self.obj.repr(), self.key.repr())
+
+@LKeyError.instantiator
+@signature(Object, String)
+def _(obj, name):
+    return LAttributeError(obj, name.string)
 
 class LValueError(LException):
     def __init__(self, obj, value):
@@ -78,12 +106,22 @@ class LValueError(LException):
     def repr(self):
         return u"%s in %s" % (self.value.repr(), self.obj.repr())
 
+@LValueError.instantiator
+@signature(Object, Object)
+def _(obj, value):
+    return LValueError(obj, value)
+
 class LTypeError(LException):
     def __init__(self, message):
         self.message = message
 
     def repr(self):
         return self.message
+
+@LTypeError.instantiator
+@signature(String)
+def _(message):
+    return LTypeError(message.string)
 
 class LFrozenError(LException):
     def __init__(self, obj):
@@ -92,6 +130,15 @@ class LFrozenError(LException):
     def repr(self):
         return u"%s is frozen" % self.obj.repr()
 
+@LFrozenError.instantiator
+@signature(Object)
+def _(obj):
+    return LFrozenError(obj)
+
+# TODO: improve this. :)
+# Consider putting trace entries into Builtins, so
+# that tracebacks present movement through builtin
+# entries as well.
 class LCallError(LException):
     def __init__(self, min, max, variadic, got):
         self.min = min

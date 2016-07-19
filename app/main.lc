@@ -6,5 +6,8 @@ console = module("console", base)
 print("LEVER 0.8.0")
 while true
     string = input(">> ")
-    code = compiler.read_string(string, "console")
-    print(repr(exec(code, console)))
+    try
+        code = compiler.read_string(string, "console")
+        print(repr(exec(code, console)))
+    except Exception as exc
+        print_traceback(exc)
