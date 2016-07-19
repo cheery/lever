@@ -1,0 +1,5 @@
+friends = ["john", "michella", "george", "luca"]
+i = 0
+for name in friends
+    print(" ".join(["iteration", repr(i), "is", name]))
+    i += 1

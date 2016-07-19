@@ -1,0 +1,16 @@
+bee = ():
+        for i in range(10)
+            sleep(1.0 * random())
+            print("bee!")
+boop = ():
+        for i in range(10)
+            sleep(1.0 * random())
+            print("boop!")
+bleep = ():
+        for i in range(10)
+            sleep(1.0 * random())
+            print("bleep!")
+
+schedule(bee)
+schedule(boop)
+schedule(bleep)

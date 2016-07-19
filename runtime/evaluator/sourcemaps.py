@@ -2,6 +2,7 @@ from rpython.rtyper.lltypesystem import rffi
 import space
 
 # TODO: Without the path, this doesn't really pinpoint the origin of a traceback entry.
+# TODO: Without pc=0 entry in sourcemap CallError will return the wrong line.
 class TraceEntry(space.Object):
     def __init__(self, pc, sources, sourcemap, path=space.null):
         self.pc = pc

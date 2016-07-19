@@ -1,0 +1,5 @@
+greet = (name):
+    print("Hello", name)
+greet("james")
+greet("alice")
+greet("victor")
