@@ -72,14 +72,11 @@ preprocess = (user_grammar, default_accept):
         nullable = nullable
 
 find_nullable = (grammar):
-    # TODO: add sets to the language.
-    #nullable = set()
-    nullable = []
+    nullable = set()
     queue = []
     new_nullable = (symbol):
         if symbol not in nullable
-            #nullable.add(symbol)
-            nullable.append(symbol)
+            nullable.add(symbol)
             queue.append(symbol)
     inverse_lookup = {}
     new_lookup = (index, symbol):
@@ -328,8 +325,19 @@ class Nonterminal
 
     +repr = (self):
         return self.name
-##    def __repr__(self):
-##        return "{!s}".format(self.name)
+
+symbol_lt = multimethod(2)
+symbol_lt[[Terminal, Nonterminal]] = (a, b):
+    return false
+
+symbol_lt[[Nonterminal, Terminal]] = (a, b):
+    return true
+
+symbol_lt[[Nonterminal, Nonterminal]] = (a, b):
+    return a.name < b.name
+
+symbol_lt[[Terminal, Terminal]] = (a, b):
+    return a.name < b.name
 
 class EIM
     +init = (self, rule, pos, origin):
@@ -458,13 +466,13 @@ class IndentParser
         self.dedent = dedent
         self.newline = newline
 
-    step = (self, parser, pos):
+    step = (self, parser, pos, source):
         if self.line < pos.lno
             while pos.col < self.level and parser.expecting(self.dedent)
                 parser.step(self.dedent, null, pos, pos)
                 self.level = self.stack.pop()
             if pos.col < self.level
-                raise SyntaxError("Uneven indent at line " ++ repr(pos.lno))
+                raise SyntaxError("uneven indent", pos, source)
             if pos.col == self.level and parser.expecting(self.newline)
                 parser.step(self.newline, null, pos, pos)
             if pos.col > self.level and parser.expecting(self.indent)
@@ -479,3 +487,39 @@ class IndentParser
             parser.step(self.dedent, null, pos, pos)
             self.level = self.stack.pop()
         return self.stack.length == 0
+
+class SyntaxError extends Exception
+    +init = (self, message, location, source, at_eof=false):
+        self.message = message
+        self.location = location
+        self.source = source
+        self.traceback = null
+        self.at_eof = at_eof
+
+    +repr = (self):
+        return self.message
+
+class SyntaxErrorExpected extends SyntaxError
+    +init = (self, expect, location, source, at_eof=false):
+        self.expect = list(expect)
+        self.location = location
+        self.source = source
+        self.traceback = null
+        self.at_eof = at_eof
+
+    +repr = (self):
+        msg = [format_origin(self.source, self.location, " expected some of:")]
+        self.expect.sort(symbol_lt)
+        for symbol in self.expect
+            msg.append("    " ++ symbol.name)
+        return "\n".join(msg)
+
+format_origin = (source, location, message=null):
+    loc = [repr(location.lno), repr(location.col)]
+    if message
+        loc.append(message)
+    if source
+        loc.insert(0, source)
+    else
+        loc.insert(0, "")
+    return ":".join(loc)

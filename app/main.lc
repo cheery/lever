@@ -4,10 +4,22 @@ import base
 console = module("console", base)
 
 print("LEVER 0.8.0")
+buffer = []
 while true
-    string = input(">> ")
+    prompt = ">> "
+    if buffer.length > 0
+        prompt = "   "
+    string = input(prompt)
+    buffer.append(string)
     try
-        code = compiler.read_string(string, "console")
+        code = compiler.read_string("\n".join(buffer), "console")
         print(repr(exec(code, console)))
+    except compiler.SyntaxError as syn
+        if syn.at_eof
+            continue
+        print(repr(syn))
+    except SystemExit as exit
+        raise exit
     except Exception as exc
         print_traceback(exc)
+    buffer = []

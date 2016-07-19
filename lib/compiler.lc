@@ -5,6 +5,10 @@ import optable
 import base
 import binon
 
+# It is expected these classes are here.
+SyntaxError = chartparser.SyntaxError
+SyntaxErrorExpected = chartparser.SyntaxErrorExpected
+
 language = grammar_language.read_file(dir ++ "../lever-0.8.0.grammar")
 language.new_parser = chartparser.preprocess(
     language.grammar,
@@ -36,23 +40,14 @@ read_tokens = (tokens, source=null):
         dedent = language.table.terminal("dedent")
         newline = language.table.terminal("newline")
     for token in tokens
-        indent.step(parser, token.start)
+        indent.step(parser, token.start, source)
         terminal = language.table.terminal(token.name)
         if not parser.expecting(terminal)
-            print("expected some of:")
-            for t in parser.expect
-                print("    " ++ t.name)
-            print("Got " ++ repr(token))# ++ ", expected some of " ++ ", ".join(parser.expect))
-            print("Location: " ++ repr(token.start.lno) ++ ":" ++ repr(token.start.col))
-            raise SyntaxError()
+            raise chartparser.SyntaxErrorExpected(parser.expect, token.start, source)
         parser.step(terminal, token, token.start, token.stop)
     indent.finish(parser, token.stop)
     if not parser.accepted
-        print("expected some of:")
-        for t in parser.expect
-            print("    " ++ t.name)
-        print("At EOF")
-        raise SyntaxError()
+        raise chartparser.SyntaxErrorExpected(parser.expect, token.stop, source, true)
     argl = []
     post = (rule, args, start, stop):
         cell = rule.annotation(actions, args, argl)
@@ -101,7 +96,7 @@ actions = :exnihilo()
         return Code("constant", parse_float(token.string))
     string = (string):
         return Code("constant", string.string)
-    list = (args):
+    list = (args=[]):
         return Code("list", args...)
     dict = (pairs):
         return CodeGroup("setitem",

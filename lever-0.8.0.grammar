@@ -62,7 +62,7 @@ otherwise =>
 
 excepts =>
     first  {except}
-    append {excepts except}
+    append {excepts %newline except}
 
 except =>
     except {"except" expr "as" symbol block}
