@@ -186,8 +186,51 @@ Continuations add some challenges to working with resources such as file
 descriptors. This kind of feature dissonance seem to be a recurring theme
 across whole Lever. 
 
+
+
                                                              evaluator/loader.py
+
+TODO
+
+
+
                                                             evaluator/optable.py
+                                                               stdlib/optable.py
+
+Some people like to type stupid magic numbers everywhere and move them across
+files. I prefer that stuff works even if nobody is in supporting it with a stick.
+
+The evaluator/optable.py contains name, opcode and format for every instruction
+in the bytecode that Lever uses.
+
+enc/dec tables are filled from the tabular specification. Both are dictionaries
+that come in following format:
+    
+    enc[opname] = [opcode, has_result, [pattern], variadic]
+    dec[opcode] = [opname, has_result, [pattern], variadic]
+
+Examples:
+
+    enc["call"] = [0x40, True,  ['vreg', 'vreg'], 'vreg']
+    enc["jump"] = [0x60, False, ['block'],          null]
+
+Every compiler and evaluators refers to these tables directly.
+
+Changing optable isn't an offense as long as you have a good reason to do so.
+For example, that the opcodes are all weirdly spread is not a good reason. A
+good reason would be that you need a new instruction to support some usecase.
+
+If you introduce a new instruction, try not to choose a number that was used
+by earlier instruction to avoid issues. The old instructions are commented out
+and it should be written in which version they were discarded to help you avoid
+choosing a recently used number. The rule can be broken when the instructions
+are so old that they have been nearly forgotten.
+
+Please keep the opcode numbers in order and try to group the instructions by
+their context, prefer alphabetic order otherwise.
+
+
+
                                                          evaluator/sourcemaps.py
                                                                          main.py
                                                             module_resolution.py
@@ -213,12 +256,82 @@ across whole Lever.
                                                             stdlib/ffi/simple.py
                                                            stdlib/ffi/systemv.py
                                                                     stdlib/fs.py
+
+
+
+
+
                                                                     stdlib/gc.py
+
+I would hope to have some control over GC. But RPython methods that seemed
+relevant didn't turn out to control anything.
+
+All this 'gc' module exposes is:
+
+    collect()
+
+I don't know if it triggers a collector cycle.
+
+
+
                                                               stdlib/__init__.py
+
+When I have a directory containing names, it would feel off that have to write
+a list of modules present in Lever. A little script in the stdlib/__init__.py
+did really brightened up my mood.
+
+
+
                                                                   stdlib/json.py
-                                                               stdlib/optable.py
+
+I'm certain I wouldn't definitely copy this JSON reader. I'm not sure it handles
+every special case.
+
+This reader was introduced to read the generated C header files that I encoded
+as json for convenience. It's pretty cool how fast loading json files can be.
+
+This is a rare case where hand-written parsers have their merits.
+
+Json files are also used for configs. It's pretty clear so far that they rock
+for lots of common uses.
+
+Exposed function:
+
+    read_file(path:Object)
+
+It might be a neat weekend project to improve this module.
+
+
+
                                                               stdlib/platform.py
+
+Sometimes it's really necessary to know what your platform looks like. Every
+interface isn't portable, and everyone can make mistakes.
+
+Exposed values:
+
+    name  # Describes the name of the platform. win32 or linux.
+            This is derived from the sys.platform directly.
+
+
+
                                                                stdlib/process.py
+
+Consider that you want to communicate with other programs. Chances are you want
+to spawn processes. This library was written to get blender export stale models
+automatically.
+
+I'm honestly not sure how the spawnv should work. The first argument variable
+seem to be often unimportant. But I know how it would suck if some app depended
+on specific argv[0] and you couldn't trigger it with this code.
+
+The module 'process' contains following objects:
+
+    spawnv(path, args:list)
+    waitpid(pid:int)
+    which(program:path)
+    is_exe(file:path)
+
 
 
                                                                          util.py
