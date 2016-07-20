@@ -200,7 +200,8 @@ This file also contains some code the translator requires to produce JIT
 compiler.
 
 Instruction set for the interpreter is compact because operators are implemented
-as functions and methods. Just "or" and "and" are exceptions there.
+as functions and methods. Only "or", "not" and "and" are implemented via
+instructions.
 
 This is not the place to mention what each instruction does, but it's worthwhile
 to mention how the interpreter is constructed:
