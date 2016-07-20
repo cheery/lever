@@ -7,7 +7,7 @@ import space
 
 u16_array = lltype.GcArray(rffi.USHORT)
 
-def from_object(obj):
+def from_object(obj, path):
     if as_i(obj.getitem(space.String(u"version"))) != 0:
         raise space.unwind(space.LError(u"bytecode version=0 required"))
 
@@ -38,7 +38,7 @@ def from_object(obj):
                 rffi.r_ulong(as_i(n.getitem(space.Integer(3)))),
             ))
         functions.append(Function(flags, regc, argc, topc, localc, block, sourcemap, excs[:]))
-    return Program(Unit(constants[:], functions[:], sources[:]))
+    return Program(Unit(constants[:], functions[:], sources[:], path))
 
 class Exc:
     _immutable_fields_ = ['start', 'stop', 'label', 'reg']
@@ -78,7 +78,9 @@ class Closure(space.Object):
         if L < argc:
             # The pc=0 refers to the function itself. This entry
             # is really helpful when trying to determine the origin of a CallError.
-            head_entry = TraceEntry(rffi.r_long(0), self.function.unit.sources, self.function.sourcemap)
+            head_entry = TraceEntry(rffi.r_long(0),
+                self.function.unit.sources,
+                self.function.sourcemap, self.function.unit.path)
             unwinder = space.unwind(space.LCallError(argc, topc, varargs, L))
             unwinder.traceback.contents.append(head_entry)
             raise unwinder
@@ -127,11 +129,12 @@ class Program(space.Object):
         return interpret(0, entry.block, regv, frame)
 
 class Unit:
-    _immutable_fields_ = ['constants[*]', 'functions[*]', 'sources[*]']
-    def __init__(self, constants, functions, sources):
+    _immutable_fields_ = ['constants[*]', 'functions[*]', 'sources[*]', 'path']
+    def __init__(self, constants, functions, sources, path):
         self.constants = constants
         self.functions = functions
         self.sources = sources
+        self.path = path
         for function in functions:
             function.unit = self
 
@@ -316,10 +319,10 @@ def interpret(pc, block, regv, frame):
                     raise
     except StopIteration as stop:
         unwinder = space.unwind(space.LUncatchedStopIteration())
-        unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.sources, frame.sourcemap))
+        unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.sources, frame.sourcemap, unit.path))
         raise unwinder
     except space.Unwinder as unwinder:
-        unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.sources, frame.sourcemap))
+        unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.sources, frame.sourcemap, unit.path))
         raise
     return space.null
 

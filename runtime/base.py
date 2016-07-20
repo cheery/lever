@@ -54,9 +54,13 @@ def builtin(fn):
     return fn
 
 @builtin
-@signature(Object, Object)
-def exec_(program, module):
-    return from_object(program).call([module])
+@signature(Object, Object, Object, optional=1)
+def exec_(program, module, path):
+    if path is None:
+        path = null
+    else:
+        path = pathobj.to_path(path)
+    return from_object(program, path).call([module])
 
 @builtin
 def class_(argv):

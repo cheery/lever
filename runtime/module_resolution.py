@@ -162,7 +162,7 @@ class ModuleInfo(Object):
             scope.compile_file.call([self.cb_path, self.lc_path])
             self.cb_mtime = os.path.getmtime(pathobj.os_stringify(self.cb_path).encode('utf-8'))
             self.cb_present = True
-        program = evaluator.loader.from_object(bon.open_file(self.cb_path))
+        program = evaluator.loader.from_object(bon.open_file(self.cb_path), self.cb_path)
         return program.call([module])
 
     def getattr(self, name):
