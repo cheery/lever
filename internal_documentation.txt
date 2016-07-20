@@ -190,7 +190,74 @@ across whole Lever.
 
                                                              evaluator/loader.py
 
-TODO
+Loader is one of the things in runtime where there's lot of happening. The name
+is a bit of misnomer because the loader code also holds the interpreter for
+Lever.
+
+This file defines how closures behave and how programs are loaded.
+
+This file also contains some code the translator requires to produce JIT
+compiler.
+
+Instruction set for the interpreter is compact because operators are implemented
+as functions and methods. Just "or" and "and" are exceptions there.
+
+This is not the place to mention what each instruction does, but it's worthwhile
+to mention how the interpreter is constructed:
+
+ - Code is loaded as compilation units that usually span a single source file.
+ - The compilation unit consists of list of functions. These functions can
+   create a closure from any other function they share an unit with.
+ - When the unit is loaded, The whole thing is wrapped into Program, that when
+   called creates a Frame and runs the very first function in it.
+
+ - Closure has access to the Frame of the function where it's been created.
+   It can access variables in that frame. When closure is called it creates a
+   new frame that parents the frame it had.
+
+ - The execution context holds a virtual register array, and a bundle of locals.
+   This separation is intended to avoid lugging the registers that might happen
+   when you pass child closures around.
+
+ - The exceptions are handled by exceptions -list. When interpreter
+   returns into a frame with an exception it goes through the exceptions -list
+   and jumps into the first entry that is active on the location of the current
+   program counter. The exception is stored in the register pointed out by the
+   exception structure.
+
+Since the loader defines how the bytecode object looks like, lets describe the
+format here:
+
+{
+    version = 0
+    sources = [ str ] # list of source files this unit was compiled from.
+    constants = [ object ] # List of constants for this unit.
+    functions = [
+        {
+            flags = int # These aren't actually described anywhere, but..
+                        # 0x1 -bit means that the remaining arguments are
+                          put into local[topc]
+            argc = int # minimum number of arguments
+            topc = int # maximum number of recognized arguments
+            localc = int # how many local variables there are in the frame.
+            regc = int # how many virtual registers in this frame.
+            code = Uint8Array # network-byte-endian encoded array of u16
+            sourcemap = Uint8Array # described at evaluator/sourcemaps.py
+            exceptions = [[start, stop, label, vreg]]
+        }
+    ]
+}
+
+When the object is loaded, it also gets a path -object that is given to
+TraceEntry -records produced by the compilation unit. The point of this path is
+to locate the source file when used in combination with 'sources' and
+'sourcemap'.
+
+Related:
+
+    exec(unit, module, path)  loads an object and calls it using this system.
+                              To help implementing REPL, the last value in
+                              the compilation unit is returned by this function.
 
 
 
