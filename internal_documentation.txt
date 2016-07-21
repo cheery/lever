@@ -341,6 +341,73 @@ The same "header" record can be later used to "go to the source" of a function.
 
 
                                                                          main.py
+
+Main is the heart of Lever. Main is the entry point of lever. This file also
+implements greenlets.
+
+Lever process has a global state that holds execution context. The execution
+context hold up some values the context needs to function.
+
+    lever_path -- The directory where lever is operating in.
+                  If LEVER_PATH variable is not set, the program assumes the
+                  execution takes place in current directory, or in the
+                  prefix path given during translation.
+
+Note that LEVER_PATH variable can cause problems if it's inappropriately set.
+
+
+When Lever starts up, it comes up with an event loop. The event loop isn't much
+yet. For now you can wait with sleep -function. Also nothing prevents you from
+suspending execution yourself and scheduling it in. :)
+
+Behavior during startup is bit chaotic. If the program gives arguments, the
+first argument is treated as a script to run. Otherwise it will run a script
+"app/main.lc" inside lever_path.
+
+However it goes, the script is brought up with a new module scope.
+
+The greenlets are wound up with the event loop to make both much more useful, so
+they are in the same file. These are built along the earlier continuation
+structures, but each greenlet associates with an execution, making them easier
+to reason about.
+
+Greenlets mesh neatly with the remaining system. You can either schedule them or
+jump into them directly. There are many neat usecases where this is useful.
+Particularly it makes event streams easy to wait on.
+
+When greenlet ends, it returns to their parent. The parent is one that created
+the greenlet, but it could be switched in theory.
+
+It should be also possible to throw an error via the greenlet, either in sync or
+async, to cause it alter in behavior, but this useful feature hasn't been
+introduced yet. The likely functions will be:
+
+    greenlet.throw(exception) # sync
+    schedule(greenlet.throw, exception) # async
+
+Functions provided into base -module in main.py:
+
+    schedule(function/greenlet, args...)
+        - schedules a function or greenlet to start/resume up inside the event
+          loop. Execution continues without interruption.
+    sleep(...)
+          d:float - suspends the current greenlet for d seconds.
+          d:float, func/greenlet - schedules a function or resumes a greenlet
+                                   after given time.
+    getcurrent() - gets the current greenlet.
+
+    greenlet(args...) - creates a new greenlet which runs call with the given
+                        args when waked up.
+
+    greenlet.swich(args...) - switches to the given greenlet.
+                            - if the greenlet is just starting up, the arguments
+                              are catenated with the initials
+                            - otherwise zero arguments give null
+                              one argument is passed as it
+                              many arguments are turned into a list to return
+                              from .switch() of the resuming greenlet.
+
+
                                                             module_resolution.py
                                                                       pathobj.py
 
@@ -365,6 +432,9 @@ The same "header" record can be later used to "go to the source" of a function.
                                                           stdlib/ffi/__init__.py
                                                             stdlib/ffi/simple.py
                                                            stdlib/ffi/systemv.py
+
+
+
                                                                     stdlib/fs.py
 
 Every module that wants to read or write something into file is using this
