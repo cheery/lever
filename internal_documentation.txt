@@ -559,10 +559,92 @@ Also implements getcwd, chdir, to_path, so on..
 
 
                                                                space/__init__.py
+
+Python and Lever are similar to the extent that everything is a value. Therefore
+we need several objects that just "are there". I misinterpreted what space means
+in PyPy and called the directory of these objects a space.
+
+The name is appropriate here anyway. The objects here pretty much form a common
+space where everything happens.
+
+Every user-accessible value has an interface. The interface is used to
+determine what is called when the user operates on the value.
+
+Interface is retrieved directly from the class definition, unless you have a
+custom object. Instantiations from user defined classes are such custom
+objects.
+
+
+
                                                                 space/builtin.py
+
+Builtin functions represent entries in the runtime. Some day the builtins
+will have documentation associated to them.
+
+From now on the preferred way to create a builtin function when extending lever
+runtime is to use the space.signature() -decorator.
+
+There's been considerations to mark the builtin functions in the exception
+flow, so that you know whether the control flow goes through a builtin. This is
+rare enough occassion so it hasn't happened yet.
+
+
+
                                                            space/customobject.py
+
+Custom objects are objects that come with custom interface. It's a nice concept.
+You can determine how the object should behave in respect to some builtin
+functions:
+
+    +init
+    +call
+    +getattr(name)
+    +setattr(name, item)
+    +getitem(index)
+    +setitem(index, item)
+    +iter()
+    +contains(object)
+    +repr()
+    +hash()
+
+In this file, properties are introduced. Although they are so useful concept
+that they should be perhaps introduced earlier, in the space/interface.py
+
+Property objects have .get and .set you can choose. This way you can provide
+custom attributes that call functions, without hacking the getattr/setattr.
+
+Please don't use property objects to produce immutability. If you do, despite
+this written notice, don't mind about the batons flying like arrows around you.
+It's just a side effect of doing one of the dumbest things I can imagine.
+
+
+
                                                              space/dictionary.py
+
+Dictionaries. They shouldn't about have anything special in respect to python
+dictionaries, but for reference their behavior is described here:
+
+    dict(arg=null) -- if you pass an iterable here that returns pairs, you'll
+                      get a dictionary.
+    +contains(key) -- works pretty much like it should.
+    dict.length    -- how many entries in this dict.
+    +getitem(key)
+    +setitem(key, value)
+    +iter()                     -- you get bunch of keys.
+    dict.get(key, default=null) -- getitem, except that default value is
+                                   returned if it fails.
+    dict.keys()    -- iterator for keys
+    dict.items()   -- iterator for item pairs
+    dict.values()  -- iterator for values
+
+
+
                                                                  space/errors.py
+
+
+
+
+
                                                                space/exnihilo.py
                                                               space/interface.py
                                                              space/listobject.py
