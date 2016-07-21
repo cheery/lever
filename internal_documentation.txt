@@ -410,8 +410,7 @@ It may be necessary to introduce a simple event loop lock mechanism to prevent t
 kind of problems. Also you can control access to objects by means of visibility.
 Execution that does not have access to something can also neither write to it.
 Third you can introduce lot of stability into your programs by determining that
-certain objects are immutable and that you shouldn't write into them after
-they've been created.
+certain objects are immutable after they've been created.
 
 
 
@@ -440,7 +439,124 @@ Functions provided into base -module in main.py:
 
 
                                                             module_resolution.py
+
+I remember Python module system maintainer saying that Python modules aren't as
+nice as they could be because there's a notion of mutable global state in them,
+and that people are occassionally doing nasty things to this state to reach
+their means. It turned up when I was researching on module systems.
+
+Module system in dynamically typed language faces few challenges. Problems are
+related to the fact that modules should be cached such that they can be accessed
+my multiple modules that share dependencies.
+
+Simplest and often most common way to implement coding of programs while they
+are live is to write a script that is reloaded when it is updated. For module
+systems this means you should be able to reload modules, or otherwise be able to
+control which modules are reloaded and when.
+
+The concepts related to module resolution aren't entirely honed up yet in Lever,
+but there's very promising development going related to the problems described
+above.
+
+Lever comes with a concept I call scoped modules. I mean modules practically
+have scopes, exactly like how functions have scopes. You can freely choose that
+scope when you create a module or inherit from an another scope!
+
+Any lever module scope can cache any path or resource and they are cached by
+their absolute paths to help live reloaders to do their job. Very few
+programs prepare for the situation that their path may change while they're
+running, am I right?
+
+Every module scope comes with a default search directory where to look modules
+from. Every module scope also has a parent scope which is searched if the
+current scope doesn't resolve the resource.
+
+Every scope may also contain a handle to the function to compile stale modules
+in the scope. The compile_file is retrieved for lib/ -scope before the main
+scope is created.
+
+Every module cache entry contains the mtime of the file that was loaded, and a
+path to the file. So live reloaders know which modules are stale and should be
+reloaded too.
+
+When lever boots up, it already has a builtin:/ scope. It derives the lib/ scope
+from this builtin scope. Then the main scope is created that points to the
+directory of the first script. 
+
+Lever supports directory hierarchies in modules. If you have a directory and
+that directory contains "init.lc" or "init.lc.cb", then it's a module you can
+import.
+
+When a module is created in this system, it receives some attributes:
+
+    dir    -- directory of the module, makes it easy to relative-load things.
+    name   -- name of this module.
+    import -- a callable object this module uses for importing code.
+
+Import holds copy to the directory of the module, so that it can first search
+relative to the location of the current module.
+
+Then it searches from the scopes in order until it finds the module or fails to
+import it. The imported module is returned by the call.
+
+%"import".scope and you can access the current module scope as an object. This
+scope object has one useful function such as: reimport It should supposedly
+reimport your module but it looks like it might be half broken.
+
+You can iterate through the scope, as well as getitem from it.
+
+Note the "import" function is conveniently accessible. So you can always import
+from the scope of an another module. Same applies to the "dir".
+
+This is not implemented yet, but "foo.bar" -convention in lever should trigger
+import of foo/init.lc, then getattr(init, "import")("bar"). Otherwise if you
+import it directly, it should skip the foo/init.lc entirely.
+
+
+
                                                                       pathobj.py
+
+It was always total and utter pain in the ass to take care of the correct
+obeyance of path conventions present on the system. On Lever I decided to say
+"fuck you" and denote that every path is posix-formatted inside lever.
+
+To the OS, lever would still present whichever wrecked path convention the OS
+follows. But instead of \\cupcake\boilingeggs on one system and something else
+on another, the user would see //cupcake/boilingeggs.
+
+The file pathobj.py takes care of this translation.
+
+Lever comes with a path() -object. This path can take posix and URL prefixes. In
+a way I consider URLs to be posix formatted paths to a limit.
+
+When you wrap a string into a path object, it is converted into prefix and
+path sequence.
+
+this file provides following entries:
+
+    PosixPrefix(label="", is_absolute=false)
+    PosixPrefix.is_absolute -- whether the path starts with "/" or not.
+                               eg. is absolute path and not relative.
+    PosixPrefix.label       -- the thing before colon, eg. "c:"
+    URLPrefix(domain="", protocol="")
+    URLPrefix.protocol  -- eg. "http"
+    URLPrefix.domain    -- eg. "example.org"
+    path.prefix -- either PosixPrefix or URLPrefix now.
+    path.basename -- basename of the path.. eg. thing after last "/"
+    path.relpath(base=getcwd()) -- turn the path into relative path in respect
+                                   base. It may still stay absolute if base has
+                                   completely different prefix.
+    path.push(name) -- push a name into the path sequence.
+    path.get_os_path(path) -- transmoglify the path into OS conventions.
+    path.to_string() - return posix formatted path.
+
+    str ++ path
+    path ++ str
+    path ++ path
+
+Also implements getcwd, chdir, to_path, so on..
+
+
 
                                                                space/__init__.py
                                                                 space/builtin.py
