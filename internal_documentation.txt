@@ -367,7 +367,32 @@ The same "header" record can be later used to "go to the source" of a function.
                                                            stdlib/ffi/systemv.py
                                                                     stdlib/fs.py
 
+Every module that wants to read or write something into file is using this
+module. This is quite rudimentary module without beauties.
 
+I would hope to combine the filesystem module with eventloop at some point, and
+have the methods in this library work asynchronously, returning control to the
+internal event loop when process would have to sleep otherwise.
+
+'fs' exposes following objects:
+    
+    exists(path)
+    stat(path)
+    getatime(path)
+    getmtime(path)
+    getctime(path)
+    read_file(path, mode="")
+    open(path, mode="")
+    file
+    file.read(count=null)
+    file.write(data:Uint8Array)
+    file.close()
+    file.seek(pos:int)
+    file.tell()
+    file.truncate(pos:int)
+    file.fileno()
+    file.isatty()
+    file.flush()
 
 
 
