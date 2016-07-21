@@ -297,6 +297,9 @@ are so old that they have been nearly forgotten.
 Please keep the opcode numbers in order and try to group the instructions by
 their context, prefer alphabetic order otherwise.
 
+The intent here is to not cause much issues with old bytecode. If you change
+behavior of an instruction, please change the opcode as well.
+
 
 
                                                          evaluator/sourcemaps.py
@@ -340,12 +343,13 @@ The same "header" record can be later used to "go to the source" of a function.
                                                                          main.py
                                                             module_resolution.py
                                                                       pathobj.py
+
+                                                               space/__init__.py
                                                                 space/builtin.py
                                                            space/customobject.py
                                                              space/dictionary.py
                                                                  space/errors.py
                                                                space/exnihilo.py
-                                                               space/__init__.py
                                                               space/interface.py
                                                              space/listobject.py
                                                                  space/module.py
@@ -355,6 +359,7 @@ The same "header" record can be later used to "go to the source" of a function.
                                                               space/setobject.py
                                                                  space/string.py
                                                              space/uint8array.py
+
                                                                    stdlib/api.py
                                                            stdlib/ffi/bitmask.py
                                                           stdlib/ffi/__init__.py
