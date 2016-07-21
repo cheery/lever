@@ -385,6 +385,36 @@ introduced yet. The likely functions will be:
     greenlet.throw(exception) # sync
     schedule(greenlet.throw, exception) # async
 
+There are three dissonance situations with greenlets you may face.
+
+One dissonance happens when you have a continuation that holds a resource that
+must be explicitly freed. A memory buffer or file handle. If greenlet is
+suspended and lost before it finishes execution, it also leaks these memory
+handles even if they were seemingly properly allocated & freed.
+
+So if you have something that can accept a greenlet, it is most likely good idea
+to send an exception that tells it that a resource it waited on was discarded.
+
+Second dissonance happens when you have an action that should not pass control,
+as in it has atomicity requirements. This kind of function might accidentally
+pass control by calling something that reads or otherwise may context switch.
+This would violate the operation of the program and cause it to crash or corrupt
+its state.
+
+Third dissonance is a dual situation to the second. It is when you assume that
+certain state is fixed during reading, and then you switch changinging the state
+you were reading, and another execution change the state you were in middle of
+reading.
+
+It may be necessary to introduce a simple event loop lock mechanism to prevent that
+kind of problems. Also you can control access to objects by means of visibility.
+Execution that does not have access to something can also neither write to it.
+Third you can introduce lot of stability into your programs by determining that
+certain objects are immutable and that you shouldn't write into them after
+they've been created.
+
+
+
 Functions provided into base -module in main.py:
 
     schedule(function/greenlet, args...)
@@ -406,6 +436,7 @@ Functions provided into base -module in main.py:
                               one argument is passed as it
                               many arguments are turned into a list to return
                               from .switch() of the resuming greenlet.
+
 
 
                                                             module_resolution.py
