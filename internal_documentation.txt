@@ -64,6 +64,9 @@ The following is being inserted into base in base.py:
     ord(string)
     chr(value)
     isinstance(obj, interface/interfaces)
+        # isinstance is the only name at the runtime
+          where you got "is" without underline. This is treated as a sort of
+          abbreviation.
     print(values...)
     and(a, b)
     or(a, b)
@@ -641,18 +644,300 @@ dictionaries, but for reference their behavior is described here:
 
                                                                  space/errors.py
 
+Errors are inevitable, and exception system has been a nice, feasible way to
+handle them where the handling matters, so far. Therefore lever implements an
+exception system too.
 
+Since lever exceptions are themselves just objects, we can't treat them as
+system exceptions. Therefore the exception objects are plugged into an unwinder
+when activated. The unwinder should be hidden from the userspace.
+
+When lever throws, it attempts to retrieve .traceback from the exception object.
+If the exception doesn't have a .traceback it creates a list for that purpose..
+
+This way you may catch multiple exceptions on one level and you still retain
+tracebacks for every exception you catched! They are cut from the point where
+they are handled.
+
+It's bit dissonant too. If you abuse this thing you are able to hide stack trace
+entries! So don't abuse it without a reason.
+
+There's an inheritance hierarchy on lever exceptions, though so far it may still
+change. For now the hierarchy is flat, every exception is just inherited from an
+Exception.
+
+Users can introduce custom objects as exceptions. Only requirement is that they
+hold .traceback -value that is initially null or a list. Be aware remaining
+system can't catch an exception if it's not extended from Exception, though.
+
+In runtime you see OldErrors spread around. It's a legacy. Replace those when
+you update some part of code, but don't commit just to remove this function.
+I want it to drop down from there on its own pace.
+
+So far there are following exceptions:
+
+    Exception
+    Error                  extends Exception
+    AssertionError         extends Exception
+    SystemExit             extends Exception
+    UncatchedStopIteration extends Exception
+    AttributeError         extends Exception
+    KeyError               every subsequent extends Exception
+    ValueError
+    TypeError
+    FrozenError
+    CallError
+    InstructionError
+
+More can be defined when appropriate.
 
 
 
                                                                space/exnihilo.py
+
+It's extremely common to define small objects that have attributes. It's
+extremely good practice when the object has no other purpose than to hold some
+values.
+
+Therefore you got exnihilo(). For now you can't fill it from an iterable. But
+it's some object you can fill with values of your choice. It's very good when a
+custom class and additional new type isn't required.
+
+
+
                                                               space/interface.py
+
+Defines how the objects in lever look like. There's very little bit of legacy
+here, that should be likely removed proactively some day, unlike the harmless
+OldError.
+
+Interfaces are themselves objects, so this file contains some recursive
+definitions.
+
+Interestingly it was quite easy to choose these details eventually. Even if they
+are hard and complex subjects.
+
+Interfaces and internal representations of objects aren't related. Interface
+means for an object that is used to determine how certain object behaves under
+commands.
+
+The "interface" was chosen as a name to avoid misguided associations with
+Plato and biologist ideas. Object system in lever doesn't form a taxonomy, it's
+not magical or mystical and definitely physical objects "instances" aren't some
+shadows of their ideal forms "classes".
+
+It removes quite lot of confusions when the language author isn't lying through
+his teeth about the implementation!
+
+Every object has an interface, so interfaces have interface too. Interface of an
+interface should be an interface.
+
+Null is bit of a special object in that it's an interface too, because null is
+an interface of itself. null is also a parent of null.
+
+When used in isinstance() or in coercion operations, it's useful to have a
+hierarchy so that you can group objects with similar meaning together.
+
+Every interface can have a parent interface. "null" is generally accepted as a
+parent, but the distinction between "null" and "object" as a parent is probably
+pointless.
+
+Every interface are considered to have methods. When method is retrieved via
+getattr it is bound. This is default behavior that can be vastly mangled by the
+runtime.
+
+It'd be likely beneficial to have a Property -system for builtins. I yet have to
+consider options for how to do this.
+
+
+
                                                              space/listobject.py
+
+Old good workhorse. The analogy is bit off but you can't really understate how
+nice thing lists can be in a language runtime.
+
+They aren't very exciting but that's very good property in them:
+
+    +hash
+    +getattr
+    +contains
+    +getitem
+    +setitem
+    +iter
+    +repr
+    .append(item)
+    .extend(items)
+    .insert(index:int, item)
+    .remove(item)
+    .pop(index=.length-1)
+    .index(item)
+    .count(item)
+    .sort(lt=%"<")
+    .reverse()
+
+
+
                                                                  space/module.py
+
+Module presents a global context for a script. Basically when you run a script,
+it is associated with a module.
+
+Module has been structured so that it works efficiently as global scope when
+used in combination with JIT. Again if you get caught about lying, it's not
+good for you. So the principle here is to not lie in the first place about the
+implementation.
+
+Modules can be cleared during reimport. You can getattr/setattr anything they
+contain. And you can use a module as a base when you instantiate new module.
+
+Makes me think I should probably remove "exec()" and replace it with an object
+that actually returns a Program -object.
+
+
+
                                                             space/multimethod.py
+
+Multimethods consists of table of functions, each associated with interfaces the
+function should be used with.
+
+For efficient implementation there's a dissonance in multimethods that lever
+presents, with extended interfaces. The multimethods completely ignore
+inheritance rules.
+
+Multimethods have fixed arity. This means that they select the function by
+fixed number of arguments they receive.
+
+Basically the action done by lever multimethod is:
+
+ - Select function in the table by the interfaces associated with n objects.
+ - if that function exists, call it.
+ - if the function isn't existing and the call isn't suppressed, call
+   the default method associated with multimethod.
+
+Multimethods can handle:
+    
+    multimethod(int)
+    setitem
+    .default set and get
+    call
+
+This behavior makes it really easy to reason about multimethods! This is
+invaluable if lever is ever translated, and it is invaluable for documentation.
+
+Your initial impression of this kind of multimethods would be that they cannot
+handle arithmetic without being really crowded. But Lever methods aren't really
+crowded. That's because the lever author is clever.
+
+Lets consider the usual situation that arithmetic isn't in pair. You call 1.4 +
+2, what should happen is that you get 2.4. On float + int you will expect float
+aka. some inaccurate answer.
+
+You would think "there must be a float + int", but lever doesn't have one.
+Instead when float + int is called, it goes to +.default which calls coerce on
+the values and attempts to call the multimethod again with the returned values,
+suppressed this time so that there doesn't come an infinite loop.
+
+There's very small potential surprise that the person didn't notice the values
+were coerced to try again. But otherwise this way is much better than trying to
+be stupid and pretend that float inherits from a integer inherits from a boolean.
+
+There are some unimplemented features such as that multimethod cannot be called
+by the user in suppressed mode. This should be fixed.
+
+
+
                                                                 space/numbers.py
+
+Basic structures for floats, integers and booleans. Might be that some implicit
+conversion system needs to be designed, so that you can call sin -function with
+an integer.
+
+Strings cannot be coerced into integers or floats btw. You need to convert them
+by parsing.
+
+Path objects also require something similar.
+
                                                               space/operators.py
+
+Operators define some multimethods, and some non-multimethods!
+
+Multimethods:
+
+    clamp(low, high, value)
+    coerce(a,b)
+    a ++ b
+    a != b
+    a == b
+    a < b
+    a > b
+    a <= b
+    a >= b
+    -expr # yes, you actually do %"-expr" to get this.
+    +expr
+
+Every arithmetic method does the coerce as default, like described in
+multimethods. Otherwise they are implemented for int and float pairs in this
+file.
+
+There is whole full set of them: + - * | % & ^ >> << min max /
+
+Divide is bit of special in this set because it returns a float for integers as
+well. If there is ever division to return integer, it'll be // and defaults to
+floor(a/b).
+
+Coercion rules on coerce(a, b):
+    
+    bool  bool  -> int int
+    int   bool  -> int int
+    bool  int   -> int int
+    int   float -> float float
+    float int   -> float float
+
+Comparison methods are completely defined on integers, floats and strings pairs.
+
+Comparison is not using coercion table on default. It may be better idea to just
+implement comparison between integers and floats explicitly. That is very
+special case when you need to compare something else together.
+
+The proposition to comparison is that when you define one, it should make sense
+to define all of them.
+
+Concat works on strings and lists.
+
+Sets implement <= >= < > | & - ^ -methods.
+
+
+
                                                               space/setobject.py
+
+Sets follow the good convention of "lets take it from python" we have already
+used to.
+
+Sets implement:
+
+    +contains
+    +getattr
+    +iter
+    .copy()
+    .clear()
+    .update(args...)
+    .intersection_update(args...)
+    .differenc_update(args...)
+    .symmetric_differenc_update(other)
+    .discard(value)
+    .remove(value)
+    .pop()
+    .is_disjoint(other)
+    .is_subset(other)
+    .is_superset(other)
+    .union(others...)
+    .intersection(others...)
+    .difference(others...)
+    .symmetric_difference(others...)
+    set(iterable?)
+
+
+
                                                                  space/string.py
                                                              space/uint8array.py
 
