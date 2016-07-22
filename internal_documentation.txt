@@ -939,14 +939,121 @@ Sets implement:
 
 
                                                                  space/string.py
+
+Strings are immutable just like in python. Turns out it's very sane choice.
+
+Supported:
+
+    +repr
+    +hash
+    +getitem
+    +iter
+    .length
+    .join(strings)
+    .is_alpha()
+    .is_digit(base=10)
+    .is_space()
+
+
+
                                                              space/uint8array.py
 
+Uint8Arrays aren't immutable because that's not very sane.
+
+These are blobs of uint8 that are manage to remove themselves when they get
+forgotten.
+
+If I remember right, you can pass these into ffi as memory buffers. If I don't,
+well..
+
+Supported:
+    
+    +repr
+    +getitem
+    +setitem
+    .length
+    Uint8Arrays(...)
+                size
+                iterable containing integers
+
+
+
                                                                    stdlib/api.py
-                                                           stdlib/ffi/bitmask.py
+
+api is the module for loading machine readable C header files. These files are
+.json -formatted and a byproduct to get lever interoperate cleanly with C code.
+
+TODO: explaining this will require awake person.
+
+Provided objects:
+
+    library(path, func=default, dependencies={}, decorator=default)
+    open_nobind(path, dependencies={}, decorator=default) TODO: reconsider name.
+
+
+
                                                           stdlib/ffi/__init__.py
+
+FFI on lever was designed with a goal to make it so nice to work with
+automatically generated foreign function bindings that there would be little or
+no need to write wrappers for them.
+
+This means that given good enough C header parser/spec and tool to generate
+json-formatted headers, you can use it in a manner that isn't much worse off
+than using the library directly in C.
+
+TODO: continue
+
+Supported objects:
+
+    array
+    bitmask
+    cfunc
+    handle
+    library
+    mem
+    pointer
+    signed
+    struct
+    union
+    unsigned
+    voidp
+    wrap
+    pool
+    cast(obj, ctype)
+    sizeof(ctype, count=1)
+    malloc(ctype, count=1, clear=? TODO)
+    automem(ctype, count=1, clear=? TODO)
+    free(mem)
+    memset(dst, byte, count)
+    memcpy(dst, src,  count)
+    ref(membuffer)
+
+                                                           stdlib/ffi/bitmask.py
+
+Idea of bitmasks, including enums and flags. This is not used if it doesn't make
+the C FFI cleaner.
+
+This became useful when implementing early vulkan support to Lever. Vulkan had
+so many object-orientedly named bitmasks that it became much cleaner when you
+have something to tackle them.
+
+TODO: MOAR details.
+
+
                                                             stdlib/ffi/simple.py
+
+ffi/simple.py simple, platform independent concepts of the FFI belong here.
+
+TODO: more details
+
+
+
                                                            stdlib/ffi/systemv.py
 
+ffi/systemv.py This code used to be partially or completely SystemV specific.
+
+TODO: same thing. details.
 
 
                                                                     stdlib/fs.py
