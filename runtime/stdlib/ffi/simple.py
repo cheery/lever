@@ -31,6 +31,8 @@ class Type(Object):
         raise Object.getattr(mem, name)
 
     def on_setattr(self, mem, name, value):
+        if name == u"to":
+            return self.store(mem.pool, mem.pointer, value)
         raise Object.setattr(mem, name, value)
 
 # Many systems are sensitive to memory alignment

@@ -134,7 +134,7 @@ simple_shader = (type, pathname):
     so = gl.createShader(type)
     source = fs.read_file(pathname)
     source = encode_utf8(source)
-    source_length = ffi.automem(ffi.uint)
+    source_length = ffi.automem(ffi.uint, 1)
     source_length.to = source.length
     gl.shaderSource(so, 1, ffi.ref(source), source_length)
     compiled = ffi.automem(ffi.int)

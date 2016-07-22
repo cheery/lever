@@ -98,7 +98,7 @@ actions = :exnihilo()
         return Code("constant", string.string)
     list = (args=[]):
         return Code("list", args...)
-    dict = (pairs):
+    dict = (pairs=[]):
         return CodeGroup("setitem",
             Code("call", Getvar("dict")), pairs)
 
@@ -711,7 +711,7 @@ class Getvar extends Cell
             depth = scope.depthc - 1
             while scope.parent
                 if self.name in scope.parent.localv
-                    return scope.parent.getvar(context, self.loc, depth, self.name)
+                    return scope.parent.getvar(context, depth, self.name)
                 depth += scope.parent.depthc
                 scope = scope.parent
         return context.op("getglob", self.name)
