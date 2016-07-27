@@ -307,13 +307,22 @@ behavior of an instruction, please change the opcode as well.
 
                                                          evaluator/sourcemaps.py
 
-TODO: rewrite this section to make it consistent.
+I've been following how other languages made error mapping to source files
+and learnt along the way.
 
-The sourcemapping seen here is copied from the javascript world.
+It saddened me that python couldn't point out the exact position where error
+occured, just the line. Also I felt that if this system wass well-documented,
+and forwards-compatible it would make it easier to create code that generates
+bytecode.
 
-Sourcemaps are stored in Uint8Arrays to make their encoding and decoding into
-files very fast. The purpose of this map is to translate program counter [pc]
-values into a path and a position inside a file.
+The evaluator/sourcemaps.py describes the sourcemaps of Lever. The sourcemapping
+seen here is copied from the javascript world.
+
+Every function in compilation unit has a sourcemap -object.
+
+The purpose of this map is to translate program counter [pc] values into a path
+and a position inside a file. Sourcemaps are stored in Uint8Arrays to make their
+encoding and decoding into files very fast. 
 
 Every sourcemap consists of variable length quantity -encoded values of unsigned
 kind. There are 6 VLQ encoded values in every record.
@@ -324,22 +333,22 @@ The record contains following values:
     file_id -- Index to the sources -list.
     col0, lno0, col1, lno1 -- Range inside the file.
 
-Every compilation unit has been annotated with 'sources' -list. It points out
-relative paths to the source files the unit was compiled from.
 
-The Lever compiler only compiles one source file into one output. But I am
-aware there are situations where single bytecode unit might originate from
-multiple sources files.
+Compilation unit has been annotated with 'sources' -list, which points out the
+paths to the source code files. The paths are relative to the file location of
+the compilation unit. To retrieve the source file, you would catenate 'source'
+to the compilation unit.
 
-To retrieve the actual origin of the file, the path in "source" should be
-attached to the directory path where the bytecode was loaded from.
+Current lever compiler only compiles one source file into one compilation unit.
+I foresee there could be a situation where single compilation unit will contain
+several different files.
 
-CallErrors are particularly nasty if you're not aware of which function is
-getting the bad arguments. To allow CallErrors point out the function it
-originates from, the sourcemap holds a zero-count record in the beginning, where
-you can put something where the CallError should point towards.
 
-The same "header" record can be later used to "go to the source" of a function.
+A sourcemap can hold a record with count=0 in the beginning. This should point
+to the declaration of the function.
+
+The zero-count record is meant to make CallErrors little more readable and
+can be later used to implement "go to the source" -function.
 
 
 
