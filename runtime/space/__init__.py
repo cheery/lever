@@ -1,5 +1,5 @@
 from rpython.rlib.objectmodel import specialize, always_inline
-from interface import Object, Interface, null
+from interface import Object, Interface, null, cast, cast_for
 from builtin import Builtin, signature, expectations_error
 from dictionary import Dict
 from listobject import List

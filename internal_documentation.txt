@@ -755,6 +755,10 @@ Every interface are considered to have methods. When method is retrieved via
 getattr it is bound. This is default behavior that can be vastly mangled by the
 runtime.
 
+Every interface defined by runtime can get a 'cast' -function which
+describes the implicit casting rules into those values follow. Use
+'space.cast_for(ClassName)' -decorator to tell out the function.
+
 It'd be likely beneficial to have a Property -system for builtins. I yet have to
 consider options for how to do this.
 

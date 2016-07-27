@@ -46,14 +46,14 @@ def signature(*argtypes, **keywords):
                 if isinstance(arg, argtypes[i]):
                     args += (arg,)
                 else:
-                    raise expectations_error(i, argtypes[i].interface.name)
+                    args += (space.cast(arg, argtypes[i], u"arg:%d"%i),)
             for j in argj:
                 if j < L:
                     arg = argv[j]
                     if arg is null:
                         arg = None
                     elif not isinstance(arg, argtypes[j]):
-                        raise expectations_error(j, argtypes[j].interface.name)
+                        arg = space.cast(arg, argtypes[j], u"arg:%d"%j)
                 else:
                     arg = None
                 args += (arg,)
@@ -67,5 +67,6 @@ def signature(*argtypes, **keywords):
 # Sometimes we may expect different things, so there needs to be a way to escape
 # the signature when it is appropriate and drop back into expectations error
 # if expectations are violated.
+# TODO: remove after grep.
 def expectations_error(index, name):
     raise space.unwind(space.LTypeError(u"expected arg:%d is %s" % (index, name)))

@@ -1,5 +1,5 @@
 import re
-from rpython.rlib.objectmodel import compute_hash
+from rpython.rlib.objectmodel import compute_hash, specialize, always_inline
 import space
 
 class Object:
@@ -166,3 +166,33 @@ class BoundMethod(Object):
 
     def repr(self):
         return u"%s.%s" % (self.obj.repr(), self.name)
+
+# Notice that cast != instantiation.
+# The distinction is very important.
+cast_methods = {}
+def cast_for(cls):
+    def _cast_decorator_(x):
+        cast_methods[cls] = x
+        return x
+    return _cast_decorator_
+
+# Cast didn't appear to handle well as a class method, so I made this
+# convenient table construct that uses default handling when conversion
+# is not available.
+
+# User objects will not have access to implement this method of casting. 
+# Userspace casting will be treated as separate problem.
+
+# TODO: frame entry association could be "cool" here. So you would know
+#       where a cast attempt failed.
+@always_inline
+@specialize.arg(1, 2)
+def cast(x, cls, info=u"something"):
+    try:
+        fn = cast_methods[cls]
+    except KeyError as _:
+        raise space.unwind(space.LTypeError(u"expected %s is %s, got %s" % (
+            info, cls.interface.name, x.repr())))
+    res = fn(x)
+    assert isinstance(res, cls)
+    return res

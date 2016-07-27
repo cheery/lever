@@ -1,4 +1,4 @@
-from interface import Object, null
+from interface import Object, null, cast_for
 from rpython.rlib.objectmodel import compute_hash
 from builtin import signature
 from errors import OldError
@@ -102,15 +102,18 @@ def boolean(cond):
 
 @Float.instantiator
 @signature(Object)
+@cast_for(Float)
 def instantiate(obj):
     return Float(to_float(obj))
 
 @Integer.instantiator
 @signature(Object)
+@cast_for(Integer)
 def instantiate(obj):
     return Integer(to_int(obj))
 
 @Boolean.instantiator
 @signature(Object)
+@cast_for(Boolean)
 def instantiate(obj):
     return boolean(is_true(obj))
