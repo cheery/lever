@@ -1181,32 +1181,78 @@ This means that given good enough C header parser/spec and tool to generate
 json-formatted headers, you can use it in a manner that isn't much worse off
 than using the library directly in C.
 
-TODO: continue
+To keep it simple, in terms of C-visible storage, the FFI only has a concept of
+memory buffer.
 
 Supported objects:
 
-    array
+    array(ctype, count=null)
     bitmask
-    cfunc
-    handle
-    library
-    mem
-    pointer
-    signed
-    struct
-    union
-    unsigned
-    voidp
-    wrap
-    pool
+    cfunc(restype, [argtype])
+    handle - A concept of a library handle.
+             It may make sense to make this object more like mem in future.
+    library(name, api) - 
+        Loads a C library with given name. The api -object can be used to supply
+        headers to make the library immediately usable. api must implement
+        getitem()
+        TODO: put to support path objects.
+        throws ffi.LoadError if fails.
+    mem - A memory object, can be obtained with malloc & automem
+    pointer(ctype)
+    signed(size)
+    struct([[name, ctype]])
+    union([[name, ctype]])
+    unsigned(size)
+    voidp - a void pointer.
+    wrap - an object that can be returned to a library object.
+         - Contains a reference to cname and a ctype. The intent is
+         - that the library exports when it sees such object.
+    pool(autoclear=true)
+    pool.alloc(ctype, count=1, clear=pool.autoclear)
+        - allocate from the pool.
+    pool.mark(obj) - keep 'obj' alive while pool is alive.
+    pool.free() - clean every entry in the pool.
     cast(obj, ctype)
     sizeof(ctype, count=1)
-    malloc(ctype, count=1, clear=? TODO)
-    automem(ctype, count=1, clear=? TODO)
+    malloc(ctype, count=1, clear=false)
+    automem(ctype, count=1, clear=false)
     free(mem)
     memset(dst, byte, count)
     memcpy(dst, src,  count)
     ref(membuffer)
+
+TODO: make an object that is filled with automem-record of correct type if fed
+into the call.
+
+TODO: implement callbacks finally? I still have managed to avoid needing them
+      though...
+
+
+
+                                                            stdlib/ffi/simple.py
+
+ffi/simple.py simple, platform independent concepts of the FFI belong here.
+
+This file establishes some concepts in the lever FFI, so I should point them
+out here.
+
+sizeof() in lever accepts both a ctype and a count. This makes sure the
+parametric C types can be treated correctly.
+
+size=0 and align=0 in a type means it's an opaque type and cannot be allocated.
+
+It can be worth mentioning that any lever object can be treated as a C type if
+there are the methods .load(value) and .store(value), and an attribute .shadow
+
+If the above happens, the type is wrapped into a "shadow" -type which internally
+takes care that such user-defined-ctypes behave like other type objects.
+
+C-types are like interfaces in the sense that they provide an interface. But this
+interface is provided to a memory object laying in C heap.
+
+Types also describe getattr/setattr behavior of the C objects.
+
+
 
                                                            stdlib/ffi/bitmask.py
 
@@ -1217,14 +1263,38 @@ This became useful when implementing early vulkan support to Lever. Vulkan had
 so many object-orientedly named bitmasks that it became much cleaner when you
 have something to tackle them.
 
-TODO: MOAR details.
+Internally bitmask is represented as a value wrapped with an annotation.
+
+There are several things you can do for bitmasks. First of all you can convert
+them to integers. Second you can getattr them to query whether the flag or enum
+is set. Example:
+
+    apiType = lib.buffType
+    if apiType.FLOAT
+        float things...
+    elif apiType.INT
+        int things...
+    else
+        some error
+
+When you have a field that accepts a bitmask, you may supply it a string,
+another bitmask, integer or a list (only if it's not an enum).
+
+For example:
+
+    lib.setTypes("FLOAT")
+    lib.setTypes(["INT", "FLOAT"])
+    lib.setTypes(2)
 
 
-                                                            stdlib/ffi/simple.py
+TODO: Implicit conversions present across the lever ffi...
+      I've been considering whether they should be reversible for some purpose.
+      For example. these bitmasks.
+      
+      Should it be possible to implicitly convert them into best representation
+      you can infer?
 
-ffi/simple.py simple, platform independent concepts of the FFI belong here.
-
-TODO: more details
+      This might allow lever to have it easier to store C objects in .json
 
 
 
@@ -1232,7 +1302,38 @@ TODO: more details
 
 ffi/systemv.py This code used to be partially or completely SystemV specific.
 
-TODO: same thing. details.
+The file has received non-systemv specific things as well, so it might be
+revised if lever is ever ported to different platforms. 
+
+Arrays are pretty standard part in Lever. They may either form a parametric
+field, or then their size is specified and they don't.
+
+If the size of array ctype is 1, the array memory object has a .str -attribute
+which gives you the array contents as a string. Lever assumes utf-8 encoding in
+this case.
+
+Arrays can be implicitly filled from lists when there is memory backing.
+
+Unions and structures can be implicitly filled from a dictionary when there is
+memory backing.
+
+Pools were introduced when considering Vulkan bindings. The intent of this
+construct is to make it easy to fill large C structures.
+
+When you allocate an object from a pool, the pool is used for implicit
+allocation and for keeping references alive.
+
+In presence of pool you can setattr lists and dictionaries into memory object
+and see them stored into implicitly allocated C structures that you can pass to
+C API.
+
+If you pass a mem -object to pool-allocated record, the pool marks the object
+and keeps it alive as long as the pool itself is alive.
+
+Calls to C functions create themselves a pool to construct a function call. You
+should be able to call a function with a list as a parameter and expect it to be
+converted into memory object of appropriate size.
+
 
 
                                                                     stdlib/fs.py
