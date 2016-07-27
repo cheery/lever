@@ -811,7 +811,8 @@ function should be used with.
 
 For efficient implementation there's a dissonance in multimethods that lever
 presents, with extended interfaces. The multimethods completely ignore
-inheritance rules.
+inheritance rules. It means that Lever multimethods can be perceived to violate
+Liskov Substitution Principle.
 
 Multimethods have fixed arity. This means that they select the function by
 fixed number of arguments they receive.
