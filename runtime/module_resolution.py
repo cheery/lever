@@ -28,6 +28,15 @@ class ModuleScope(Object):
         except KeyError as k:
             return None
 
+    def getattr(self, name):
+        if name == u"parent":
+            return self.parent if self.parent is not None else null
+        if name == u"local":
+            return self.local
+        if name == u"frozen":
+            return boolean(self.frozen)
+        return Object.getattr(self, name)
+
     def getitem(self, item):
         if isinstance(item, String):
             if item.string in self.cache:
@@ -36,6 +45,10 @@ class ModuleScope(Object):
 
     def iter(self):
         return ScopeIterator(self.cache.iterkeys())
+
+@ModuleScope.instantiator2(signature(pathobj.Path, ModuleScope, optional=1))
+def _(local, parent):
+    return ModuleScope(local, parent)
 
 class ScopeIterator(Object):
     _immutable_fields_ = ['iterator']
@@ -220,7 +233,13 @@ class Import(Object):
     def getattr(self, name):
         if name == u'scope':
             return self.scope
+        if name == u"local":
+            return self.local
         return Object.getattr(self, name)
+
+@Import.instantiator2(signature(pathobj.Path, ModuleScope))
+def _(local, scope):
+    return Import(local, scope)
 
 @ModuleScope.builtin_method
 @signature(ModuleScope, String)
@@ -239,3 +258,6 @@ def resuffix(string, suffix, new_suffix=u""):
         i = max(0, len(string) - len(suffix))
         return string[0:i] + new_suffix
     return string + new_suffix
+
+base.module.setattr_force(u"ModuleScope", ModuleScope.interface)
+base.module.setattr_force(u"Import", Import.interface)

@@ -120,3 +120,7 @@ class Multimethod(Object):
 @signature(Integer)
 def _(arity):
     return Multimethod(arity.value)
+
+@Multimethod.method(u"call_suppressed", signature(Multimethod, variadic=True))
+def Multimethod_call_suppressed(mm, args):
+    return mm.call_suppressed(args)

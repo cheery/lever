@@ -276,7 +276,6 @@ def _(a, b):
 
 @operators.concat.multimethod_s(Path, Path)
 def concat(a, b):
-    assert isinstance(b, Path)
     if is_absolute(b):
         return Path(duplicate_prefix(b.prefix), list(b.pathseq))
     pathseq = pathseq_ncat(list(a.pathseq), b.pathseq)

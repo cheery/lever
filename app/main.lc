@@ -4,7 +4,8 @@ import base
 console = :module("console", base)
     dir = getcwd()
     name = "console"
-    #%"import" = TODO
+    %"import" = Import(dir,
+        ModuleScope(dir, %"import".scope.parent))
 
 print("LEVER 0.8.0")
 buffer = []

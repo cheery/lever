@@ -524,6 +524,11 @@ This is not implemented yet, but "foo.bar" -convention in lever should trigger
 import of foo/init.lc, then getattr(init, "import")("bar"). Otherwise if you
 import it directly, it should skip the foo/init.lc entirely.
 
+Introduces following names into 'base' -module:
+
+    ModuleScope(local, parent=null)
+    Import(local, scope)
+
 
 
                                                                       pathobj.py
@@ -567,6 +572,9 @@ this file provides following entries:
     path ++ path
 
 Also implements getcwd, chdir, to_path, so on..
+
+TODO: Reconsider whether path objects should be immutable. Or at least become
+      immutable when stringified the first time.
 
 
 
@@ -816,7 +824,8 @@ inheritance rules. It means that Lever multimethods can be perceived to violate
 Liskov Substitution Principle.
 
 Multimethods have fixed arity. This means that they select the function by
-fixed number of arguments they receive.
+fixed number of arguments they receive. But otherwise they let all arguments
+pass through.
 
 Basically the action done by lever multimethod is:
 
@@ -831,6 +840,7 @@ Multimethods can handle:
     setitem
     .default set and get
     call
+    .call_suppressed(args...)
 
 This behavior makes it really easy to reason about multimethods! This is
 invaluable if lever is ever translated, and it is invaluable for documentation.
@@ -851,9 +861,6 @@ suppressed this time so that there doesn't come an infinite loop.
 There's very small potential surprise that the person didn't notice the values
 were coerced to try again. But otherwise this way is much better than trying to
 be stupid and pretend that float inherits from a integer inherits from a boolean.
-
-There are some unimplemented features such as that multimethod cannot be called
-by the user in suppressed mode. This should be fixed.
 
 
 

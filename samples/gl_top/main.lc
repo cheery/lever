@@ -9,9 +9,9 @@ with_hmd = false # or = true if you have oculus rift.
                  # rift not tested yet.
 # https://wiki.libsdl.org/CategoryAPI
 if win32
-    sdl = ffi.library("SDL2.dll", api.open_nobind("libSDL2", {}))
+    sdl = ffi.library("SDL2.dll", api.read_file("libSDL2", {}))
 else
-    sdl = ffi.library("libSDL2.so", api.open_nobind("libSDL2", {}))
+    sdl = ffi.library("libSDL2.so", api.read_file("libSDL2", {}))
 # https://www.opengl.org/documentation/
 # https://www.opengl.org/sdk/docs/man/
 gl = api.library("libGL", sdl.GL_GetProcAddress)

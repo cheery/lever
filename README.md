@@ -40,6 +40,7 @@ Works on Windows if not blown.
  * Foreign Function Interface which relies on automatically generated C headers. Use of C libraries among dynamically typed code is made simpler than it ever was.
  * Bytecode format inspired by SPIR-V. The format supports quick changes to instruction set, and makes it easy to keep different bytecode related tools updated.
  * Coroutines, and coroutine-enabled event loop, provided by RPython. Crucial tool for writing clean code that may wait asynchronously.
+ * Module resolution scopes.
  * Fixed-arity Multimethods. Efficient implementation purposefully incompatible with inheritance. Most operators in lever are defined as multimethods. Doesn't come without drawbacks, but makes lot of things cleaner.
  * Customizable grammars that can be shared between utilities. Made possible with a parsing kernel that copies concepts from [marpa parser](https://jeffreykegler.github.io/Marpa-web-site/). Makes it trivial to provide auxiliary notation for legibility.
  * POSIX-compatible path convention that is enforced across platforms: The programmer and configuration files see POSIX-paths while the operating system see an illusion of obeying its rules regarding file paths.
@@ -49,9 +50,41 @@ Works on Windows if not blown.
 
 TODO, also may want to sprinkle some (already running) code examples into introduction to immediately prove some claims.
 
+
+### Console - modules, compiler, bytecode usecase
+
+Although it is surrounded by syntax, "import" is just a function in your module. The result is you can do weird parlour tricks by importing from other modules.
+
+Python tried to dictate and force me to not change default environment of a script. It was one of those decisions that drove me to design my own language that would not have this handicap.
+
+Lever console is something that is not implemented in the runtime. It's an application present in app/main.lc. Here you have a shortened version of that program:
+
+    import base, compiler
+
+    console = :module("console", base)
+        dir = getcwd()
+        name = "console"
+        %"import" = Import(dir,
+            ModuleScope(dir, %"import".scope.parent))
+
+    while true
+        string = input(">> ")
+        code = compiler.read_string(string)
+        print(repr(load(code)(console)))
+
+As shown above, the code is explicitly compiled, explicitly loaded and the environment where it runs is explicitly created and passed in. You can absolutely replace one or all of these pieces with your own.
+
+Like a firearm, you can disassemble Lever's way to load code and then assemble it back up. And like with firearms, you bear the consequences of using the power it provides. I admit the whole lever is just a tool. It leaves the moral decisions to whoever uses it.
+
 ### Collision checking between shapes - Custom multimethods usecase
 
+Lever has fixed-arity multimethods that resolve to a value to call in place of a multimethod. If no match is made, you will observe a call to .default -value.
 
+Lever multimethods do not obey inheritance rules. They also may start to accumulate methods if you reload modules. It is very easy to reason about their behavior though.
+
+I figured out how awesome they are at implementing operators such as "+", "-" and so on. And thought, if you don't do some stupid things they really shine at what they are good at.
+
+To showcase multimethods, I got this collision checking between different kinds of shapes:
 
     collides = multimethod(2)
 
@@ -67,6 +100,16 @@ TODO, also may want to sprinkle some (already running) code examples into introd
     # Parallel planes do not collide
     collides[[Plane, Plane]] = (plane1, plane2):
         return abs(dot(plane1.normal, plane2.normal)) != 1.0
+
+    collides.default = (a, b):
+        return collides.call_suppressed(b, a)
+        # If an exception is added to catch suppress here, you could introduce
+        # some behavior even after an attempted default call failed.
+        # See 'Contribution or Use'
+
+Here I think it's perfect, because you don't do anything with inheritance when you have geometric shapes. Also, these different shapes tend to be really well-defined. So you can live-reload every method here until you get it correct.
+
+Why would you want collision checkers like these? Well, since Unity3D doesn't have them, there's very good chance all physics engines do not expose the collision checking functions they have. Therefore you're going very dry if you wanted to check whether there's space for something before you instantiate it into the scene! You might have to implement these yourself. In that case multimethods might be something to consider.
 
 ### Script-relative resource loading - POSIX-path object usecase
 

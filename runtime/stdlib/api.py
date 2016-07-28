@@ -232,7 +232,7 @@ def library(path, func, dependencies, decorator):
         return FuncLibrary(api, func)
     return ffi.Library.interface.call([String(so_path), api])
 
-@builtin(u"open_nobind", signature(Object, Object, Object, optional=1))
+@builtin(u"open_nobind", signature(pathobj.Path, Object, Object, optional=2))
 def open_nobind(path, dependencies, decorator):
     print "api.open_nobind will be removed in favor to api.read_file"
     print "Fix code using api.open_nobind(...) to use api.read_file(...)"
