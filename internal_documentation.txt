@@ -1069,18 +1069,26 @@ use. They were originally designed to handle Vulkan. They should be only used if
 it makes easier to use the library.
 
 Provided objects:
+    
+    so_ext
+    funclibrary(api, func)
 
-    library(path, func=default, dependencies={}, decorator=default)
-    open_nobind(path, dependencies={}, decorator=default) TODO: reconsider name.
+    library(name, func=null, dependencies={}, decorator=null)
+        - this is a shorthand for:
+            ffi.library(name, api.read_file(name, dependencies, decorator))
+            api.funclibrary(api.read_file(name, dependencies, decorator), func)
 
-    TODO: reconsider order of arguments here.
-    TODO: reconsider the structure of the whole damn API.
+    read_file(path, dependencies={}, decorator=null)
+    read_object(obj, dependencies={}, decorator=null)
+
 
     api.lookup_type(name)
         - looks up a type.
     api.build_type(name, decl)
         - builds a type from declaration, assuming it had the name given here.
           Was introduced along the decorator argument.
+
+
 
 Meaning of different arguments:
 
@@ -1089,13 +1097,15 @@ Meaning of different arguments:
           If the path doesn't end with ".json", the string will
           be catenated to the end of the path.
 
-          TODO: this is inconsistent with relative handling of paths elsewhere.
-                Also it's required to be a string for some reason now.
+          The 'api' should treat paths as if they are relative to headers/
+          -directory.
 
-          Not satisfying.
+          To be forwards compatible, the ".json" file extension will be
+          supplied to you, and you shouldn't add it yourself.
 
     func: Meant for times when you have something like glGetProcAddr and you
           would need to convert it into a library.
+          You get a funclibrary that way.
 
     dependencies: If a library depends on something, you can pass here which API
                   it should use to satisfy the dependency. The object given here
@@ -1105,7 +1115,6 @@ Meaning of different arguments:
         Can be used to redefine how the library builds type objects. Also a
         concept that was originally introduced to handle Vulkan.
 
-You may expect this api will change at least once before 1.0.0.
 
 
 Format and a function of a header json file:

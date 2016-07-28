@@ -276,6 +276,7 @@ def _(a, b):
 
 @operators.concat.multimethod_s(Path, Path)
 def concat(a, b):
+    assert isinstance(b, Path)
     if is_absolute(b):
         return Path(duplicate_prefix(b.prefix), list(b.pathseq))
     pathseq = pathseq_ncat(list(a.pathseq), b.pathseq)
@@ -361,6 +362,7 @@ def getcwd():
 def chdir(path):
     os.chdir(os_stringify(path).encode('utf-8'))
 
+@cast_for(Path)
 def to_path(obj):
     if isinstance(obj, String):
         return parse(obj.string)

@@ -13,19 +13,6 @@ conf = ApiConfig()
 def init(lever_path):
     conf.headers_dir = pathobj.concat(lever_path, pathobj.parse(u"headers"))
 
-def dirname(p):
-    """Returns the directory component of a pathname, adjusted for rpython"""
-    i = p.rfind('/')
-    if i > 0:
-        return p[:i]
-    elif i == 0:
-        return p[:1]
-    else:
-        return ""
-
-def get_header(path):
-    return pathobj.concat(conf.headers_dir, path)
-
 class Api(Object):
     def __init__(self, constants, types, variables, dependencies, decorator):
         self.cache = {}
@@ -207,83 +194,70 @@ class FuncLibrary(Object):
         elif res is null:
             raise unwind(LAttributeError(self, name))
         else:
-            raise OldError(u"expected memory object, not %s" % res.repr())
+            raise unwind(LTypeError(
+                u"expected api(%s) is memory object, got %s" % (
+                    cname, res.repr())))
 
 @FuncLibrary.instantiator
-def _(argv):
-    if len(argv) < 2:
-        raise OldError(u"expected at least 2 arguments")
-    return FuncLibrary(argv[0], argv[1])
-
-def wrap_json(obj):
-    if isinstance(obj, dict):
-        dict_ = Dict()
-        for key, value in obj.items():
-            dict_.setitem(wrap_json(key), wrap_json(value))
-        return dict_
-    elif isinstance(obj, list):
-        return List(map(wrap_json, obj))
-    elif isinstance(obj, str):
-        return from_cstring(obj)
-    elif isinstance(obj, unicode):
-        return from_ustring(obj)
-    elif isinstance(obj, int):
-        return Integer(obj)
-    elif obj is None:
-        return null
-    else:
-        assert False, repr(obj)
+@signature(Object, Object)
+def _(api, func):
+    return FuncLibrary(api, func)
 
 module = Module(u'api', {
     u"so_ext": from_cstring(platform.so_ext),
     u"funclibrary": FuncLibrary.interface,
 }, frozen=True)
 
-def builtin(fn):
-    module.setattr_force(fn.__name__.decode('utf-8'), Builtin(fn))
-    return fn
+def builtin(name, deco):
+    def _builtin_(fn):
+        module.setattr_force(name, Builtin(deco(fn)))
+        return fn
+    return _builtin_
 
-@builtin
-def open(argv):
+@builtin(u"open", signature(String, Object, Object, Object, optional=3))
+def open(path, func, dependencies, decorator):
     print "api.open will be soon removed in favor to api.open_nobind"
     print "Fix code using api.open(...) to use api.library(...)"
-    return library(argv)
+    return library(path, func, dependencies, decorator)
 
-@builtin
-@signature(String, Object, Object, Object, optional=3)
+@builtin(u"library", signature(String, Object, Object, Object, optional=3))
 def library(path, func, dependencies, decorator):
     path = path.string
     if path.endswith(u".so") or path.endswith(u".json") or path.endswith(u".dll"):
         path = path.rsplit(u'.', 1)[0]
     json_path = pathobj.parse(path + u".json")
     so_path = path + u"." + platform.so_ext.decode('utf-8')
-    api = open_api(json_path, dependencies, decorator)
+    api = read_file(json_path, dependencies, decorator)
     if func is not None:
         return FuncLibrary(api, func)
     return ffi.Library.interface.call([String(so_path), api])
 
-@builtin
-@signature(Object, Object, Object, optional=1)
+@builtin(u"open_nobind", signature(Object, Object, Object, optional=1))
 def open_nobind(path, dependencies, decorator):
-    path = pathobj.to_path(path)
+    print "api.open_nobind will be removed in favor to api.read_file"
+    print "Fix code using api.open_nobind(...) to use api.read_file(...)"
+    return read_file(path, dependencies, decorator)
+
+@builtin(u"read_file", signature(pathobj.Path, Object, Object, optional=2))
+def read_file(path, dependencies, decorator):
     basename = path.getattr(u"basename")
     if isinstance(basename, String):
         if not basename.string.endswith(u".json"):
             path.setattr(
                 u"basename",
                 String(basename.string + u".json"))
-    return open_api(path, dependencies, decorator)
-
-def open_api(json_path, dependencies, decorator):
-    path = get_header(json_path)
+    path = pathobj.concat(conf.headers_dir, path)
     try:
         apispec = json.read_file([path])
     except OSError as error:
         raise OldError(u"[Errno %d]: %s\n" % (error.errno, pathobj.stringify(path)))
-    api = Api(
+    return read_object(apispec, dependencies, decorator)
+
+@builtin(u"read_object", signature(Object, Object, Object, optional=2))
+def read_object(apispec, dependencies, decorator):
+    return Api(
         apispec.getitem(String(u"constants")),
         apispec.getitem(String(u"types")),
         apispec.getitem(String(u"variables")),
         dependencies,
         decorator)
-    return api
