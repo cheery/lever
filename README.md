@@ -48,7 +48,6 @@ Works on Windows if not blown.
 
 ## Use cases
 
-TODO, also may want to sprinkle some (already running) code examples into introduction to immediately prove some claims.
 
 
 ### Console - modules, compiler, bytecode usecase
@@ -73,8 +72,6 @@ Lever console is something that is not implemented in the runtime. It's an appli
         print(repr(load(code)(console)))
 
 As shown above, the code is explicitly compiled, explicitly loaded and the environment where it runs is explicitly created and passed in. You can absolutely replace one or all of these pieces with your own.
-
-Like a firearm, you can disassemble Lever's way to load code and then assemble it back up. And like with firearms, you bear the consequences of using the power it provides. I admit the whole lever is just a tool. It leaves the moral decisions to whoever uses it.
 
 ### Collision checking between shapes - Custom multimethods usecase
 
