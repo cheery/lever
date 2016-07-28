@@ -47,7 +47,50 @@ Works on Windows if not blown.
 
 ## Use cases
 
-TODO, also may want to sprinkle some (already running) code examples into introduction to prove some claims.
+TODO, also may want to sprinkle some (already running) code examples into introduction to immediately prove some claims.
+
+
+### Distance between two lines - vector arithmetic usecase
+
+Vectors, matrices and quaternions are ubiquitous in graphics applications.
+
+But so far I've seen them implemented by third party libraries. But it's not common for different programs to use the same library. It makes it difficult to share code and graphic data between programs.
+
+To Lever I took the semantics from GLSL -language because they were fairly good. Most of the functionality is implemented as multimethods to allow extension.
+
+I care that the language I should use works for solving geometry problems.
+
+Line to line distance is quite simple thing to calculate, but it should give a glimpse of how clean vector arithmetic can be in Lever:
+
+    line_line_distance = (p, q):
+        u = p[1] - p[0]
+        v = q[1] - q[0]
+        c = q[0] - p[0]
+        d = cross(u, v)
+        return abs(dot(c, d)) / d
+
+    line_line_nearest = (p, q):
+        u = p[1] - p[0]
+        v = q[1] - q[0]
+        c = q[0] - p[0]
+
+        a = dot(u, u)
+        b = dot(u, v)
+        c = dot(v, v)
+        d = dot(u, c)
+        e = dot(v, c)
+
+        div = a*c - b*b
+        if div == 0.0 # lines are parallel or either one is degenerate
+            return exnihilo()
+                s = 0.0
+                if b > c
+                    t = d/b
+                else
+                    t = e/c
+        return exnihilo()
+            s = (b*e - c*d) / div
+            t = (a*e - b*d) / div
 
 ## How to try it out
 

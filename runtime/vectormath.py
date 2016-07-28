@@ -522,6 +522,24 @@ def atan2_(y, x):
 def sqrt_(f):
     return Float(sqrt(f.number))
 
+@Builtin
+@signature(Float)
+def abs_(f):
+    if f.number < 0.0:
+        return Float(-f.number)
+    else:
+        return f
+
+@Builtin
+@signature(Float)
+def sign(f):
+    if f.number < 0.0:
+        return Float(-1.0)
+    elif f.number > 0.0:
+        return Float(+1.0)
+    else:
+        return Float(0.0)
+
 #acos, asin, atan, atan2
 
 @Builtin
@@ -565,4 +583,6 @@ by_symbol = {
     u"pi":        Float(pi),
     u"tau":       Float(pi*2),
     u"projection_matrix": projection_matrix,
+    u"abs":       abs_,
+    u"sign":      sign,
 }
