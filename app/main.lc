@@ -1,7 +1,10 @@
 import compiler
 import base
 
-console = module("console", base)
+console = :module("console", base)
+    dir = getcwd()
+    name = "console"
+    #%"import" = TODO
 
 print("LEVER 0.8.0")
 buffer = []
@@ -13,7 +16,7 @@ while true
     buffer.append(string)
     try
         code = compiler.read_string("\n".join(buffer), "console")
-        print(repr(exec(code, console)))
+        print(repr(load(code)(console)))
     except compiler.SyntaxError as syn
         if syn.at_eof
             continue

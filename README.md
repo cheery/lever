@@ -49,6 +49,42 @@ Works on Windows if not blown.
 
 TODO, also may want to sprinkle some (already running) code examples into introduction to immediately prove some claims.
 
+### Collision checking between shapes - Custom multimethods usecase
+
+
+
+    collides = multimethod(2)
+
+    collides[[Sphere, Sphere]] = (sphere1, sphere2):
+        d = sphere1.pos - sphere2.pos
+        r = sphere1.r + sphere2.r
+        return r*r <= dot(d, d)
+
+    collides[[Sphere, Plane]] = (sphere, plane):
+        d = dot(plane.normal, sphere.pos) - plane.d
+        return sphere.radius <= d
+
+    # Parallel planes do not collide
+    collides[[Plane, Plane]] = (plane1, plane2):
+        return abs(dot(plane1.normal, plane2.normal)) != 1.0
+
+### Script-relative resource loading - POSIX-path object usecase
+
+In most languages, when I've had resources associated with scripts it's been complicated to refer to those files.
+
+Relative references should be something even simplest applications should handle right. Lever makes it easy. Every module loaded gets 'dir' -variable which tells the current directory where the script was loaded from:
+
+    import fs
+
+    text = fs.read_file(dir ++ "greeting_message.txt")
+    print(text)
+
+Below you see how it'd change if you wanted your assets into an adjacent directory:
+
+    assets = dir ++ "../assets"
+    text = fs.read_file(assets ++ "greeting_message.txt")
+
+The system is forwards compatible to reading from servers and from zipfiles.
 
 ### Distance between two lines - vector arithmetic usecase
 
@@ -109,9 +145,12 @@ If you find out you're memory constrained, you may want to try compile with `./s
 
 ## Contribution or Use
 
-If you got excited about something you tried out with lever, you may be interested in forking the project. When you do it via github it will inform me of the forks. I may merge in contributions that increase the quality of the project.
+Because it is so fast to come up with new features, much of Lever development is demand driven. You may discover features that should be implemented by the runtime, or by a lever library.
 
-But remember that I'm changing things here, and I change them a lot.
+When that happens, you have two options:
+
+ * Implement the feature yourself. Make a pull request to not having to maintain your own version.
+ * Write an user story, article or feature proposal. Send it to my email or file an issue in github.
 
 ## License
 

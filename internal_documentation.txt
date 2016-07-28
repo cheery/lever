@@ -49,7 +49,7 @@ The following is being inserted into base in base.py:
     property
     Uint8Array
     set
-    exec(program:dict, module)
+    load(program:dict, path=null)(module)
     class(methods:exnihilo, parent:interface, name:str)
     interface(object)
     iter(object)
@@ -802,9 +802,6 @@ implementation.
 
 Modules can be cleared during reimport. You can getattr/setattr anything they
 contain. And you can use a module as a base when you instantiate new module.
-
-Makes me think I should probably remove "exec()" and replace it with an object
-that actually returns a Program -object.
 
 
 
