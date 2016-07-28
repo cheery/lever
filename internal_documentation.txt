@@ -862,14 +862,12 @@ by the user in suppressed mode. This should be fixed.
 
                                                                 space/numbers.py
 
-Basic structures for floats, integers and booleans. Might be that some implicit
-conversion system needs to be designed, so that you can call sin -function with
-an integer.
+Basic structures for floats, integers and booleans.
 
-Strings cannot be coerced into integers or floats btw. You need to convert them
-by parsing.
+Strings cannot be directly coerced into integers or floats btw. You need to
+convert them by parsing.
 
-Path objects also require something similar.
+
 
                                                               space/operators.py
 
