@@ -48,7 +48,7 @@ Works on Windows if not blown.
 
 ## Use cases
 
-
+### Put 'begin', 'end' denote a block, syntax absorption usecase
 
 ### Console - modules, compiler, bytecode usecase
 
@@ -182,6 +182,86 @@ You may need to install some system packages to run the remaining samples on Lin
 Compiling lever from sources can take up to 3GB of memory until it finishes.
 
 If you find out you're memory constrained, you may want to try compile with `./setup.py compile-nojit`. Compiling Lever without JIT will require considerably less memory (500M).
+
+## How to setup your development environment
+
+First of all you need a good text editor for writing lever code. Avoid wordpad and notepad, they aren't good for this. Here are some you could try:
+
+ * Visual Studio Code - Easily available on Windows.
+ * GEdit              - Easily available on Linux.
+ * GVim               - used by author, has steep learning curve. You can look, but it may be better to use either one of the above ones at first time.
+
+As Lever is indented language (and please don't change the grammar to make it otherwise), you want to expand tabs with spaces to avoid syntax errors due to mixed tabs&spaces. Preferable amount of spaces to insert instead of a tab is 4 spaces.
+
+### Visual Studio Code adjustments
+
+By default, VSCode will try to guess your indentation options depending on the file you open. But there's good chance it doesn't understand that the '.lc' file extension should be space-indented yet.
+
+You can customize this in `File > Preferences > User Settings` with:
+
+    // Controls the rendering size of tabs in characters.
+    // If set to auto, the value will be guessed based on the opened file.
+    "editor.tabSize": 4,
+
+    // Controls if the editor will insert spaces for tabs.
+    // If set to auto, the value will be guessed based on the opened file.
+    "editor.insertSpaces": false
+
+### GEdit adjustments
+
+In `Edit > Preferences` you should find a GUI that holds several options.
+
+In the `View` -tab I propose you will set "Display line numbers" and "Display right margin at column 80" on. Those settings help you find the lines with errors on them, and help you measure when you should break a line into many.
+
+In the `Editor` -tab you should set "Tab width 4" and "Insert spaces instead of tabs"
+
+### GVim adjustments
+
+You may like correct syntax colors on GVim. To do that you may like to create symbolic links so that the vim finds the symbolic links in lever -directory:
+
+    export LEVER_PATH=/home/cheery/.local/lever
+    ln -s $LEVER_PATH/tools/lever-ftdetect.vim ~/.vim/ftdetect/lever.vim
+    ln -s $LEVER_PATH/tools/lever.vim          ~/.vim/syntax/lever.vim
+
+To configure gvim to expand tabs:
+
+    set expandtab
+    set tabstop=4
+    set shiftwidth=4
+
+You may set them to your `.vimrc` -file, or type them when you start:
+
+### On Windows
+
+TODO: setup a system that builds win32 runtime binaries on weekly basis after new commitsand uploads them.
+
+The latest win32 release is ancient, so you have to compile yourself new one from the master -branch. To do that you need Visual Studio 2008 C++ compiler.
+
+Once you have successfully compiled, you can run win32_dist.py to get yourself a fresh binary distribution. Start writing your code into app/ -directory.
+
+TODO: provide some way to update win32 binaries.
+
+### On Linux
+
+TODO: Deployment help to deploying on Steam could be nice.
+
+Most Linux package managers cannot keep up in pace with something that updates on weekly basis. Fortunately setting up yourself Lever development environment on Linux isn't difficult.
+
+You may resolve it many ways, but the easiest is probably writing this kind of a script, call it 'lever':
+
+    #!/bin/bash
+    export LEVER_PATH=/home/cheery/.local/lever
+    exec $LEVER_PATH/lever $*
+
+Rewrite the /home/cheery/.local/lever to point on wherever your lever repository is. Then put the script into some directory that is in your $PATH, eg. into ~/.local/bin that is an user script directory on many linux distributions.
+
+When you git-clone the repository properly, you can do this to update your lever:
+
+    git pull origin master && ./setup.py compile
+
+Once you have done this, you can create a new directory and write the script 'main.lc' there. Then you can test your app by running this inside your directory:
+
+    lever main.lc
 
 ## Contribution or Use
 
