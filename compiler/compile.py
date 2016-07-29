@@ -361,7 +361,7 @@ def post_assert(env, loc, cond, body):
     if isinstance(body, list):
         body = Prog(body)
     return Cond([[loc, Code(loc, "not", cond),
-        Code(loc, "assert", body)]], None)
+        [Code(loc, "assert", body)]]], None)
 
 def post_or(env, loc, a, b):
     return Or(loc, a, b)

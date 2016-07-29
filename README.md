@@ -48,7 +48,43 @@ Works on Windows if not blown.
 
 ## Use cases
 
-### Put 'begin', 'end' denote a block, syntax absorption usecase
+### Make 'BEGIN', 'END' denote a block, syntax absorption, rapid language development usecase
+
+Trends, fashions, fads. They are very real at programming world, and many old languages are unable to follow along. Or then they follow along dragging everyone into it at once, and we get Python3 async/await -keywords. 
+Rare are the days when there comes a new insight to programming that require changes into language grammar, but those days do happen at times. They could happen more often. 
+
+If you're used to not being able to change the grammar of your programming language, the following may offend you:
+
+    block =>
+        {"BEGIN" statements "END"}
+        {"BEGIN" statements %newline "END"}
+
+If you add this into the `lever-0.8.0.grammar`, the following code will compile and run:
+
+    hello = (foo): BEGIN
+    if foo.endswith("3") BEGIN
+    print("foo", foo)
+    END
+    else BEGIN print("baa", foo) END
+    END
+
+    hello("123-c-432")
+    hello("423-b-213")
+    hello("423-b-212")
+
+There's some rationale to showing this with `BEGIN` and `END` rather than {}. The braces are reserved for dictionaries in lever-0.8.0. The lowcase words 'begin' and 'end' are in use at lib/vr.lc and lib/vulkan.lc. Since the grammar in lever directory is used by all of the compilers we have, changing it can cause ambiguities or change the meaning of the library modules.
+
+Thanks to use of context free grammar, if you don't remove any existing rules, then doing `./setup.py compile-lib-all` will reveal where the new rules introduce ambiguities.
+
+Due to the existing rules being still in place, you may notice every variation of BEGIN and END is not recognized. For example if you add BEGIN to new line or indent it, it will most likely produce a syntax error. This happens due to how lever language recognizes indentation.
+
+Source files are parsed from left to right and there's an indenter before the parsing engine. If the indenter notes it could insert one of "indent", "dedent" or "newline" tokens, it will first check whether the parser anticipates for one. If it does, it will insert one into the stream.
+
+Practically you could copy the grammar into your own directory and hack it to your preferences or (hopefully) practical needs. It would allow infinite customizability into the syntax. Some short adjustments would have to be done to lever runtime to allow it.
+
+It doesn't look that horrible if you accept that programming languages are merely user interfaces for humans and then treat them as such.
+
+The features allowing this usecase makes the development of Lever very fast. It is very low stress operation to introduce new syntactic rules when you need them. You might like to change the grammar files to accomodate for disabilities, port old code or just troll your coding companions.
 
 ### Console - modules, compiler, bytecode usecase
 

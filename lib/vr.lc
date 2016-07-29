@@ -118,7 +118,7 @@ init = (gl):
 
 hmd_projection = (righthanded, tan_half_fov, znear, zfar, flipz, faratinfinity):
     if not flipz and faratinfinity
-        assert(false, "Cannot push far clip to infinity when z-order is not flipped")
+        assert false, "Cannot push far clip to infinity when z-order is not flipped"
     scaleAndOffset = create_ndc_scale_and_offset_from_fov(tan_half_fov)
 
     if righthanded
