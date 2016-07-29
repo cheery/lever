@@ -57,6 +57,13 @@ def get(argv):
     except KeyError as error:
         return v2
 
+@Dict.method(u"pop", signature(Dict, Object))
+def Dict_pop(self, key):
+    try:
+        return self.data.pop(key)
+    except KeyError as error:
+        raise space.unwind(space.LKeyError(self, key))
+
 @Dict.builtin_method
 @signature(Dict)
 def keys(self):

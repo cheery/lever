@@ -188,11 +188,24 @@ def cast_for(cls):
 @always_inline
 @specialize.arg(1, 2)
 def cast(x, cls, info=u"something"):
+    if isinstance(x, cls): # This here means that cast won't change object
+        return x           # if it is already correct type.
     try:
         fn = cast_methods[cls]
     except KeyError as _:
         raise space.unwind(space.LTypeError(u"expected %s is %s, got %s" % (
             info, cls.interface.name, x.repr())))
     res = fn(x)
-    assert isinstance(res, cls)
-    return res
+    if isinstance(res, cls):
+        return res
+    # TODO: Consider alternative ways to say it. :)
+    raise space.unwind(space.LTypeError(u"implicit conversion of %s at %s into %s returned %s" % (
+        x.repr(), info, cls.interface.name, res.repr())))
+
+# Variation of cast that accepts a null value and translates it to None.
+@always_inline
+@specialize.arg(1, 2)
+def cast_n(x, cls, info=u"something"):
+    if x is null:
+        return None
+    return cast(x, cls, info)

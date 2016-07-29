@@ -78,11 +78,3 @@ class Module(Object):
 
     def repr(self):
         return u"<module %s>" % self.name
-
-    # Utility for reimporting modules
-    def clear(self):
-        if self.frozen:
-            raise space.unwind(space.LFrozenError(self))
-        for name, cell in self.cells.iteritems():
-            if isinstance(MutableCell):
-                cell.slot = null

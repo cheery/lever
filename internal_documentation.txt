@@ -656,6 +656,7 @@ dictionaries, but for reference their behavior is described here:
     dict.keys()    -- iterator for keys
     dict.items()   -- iterator for item pairs
     dict.values()  -- iterator for values
+    dict.pop(key)
 
 
 
@@ -808,8 +809,11 @@ used in combination with JIT. Again if you get caught about lying, it's not
 good for you. So the principle here is to not lie in the first place about the
 implementation.
 
-Modules can be cleared during reimport. You can getattr/setattr anything they
-contain. And you can use a module as a base when you instantiate new module.
+Modules cannot be cleared during reimport. You may null every field, but that's
+it. You can getattr/setattr anything they contain. And you can use a module as a
+base when you instantiate new module.
+
+All builtin modules should be frozen, unless there's opposite reason.
 
 
 

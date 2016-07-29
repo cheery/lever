@@ -15,6 +15,7 @@ class ModuleScope(Object):
         self.parent = parent
         self.frozen = frozen # if frozen, the scope relies on cache.
         self.compile_file = null
+        self.base_module = None
 
     def setcache(self, m_path, module, mtime):
         m = ModuleCache(m_path, module, mtime)
@@ -35,7 +36,19 @@ class ModuleScope(Object):
             return self.local
         if name == u"frozen":
             return boolean(self.frozen)
+        if name == u"base_module":
+            if self.base_module is None:
+                return null
+            return self.base_module
         return Object.getattr(self, name)
+
+    def setattr(self, name, value):
+        if name == u"base_module":
+            if len(self.cache) > 0:
+                raise unwind(LTypeError(u"Cannot change base_module in active module scope"))
+            self.base_module = cast_n(value, Module, u"ModuleScope.base_module")
+            return null
+        return Object.setattr(self, name, value)
 
     def getitem(self, item):
         if isinstance(item, String):
@@ -84,6 +97,7 @@ def get_moduleinfo(self):
     return moduleinfo(self.path)
 
 root_module = ModuleScope(pathobj.parse(u"builtin:/"), frozen=True)
+root_module.base_module = base.module
 for py_module in stdlib.import_all_modules():
     p = pathobj.concat(root_module.local, pathobj.parse(py_module.module.name))
     root_module.setcache(p, py_module.module, 0.0)
@@ -207,7 +221,8 @@ class Import(Object):
         if not self.scope.frozen:
             mi = moduleinfo(path)
             if mi.lc_present or mi.cb_present:
-                this = Module(name.string, {}, extends=base.module) # base.module
+                base_module = get_base_module(self.scope)
+                this = Module(name.string, {}, extends=base_module) # base.module
                 mi.default_config(this, self.scope)
                 mi.loadit(this, self.scope)
                 self.scope.setcache(path, this, max(mi.lc_mtime, mi.cb_mtime))
@@ -222,7 +237,8 @@ class Import(Object):
             if not scope.frozen:
                 mi = moduleinfo(path)
                 if mi.lc_present or mi.cb_present:
-                    this = Module(name.string, {}, extends=base.module) # base.module
+                    base_module = get_base_module(scope)
+                    this = Module(name.string, {}, extends=base_module) # base.module
                     mi.default_config(this, scope)
                     mi.loadit(this, scope)
                     scope.setcache(path, this, max(mi.lc_mtime, mi.cb_mtime))
@@ -236,6 +252,11 @@ class Import(Object):
         if name == u"local":
             return self.local
         return Object.getattr(self, name)
+
+def get_base_module(scope):
+    while scope.parent and scope.base_module is None:
+        scope = scope.parent
+    return scope.base_module
 
 @Import.instantiator2(signature(pathobj.Path, ModuleScope))
 def _(local, scope):
