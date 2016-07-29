@@ -48,6 +48,8 @@ Works on Windows if not blown.
 
 ## Use cases
 
+Every single usecase here features functionality. Every snippet of code runs in the interpreter and works as advertised.
+
 ### Make 'BEGIN', 'END' denote a block, syntax absorption, rapid language development usecase
 
 Trends, fashions, fads. They are very real at programming world, and many old languages are unable to follow along. Or then they follow along dragging everyone into it at once, and we get Python3 async/await -keywords. 
