@@ -1061,8 +1061,6 @@ headers along your program. You would access the full access to the library by:
         640, 480, sdl.WINDOW_SHOWN)
     assert window, "CreateWindow" ++ sdl.GetError()
 
-TODO: implement assert asap.
-
 When preprocessing headers, it is acceptable for the author to remove the
 library prefix and adjust the formatting of names.
 
