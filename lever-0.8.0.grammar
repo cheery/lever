@@ -40,6 +40,8 @@ block_statement =>
     continue {"continue"}
     class    {"class" class_header}
     class    {"class" class_header block}
+    assert   {"assert" statement "," statement}
+    assert   {"assert" statement block}
 
 class_header =>
     class_header {symbol}

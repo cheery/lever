@@ -5,7 +5,7 @@ print(ovr)
 
 result = ovr.Initialize(null)
 if result < ovr.Success
-    assert(false, "ovr initialize failed")
+    assert false, "ovr initialize failed"
 
 session = ffi.automem(ovr.Session)
 luid = ffi.automem(ovr.GraphicsLuid)
@@ -13,7 +13,7 @@ luid = ffi.automem(ovr.GraphicsLuid)
 result = ovr.Create(session, luid)
 print(result)
 if result < ovr.Success
-    assert(false, "ovr failure")
+    assert false, "ovr failure"
 
 print("trying to track")
 x = 0

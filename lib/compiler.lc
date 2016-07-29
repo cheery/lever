@@ -205,6 +205,12 @@ actions = :exnihilo()
             conds = []
             body = null
 
+    %"assert" = (cond, body):
+        if isinstance(body, base.list)
+            body = Prog(body)
+        return Cond([[Code("not", cond),
+            [Code("assert", body)]]], null)
+
     %"or" = (a, b):
         return Or(a, b)
     %"and" = (a, b):

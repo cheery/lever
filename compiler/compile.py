@@ -357,6 +357,12 @@ def post_else(env, loc, body):
 def post_done(env, loc):
     return ([], None)
 
+def post_assert(env, loc, cond, body):
+    if isinstance(body, list):
+        body = Prog(body)
+    return Cond([[loc, Code(loc, "not", cond),
+        Code(loc, "assert", body)]], None)
+
 def post_or(env, loc, a, b):
     return Or(loc, a, b)
 

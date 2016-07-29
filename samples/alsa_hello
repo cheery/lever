@@ -17,21 +17,21 @@ main := ():
     err = snd.pcm_open(pcm_handle, "plughw:0,0", snd.PCM_STREAM_PLAYBACK, 0)
     if err < 0
         print("cannot open audio:", snd.strerror(err).str)
-        assert(err >= 0)
+        assert err >= 0
 
     err = snd.pcm_hw_params_malloc(hw_params)
-    assert(err >= 0)
+    assert err >= 0
 
     err = snd.pcm_hw_params_any(pcm_handle.to, hw_params.to)
-    assert(err >= 0)
+    assert err >= 0
 
     err = snd.pcm_hw_params_set_access(pcm_handle.to, hw_params.to,
         snd.PCM_ACCESS_RW_INTERLEAVED)
-    assert(err >= 0)
+    assert err >= 0
 
     err = snd.pcm_hw_params_set_format(pcm_handle.to, hw_params.to,
         snd.PCM_FORMAT_S16_LE)
-    assert(err >= 0)
+    assert err >= 0 
 
     exact_rate = automem(snd.int)
     exact_rate.to = 44100
@@ -41,20 +41,20 @@ main := ():
 
     err = snd.pcm_hw_params_set_rate_near(pcm_handle.to, hw_params.to,
         exact_rate, null)
-    assert(err >= 0)
+    assert err >= 0
 
     err = snd.pcm_hw_params_set_channels(pcm_handle.to, hw_params.to, 2)
-    assert(err >= 0)
+    assert err >= 0
 
     err = snd.pcm_hw_params_set_periods(pcm_handle.to, hw_params.to, periods, 0)
-    assert(err >= 0)
+    assert err >= 0
 
     err = snd.pcm_hw_params_set_buffer_size(pcm_handle.to, hw_params.to,
         (period_size * periods) >> 2)
-    assert(err >= 0)
+    assert err >= 0
 
     err = snd.pcm_hw_params(pcm_handle.to, hw_params.to)
-    assert(err >= 0)
+    assert err >= 0
 
     data = automem(snd.char, period_size)
     frames = period_size >> 2
@@ -78,8 +78,3 @@ main := ():
         l1 = l1 + 1
 
     snd.pcm_drain(pcm_handle.to)
-
-assert = (boolean):
-    if boolean
-        print("assert error")
-        exit()

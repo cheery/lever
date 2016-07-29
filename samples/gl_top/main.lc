@@ -19,17 +19,17 @@ gl = api.library("libGL", sdl.GL_GetProcAddress)
 sdl_img = api.library("libSDL2_image", null, {"libSDL2": sdl})
 
 main = ():
-    assert(0 == sdl.Init(sdl.INIT_EVERYTHING), "sdl2 init")
-    assert(0 < sdl_img.Init(sdl_img.INIT_JPG | sdl_img.INIT_PNG), "sdl2 image init")
+    assert 0 == sdl.Init(sdl.INIT_EVERYTHING), "sdl2 init"
+    assert 0 < sdl_img.Init(sdl_img.INIT_JPG | sdl_img.INIT_PNG), "sdl2 image init"
     sdl.GL_SetAttribute(sdl.GL_CONTEXT_MAJOR_VERSION, 4)
     sdl.GL_SetAttribute(sdl.GL_CONTEXT_MINOR_VERSION, 4)
     sdl.GL_SetAttribute(sdl.GL_DOUBLEBUFFER, 1)
     sdl.GL_SetAttribute(sdl.GL_DEPTH_SIZE, 24)
     win = sdl.CreateWindow(caption, 0, 0, width, height,
         sdl.WINDOW_OPENGL | sdl.WINDOW_SHOWN)
-    assert(win, "cannot open window")
+    assert win, "cannot open window"
     ctx = sdl.GL_CreateContext(win)
-    assert(ctx, "cannot create opengl 4 context")
+    assert ctx, "cannot create opengl 4 context"
     program = simple_program(dir ++ "plain.vert", dir ++ "plain.frag")
     cube = cube_model()
     top = load_model(dir ++ "top")
@@ -266,12 +266,6 @@ arraycopy = (dst, src):
     for x in src
         dst[i] = x
         i = i + 1
-
-# Makeshift assert -function for stopping the program on failure.
-assert = (cond, message):
-    if not cond
-        print("assert:", message)
-        exit(1) # exit is undefined, so it throws an exception.
 
 init_hmd = ():
     if with_hmd

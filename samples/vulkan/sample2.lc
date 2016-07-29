@@ -1,0 +1,595 @@
+import vulkan, sdl2_wsi, ffi, gc, api, fs
+
+sdl = api.library("libSDL2")
+
+main = ():
+    orchid_model = load_model(dir ++ "orchid/orchid")
+    print(orchid_model.header)
+    print("model length", orchid_model.vbo.length)
+    vertex_count = int(orchid_model.vbo.length / orchid_model.header["vertexBindingDescriptions"][0]["stride"])
+    print("vertices", vertex_count)
+
+    extensions = vulkan.listInstanceExtensions()
+    enabledExtensionNames = sdl2_wsi.required_extensions(extensions)
+
+    instance = vulkan.Instance({
+        enabledExtensionNames = enabledExtensionNames
+    })
+
+    screen = :exnihilo()
+        width = 1024
+        height = 1024
+        offset = {x = 0, y = 0}
+        extent = {width = width, height = height}
+        area = {offset=offset, extent=extent}
+        viewport = {x = 0, y = 0,
+            width = width, height = height,
+            minDepth = 0.0, maxDepth = 1.0}
+
+    assert(sdl.Init(sdl.INIT_VIDEO) == 0, "SDL Init")
+    win = sdl.CreateWindow("Hello", 0, 0,
+        screen.width, screen.height, sdl.WINDOW_SHOWN)
+    assert(win, "SDL CreateWindow")
+    surface = sdl2_wsi.create_surface(vulkan, sdl, instance, win)
+
+    gpu = null
+    queueIndex = null
+    for device in instance.listPhysicalDevices()
+        prop = device.getProperties()
+        i = 0
+        for x in device.listQueueFamilyProperties()
+            if not device.getSurfaceSupport(i, surface)
+                continue
+            if x.queueFlags.GRAPHICS_BIT
+                print("Device name:", prop.deviceName.str)
+                print("            ", prop.deviceType)
+                queueIndex = i
+                gpu = device
+            i += 1
+    if gpu == null
+        print("Did not find a suitable GPU")
+        exit(1)
+    print("found suitable GPU")
+
+    devMemoryIndex = null
+    hostMemoryIndex = null
+    gpu_mem = gpu.getMemoryProperties()
+    for i in range(gpu_mem.memoryTypeCount)
+        if gpu_mem.memoryTypes[i].propertyFlags.HOST_CACHED_BIT
+            hostMemoryIndex = i
+        if gpu_mem.memoryTypes[i].propertyFlags.DEVICE_LOCAL_BIT
+            devMemoryIndex = i
+        print(i, "type:", gpu_mem.memoryTypes[i].propertyFlags)
+        print(i, "type:", gpu_mem.memoryTypes[i].heapIndex)
+
+    device = vulkan.Device(gpu, {
+        enabledExtensionNames = ["VK_KHR_swapchain"]
+        queueCreateInfos = [{
+            queueFamilyIndex = queueIndex
+            queuePriorities = [1.0]
+        }]
+    })
+    queue = device.getQueue(0, 0)
+    swapchain = get_swapchain(device, surface, screen)
+
+    command_pool = vulkan.CommandPool(device, {
+        flags = 0 #"RESET_COMMAND_BUFFER_BIT"
+        queueFamilyIndex = queueIndex
+    })
+
+    image_acquired = vulkan.Semaphore(device)
+    rendering_done = vulkan.Semaphore(device)
+
+    depth_stencil = :exnihilo()
+        format = find_depth_format(gpu)
+        print("selected format", format)
+        subresource_range = {
+                aspectMask = ["DEPTH_BIT", "STENCIL_BIT"]
+                baseMipLevel = 0
+                levelCount = 1
+                baseArrayLayer = 0
+                layerCount = 1
+        }
+        image = vulkan.Image(device, {
+            imageType = "2D"
+            format = format
+            extent = {width = screen.width, height = screen.height, depth = 1}
+            mipLevels = 1
+            arrayLayers = 1
+            samples = "1_BIT"
+            tiling = "OPTIMAL"
+            usage = ["DEPTH_STENCIL_ATTACHMENT_BIT", "TRANSFER_SRC_BIT"]
+        })
+        memreq = image.getMemoryRequirements()
+        if memreq.memoryTypeBits & (1 << devMemoryIndex) == 0
+            print("Hmm? Weird gpu arch.")
+            exit(1)
+        mem = device.allocateMemory({allocationSize=memreq.size, memoryTypeIndex = devMemoryIndex})
+        image.bindMemory(mem, 0)
+        view = vulkan.ImageView(device, {
+            image = image
+            viewType = "2D"
+            format = format
+            subresourceRange = subresource_range
+        })
+
+    render_pass = vulkan.RenderPass(device, {
+        attachments = [
+            {
+                # These values will likely require adjustment.
+                format = swapchain.format
+                samples = "1_BIT"
+                loadOp = "CLEAR"
+                storeOp = "STORE"
+                stencilLoadOp = "DONT_CARE"
+                stencilStoreOp = "DONT_CARE"
+                # I'm not sure about these.. going to read on them soon.
+                initialLayout = "COLOR_ATTACHMENT_OPTIMAL"
+                finalLayout = "COLOR_ATTACHMENT_OPTIMAL"
+            },
+            {
+                format = depth_stencil.format
+                samples = "1_BIT"
+                loadOp = "CLEAR"
+                storeOp = "STORE"
+                stencilLoadOp = "DONT_CARE"
+                stencilStoreOp = "DONT_CARE"
+                initialLayout = "DEPTH_STENCIL_ATTACHMENT_OPTIMAL"
+                finalLayout = "DEPTH_STENCIL_ATTACHMENT_OPTIMAL"
+            }
+        ]
+        subpasses = [
+            {
+                pipelineBindPoint = "GRAPHICS"
+                inputAttachments = []
+                colorAttachments = [
+                    {attachment = 0, layout = "COLOR_ATTACHMENT_OPTIMAL"}
+                ]
+                pDepthStencilAttachment = {attachment = 1, layout = "DEPTH_STENCIL_ATTACHMENT_OPTIMAL"}
+            }
+        ]
+    })
+
+    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR = 1000001002
+
+    descset_layout = vulkan.DescriptorSetLayout(device, {
+        bindings = [{
+            binding = 0
+            descriptorType = "UNIFORM_BUFFER"
+            descriptorCount = 1
+            stageFlags = "VERTEX_BIT"
+        }]
+    })
+
+    pipeline_layout = vulkan.PipelineLayout(device, {
+        flags = 0
+        setLayouts = [descset_layout]
+        pushConstantRanges = []
+    })
+
+    vbo = :exnihilo()
+        size = orchid_model.vbo.length #8 * 1024
+        buffer = vulkan.Buffer(device, {size = size, usage = "VERTEX_BUFFER_BIT"})
+        memreq = buffer.getMemoryRequirements()
+        print(memreq.size, memreq.alignment, memreq.memoryTypeBits)
+        mem = device.allocateMemory({
+            allocationSize = memreq.size
+            memoryTypeIndex = hostMemoryIndex
+        })
+        buffer.bindMemory(mem, 0)
+
+        data = mem.map(ffi.float, 0, memreq.size)
+        #stuff = [
+        #    0.0, 0.0, 0.0, 1.0, 0.5, 0.5,
+        #    0.0, 1.0, 0.0, 0.5, 1.0, 0.5,
+        #    1.0, 0.0, 0.0, 0.5, 0.5, 1.0,
+        #    0.0, 1.0, 0.0, 0.5, 0.5, 1.0,
+        #    1.0, 1.0, 0.0, 0.5, 1.0, 1.0,
+        #    1.0, 0.0, 0.0, 1.0, 1.0, 0.5,
+        #]
+        #i = 0
+        #while i < stuff.length
+        #    data[i] = stuff[i]
+        #    i += 1
+        ffi.memcpy(data, orchid_model.vbo, orchid_model.vbo.length)
+        mem.unmap()
+
+    ubo = :exnihilo()
+        size = 2 * 4 * 4 * ffi.sizeof(ffi.float)
+        buffer = vulkan.Buffer(device, {size = size, usage = "UNIFORM_BUFFER_BIT"})
+        memreq = buffer.getMemoryRequirements()
+        print(memreq.size, memreq.alignment, memreq.memoryTypeBits)
+        mem = device.allocateMemory({
+            allocationSize = memreq.size
+            memoryTypeIndex = hostMemoryIndex
+        })
+        buffer.bindMemory(mem, 0)
+        data = mem.map(ffi.float, 0, memreq.size)
+
+    fovy = 60 / 180 * pi
+    proj = projection_matrix(fovy, screen.width / screen.height, 0.01, 100)
+
+    descriptor_pool = vulkan.DescriptorPool(device, {
+        maxSets = 1
+        poolSizes = [
+            {type = "UNIFORM_BUFFER", descriptorCount = 1}
+        ]
+    })
+
+    descset = device.allocateDescriptorSets({
+        descriptorPool = descriptor_pool
+        setLayouts = [descset_layout]
+    })[0]
+
+    device.updateDescriptorSets([{
+        dstSet = descset
+        dstBinding = 0
+        dstArrayElement = 0
+        descriptorType = "UNIFORM_BUFFER"
+        descriptorCount = 1
+        pBufferInfo = {
+            buffer = ubo.buffer
+            offset = 0
+            range  = ubo.memreq.size
+        }
+    }], [])
+
+    # haaaaack.
+    vertex_blob = fs.read_file(dir ++ "vertex_shader.spv", "b")
+    vertex_shader = vulkan.ShaderModule(device, {
+        codeSize = vertex_blob.length
+        pCode = vertex_blob
+    })
+
+    fragment_blob = fs.read_file(dir ++ "fragment_shader_plant.spv", "b")
+    fragment_shader = vulkan.ShaderModule(device, {
+        codeSize = fragment_blob.length
+        pCode = fragment_blob
+    })
+
+    pipeline_cache = vulkan.PipelineCache(device, {})
+
+    pipeline = device.createGraphicsPipeline(pipeline_cache, {
+        flags = 0
+        stages = [
+            {
+                stage = "VERTEX_BIT"
+                module = vertex_shader
+                name = "main"
+            },
+            {
+                stage = "FRAGMENT_BIT"
+                module = fragment_shader
+                name = "main"
+            }
+        ]
+        vertexInputState = {
+            flags = 0
+            vertexBindingDescriptions = orchid_model.header["vertexBindingDescriptions"]
+            vertexAttributeDescriptions = orchid_model.header["vertexAttributeDescriptions"]
+            #vertexBindingDescriptions = [{
+            #    binding = 0
+            #    stride = 6 * ffi.sizeof(ffi.float)
+            #    inputRate = "VERTEX"
+            #}]
+            #vertexAttributeDescriptions = [
+            #    {
+            #        binding = 0
+            #        location = 0
+            #        format = "R32G32B32_SFLOAT"
+            #        offset = 0
+            #    },
+            #    {
+            #        binding = 0
+            #        location = 1
+            #        format = "R32G32B32_SFLOAT"
+            #        offset = 3 * ffi.sizeof(ffi.float)
+            #    }
+            #]
+        }
+        inputAssemblyState = {topology = "TRIANGLE_LIST"}
+        viewportState = {
+            viewports = [screen.viewport]
+            scissors = [screen.area]
+        }
+        rasterizationState = {
+            polygonMode = "FILL"
+            cullMode = 0
+            frontFace = "COUNTER_CLOCKWISE"
+        }
+        multisampleState = {rasterizationSamples = "1_BIT"}
+        colorBlendState = {
+            logicOpEnable = false
+            logicOp = "CLEAR"
+            attachments = [{
+                blendEnable = false
+                colorWriteMask = 0xf
+                srcColorBlendFactor = "ZERO"
+                dstColorBlendFactor = "ZERO"
+                colorBlendOp = "ADD"
+                srcAlphaBlendFactor = "ZERO"
+                dstAlphaBlendFactor = "ZERO"
+                alphaBlendOp = "ADD"
+            }]
+            blendConstants = [0.0, 0.0, 0.0, 0.0]
+        }
+        depthStencilState = {
+            depthTestEnable = true
+            depthWriteEnable = true
+            depthCompareOp = "LESS_OR_EQUAL"
+        }
+        dynamicState = null
+        layout = pipeline_layout
+        renderPass = render_pass
+        subpass = 0
+    })
+
+    swapchain.views = []
+    swapchain.fences = []
+    swapchain.framebuffers = []
+    swapchain.commandbuffers = command_pool.allocate({level = "PRIMARY", commandBufferCount = 2})
+    for image in swapchain.images
+        view = vulkan.ImageView(device, {
+            image = image
+            viewType = "2D"
+            format = swapchain.format
+            components = {r = "R", g = "G", b = "B", a = "A"}
+            subresourceRange = swapchain.subresource_range
+        })
+        swapchain.views.append(view)
+
+        fence = vulkan.Fence(device, {flags = "SIGNALED_BIT"})
+        swapchain.fences.append(fence)
+
+        framebuffer = vulkan.Framebuffer(device, {
+            renderPass = render_pass
+            attachments = [view, depth_stencil.view]
+            width = screen.width
+            height = screen.height
+            layers = 1
+        })
+        swapchain.framebuffers.append(framebuffer)
+
+        current_image = swapchain.views.length - 1
+        buffer = swapchain.commandbuffers[current_image]
+        buffer.begin({})#flags = "ONE_TIME_SUBMIT_BIT"})
+        buffer.pipelineBarrier("ALL_GRAPHICS_BIT", "COLOR_ATTACHMENT_OUTPUT_BIT", 0, [], [], [{
+            srcAccessMask = "MEMORY_READ_BIT"
+            dstAccessMask = "COLOR_ATTACHMENT_WRITE_BIT"
+            oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+            newLayout = "COLOR_ATTACHMENT_OPTIMAL"
+            srcQueueFamilyIndex = queueIndex
+            dstQueueFamilyIndex = queueIndex
+            image = swapchain.images[current_image]
+            subresourceRange = swapchain.subresource_range
+        }])
+        buffer.beginRenderPass({
+            renderPass = render_pass
+            framebuffer = swapchain.framebuffers[current_image]
+            renderArea = screen.area
+            clearValues = [
+                {color = {float32 = [0.5, 0.5, 0.5, 1.0]}},
+                {depthStencil = {depth = 1.0, stencil=0}}
+            ]
+        }, "INLINE")
+        buffer.bindPipeline("GRAPHICS", pipeline)
+        buffer.bindDescriptorSets("GRAPHICS", pipeline_layout, 0, [descset], [])
+        buffer.bindVertexBuffers(0, [vbo.buffer], [0])
+        buffer.draw(vertex_count, 1, 0, 0)
+        buffer.endRenderPass()
+        buffer.pipelineBarrier("COLOR_ATTACHMENT_OUTPUT_BIT", "ALL_GRAPHICS_BIT", 0, [], [], [{
+            srcAccessMask = "COLOR_ATTACHMENT_WRITE_BIT"
+            dstAccessMask = "MEMORY_READ_BIT"
+            oldLayout = "COLOR_ATTACHMENT_OPTIMAL"
+            newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
+            srcQueueFamilyIndex = queueIndex
+            dstQueueFamilyIndex = queueIndex
+            image = swapchain.images[current_image]
+            subresourceRange = swapchain.subresource_range
+        }])
+        buffer.end()
+
+    frame_statistics = []
+    last_image = 0
+    render = ():
+        # This is lazy. It means we can't continue before the previous frame has been submitted.
+        # Need to check with performance counter later, whether this is sufficient
+        if swapchain.fences[last_image].getStatus().NOT_READY
+            return null
+        current_image = device.acquireNextImage(swapchain, 0xFFFFFFFFFFFFFFFF, image_acquired)
+        device.resetFences([swapchain.fences[current_image]])
+        frame_begin = time()
+
+        # Before submission, Lets update the uniform buffer contents.
+        modelview = axisangle(up, time() * 0.2).to_mat4(vec3(0, -1.0, -3.0))
+        stuff = list(proj) ++ list(modelview)
+        i = 0
+        while i < stuff.length
+            ubo.data[i] = stuff[i]
+            i += 1
+
+        queue.submit([{
+            waitSemaphores = [image_acquired]
+            commandBuffers = [swapchain.commandbuffers[current_image]]
+            signalSemaphores = [rendering_done]
+        }], swapchain.fences[current_image])
+        frame_end = time()
+        frame_statistics.append(frame_end - frame_begin)
+
+        queue.present({
+            waitSemaphores = [rendering_done]
+            swapchains = [swapchain.id]
+            imageIndices = [current_image]
+        })
+        last_image := current_image
+
+        if frame_statistics.length >= 1000
+            best  = 1.0
+            worst = 0.0
+            avg   = 0.0
+            for stat in frame_statistics
+                best = min(best, stat)
+                worst = max(worst, stat)
+                avg += stat
+            avg /= frame_statistics.length
+            print("best:", best, "worst:", worst, "avg:", avg)
+            frame_statistics := []
+
+    print("ready to draw")
+    event = ffi.automem(sdl.Event)
+    running = true
+    while running
+        render()
+        sleep(0.001)
+        while sdl.PollEvent(event) != 0
+            if event.type == sdl.QUIT
+                running = false
+
+    queue.waitIdle()
+    device.waitIdle()
+
+    for obj in swapchain.fences ++ swapchain.framebuffers ++ swapchain.views
+        obj.destroy()
+    descriptor_pool.destroy()
+    descset_layout.destroy()
+    pipeline.destroy()
+    pipeline_layout.destroy()
+    pipeline_cache.destroy()
+    depth_stencil.image.destroy()
+    depth_stencil.view.destroy()
+    depth_stencil.mem.free()
+    vbo.buffer.destroy()
+    vbo.mem.free()
+    ubo.buffer.destroy()
+    ubo.mem.free()
+    vertex_shader.destroy()
+    fragment_shader.destroy()
+    render_pass.destroy()
+    image_acquired.destroy()
+    rendering_done.destroy()
+    command_pool.destroy()
+    swapchain.destroy()
+    device.destroy()
+    surface.destroy()
+    instance.destroy()
+    print("quit")
+
+get_swapchain = (device, surface, screen):
+    imageUsage = "COLOR_ATTACHMENT_BIT"
+    gpu = device.physicalDevice
+
+    cap = gpu.getSurfaceCapabilities(surface)
+    # uint32_t                         minImageCount;
+    # uint32_t                         maxImageCount;
+    # VkExtent2D                       currentExtent;
+    # VkExtent2D                       minImageExtent;
+    # VkExtent2D                       maxImageExtent;
+    # uint32_t                         maxImageArrayLayers;
+    # VkSurfaceTransformFlagsKHR       supportedTransforms;
+    # VkSurfaceTransformFlagBitsKHR    currentTransform;
+    # VkCompositeAlphaFlagsKHR         supportedCompositeAlpha;
+    if not cap.currentTransform.IDENTITY_BIT_KHR
+        print("Surface transform not desired")
+        exit(1)
+    if not cap.supportedUsageFlags.COLOR_ATTACHMENT_BIT
+        print("Surface does not support the desired usage")
+        exit(1)
+
+    imageFormat = null
+    colorSpace = null
+    for prop in gpu.listSurfaceFormats(surface)
+        imageFormat = prop.format
+        colorSpace = prop.colorSpace
+        break
+
+    presentMode = "FIFO_KHR"
+    for mode in gpu.listSurfacePresentModes(surface)
+        continue
+
+    format = "B8G8R8A8_UNORM" # hack, should enumerate the damn surface caps already.
+    # Fourth temporary measure, no idea where this works.
+    swapchain = vulkan.Swapchain(device, {
+        surface = surface
+        minImageCount = 2
+        imageFormat = imageFormat
+        imageColorSpace = colorSpace
+        imageExtent = screen.extent
+        imageUsage = imageUsage
+        preTransform = "IDENTITY_BIT_KHR" # ?
+        compositeAlpha = "OPAQUE_BIT_KHR"
+        imageArrayLayers = 1
+        imageSharingMode = "EXCLUSIVE"
+        #queueFamilyIndexCount = 0
+        #pQueueFamilyIndices = null
+        presentMode = presentMode
+        #oldSwapchain = null
+        clipped = true
+    })
+
+    return :swapchain
+        screen = screen
+        images = swapchain.getImages()
+        format = format
+        surface = surface
+        subresource_range = {
+            aspectMask = "COLOR_BIT"
+            baseMipLevel = 0
+            levelCount = 1
+            baseArrayLayer = 0
+            layerCount = 1
+        }
+
+assert = (condition, message="assert"):
+    if not condition
+        print(message)
+        exit(1)
+
+import json, process, platform
+
+config = {run_blender = true}
+exporter_script = dir ++ "orchid/exporter.py"
+
+load_model = (pathname):
+    if config["run_blender"]
+        header_path = make_blend(pathname, exporter_script)
+    else
+        header_path = path(pathname)
+        header_path.basename = header_path.basename ++ ".json"
+    return :exnihilo()
+        header = json.read_file(header_path)
+        header_dir = header_path ++ ".."
+        vbo = fs.read_file(header_dir ++ header["vbo"], "b")
+        
+make_blend = (pathname, exporter_script):
+    header_path = path(pathname)
+    header_path.basename = header_path.basename ++ ".json"
+    blend_path = path(pathname)
+    blend_path.basename = blend_path.basename ++ ".blend"
+    if needs_update(header_path, blend_path)
+        args = ["blender", blend_path, "--background",
+            "--python", exporter_script,
+            "--", header_path]
+        if platform.name == "win32"
+            blender_exe = config["blender_exe"]
+        else
+            blender_exe = process.which("blender")
+        pid = process.spawnv(blender_exe, args)
+        process.waitpid(pid)
+        if needs_update(header_path, blend_path)
+            print("blender export failed")
+            exit(1)
+    return header_path
+
+needs_update = (dst, src):
+    if not fs.exists(dst)
+        return true
+    sm = fs.getmtime(src)
+    dm = fs.getmtime(dst)
+    return sm >= dm
+
+find_depth_format = (gpu):
+    for format in ["D32_SFLOAT_S8_UINT", "D32_SFLOAT", "D24_UNORM_S8_UINT", "D16_UNORM_S8_UINT", "D16_UNORM"]
+        props = gpu.getFormatProperties(format)
+        if props.optimalTilingFeatures.DEPTH_STENCIL_ATTACHMENT_BIT
+            return format
+    return null

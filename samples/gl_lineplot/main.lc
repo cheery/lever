@@ -36,10 +36,8 @@ gl = api.library("libGL", sdl.GL_GetProcAddress)
 sdl_img = api.library("libSDL2_image", null, {"libSDL2": sdl})
 
 main = ():
-    # todo: add assert
-    if 0 != sdl.Init(sdl.INIT_EVERYTHING)
-        print("cannot sdl2 init")
-        exit(1)
+    assert 0 == sdl.Init(sdl.INIT_EVERYTHING)
+        "cannot sdl2 init"
     sdl_img.Init(sdl_img.INIT_JPG | sdl_img.INIT_PNG)
 
     sdl.GL_SetAttribute(sdl.GL_CONTEXT_MAJOR_VERSION, 4)
