@@ -6,29 +6,30 @@
     <link rel="stylesheet" href="stylesheet.css">
 </head>
 <body>
-    <a href="/"><img src="logo.png" alt="LEVER"></a>
-    <p>Lever is a dynamically typed programming language that pivots on malleability of itself.</p>
+    <ul class="nav">
+        <li><a href="/"><img src="logo.png" alt="LEVER"></a></li>
+        <li><a class="nav_button" href="https://github.com/cheery/lever/">source code + documentation</a></li>
+        <li><a class="nav_button" href="https://github.com/cheery/lever/releases">download</a></li>
+    </ul>
+    <img src="header.jpg" class="header">
+    <p>As computing power and capabilities increase, even very complex computer programs can be written in smooth, simple and expressive languages.</p>
+    <p>Rapid language development tools, fully customizable syntax and semi-automatic C-FFI in lever ensures you're not running out of options.
+    Dynamically typed runtime and language ensure there are no mathematical straitjackets slowing down your keystrokes. Code off like a madman!</p>
+
     <ul>
-        <li>Initial audience: Computer game developers, Virtual reality, 3D graphics. This is the audience we attempt to cater with optimizations and design decisions. Lever doesn't attempt to replace other languages in domains where they work better.</li>
-        <li>Leverages RPython for implementation. Easier to improve and optimize than traditional programming languages.</li>
-        <li>Built-in eventloop and greenlets. Results in asyncronous programs that are as simple as what syncronous code was.</li>
-        <li>Customizable, extensible and hotswappable context free grammars. Allows to adjust the notation for the usecase.</li>
-        <li>Foreign function interface. Uses formatted declarations. Wrappers around C libraries can be reused across programming languages.</li>
-        <li>Multimethods with fixed arity. Avoids the gang of four pattern.</li>
-        <li>Lever is MIT licensed, to acknowledge the good work put into PyPy that made it possible.</li>
+        <li>RPython implemented runtime.</li>
+        <li>Built-in eventloop with powerful concurrent programming framework based on greenlets.</li>
+        <li>Plugin-architectures and hot-reloadable code with module scopes.</li>
+        <li>Intuitive lexical scoping, operator overloading via multimethods.</li>
+        <li>GLSL-style runtime-supported vector, matrix and quaternion math.</li>
+        <li>Growing library support for computer game developers, virtual reality, audio and 3D graphics.</li>
+        <li>Partial Windows, SteamOS development support.</li>
+        <li>Partial out-of-the-box OpenGL 4 and Vulkan support.</li>
+        <li>MIT license.</li>
     </ul>
-    <p>Lever 0.5.0 has been released in 31 December 2015.</p>
-    <ul class="buttons">
-        <li><a href="/doc/0.5.0/">Documentation (0.5.0)</a></li>
-        <li><a href="https://github.com/cheery/lever/">Source code in github</a></li>
-    </ul>
-    <p>Future plans for 1.0.0 will include:</p>
-    <ul>
-        <li>Eventual 3-platform support: Windows, OSX, SteamOS. (0.5.0 runs reliably in Linux systems)</li>
-        <li>Out-of-the-box OpenGL 4 or Vulkan support.</li>
-    </ul>
-    <p>Long term goal and policy of lever is that installation&amp;upgrade of any program should be "flip-a-switch" rather than "climb-the-everest".</p>
-    <p>If you like to try this out, take a glance over the documentation.</p>
+
+    Author: <a href="http://boxbase.org/">Henri Tuhola</a>
+
     <script>
       (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
       (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),

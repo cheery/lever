@@ -316,7 +316,12 @@ Lever IRC channel: irc.freenode.net#lever [webchat link](http://webchat.freenode
 
 ### Project coordination
 
-I have clear vision on Lever and I'd like to have some coordination over lever development. To coordinate I will use STRATEGY and TACTIC -tags in the source code. Finding them you can discover long term goals of the lever and the worksites, as well as the current activity taking place.
+I have clear vision on Lever and I'd like to have some coordination over lever development. To coordinate I will use STRATEGY and TACTIC -tags in the source code. Finding them you can discover long term goals of the lever and the worksites, as well as the current activity taking place. Here's an example of what you might face:
+
+    STRATEGY: Provide installation & upgrade methods in "flip-a-switch" -style.
+        restricts release of 1.0.0
+    TACTIC: Provide downloadable win32 binary.
+    TACTIC: Plow the way out for SteamOS distributions.
 
 Long term mission of Lever is to prove the large scale viability of dynamic languages, and to evolve to remain as an always fresh programming environment.
 

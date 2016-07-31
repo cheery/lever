@@ -1,25 +1,50 @@
-ul.buttons {
-    margin: 0;
-    padding: 0;
+body {
+    padding: 10px;
+    margin: auto;
+    min-width: 130mm;
+    max-width: 200mm;
+    font-family: arial;
 }
 
-ul.buttons > li {
+ul.nav {
+    margin: 0;
+    padding: 0;
+    font-variant: small-caps;
+}
+
+ul.nav > li {
     display: inline;
 }
 
-ul.buttons > li > a {
+ul.nav > li + li {
+    margin-left: 10px;
+}
+
+ul.nav > li > a {
     display: inline-block;
-    background: #F1D370;
-    color: #1515B7;
-    font-size: 140%;
-    padding: 20px;
+}
+
+ul.nav > li > a > img {
+    vertical-align: middle;
+}
+
+a.nav_button {
+    background: #e4e4c6;
+    color: #251115;
+    font-size: 100%;
+    padding: 2px 4px;
     border-radius: 4px;
-    margin-bottom: 0.5em;
-    margin-right: 0.5em;
-    width: 28ex;
     text-align: center;
 }
 
-ul.buttons > li > a:hover {
+a.nav_button:hover {
     background: #F8D673;
+}
+
+img.header {
+    margin: 0 0;
+    margin-top: -5px;
+    display: block;
+    width: 100%;
+    height: auto;
 }
