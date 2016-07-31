@@ -1,0 +1,45 @@
+# Completion of this strategy is due to 0.9.0 milestone
+# STRATEGY: Improve foreign function interface to extend it's capabilities.
+#           Provide complete REPL+Integrated Editor suite for lever.
+# 
+# I want people to frown when they see lever FFI and then contempt their
+# language do not have this kind of system. To do this it needs to be
+# slightly better and get some more exposure.
+
+# Powerful interactive programming is lever's staple feature. This means we
+# need really powerfull integrated development environment embedded into the
+# runtime. The first step would be to provide a REPL that does bit more than
+# reading a line and printing another out.
+
+# TACTIC: use readline via FFI
+# motivation: 
+#   Line-editing tools in console are a great way to prepare
+#   for the needs of a real IDE early on. It is also a feature many
+#   other dynamic language implementations lack.
+#
+# requirements:
+#   Use of readline requires that callbacks are implemented,
+#   It also requires that library variables are handled more like
+#   ordinary memory entries, because readline relies on global variables.
+
+#   Use of readline requires dynamic loading that interrupts if the
+#   library isn't available.
+
+#   Also we may want to use this feature async. Async readline that doesn't
+#   get confused by printing lines out would be so
+#   awesome that it gives a new meaning for awesome.
+
+#   Use of readline requires good C header generation. The cffi-gen library
+#   is clumsy to use and update. Partially my own fault because I relied on
+#   LR parsing. 
+
+#   I believe it'd be the time to implement cffi header generator in lever.
+
+#   To do that we need a C parser. Wholly functioning C parser! With macro
+#   preprocessor.
+
+#   This motivates the storyline of c.lc
+
+#   This library should implement C tokenizing and parsing.
+#   The parts that are common when you need to this kind of things.
+
