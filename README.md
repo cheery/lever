@@ -231,6 +231,8 @@ First of all you need a good text editor for writing lever code. Avoid wordpad a
 
 As Lever is indented language (and please don't change the grammar to make it otherwise), you want to expand tabs with spaces to avoid syntax errors due to mixed tabs&spaces. Preferable amount of spaces to insert instead of a tab is 4 spaces.
 
+Most text editors meant for programming have a command to change indentation level of multiple lines at once. Relevant GVim commands to do this are 'Vjk<' and 'Vjk>'. On Visual Studio Code you can select the text and then press tab key to indent, or shift+tab to dedent. It's good idea to learn how to trigger this command in your editor.
+
 ### Visual Studio Code adjustments
 
 By default, VSCode will try to guess your indentation options depending on the file you open. But there's good chance it doesn't understand that the '.lc' file extension should be space-indented yet.
@@ -309,6 +311,16 @@ When that happens, you have two options:
 
  * Implement the feature yourself. Make a pull request to not having to maintain your own version.
  * Write an user story, article or feature proposal. Send it to my email or file an issue in github.
+
+Lever IRC channel: irc.freenode.net#lever [webchat link](http://webchat.freenode.net/?randomnick=1&channels=%23lever&prompt=1)
+
+### Project coordination
+
+I have clear vision on Lever and I'd like to have some coordination over lever development. To coordinate I will use STRATEGY and TACTIC -tags in the source code. Finding them you can discover long term goals of the lever and the worksites, as well as the current activity taking place.
+
+Long term mission of Lever is to prove the large scale viability of dynamic languages, and to evolve to remain as an always fresh programming environment.
+
+I review all the code that is supposed to get into the mainline repository of lever, this is currently: http://github.com/cheery/lever
 
 ## License
 

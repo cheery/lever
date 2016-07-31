@@ -6,13 +6,7 @@
 Welcome to Lever's documentation
 ================================
 
-This documentation is for version 0.8.0 of the Lever programming language.
-Runtime contect-specific documentation is being planned, and the current
-documentation format works as a crutch until the runtime documentation works.
-
-Lever is considered as one-man-language. There is only one active maintainer
-that is also the only user of the language. Maybe if you're reading this,
-things could change. 
+The sphinx documentation is no longer updated, and it will be removed soon.
 
 IRC community channel
 =====================
