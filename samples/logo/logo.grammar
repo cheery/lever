@@ -1,0 +1,11 @@
+file =>
+    first  { motion }
+    append { file motion }
+
+motion =>
+    forward  { "forward"  int }
+    backward { "backward" int }
+    left  { "left"  int }
+    right { "right" int }
+    penup   { "penup" }
+    pendown { "pendown" }

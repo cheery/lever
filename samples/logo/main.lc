@@ -1,0 +1,239 @@
+import ffi, api, fs, platform
+import tokenizer
+import chartparser
+import grammar_language
+
+language = grammar_language.read_file(dir ++ "logo.grammar")
+language.new_parser = chartparser.preprocess(
+    language.grammar,
+    language.table.nonterminal("file"))
+
+source = "program.txt"
+tokens = tokenizer.read_file(source, language.table.keywords)
+parser = language.new_parser()
+for token in tokens
+    terminal = language.table.terminal(token.name)
+    if not parser.expecting(terminal)
+        raise chartparser.SyntaxErrorExpected(parser.expect, token.start, source)
+    parser.step(terminal, token, token.start, token.stop)
+if not parser.accepted
+    raise chartparser.SyntaxErrorExpected(parser.expect, token.stop, source, true)
+
+width = 512
+height = 512
+
+white = vec3(1, 1, 1)
+red = vec3(1, 0, 0)
+green = vec3(0, 1, 0)
+blue = vec3(0, 0, 1)
+
+plotter = (clean, plot):
+    clean()
+    turtle = :exnihilo()
+        is_down = true
+        pos = vec3(0, 0)
+        dir = vec3(0, 1)
+        forward = (num):
+            d = parse_int(num.string) / 50
+            was = pos
+            pos := pos + dir * d
+            if is_down
+                plot(was, white)
+                plot(pos, white)
+                sleep(0.5)
+        backward = (num):
+            d = parse_int(num.string) / 50
+            was = pos
+            pos := pos - dir * d
+            if is_down
+                plot(was, white)
+                plot(pos, white)
+                sleep(0.5)
+        left = (num):
+            d = parse_int(num.string)
+            dir := axisangle(vec3(0, 0, 1), d * pi / 180) * dir
+        right = (num):
+            d = parse_int(num.string)
+            dir := axisangle(vec3(0, 0,-1), d * pi / 180) * dir
+        penup = ():
+            is_down := false
+        pendown = ():
+            is_down := true
+        first = (a):
+            return [a]
+        append = (a, b):
+            a.append(b)
+            return a
+
+    argl = []
+    post = (rule, args, start, stop):
+        return rule.annotation(turtle, args, argl)
+    blank_lhs = (x): # Not used in this grammar.
+        return null
+    parser.traverse(post, blank_lhs)
+
+# This will eventually go to stdlib, but not sure where it should go there.
+parse_int = (string, base=10):
+    value = 0
+    for ch in string
+        if '0' <= ch and ch <= '9'
+            digit = ord(ch) - ord('0')
+        elif 'a' <= ch and ch <= 'z'
+            digit = ord(ch) - ord('a')
+        elif 'A' <= ch and ch <= 'Z'
+            digit = ord(ch) - ord('A')
+        else
+            raise Exception("invalid digit char: " ++ ch)
+        value = value * base + digit
+    return value
+
+win32 = (platform.name == "win32")
+if win32
+    sdl = ffi.library("SDL2.dll", api.read_file("libSDL2", {}))
+else
+    sdl = ffi.library("libSDL2.so", api.read_file("libSDL2", {}))
+gl = api.library("libGL", sdl.GL_GetProcAddress)
+
+main = ():
+    assert 0 == sdl.Init(sdl.INIT_EVERYTHING)
+        "cannot sdl2 init"
+
+    sdl.GL_SetAttribute(sdl.GL_CONTEXT_MAJOR_VERSION, 4)
+    sdl.GL_SetAttribute(sdl.GL_CONTEXT_MINOR_VERSION, 4)
+
+    sdl.GL_SetAttribute(sdl.GL_DOUBLEBUFFER, 1)
+    sdl.GL_SetAttribute(sdl.GL_DEPTH_SIZE, 24)
+
+    win = sdl.CreateWindow("Tutorial", 100, 100, width, height,
+      sdl.WINDOW_OPENGL | sdl.WINDOW_SHOWN)
+    assert win, "Cannot open window"
+
+    ctx = sdl.GL_CreateContext(win)
+    assert ctx, "Cannot create OpenGL 4 context"
+
+    # shader program
+    po = gl.createProgram()
+    vso = gl.createShader(gl.VERTEX_SHADER)
+    fso = gl.createShader(gl.FRAGMENT_SHADER)
+
+    vsrc = fs.read_file(dir ++ "2d.vert")
+    fsrc = fs.read_file(dir ++ "vertexcolor.frag")
+
+    build_shader(vso, vsrc)
+    build_shader(fso, fsrc)
+
+    gl.attachShader(po, vso)
+    gl.attachShader(po, fso)
+    gl.linkProgram(po)
+
+    linked = ffi.automem(ffi.int)
+    gl.getProgramiv(po, gl.LINK_STATUS, linked)
+    if linked.to != gl.TRUE
+        print("shader link failed")
+        print(get_info_log(po))
+        exit(1)
+
+    max_vertices = 2048
+    vertex_count = 0
+    data = ffi.automem(ffi.float, max_vertices*6)
+
+    stride = ffi.sizeof(ffi.float)*6
+    v_offset0 = ffi.sizeof(ffi.float)*0
+    v_offset1 = ffi.sizeof(ffi.float)*3
+    data_size = max_vertices*stride
+
+    plot_clean = ():
+        vertex_count := 0
+
+    plot_vertex = (pos, color):
+        i = vertex_count * 6
+        data[i+0] = pos.x
+        data[i+1] = pos.y
+        data[i+2] = pos.z
+        data[i+3] = color.x
+        data[i+4] = color.y
+        data[i+5] = color.z
+        vertex_count := vertex_count + 1
+
+    schedule(plotter, plot_clean, plot_vertex)
+
+    vbo_p = ffi.automem(ffi.int)
+    gl.genBuffers(1, vbo_p)
+    vbo = vbo_p[0]
+
+    # vertex array object (binds to the vbo above)
+    v_position = gl.getAttribLocation(po, "position")
+    v_color    = gl.getAttribLocation(po, "color")
+    print(v_position, v_color)
+    vao_p = ffi.automem(ffi.int)
+    gl.genVertexArrays(1, vao_p)
+    vao = vao_p[0]
+
+    gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+    gl.bindVertexArray(vao)
+    gl.enableVertexAttribArray(v_position)
+    gl.vertexAttribPointer(v_position, 3, gl.FLOAT, gl.FALSE, stride, ffi.cast(v_offset0, ffi.voidp))
+    if v_color >= 0
+        gl.enableVertexAttribArray(v_color)
+        gl.vertexAttribPointer(v_color, 3, gl.FLOAT, gl.FALSE, stride, ffi.cast(v_offset1, ffi.voidp))
+    gl.bindBuffer(gl.ARRAY_BUFFER, 0)
+
+    event = ffi.automem(sdl.Event)
+    running = true
+    while running
+        while sdl.PollEvent(event) != 0
+            if event.type == sdl.QUIT
+                return exit(0)
+        sleep(0.01)
+        gl.clearColor(0.5, 0.5, 0.5, 1)
+        gl.clear(gl.COLOR_BUFFER_BIT)
+        gl.useProgram(po)
+        gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
+        gl.bufferData(gl.ARRAY_BUFFER, data_size, data, gl.STREAM_DRAW)
+        gl.drawArrays(gl.LINES, 0, vertex_count)
+        sdl.GL_SwapWindow(win)
+    sdl.GL_DeleteContext(ctx)
+    sdl.DestroyWindow(win)
+    sdl.Quit()
+
+build_shader = (so, source):
+    source = encode_utf8(source)
+    source_length = ffi.automem(ffi.uint)
+    source_length.to = source.length
+    gl.shaderSource(so, 1, ffi.ref(source), source_length)
+
+    compiled = ffi.automem(ffi.int)
+
+    gl.compileShader(so)
+    gl.getShaderiv(so, gl.COMPILE_STATUS, compiled)
+    if compiled.to != gl.TRUE
+        print("shader compile failed")
+        print(get_info_log(so))
+        exit(1)
+
+get_info_log = (obj):
+    blen = ffi.automem(ffi.uint)
+    gl.getObjectParameterivARB(obj, gl.OBJECT_INFO_LOG_LENGTH_ARB, blen)
+    gl.getShaderiv(obj, gl.INFO_LOG_LENGTH, blen)
+    log = ffi.automem(ffi.ubyte, blen.to)
+    gl.getInfoLogARB(obj, blen.to, null, log)
+    return log.str
+
+autoarray = (ctype, sequence):
+    mem = ffi.automem(ctype, sequence.length)
+    i = 0
+    for x in sequence
+        mem[i] = x 
+        i = i + 1
+    return mem
+
+arraycopy = (dst, src):
+    i = 0
+    for x in src
+        dst[i] = x
+        i = i + 1
+
+tmp_matrix = ffi.automem(ffi.float, 16)
+uniform_mat4 = (loc, matrix):
+    arraycopy(tmp_matrix, matrix)
+    gl.uniformMatrix4fv(loc, 1, 0, tmp_matrix)
