@@ -9,7 +9,7 @@
     <ul class="nav">
         <li><a href="/"><img src="logo.png" alt="LEVER"></a></li>
         <li><a class="nav_button" href="https://github.com/cheery/lever/">repository</a></li>
-        <li><a class="nav_button" href="https://github.com/cheery/lever/releases">download</a></li>
+        <li><a class="nav_button" href="beginner_guide.html">beginner guide</a></li>
     </ul>
     <div class="intro">
         <img src="header.jpg">
@@ -18,7 +18,7 @@
     <p>Lever is a general purpose programming language, in the Perl/Python/Ruby group, with built-in support for GUI applications, including OpenGL, and a packaging feature that makes it easy to distribute applications.</p>
     <p>It's easy to add support for external 'C' libraries and the interface is relatively fast.</p>
     <p>The language itself is extensible and modifiable and, in general, there is an emphasis on practicality.</p>
-    <h2>Features:</h2>
+    <h2>Features</h2>
     <ul class="features">
         <li>Completely customizable syntax</li>
         <li>Dynamic typing</li>
@@ -38,7 +38,19 @@
 
     <p>There is more in-depth documentation in the <a href="https://github.com/cheery/lever/">repository</a>, including internal documentation for the runtime.</p>
 
-    <p>Lever has no beginner documentation at this time.</p>
+    <h2 id="download">Download</h2>
+
+    <ul class="download-links">
+        <li id="windows"><a href="https://github.com/cheery/lever/releases/download/0.8.0/lever-0.8.0-win32.zip">win32 standalone (zip)</a></li>
+        <li><a href="https://github.com/cheery/lever/archive/0.8.0.zip">0.8.0 source code (zip)</a></li>
+        <li id="linux"><a href="https://github.com/cheery/lever/archive/0.8.0.tar.gz">0.8.0 source code (tar.gz)</a></li>
+    </ul>
+    <script>
+        if (navigator.userAgent.match(/Linux/))
+            document.getElementById("linux").className = "preferred";
+        if (navigator.userAgent.match(/Win/))
+            document.getElementById("windows").className = "preferred";
+    </script>
 
     <p>Website maintained by Lever community.</p>
 

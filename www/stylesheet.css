@@ -78,6 +78,20 @@ h2 {
     font-size: 120%;
 }
 
-.features li {
+.features li, .download-links li {
     padding: 0.3mm 0;
+}
+
+.download-links .preferred::before {
+    content: "for your platform: ";
+    font-variant: small-caps;
+}
+
+.embed-header {
+    border: 1mm solid black;
+    font-size: 120%;
+    font-variant: small-caps;
+    padding: 0mm 2mm;
+    padding-top: 1mm;
+    margin: 0;
 }
