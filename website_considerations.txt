@@ -1,0 +1,45 @@
+Good programming language website has to account for following:
+
+1) What's the name?
+2) what does it do in a sentence?
+3) how do I get it
+4) what do I do now?
+5) where do I find more information
+6) is it a clean layout/typography
+7) good color scheme
+
+   presentation + content + relevance
+
+
+Step outside of the thing you made, and judge it as if you knew
+nothing about it in particular, and not much about this kind of
+software in general.
+
+Don't assume anything. ELI5.
+
+Exclude distractions away. You require no noise to get your point through.
+
+infographic minus graphic -- show, don't tell.
+
+DOWNLOAD --> think about where does this lead.
+             should be clean, simple. No hassle.
+
+It is possible that there needs to be more tutorials on the website, and a
+documentation index.
+
+Things the website should perhaps cover:
+
+    It's graphics&media focused, desktop app focused, this is mostly
+    social aspect but should reflect on libraries.
+
+    in python, when you want to make a desktop app with interactive
+    display, you got to download lots of stuff besides python at least you
+    need glmatrix and opengl, and possibly a library to open the window
+
+    OpenGL is included with graphic drivers, but you need tools to use it.
+
+    Displaying information is huge thing in computing, even if people
+    commonly see it as games and stuff.
+
+If everything else fails, let's make hexagonal mines -game and a text editor,
+then dump the screenshost to the front.
