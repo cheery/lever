@@ -108,3 +108,8 @@ h2 {
     padding-top: 1mm;
     margin: 0;
 }
+
+pre {
+    border: 0.2mm gray dashed;
+    padding: 5mm;
+}

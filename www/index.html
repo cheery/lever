@@ -20,16 +20,66 @@
     <p>Lever is a general purpose programming language, in the Perl/Python/Ruby group, with built-in support for GUI applications, including OpenGL, and a packaging feature that makes it easy to distribute applications.</p>
     <p>It's easy to add support for external 'C' libraries and the interface is relatively fast.</p>
     <p>The language itself is extensible and modifiable and, in general, there is an emphasis on practicality.</p>
-    <h2>Features</h2>
+
+    <h2>Superior FFI</h2>
+    <p>Using C libraries in your Lever code is so clean that
+    it is optional to write wrappers for them.</p>
+    <pre>sdl = api.library("libSDL2")
+sdl.Init(sdl.INIT_EVERYTHING)
+sdl.Quit()</pre>
+    <p>Lever has semi-automatic utilities to parse C files, clean them and translate them into .json -formatted headers that provide you with everything to use the libraries you need.</p>
+    <p>It also has headers for OpenGL4, although they have been generated directly from Khronos specifications.</p>
+    <pre>blen = ffi.automem(ffi.uint)
+gl.getObjectParameterivARB(obj, gl.OBJECT_INFO_LOG_LENGTH_ARB, blen)
+gl.getShaderiv(obj, gl.INFO_LOG_LENGTH, blen)
+log = ffi.automem(ffi.ubyte, blen.to)
+gl.getInfoLogARB(obj, blen.to, null, log)
+print(log.str)</pre>
+    <p>Combine this with rest of the features, and you get so incredibly simple programs that do incredibly
+    complex things. For example, check this
+    <a href="https://github.com/cheery/lever/blob/master/samples/logo/main.lc">implementation of Logo</a> out.</p>
+
+    <h2>Modules, without sys.modules</h2>
+    <p>There's no global object in lever that holds all the loaded modules. Instead the loaded modules are kept in module scopes. It is first-class loaded-modules handling! You can stack module scopes over others. There's 15 lines to plugin system or live coding from here:</p>
+
+    <pre>plugins = ModuleScope(dir ++ "path/to/plugins", %"import".scope)
+plugins_importer = Import(plugins.local, plugins)</pre>
+   
+    <p>And you can get rid of your scope when you like, to get all your modules to reload.</p>
+    
+    <h2>Built-in eventloop with augmented concurrency</h2>
+
+    <p>Async code looks so ugly, were you using callbacks, async/await or promises to do it. Except in Lever. In lever it looks prettier than your sync code.</p>
+    <p>Lever's got integrated eventloop that implements its 'sleep' command, which is very much like 'setInterval' in javascript. Except that if you call it without a function, it waits:</p>
+    <pre>sleep(2)</pre>
+
+    <p>If you call it with a function, it calls the function after a while.</p>
+    <pre>test = ():
+    print("5 second hello!")
+sleep(5, test)
+sleep(1)
+print("1 second hello")</pre>
+
+    <p>But you can also call it with...</p>
+
+    <pre>test = (parent):
+    parent.switch() # switches back
+    print("4 second hello!")
+dat = greenlet(test)
+dat.switch(getcurrent()) # goes to run test.
+# now we have a greenlet that hasn't returned.
+sleep(4, dat)
+# that inserted it into an event loop, cool?</pre>
+
+    <p>That's right, greenlets! This is how any event emitter works in lever. You don't need to worry whether it should be callbacks or greenlets. You can either wait for event or pass a callback and things keep working.</p>
+
+    <p>What if you stuck your app to wait for an event, but the event source is removed and the waiting code should release file handle? No problem. The event source schedules 'Discard' -exception thrown to the greenlet, that makes your waiting code to gracefully exit.</p>
+
+    <h2>Other Features</h2>
     <ul class="features">
         <li>Completely customizable syntax</li>
         <li>Dynamic typing</li>
         <li>RPython implemented runtime</li>
-        <li>Built-in eventloop</li>
-        <li>Concurrent programming with greenlets</li>
-        <li>Modules with cache scoping</li>
-        <li>Superior FFI</li>
-        <li>Semi-automatic C bindings</li>
         <li>Lexical scoping</li>
         <li>Operator overloading via multimethods</li>
         <li>GLSL-like vector, matrix and quaternion math</li>
