@@ -303,11 +303,13 @@ So every operator is a function, there are some exceptions:
 
     in     {expr10 "in" expr10}
     not_in {expr10 "not" "in" expr10}
+    not {"not" expr8}
 
 Examples:
 
     "foo" in [foo, bar]
     "foo" not in [foo, bar]
+    not false
 
 The 'in' invokes '+contains' in the interface of a right-hand object, and
 evaluates to 'true' or 'false', depending if the object contains an another.
@@ -315,36 +317,290 @@ evaluates to 'true' or 'false', depending if the object contains an another.
 The 'not_in' forms an inversion. This may be later described in the grammar with
 a different rule, and would be omitted from the semantics.
 
+The 'not' is there to invert a boolean value. It always evaluates to an inverted
+boolean value of it's containing statement.
+
+Lever has implicit conversion to booleans, and it follows the following rule:
+
+    boolean(null) == false
+    boolean(false) == false
+    boolean(anything else) == true
 
 
-return
-if
-    done
-    elif
+
+                                                                          import
+
+Import evaluates to null?
+
+While it does so, it will also call 'import' function in the current scope
+for each name and then it assigns the imported module to variable of that name.
+
+    import   {"import" symbols_list}
+
+Example:
+    
+    import blub, bar
+
+
+
+                                                                       functions
+
+    function {"(" bindings ")" ":" block}
+
+Examples:
+
+    ():
+        print("hello")
+    (foo):
+        print(foo)
+    (foo, bar=2):
+        print(foo, bar)
+    (foo, bar=2, rest...):
+        print(rest)
+        return foo + bar
+
+Function consists of bindings associated with list of statements. Function
+statement evaluates into a function. The statements inside are evaluated in new
+variable scope when the function is called.
+
+Scope resolution inside a function considers the whole higher scope, including
+the local_assign operations before and after the function statement.
+
+Arguments given to function during a call are bound using the binding rules.
+
+The bindings consists of mandatory arguments, followed by optional arguments,
+followed by variadic function argument.
+
+Arguments are consumed and assigned from argument list in the order they are
+given. If there is a variadic function argument then the argument list with
+remaining arguments will be assigned to that.
+
+Every optional argument has a default statement that will be evaluated if the
+function doesn't get enough arguments or if the given argument is 'null'.
+
+The 'null' behavior in optional is arguably weird, but also very logical. It is
+to be considered later, if it is worthwhile to keep this way.
+
+
+
+                                                         control flow statements
+
+Control flow statements form a large part of lever. Everything defined below,
+down to the pseudoscopes are form of control flow statements.
+
+If not otherwise described, the control flow statements always evaluate to what
+the last evaluated statement in them evaluate to.
+
+Simplest control flow statement is return:
+
+    return {"return" statement}
+
+Example:
+
+    return 5
+
+When return is evaluated, it returns from a function or program that
+is running. The given statement is evaluated and the value is returned as a
+return value of the given function or program.
+
+Return doesn't evaluate to anything, because subsequent evaluations do not
+evaluate, including the statements that contained 'return'.
+
+The next simplest control flow statements would be 'or' and 'and':
+
+    or {expr3 "or" expr}
+    and {expr5 "and" expr3}
+
+Examples:
+
+    true or false
+    true and false
+
+If the first item in 'or' evaluates to 'null' or 'false', then the second item
+is evaluated and the statement evaluates to it instead.
+Otherwise the statement evalutes to what the first item evaluates to.
+
+If the first item in 'and' evaluates to 'null' or 'false', then the statement
+evaluates to first item.
+Otherwise the statement evaluates to what the second item evaluates to.
+
+For more serious control flow, Lever has if/elif/else, just like python got it!
+
+    if     {"if"     statement block otherwise}
+    otherwise =>
+        done {}
+        elif {%newline "elif" statement block otherwise}
+        else {%newline "else" block}
+
+Examples:
+
+    if holiday
+        rage_party()
+    elif tuesday
+        lazy_mode()
     else
-while
-for
-assert
-try
-    except
-break
-continue
-raise
+        churn()
+    
+If-block goes through conditions in order. If a condition evaluates to true
+value, then the statement list is evaluated below it.
+Otherwise if else is present, that else-block is evaluated.
+Otherwise if-block evaluates to 'null'.
 
-or
-and
-not
 
-class
-class_header
 
-import
+                                                                           loops
 
-function
-    with_variadic
-    only_variadic
-    first_optional
-    append_optional
-    mandatory
-    append_mandatory
-scopegrabber
+    while  {"while"  statement block}
+    for      {"for" symbol "in" statement block}
+    break    {"break"}
+    continue {"continue"}
+
+Examples:
+
+    while tuesday
+        keep_working()
+    for x in days
+        print(x)
+    while true
+        if lazy()
+            break
+    while tuesday
+        if eager()
+            continue
+
+The while statement is a simplest way to form a loop in lever. If the condition
+evaluates to true value, then the statement list is evaluated. This is then repeated
+until condition evaluates to false.
+
+'for' statement evaluates the first statement given to it and retrieves an
+iterator from it. It calls '.next()' -function in the iterator until the
+function signals to stop iteration.
+
+For every value the 'for' statement gets, it local_assigns the value to a symbol
+and evaluates the statement list with the value.
+
+If the containing statement list in loops do not evaluate, the loop statement
+evaluates to 'null'.
+
+
+
+                                                    error reporting and handling
+
+Lever has tracebacks and exceptions. The exception handling is intended to be
+used for handling errors and releasing resources in Lever.
+
+    assert   {"assert" statement "," statement}
+    assert   {"assert" statement block}
+
+Examples:
+
+    assert win, "window not opened"
+    assert win
+        result = run_error_diagnostic()
+        "window not opened, reason: " ++ format_result(result)
+
+Assert is the entry-level error reporting tool in Lever. It is the first thing
+you should spam when you have an error condition in your program.
+
+If the argument given to assert evaluates to false value, the assert will
+evaluate it's block and raise AssertionError with the evaluated value.
+
+When program gets sophisticated and raise is not enough, you can start using
+raise with exception object of your choice:
+
+    raise    {"raise" statement}
+
+Examples:
+
+    raise Exception("bad error")
+    raise BadThingsHappened()
+
+Preferably the value to 'raise' should extend from 'Exception'. Also the value
+needs a '.traceback' -attribute. This attribute starts collecting a list of
+traceback entries while the exception travels in the call graph of a program.
+
+Exceptions can be catched too!
+
+    try      {"try" block excepts}
+    except =>
+        except {"except" expr "as" symbol block}
+
+Example:
+
+    try
+        catastrophy()
+    except Collapse as c
+        print_traceback(c)
+        return GoldenParachute()
+
+The 'try' block evaluates its containing block normally and evaluates to the
+value of its inner block like it should. In normal operation the except -clauses
+are getting ignored.
+
+When exception happens inside the 'try' block, the program proceeds through
+exceptions treating them as a condition block similar to 'if'. 'isinstance(x,
+Exception)' gets used to test whether the block should catch an exception.
+
+
+The current implementation cannot build a traceback without traversing and
+returning. This matters for debuggers and tracers so it should be fixed
+eventually. 
+
+
+
+                                                                    pseudoscopes
+
+Pseudocodes are on the borderline of being yet another cool feature of lever, or
+a nuisance in reasoning about the program.
+
+This form of scope is used for forming classes and populating objects in lever.
+
+Pseudoscope in Lever works just like an ordinary scope, except that the scope
+resolution inside pseudoscope considers only the local_assign operations that
+come logically before the statement.
+
+Class definitions and scopegrabbers form pseudoscopes:
+
+    class    {"class" class_header}
+    class    {"class" class_header block}
+    class_header =>
+        class_header {symbol}
+        class_header {symbol "extends" expr}
+    scopegrabber {":" expr block}
+
+Examples:
+
+    class Protocol
+    class Protocol
+        print("hello")
+        +init = (self):
+            null
+    class Protocol extends Convention
+
+    rogue = :Droid()
+        callsign = "rogue"
+
+The class statement forms a custom object for capturing the scope variables,
+then it evaluates every statement inside itself in the new pseudoscope.
+Afterwards it constructs a class that matches with the class header and
+evaluates to it.
+
+As side effect the class also gets locally assigned.
+
+Classes are a tool to produce custom objects in Lever. There will be separate
+documentation for behavior of classes in future.
+
+Pseudoscopes allow to do the same trick with any object. The example above is
+equivalent to:
+
+    rogue = Droid()
+    rogue.callsign = "rogue"
+
+Just note that the variables are not backfed from the object back into the
+scope. You can only access those variables in the pseudoscope that you assign
+to.
+
+Ability to backfeed from objects would be potentially really complicated to
+implement, but it would be possible given the powerful approach Lever uses to
+compiling. It might be implemented if it ever can be proven to be very useful
+for some purpose.
