@@ -1,0 +1,350 @@
+tw=80
+
+In programming language theory, semantics is the field concerned with the
+rigorous mathematical study of the meaning of programming languages. It does so
+by evaluating the meaning of syntactically legal strings defined by a specific
+programming language, showing the computation involved.
+-- Wikipedia Semantics (computer science)
+
+Lever syntax is defined by a context-free grammar file lever-0.8.0.grammar. That
+file changes over time. This ability allows this programming language to evolve
+over time. People can fork the whole language and adjust it to their needs.
+Later the mainline can pick and merge adjustments that become valuable.
+
+Main purpose of this file, semantics_documentation.txt is to give the reader a
+basis to reason about behavior of lever source code.
+
+In summary, Lever forms a lexically scoped, dynamically typed programming
+language, resembling Python, Ruby, Perl, Scheme, Javascript.
+
+Lever source code is compiled into bytecode. Runtime can load a bytecode object.
+The loaded bytecode forms a program. The program can be invoked and invocation
+requires a module as an argument.
+
+
+
+                                                                compilation unit
+
+Since compiling takes place, we define a compilation unit. Compilation unit is a
+dictionary that holds:
+
+ 'version' = 0
+ 'sources' - List of references to source files the compilation unit used as
+             sources.
+ 'constants' - List of constants referenced by this compilation unit.
+ 'functions' - List of function declarations in this compilation unit.
+
+The function declarations consist of bytecode blobs, annotated with everything
+required to construct a function when loading the unit in the runtime.
+
+The bytecode files are treated casually. They are ordinary objects in this
+programming language, we can load and save them with any .json -like formats.
+Currently lever runtime uses binon, which is an experimental serialization
+format meant to evolve along the language into something universally useful.
+
+The multiple source file references are for forwards compatibility.
+
+
+
+                                                                    source files
+
+Person reading lever source files should treat them as programs that run with a
+module associated to the file. The source file runs in sequence from top to
+bottom, with module attached to it.
+
+
+
+                                                                         modules
+
+Module works as a "global scope" for a program. Variables defined on the
+top-level of source file end up into the module. For example. The following
+program sets a variable:
+
+    greet = "hello world"
+
+When you load this program and run it in some module, that module obtains .greet
+-variable if it didn't already have one.
+
+Most lever modules are derived by extending existing modules, such as 'base'
+which contains the default runtime environment for lever.
+
+When you define a new module scope, you can also define a base_module from which
+the module scope should derive new modules.
+
+
+
+                                                                      statements
+
+Lever source file is a list of statements. Every lever statement evaluates into
+some value when run.
+
+The value of last statement is obtained and returned implicitly. This feature
+is used in read-eval-print -loops.
+
+Statements appear as objects inside the compiler, but otherwise they never
+appear explicitly as objects. Every statement is compiled into bytecode and the
+concept of individual statement is erased at that point.
+
+List of statements form functions and blocks in compilation unit.
+
+In the lever grammar you see lot of things that are understood as 'statement'.
+You find out there are 'block statements', ordinary 'statements' and
+'expressions'. This grouping resemble most popular programming languages at
+the moment. I find it comfortable most of the time.
+
+The grammar binds every rule into their semantic meaning, and the semantic
+meaning is documented in this file.
+
+                                                                       constants
+
+
+Constants evaluate to themselves. Here's how they appear in the grammar:
+
+    int {int}
+    hex {hex}
+    float  {float}
+    string {string}
+
+Here are examples of constants:
+
+    1234
+    0x400
+    1.23
+    "terve"
+    'hei'
+
+Constants fill up an entry in 'constants' -table of compilation unit.
+
+
+
+                                                                composite values
+
+Lever has lists and dictionaries. They have notation in Lever language.
+
+    list     {"[" arguments "]"}
+    dict     {"{" pairs "}"}
+    dict     {"{" nl_pairs "}"}
+
+Here are some examples of each:
+
+    [1, 2, 3, 4]
+    {"hello":4, fair=5}
+    {
+        a = 1
+        b = 2
+        c = 3
+    }
+
+The lists and dictionaries evaluate their containing statements, then they
+evaluate to value they represent.
+
+
+
+                                                                       variables
+
+Lever variable lookup evaluates to the value of a variable-slot visible in
+current scope.
+
+    lookup {symbol}
+    lookup {"%" string}
+
+Examples of lookup statements:
+
+    %"import"
+    %"+"
+    print
+
+Lever has a lexical scope. The behavior of this scope is slightly different from
+other languages.
+
+'scopegrabber', 'class' and 'function' statements create a scope. A scope is
+active within the statement that creates it, and a scope contains variable-slots.
+
+Every variable slot in a scope has a name, and in ordinary resolution the name
+is fetched from higher scope if it is not present in currently active scope.
+
+'function' -scope considers both variables defined above and below in
+higher scope are considered, but most other scopes only consider the variables
+in higher scope that are locally defined above it.
+
+Lever has several forms of assignments:
+
+    local_assign   {local_symbol      "="  block_statement}
+    upvalue_assign {symbol            ":=" block_statement}
+    op_assign      {slot op           "="  block_statement}
+    slot =>
+        lookup_slot {symbol}
+        attr_slot   {expr "." symbol}
+        item_slot   {expr "[" expr "]"}
+    op => ["|", "^", "&", "<<", ">>", "++", "+", "-", "%", "/", "*"]
+
+Example of local_assign:
+
+    hello = "world"
+
+local_assign always creates a variable-slot in currently active, or 'local' scope.
+
+Example of upvalue_assign and op_assign:
+
+    test := 4
+    tryout += 2
+
+upvalue_assign and op_assign do an ordinary scope lookup for a variable slot.
+When a correctly labelled slot is found, it uses that slot.
+
+attr_slot and item_slot virtualize a getattr/setattr and getitem/setitem, so
+they can be used in op-associated assignments. Examples of those:
+
+    expr.attribute += 11
+    expr[4] *= 2
+
+While we go those virtualizations through, it is worthwhile to mention the
+setattr and setitem statements that resemble assignments:
+
+    setitem        {expr "[" expr "]" "="  block_statement}
+    setattr        {expr "." symbol   "="  block_statement}
+
+Examples:
+
+    expr[5] = 1
+    expr.test = 2
+
+All assignment-like statements evaluate to the value they set.
+
+Internally setattr/setitem -functions also return a value. They are meant to
+return a value that was in the place of a slot they replaced a value in. This
+feature is currently unused.
+
+Of course, getitem and getattr:
+
+    getitem {postfix "[" expr "]"}
+    getattr {postfix "." symbol}
+
+They are in the same format as the setattr/setitem statements, and evaluate to
+what a specific getattr/getitem action on the object returns.
+
+Currently there is one case where the lexical scoping of lever can cause
+significant confusion:
+
+
+    confuser = 4
+    func = ():
+        if X
+            confuser = 10
+        else
+            print(confuser) # prints 'null' and not '4'
+          
+The problem is that scope of these statements is built linearly, rather than
+following the logical flow of the program.
+
+This is potentially something that should be fixed later. For now it's
+documented here that there's this kind of problematic case.
+
+
+
+                                                                  function calls
+
+There's lot of talk about function calls above, here we define what they are.
+
+    call  {postfix "(" arguments ")"}
+    callv {postfix "(" arguments "..." ")"}
+
+Examples:
+
+    print("cabbage", "rolls")
+    print("cabbage", folio_patty...)
+
+At first these statements will evaluate the statements they contain, from left
+to right. The call gets a value to call, and list of arguments to call it with.
+
+'callv' behavior differs in that the last argument is used to extend the given
+list of arguments.
+
+When a function is called, it runs through a list of statements. If it doesn't
+return before that list of statements are run, it will return a 'null' -value in
+the end.
+
+How the arguments affect the call of a function will be described in 'functions'
+-section.
+
+Additionally 'prefix' and 'binary' statements are also function calls. They
+behave similarly to ordinary function calls.
+
+For example lets look at these binary and prefix statements:
+
+    binary {expr100 ^"+" expr200}
+    binary {expr100 ^"-" expr200}
+    prefix {^"+" postfix}
+    prefix {^"-" postfix}
+
+Here's what they look like in source file when you meet them:
+
+    1+2
+    1-2
+    +3
+    -3
+
+The are functionally equivalent to:
+
+    %"+"(1, 2)
+    %"-"(1, 2)
+    %"+expr"(3)
+    %"-expr"(3)
+
+You see that prefix statement adds that "expr" to the name to differentiate
+between single and two-arity functions. This is done to simplify implementation
+of those functions.
+
+The grammar has binary and prefix statements in hierarchies to establish
+precedence rules within these statements. The precedence rules should match that
+of python or C.
+
+So every operator is a function, there are some exceptions:
+
+    in     {expr10 "in" expr10}
+    not_in {expr10 "not" "in" expr10}
+
+Examples:
+
+    "foo" in [foo, bar]
+    "foo" not in [foo, bar]
+
+The 'in' invokes '+contains' in the interface of a right-hand object, and
+evaluates to 'true' or 'false', depending if the object contains an another.
+
+The 'not_in' forms an inversion. This may be later described in the grammar with
+a different rule, and would be omitted from the semantics.
+
+
+
+return
+if
+    done
+    elif
+    else
+while
+for
+assert
+try
+    except
+break
+continue
+raise
+
+or
+and
+not
+
+class
+class_header
+
+import
+
+function
+    with_variadic
+    only_variadic
+    first_optional
+    append_optional
+    mandatory
+    append_mandatory
+scopegrabber
