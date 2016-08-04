@@ -46,3 +46,9 @@ Things the website should perhaps cover:
 
 If everything else fails, let's make hexagonal mines -game and a text editor,
 then dump the screenshost to the front.
+
+
+Some links I better remember:
+
+https://opensource.com/business/15/5/write-better-docs
+http://tratt.net/laurie/blog/entries/fast_enough_vms_in_fast_enough_time.html
