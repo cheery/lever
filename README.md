@@ -225,7 +225,7 @@ If you find out you're memory constrained, you may want to try compile with `./s
 
 First of all you need a good text editor for writing lever code. Avoid wordpad and notepad, they aren't good for this. Here are some you could try:
 
- * Visual Studio Code - Easily available on Windows.
+ * Visual Studio Code - Easily available on Windows and Linux.
  * GEdit              - Easily available on Linux.
  * GVim               - used by author, has steep learning curve. You can look, but it may be better to use either one of the above ones at first time.
 
