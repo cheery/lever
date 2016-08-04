@@ -27,6 +27,8 @@ DOWNLOAD --> think about where does this lead.
 It is possible that there needs to be more tutorials on the website, and a
 documentation index.
 
+Getting started -guide should likely be more articulated.
+
 Things the website should perhaps cover:
 
     It's graphics&media focused, desktop app focused, this is mostly
