@@ -37,7 +37,7 @@ def include_contents(dirname):
             include(path, os.path.relpath(path, dirname))
 
 include("lever.exe")
-include("lever.grammar")
+include("lever-0.8.0.grammar")
 include("VERSION")
 include_dir("app")
 include_dir("lib")
