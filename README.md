@@ -227,11 +227,11 @@ First of all you need a good text editor for writing lever code. Avoid wordpad a
 
  * Visual Studio Code - Easily available on Windows and Linux.
  * GEdit              - Easily available on Linux.
- * GVim               - used by author, has steep learning curve. You can look, but it may be better to use either one of the above ones at first time.
+ * Vim                - used by author, has steep learning curve. You can look, but it may be better to use either one of the above ones at first time.
 
 As Lever is indented language (and please don't change the grammar to make it otherwise), you want to expand tabs with spaces to avoid syntax errors due to mixed tabs&spaces. Preferable amount of spaces to insert instead of a tab is 4 spaces.
 
-Most text editors meant for programming have a command to change indentation level of multiple lines at once. Relevant GVim commands to do this are 'Vjk<' and 'Vjk>'. On Visual Studio Code you can select the text and then press tab key to indent, or shift+tab to dedent. It's good idea to learn how to trigger this command in your editor.
+Most text editors meant for programming have a command to change indentation level of multiple lines at once. Relevant Vim commands to do this are 'Vjk<' and 'Vjk>'. On Visual Studio Code you can select the text and then press tab key to indent, or shift+tab to dedent. It's good idea to learn how to trigger this command in your editor.
 
 ### Visual Studio Code adjustments
 
@@ -255,9 +255,9 @@ In the `View` -tab I propose you will set "Display line numbers" and "Display ri
 
 In the `Editor` -tab you should set "Tab width 4" and "Insert spaces instead of tabs"
 
-### GVim adjustments
+### Vim adjustments
 
-You may like correct syntax colors on GVim. To do that you may like to create symbolic links so that the vim finds the symbolic links in lever -directory:
+You may like correct syntax colors on Vim. To do that you may like to create symbolic links so that the vim finds the symbolic links in lever -directory:
 
     export LEVER_PATH=/home/cheery/.local/lever
     ln -s $LEVER_PATH/tools/lever-ftdetect.vim ~/.vim/ftdetect/lever.vim
