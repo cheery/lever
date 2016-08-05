@@ -245,7 +245,7 @@ You can customize this in `File > Preferences > User Settings` with:
 
     // Controls if the editor will insert spaces for tabs.
     // If set to auto, the value will be guessed based on the opened file.
-    "editor.insertSpaces": false
+    "editor.insertSpaces": true
 
 ### GEdit adjustments
 
