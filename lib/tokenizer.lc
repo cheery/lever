@@ -14,8 +14,6 @@ read_string = (string, table={}):
 
 next_token = (stream, table):
     while stream.filled and stream.current.is_space()
-        if stream.current == "\r"
-            raise SyntaxError(stream.position, stream.position+1, "CR not allowed by encoding (tip: change CRLF to LF)")
         stream.advance()
     if not stream.filled
         return null
