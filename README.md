@@ -251,13 +251,15 @@ In the `Editor` -tab you should set "Tab width 4" and "Insert spaces instead of 
 
 ### Vim adjustments
 
-You may like correct syntax colors on Vim. To do that you may like to create symbolic links so that the vim finds the symbolic links in lever -directory:
+You may like correct syntax colors on Vim. To do that, retrieve them from http://github.com/cheery/vim-lever
 
-    export LEVER_PATH=/home/cheery/.local/lever
-    ln -s $LEVER_PATH/tools/lever-ftdetect.vim ~/.vim/ftdetect/lever.vim
-    ln -s $LEVER_PATH/tools/lever.vim          ~/.vim/syntax/lever.vim
+There's nice package manager for vim that lets you keep your plugins and syntax files updated called [vim-pathogen](https://github.com/tpope/vim-pathogen)
 
-To configure gvim to expand tabs:
+These files were earlier in this repository. If you had installed these files
+with symbolic links, you may want to clear those away from
+`.vim/ftdetect/lever.vim` and `.vim/syntax/lever.vim`.
+
+To configure vim to expand tabs:
 
     set expandtab
     set tabstop=4
