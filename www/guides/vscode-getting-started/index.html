@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lever - Getting started with Visual Studio Code</title>
+    <link rel="stylesheet" href="/stylesheet.css">
+</head>
+<body>
+    <ul class="nav">
+        <li><a href="/"><img src="/logo.png" alt="LEVER"></a></li>
+        <li><a class="nav_button" href="https://github.com/cheery/lever/">repository</a></li>
+        <li><a class="nav_button" href="/index.html#download">download</a></li>
+    </ul>
+    <h1 class="embed-header">Getting started with Visual Studio Code</h1>
+
+    <p>With this guide you will gain a tool to run non-packaged
+    Lever programs and edit any Lever program, or create new programs.</p>
+
+    <p>You should package your own programs so that people do not need to do
+    this. We will tackle it and update the docs as soon as someone gets so far
+    to have programs to package and tells about it for us!</p>
+
+    <p>All Lever beginner guides will assume you use this tool. If you don't, we
+    assume you are not a beginner. :-) But by all means use the tools you find
+    comfort with.</p>
+
+    <p><a href="https://code.visualstudio.com/download">Download Visual
+        Studio Code from their website</a> and install it.
+    </p>
+
+    <p>When you start the program, they provide a very nice guide for getting
+    started with the editor. I propose you will read it after we are done. You
+    can open it again from the menu with 'Help' -&gt; 'Documentation'. Close it
+    for now.</p>
+
+    <p>So, you should have yourself a window such as in the screenshot here.</p>
+
+    <img src="1.PNG"/>
+
+    <p>In the 'extensions' tab from that sidebar. Search for 'lever' -extension.
+    You should find at least one extension with that name. Pick the official
+    extension, in the name there should read 'lever'. Install it. Once it has
+    installed, remember to enable it. That 'enable' button will appear in the
+    same place where the install button was.</p>
+
+    <img src="2.PNG"/>
+
+    <p>Next, you get the following view with 'File' -&gt; 'Preferences' -&gt;
+    'User Settings'. You can close those other files pressing a cross. You only
+    need to edit the 'settings.json'.</p>
+
+    <img src="4.PNG"/>
+
+    <p>The lever tools require to know where you've stored the lever runtime.
+    The runtime comes in a ZIP archive and doesn't have an installer that would
+    configure a path into your system. It's a small language and it's early days
+    for Lever. Also you could use your own runtime any time. Visual Studio Code
+    needs to know where the runtime directory is so that you could run the Lever
+    programs with it.</p>
+
+    <img src="5.PNG"/>
+
+    <p>At this point, download and extract the lever runtime if you haven't done
+    so already. Put it somewhere on your computer. Then open the directory such
+    as below.</p>
+
+    <p>Now you see a simple way to point out for a program where the runtime
+    is.</p>
+
+    <img src="6.PNG"/>
+
+    <p>Paste it to the 'lever.runtime_path'.</p>
+
+    <img src="7.PNG"/>
+
+    <p>The backslash standardized as an escape character - even lever uses
+    backslash as an escape character! So the above path would read something
+    like "C:Usersesaprogramming stufflever" when it finally gets to the debugger
+    that should read it.</p>
+
+    <p>You can escape escape characters with themselves. Just duplicate every
+    backslash like below:</p>
+
+    <img src="8.PNG"/>
+
+    <p>Now we have setup an environment for ourselves. Lets test it so we can be
+    sure it works. This way you also see what you need to do to run a program.</p>
+
+    <h2>Hello world -tutorial</h2>
+
+    <p>Create a hello-world -directory and use 'File' -&gt; 'Open Folder' to
+    open it.</p>
+
+    <img src="9.PNG"/>
+    <img src="10.PNG"/>
+
+    <p>Create a file 'main.lc' and write your print("hello world"). If this is a
+    school class assigment, remember to write something very rude inside the
+    quotes in your native language. (non latin letters should work there, but
+    I'm not sure, you can try)</p>
+
+    <img src="11.PNG"/>
+
+    <p>Next, since there's no .vscode in the directory, if you press F5, or go
+    click 'play' from the debugging sidetab, it asks for environment. If you
+    click it wrong, just delete .vscode directory and try again.</p>
+
+    <img src="12.PNG"/>
+    <img src="13.PNG"/>
+
+    <p>Next put the 'main.lc' open and close the sidetab. It's optional but that
+    way it's more clear what's going on.</p>
+
+    <img src="14.PNG"/>
+
+    <p>Press F5, and prepare yourself.</p>
+    <img src="15.PNG"/>
+
+    <p>If everything has been going well so far. That's it. You are done with
+    this guide.</p>
+
+    <p>To learn how to use your new editor, you may like to go read the
+    <a href="https://code.visualstudio.com/docs/">Visual Studio Code
+        documentation</a>. So you know how to use some of the nicer features.</p>
+
+    <p>The next guide:
+    <a href="/guides/vscode-sample-programs/">Browsing sample programs with your
+        new editor</a></p>
+
+    <p>Oh. And who's a good new lever programmer? YOU ARE!! You gorgeous guy/gal
+    who reads the documentation. I'm sorry if that irritates you. Lever is
+    pretty fun language for people who don't like being herded. Give it a chance!</p>
+
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script>
+
+</body>
+</html>

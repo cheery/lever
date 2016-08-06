@@ -235,17 +235,11 @@ Most text editors meant for programming have a command to change indentation lev
 
 ### Visual Studio Code adjustments
 
-By default, VSCode will try to guess your indentation options depending on the file you open. But there's good chance it doesn't understand that the '.lc' file extension should be space-indented yet.
+You should get yourself the [https://github.com/cheery/vscode-lever](vscode-lever) extension if you are going to use visual studio code. There are few guides on the [lever's website](http://leverlanguage.com/) to get started with it.
 
-You can customize this in `File > Preferences > User Settings` with:
+You can install this extension in VSCode by pressing CTRL+P paste the following command and press 'enter':
 
-    // Controls the rendering size of tabs in characters.
-    // If set to auto, the value will be guessed based on the opened file.
-    "editor.tabSize": 4,
-
-    // Controls if the editor will insert spaces for tabs.
-    // If set to auto, the value will be guessed based on the opened file.
-    "editor.insertSpaces": true
+    ext install vscode-lever
 
 ### GEdit adjustments
 

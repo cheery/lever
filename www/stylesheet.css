@@ -6,6 +6,11 @@ body {
     font-family: arial;
 }
 
+img {
+    width: 100%;
+    height: auto;
+}
+
 ul.nav {
     margin: 0;
     padding: 0;
@@ -52,8 +57,6 @@ a.nav_button:hover {
     margin: 0 0;
     margin-top: -5px;
     display: block;
-    width: 100%;
-    height: auto;
 }
 .intro > div {
     position: absolute;
