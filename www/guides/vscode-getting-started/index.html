@@ -83,6 +83,23 @@
 
     <img src="8.PNG"/>
 
+    <p>It appears that
+    <a href="https://github.com/Microsoft/vscode/issues/4891">VSCode
+    developers don't let you to define file encoding by an extension.</a> To
+    have no encoding issues with Lever or any Lever related repositories, put
+    yet these in!</p>
+
+    <pre>        "editor.tabSize": 4,
+        "editor.insertSpaces": true,
+        "files.eol": "\n",
+        "files.encoding": "utf8",</pre>
+
+    <p>Above settings are very sane defaults not provided by VSCode, yet they
+    are used nearly everywhere outside Windows.</p>
+
+    <p>In the screenshots below you can see some "CRLF" in the menu. It should
+    be "LF".</p>
+
     <p>Now we have setup an environment for ourselves. Lets test it so we can be
     sure it works. This way you also see what you need to do to run a program.</p>
 
