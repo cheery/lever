@@ -7,7 +7,7 @@ body {
 }
 
 img {
-    width: 100%;
+    max-width: 100%;
     height: auto;
 }
 
@@ -54,6 +54,8 @@ a.nav_button:hover {
 }
 
 .intro > img {
+    width: 100%;
+    height: auto;
     margin: 0 0;
     margin-top: -5px;
     display: block;
