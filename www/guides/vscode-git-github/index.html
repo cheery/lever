@@ -3,100 +3,181 @@
 <head>
     <meta charset="UTF-8">
     <title>Lever - Leveraging Git&amp;Github</title>
-    <link rel="stylesheet" href="/stylesheet.css">
+    <link rel="stylesheet" href="../../stylesheet.css">
+<style>
+body { margin-left: 60px; margin-right: 60px; }
+p { text-align: justify; }
+.editalert { color: #990000; font-weight: bold; font-style: italic; }
+.secttitle { color: #aac600; font-weight: bold; }
+</style>    
 </head>
 <body>
-    <ul class="nav">
-        <li><a href="/"><img src="/logo.png" alt="LEVER"></a></li>
-        <li><a class="nav_button" href="https://github.com/cheery/lever/">repository</a></li>
-        <li><a class="nav_button" href="/index.html#download">download</a></li>
-    </ul>
-    <h1 class="embed-header">Leveraging Git&amp;Github</h1>
 
-    <p>This guide is continuation to setting up your programming
-    environment. After you've read this, you know the basics of using your tools
-    to contribute on open source projects.</p>
+<ul class="nav">
+<li><a href="../../"><img src="../../logo.png" alt="LEVER"></a></li>
+<li><a class="nav_button" href="https://github.com/cheery/lever/">repository</a></li>
+<li><a class="nav_button" href="/index.html#download">download</a></li>
+</ul>
+<h1 class="embed-header">Leveraging Git and Github</h1>
 
-    <p>Here you will learn how to use Git, and the workflow of using them with
-    online project hosting websites, such as what Github is.</p>
-
-    <p>Git allows you contribute, or create your own web repositories.
-    This is the fastest way to share your own creations with everyone else, and
-    it also makes it easy for others to continue from where you left it.</p>
-    
-    <p>Do a search with 'git hosting', and you will find plenty of such hosting
-    websites. But it may be best to use github for now, because that way you can
-    contribute to my repositories and I can contribute to yours.</p>
-
-    <p>We proceed in discovery order to give you an idea how you could
-    have discovered this out on your own. You can read through the whole guide
-    at first to find out the optimal order of setting it up. But there's no harm
-    by just reading it all through.</p>
-
-    <p>The prerequisite is that you've worked through
-        <a href="/guides/vscode-getting-started">how to get
-        started with vscode.</a> Open the hello-world folder with the 'File'
-    -menu. If someone has deleted that directory, it's okay. Just create a new
-    directory and put something there.</p>
-
-    <p>In the left tab you've got this diamond shaped symbol, when you press it
-    tells you 'git' is not installed.</p> 
-
-    <img src="1.PNG"/>
-
-    <p>If you click at the 'git-scm.com' -link, it starts to download git. Let
-    it finish and run the installer. Then step through until you hit a following
-    dialog.</p>
-
-    <p>Earlier dialogs have lot of options, they seem to be right from the
-    start, and it's okay for you to change them if you know something about what
-    each means. One thing is that you probably want to keep the "Git Bash Here"
-    and "Git GUI Here" installed. They are both very useful.</p>
-    
-    <p>In this dialog you are best off by checking 'Checkout as-is, commit
-    as-is' here.</p>
-
-    <img src="2.PNG"/>
-
-    <p>There are lot of programming terms such as 'checkout' or 'commit' here.
-    So it can look a bit chaotical.</p>
-
-    <p>This whole thing is about handling line endings. Why you
-    have to bother about this is very much
-    <a href="https://en.wikipedia.org/wiki/Newline#History">historical</a>. In
-    summary, many early computers fed text directly from the memory to a
-    teletype printer head that printed characters to paper. CR is a control
-    character that made the print head to switch to a new line.</p>
-
-    <p>Because the print head was not fast enough, it did not manage to finish
-    the operation in time and you would often see the next letter get printed to
-    a middle of page. To avoid this, text files ended up with CR+LF sequence,
-    with the LF doing nothing. This gave the print head enough time to
-    return.</p>
-
-    <p>Hardware drivers eventually ended up to abstract away the details, and
-    computers were free to use a single character as newline. Unix adopted the
-    LF as a newline, while Windows kept using CR+LF as a newline.</p>
-
-    <p>The problem here is that Git is very sensitive for line feed
-    characters. If the line feed convention changes along the way, it renders
-    the Git diff useless. There are some places where you still see CR+LF used,
-    but they appear in protocols and such, not in text files. The standard we use
-    with Lever files is to just use LF everywhere.</p>
-
-    <p>You should at least select either one of 'Checkout as-is' because this
-    means you get a repository directory that is safe to move from a computer to
-    an another without committing it through Git. You have an editor, that if
-    you put like I proposed is configured to use LF everywhere. Also the VSCode
-    doesn't force the file encoding so you shouldn't have problem with editing
-    text files using any of the above settings.</p>
-
-    <p>Once you have a git installed, you can create a git repository in
-    VSCode!</p>
-
-    <img src="3.PNG"/>
-
-    <p>Now you have a git repository and the git tab is active. It's showing up
+<p class="secttitle">
+1. Introduction.
+</p><p>
+git is a developer's tool that can be used to manage the source code
+for your projects. It provides a way to experiment with changes to
+the code and to track changes once they're finalized.
+</p><p>
+git is designed to be multi-user. It allows different developers
+to work on the same project at the same time without getting in
+each other's way. Developers can contribute fixes to the codebase
+in general or focus on maintaining different branches, or versions,
+of the code.
+</p><p>
+<img src="branches.png"
+width="474" height="278" alt="codebase branches" />
+</p><p>
+git is one of several competing tools known as Version
+Control Systems. This particular tool was created by Linus
+Torvalds, the original developer of Linux. To read more about
+Version Control Systems,
+<a href="https://git-scm.com/book/en/v2/Getting-Started-About-Version-Control">click here.</a>
+</p><p>
+git can be used as a stand-alone tool on one developer's PC or
+as a collaborative tool. In the latter case, a codebase lives on
+a server, which may be a private machine that belongs to a venture
+or a public git web service.
+</p><p>
+If you'd like simply to share your source code for others to use, it's
+easy to create a source tarball and link to it. However, if the goal
+is to open your project up to collaborative development, presently,
+git web services are one of the best approaches.
+</p><p>
+Typically, git web services are free, up to a point, but charge for
+extra features. There are several services of this type. The best one
+is generally considered to be GitHub. GitHub is located online
+at the following link:
+</p><p>
+<a href="https://github.com/">https://github.com/</a>
+</p><p class="editalert">
+Correct the following as necessary:
+</p><p>
+This guide outlines the setup of git under Windows and illustrates
+basic workflows for git both as a stand-alone tool and in conjunction
+with GitHub.
+</p><p>
+As a sample project, we'll use a VSCODE component written in Lever.
+</p><p>
+The focus is Windows as VSCODE is highly Windows-specific.
+Separate guides may be added for Linux Lever projects in the
+future.
+</p><p>
+If you work through this guide, you should be comfortable with git for
+Windows at the end and, additionally, you'll pick up a bit related to
+working with VSCODE and the Lever codebase.
+</p><p class="secttitle">
+2. Prerequisite.
+</p><p>
+Please work through the following guide first:
+</p><p>
+<a href="../../guides/vscode-getting-started">how to get
+started with vscode.</a>
+</p><p class="editalert">
+Where is this folder from? What left tab? Even if this is
+explained in the preceding guide, provide some context here.
+</p><p>
+Open the hello-world folder with the 'File'
+-menu. If someone has deleted that directory, it's okay. Just create a new
+directory and put something there.
+</p><p>
+In the left tab you've got this diamond shaped symbol, when you press it
+tells you 'git' is not installed.
+</p><p>
+<img src="vscodegit01.png"/>
+</p><p class="secttitle">
+3. Install Git for Windows.
+</p><p>
+The next step is to install Git for Windows, if you don't already
+have it.
+</p><p>
+If you click at the 'git-scm.com' -link, it starts to download git. Let
+it finish and run the installer. Then step through until you hit a following
+dialog.
+</p><p>
+Earlier dialogs have lot of options, they seem to be right from the
+start, and it's okay for you to change them if you know something about what
+each means. One thing is that you probably want to keep the "Git Bash Here"
+and "Git GUI Here" installed. They are both very useful.
+</p><p>
+In this dialog you are best off by checking 'Checkout as-is, commit
+as-is' here.
+</p><p>
+<img src="vscodegit02.png"/>
+</p><p>
+There are lot of programming terms such as 'checkout' or 'commit' here.
+So, it may look a bit chaotic.
+</p><p class="secttitle">
+3.1. Line endings: Some history.
+</p><p>
+This part is optional.
+</p><p>
+The line-ending issue is historical. To read more about it,
+<a href="https://en.wikipedia.org/wiki/Newline#History">click here.</a>
+</p><p>
+In short, many early computers fed text directly from the memory to a
+teletype printer head that printed characters to paper. CR is a control
+character that made the print head to switch to a new line.
+</p><p>
+Because the print head was not fast enough, it did not manage to finish
+the operation in time and you would often see the next letter get printed to
+a middle of page. To avoid this, text files ended up with CR+LF sequence,
+with the LF doing nothing. This gave the print head enough time to
+return.
+</p><p>
+Hardware drivers eventually ended up to abstract away the details, and
+computers were free to use a single character as newline. Unix adopted the
+LF as a newline, while Windows kept using CR+LF as a newline.
+</p><p>
+The problem here is that Git is very sensitive for line feed
+characters. If the line feed convention changes along the way, it renders
+the Git diff useless. There are some places where you still see CR+LF used,
+but they appear in protocols and such, not in text files. The standard we use
+with Lever files is to just use LF everywhere.
+</p><p class="secttitle">
+3.2. Line endings: What to choose.
+</p><p>
+We recommend 'Checkout as-is' because this
+means you get a repository directory that is safe to move from a computer to
+an another without committing it through Git. You have an editor, that if
+you put like I proposed is configured to use LF everywhere. Also the VSCode
+doesn't force the file encoding so you shouldn't have problem with editing
+text files using any of the above settings.
+</p><p>
+Once you have a git installed, you can create a git repository in
+VSCode!
+</p><p>
+<img src="vscodegit03.png"/>
+</p><p class="editalert">
+I'll pause here and suggest the following changes:
+Add step numbers to organize things a bit more. Possibly add
+step titles to the step numbers.
+</p><p class="editalert">
+I assume that the flow is as follows:
+You install Git for Windows, the hello-world project is added
+to git, you create a repo on the GitHub side, and then you make
+changes and commit. Is it something like this? Make the flow
+clearer to the casual reader.
+</p><p class="editalert">
+If Git Bash is part of this, should probably add a paragraph or
+two explaining more about what it is and linking to a Git Bash
+tutorial.
+</p><p class="editalert">
+There are images further down that need more context. The casual
+reader will like to understand what is going on, not just execute
+steps exactly.
+</p><p class="editalert">
+The 11-word link a couple of paragraphs down is too long.
+</p><p>
+Now you have a git repository and the git tab is active. It's showing up
     the changes that haven't been committed to the repository.</p>
 
     <p>Git created a directory for you that has a history. Every git directory
@@ -109,17 +190,17 @@ that in October 29, 2014!</p>
 
     <p>This is very useful feature for managing your projects.</p>
 
-    <img src="4.PNG"/>
+    <img src="vscodegit04.png"/>
 
     <p>The chances are transferred into history in stagings, multiple files at
     once. Every stage gets a message that should tell what was done.</p>
 
-    <img src="5.PNG"/>
-    <img src="6.PNG"/>
-    <img src="7.PNG"/>
+    <img src="vscodegit05.png"/>
+    <img src="vscodegit06.png"/>
+    <img src="vscodegit07.png"/>
 
     <p>BOINK! Git hits you to the head! You lose 5 sanity points!!</p>
-    <img src="8.PNG"/>
+    <img src="vscodegit08.png"/>
     <p>To avoid this, open the GIT Bash to get this kind of very discomforting
     black screen you've probably seen in hacking movies. Type the commands such
     as in the screenshot, but replace 'cheery' with user name of your own, and
@@ -129,7 +210,7 @@ that in October 29, 2014!</p>
     <p>I'm not sure, but the name perhaps must be the same you use with your
     upcoming github account. You can change it later with this very same way.</p>
 
-    <img src="12.PNG"/>
+    <img src="vscodegit12.png"/>
 
     <p>Now you should be able to commit!</p>
 
@@ -138,7 +219,7 @@ that in October 29, 2014!</p>
     as your passwords or customized server configs. You also don't want to
     commit most binaries or files that get generated when you run your program.</p>
 
-    <img src="15.PNG"/>
+    <img src="vscodegit15.png"/>
 
     <p>If you've run a program with lever, you got one right there named
     'main.lc.cb'. To ignore all files with lever bytecode file extension, add
@@ -147,7 +228,7 @@ that in October 29, 2014!</p>
     <p>I also made '.vscodeignore', because I thought it would ignore files in
     vscode -view. Turns out I was wrong.</p>
 
-    <img src="14.PNG"/>
+    <img src="vscodegit14.png"/>
 
     <p>When something becomes useless later on, you can delete it from the tree
     and stage a commit to delete it.</p>
@@ -161,7 +242,7 @@ that in October 29, 2014!</p>
     <p>If you can invalidate the information the file contains, it's usually
     better way than to change a git repository.</p>
 
-    <img src="18.PNG"/>
+    <img src="vscodegit18.png"/>
 
     <p>If the file isn't very dangerous, the best way is to let it stay in the
     history. It's the job of git to handle the history. Let it do its job.</p>
@@ -171,32 +252,33 @@ that in October 29, 2014!</p>
     <p>The following sequences shows out how to create a public repository where
     you can push changes from your local repository.</p>
 
-    <img src="20.PNG"/>
-    <img src="21.PNG"/>
-    <img src="22.PNG"/>
+    <img src="vscodegit20.png"/>
+    <img src="vscodegit21.png"/>
+    <img src="vscodegit22.png"/>
+<br clear="all" />
     <p>Remember to keep the next page open.</p>
-    <img src="23.PNG"/>
+    <img src="vscodegit23.png"/>
 
     <p>So there's no much use of this if you can't push your changes from your
     repository to the github repository. To use the above lines you need to open
     a Git Bash to your repository.</p>
-    <img src="24.PNG"/>
+    <img src="vscodegit24.png"/>
     <p>If github is new SSH destination to you, you see this kind of
     message. Just type 'yes' as answer and press return.</p>
-    <img src="25.PNG"/>
+    <img src="vscodegit25.png"/>
     <p>BOINK! Github hits you to the head! Well no. Actually it just denies your
     access to the repository because it cannot know it is yours. You need to
     authenticate.</p>
-    <img src="26.PNG"/>
+    <img src="vscodegit26.png"/>
     <p>Public-key authentification.. Safer than any other authentification
     method as long as people do not snuff or see your private key. If it's not
     your personal computer that is safe from snoopys, remember to invalidate
     the key at github's end afterwards.</p>
-    <img src="27.PNG"/>
+    <img src="vscodegit27.png"/>
     <p>The program prints out fancy things such as a fingerprint and ASCII art.
     They aren't very interesting. Check out the path it points out. Open the
     whole directory in your VSCode.</p>
-    <img src="28.PNG"/>
+    <img src="vscodegit28.png"/>
 
     <p>The 'id_rsa' is a private key. People who have this key can identify as
     you. And you can identify as someone whose key you have.</p>
@@ -207,7 +289,7 @@ that in October 29, 2014!</p>
 
     <p>The 'id_rsa.pub' is your public key. Copy it from your file!</p>
 
-    <img src="29.PNG"/>
+    <img src="vscodegit29.png"/>
 
     <p>Go to <a
          href="https://github.com/settings/keys">https://github.com/settings/keys</a>
@@ -216,12 +298,12 @@ that in October 29, 2014!</p>
     because I am on his computer. Notice the button 'Delete' - that lets you
     invalidate your key any time.</p>
 
-    <img src="30.PNG"/>
+    <img src="vscodegit30.png"/>
 
     <p>Next when you try the same thing as again, it lets you do it. Below you
     see the outcome.</p>
 
-    <img src="32.PNG"/>
+    <img src="vscodegit32.png"/>
 
     <p>After a while also your VSCode recognizes this. You can notice you will
     be able to 'Sync', 'Pull' and 'Push' from the menu aside the 'do a barrel
@@ -232,10 +314,10 @@ that in October 29, 2014!</p>
     you're in a master branch, and the 'remote' or github repository is 1 commit
     ahead of yours master branch.</p>
 
-    <img src="33.PNG"/>
+    <img src="vscodegit33.png"/>
 
     <p>Doing the pull changes the markings, like this.</p>
-    <img src="34.PNG"/>
+    <img src="vscodegit34.png"/>
 
     <p>So, is this worth all the effort? Might be the first thing you ask when
     you get accomodated to version control of any kind. I use it because it
