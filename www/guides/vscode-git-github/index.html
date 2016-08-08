@@ -7,7 +7,7 @@
 <style>
 body { margin-left: 60px; margin-right: 60px; }
 p { text-align: justify; }
-.editalert { color: #990000; font-weight: bold; font-style: italic; }
+.editalert { color: #990000; font-weight: bold; font-style: italic; display: none; }
 .secttitle { color: #aac600; font-weight: bold; }
 </style>    
 </head>
@@ -19,10 +19,14 @@ p { text-align: justify; }
 <li><a class="nav_button" href="/index.html#download">download</a></li>
 </ul>
 <h1 class="embed-header">Leveraging Git and Github</h1>
-
-<p class="secttitle">
+<p>
+This is one in a series of guides discussing software tools and their use in
+Lever projects. Working through this guide will provide a basic understanding
+of git and GitHub as well as a start on the use of VSCODE with Lever.
+</p>
+<h2 class="secttitle">
 1. Introduction.
-</p><p>
+</h2><p>
 git is a developer's tool that can be used to manage the source code
 for your projects. It provides a way to experiment with changes to
 the code and to track changes once they're finalized.
@@ -74,28 +78,28 @@ future.
 If you work through this guide, you should be comfortable with git for
 Windows at the end and, additionally, you'll pick up a bit related to
 working with VSCODE and the Lever codebase.
-</p><p class="secttitle">
+</p><h2 class="secttitle">
 2. Prerequisite.
-</p><p>
+</h2><p>
 Please work through the following guide first:
 </p><p>
-<a href="../../guides/vscode-getting-started">how to get
+<a href="../../guides/vscode-getting-started">How to get
 started with vscode.</a>
-</p><p class="editalert">
-Where is this folder from? What left tab? Even if this is
-explained in the preceding guide, provide some context here.
 </p><p>
-Open the hello-world folder with the 'File'
--menu. If someone has deleted that directory, it's okay. Just create a new
-directory and put something there.
+If you read through the
+<a href="../vscode-getting-started">getting started with vscode -guide</a>
+You created a hello-world folder. Open that folder with the 'File' -menu.
+If someone has deleted that directory, it's okay. Just create a new directory
+and put something there. But open a directory anyway, it will become a git
+repository in this guide.
 </p><p>
 In the left tab you've got this diamond shaped symbol, when you press it
 tells you 'git' is not installed.
 </p><p>
 <img src="vscodegit01.png"/>
-</p><p class="secttitle">
+</p><h2 class="secttitle">
 3. Install Git for Windows.
-</p><p>
+</h2><p>
 The next step is to install Git for Windows, if you don't already
 have it.
 </p><p>
@@ -115,9 +119,9 @@ as-is' here.
 </p><p>
 There are lot of programming terms such as 'checkout' or 'commit' here.
 So, it may look a bit chaotic.
-</p><p class="secttitle">
+</p><h2 class="secttitle">
 3.1. Line endings: Some history.
-</p><p>
+</h2><p>
 This part is optional.
 </p><p>
 The line-ending issue is historical. To read more about it,
@@ -142,9 +146,9 @@ characters. If the line feed convention changes along the way, it renders
 the Git diff useless. There are some places where you still see CR+LF used,
 but they appear in protocols and such, not in text files. The standard we use
 with Lever files is to just use LF everywhere.
-</p><p class="secttitle">
+</p><h2 class="secttitle">
 3.2. Line endings: What to choose.
-</p><p>
+</h2><p>
 We recommend 'Checkout as-is' because this
 means you get a repository directory that is safe to move from a computer to
 an another without committing it through Git. You have an editor, that if
@@ -174,8 +178,6 @@ tutorial.
 There are images further down that need more context. The casual
 reader will like to understand what is going on, not just execute
 steps exactly.
-</p><p class="editalert">
-The 11-word link a couple of paragraphs down is too long.
 </p><p>
 Now you have a git repository and the git tab is active. It's showing up
     the changes that haven't been committed to the repository.</p>
@@ -183,9 +185,8 @@ Now you have a git repository and the git tab is active. It's showing up
     <p>Git created a directory for you that has a history. Every git directory
     has a history that is stored in '.git' -folder. It is possible to checkout a
     from any point in this history and see how the directory looked back then.
-    For example,
-    <a href="https://github.com/cheery/lever/tree/887af5bcabeeb1c78050285e43485ba8837d7d75">here's the
-    directory tree of a first commit to lever repository.</a> It looked like
+    For example, here's the directory tree of 
+    <a href="https://github.com/cheery/lever/tree/887af5bcabeeb1c78050285e43485ba8837d7d75">a first commit to lever repository.</a> It looked like
 that in October 29, 2014!</p>
 
     <p>This is very useful feature for managing your projects.</p>
@@ -195,7 +196,24 @@ that in October 29, 2014!</p>
     <p>The chances are transferred into history in stagings, multiple files at
     once. Every stage gets a message that should tell what was done.</p>
 
+<p>
+Lets make the first commit. There is very clear plus -sign that appears next to
+a file in that list. Press it to stage a file.
+</p>
+
     <img src="vscodegit05.png"/>
+
+<p>
+The staged changes appear into their separate list. We leave the main.lc.cb
+away because that's a binary file that Lever compiles from main.lc before it
+runs it.
+</p>
+
+<p>
+To commit something you need a message, but this is the very first commit so
+we can give it a message 'initial commit'.
+</p>
+
     <img src="vscodegit06.png"/>
     <img src="vscodegit07.png"/>
 
@@ -228,6 +246,13 @@ that in October 29, 2014!</p>
     <p>I also made '.vscodeignore', because I thought it would ignore files in
     vscode -view. Turns out I was wrong.</p>
 
+<p>
+Prefer to describe what you do in the commit message. It is common to see very
+bad commit messages and it is understandable because naming can be hard. But you
+will get better every time you try. Eventually it will become your second nature
+to write meaningful commit messages.
+</p>
+
     <img src="vscodegit14.png"/>
 
     <p>When something becomes useless later on, you can delete it from the tree
@@ -253,7 +278,19 @@ that in October 29, 2014!</p>
     you can push changes from your local repository.</p>
 
     <img src="vscodegit20.png"/>
+
+<p>
+There's a very little button in the upper right corner of the site...
+</p>
+
     <img src="vscodegit21.png"/>
+
+<p>
+...And it opens up like this. The best results are gained by names that tell something
+important about your work. For example 'nike' is a goddess of victory. A fine
+name for sports clothing. Do the same trick and you'll be walking along the titans.
+</p>
+
     <img src="vscodegit22.png"/>
 <br clear="all" />
     <p>Remember to keep the next page open.</p>
