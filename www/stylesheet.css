@@ -118,3 +118,12 @@ pre {
     border: 0.2mm gray dashed;
     padding: 5mm;
 }
+
+h2 {
+    color: #996103; font-weight: bold;
+}
+
+h3 {
+    color: #996103; font-weight: bold;
+    font-size: 100%;
+}
