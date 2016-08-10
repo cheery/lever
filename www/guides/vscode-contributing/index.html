@@ -56,13 +56,14 @@ Next you should clone your online repository to your computer. Easiest way is to
 do 'Git Bash Here' then type "git clone " and paste the URL of your repository
 after.
 </p>
-<p>TODO: image missing</p>
+<img src="contrib02.png">
+<img src="contrib03.png">
 <h2 class="secttitle">3. Open the repository in your editor</h2>
 <p>
 The git clone created a lever repository to where you issued it. Next you should
 'File' -&gt; 'Open Folder' to get it into your editor:
 </p>
-<img src="contrib03.png">
+<img src="contrib04.png">
 <h2 class="secttitle">4. Lots of things to contribute</h2>
 <p>
 There are various things one could do to Lever. So at this point this guide has
@@ -147,7 +148,7 @@ omissions.
 <p>
 For example, there was dict.update() missing some while ago.
 </p>
-<img src="contrib04.png">
+<img src="contrib05.png">
 <p>
 Now there are some interesting things to note before you get to implement a
 missing functionality you find.
@@ -185,7 +186,7 @@ appreciates list comprehensions as they are very expressive constructs.
 <p>
 There is a set.update() of similar behavior.
 </p>
-<img src="contrib05.png">
+<img src="contrib06.png">
 <p>
 So the function is redundant, but every other reason points out it should be in
 Lever. Therefore implementing it will drive Lever forward.
@@ -214,23 +215,34 @@ Go to <a href="https://www.python.org/downloads/windows/">Python download page</
 <p>
 Next thing is important as RPython cannot translate to 64-bit executables on
 Windows, and it depends on bit-width of the Python. You need to download the
-"Windows x86 installer" from the download page.
+"Windows x86 installer" from the download page that is for 32-bit environment.
+Also be sure that it is the Python 2.7 installer. The version number should appear
+in the start of the install.
+</p>
+<img src="contrib07.png">
+<p>
+It's okay to install the Python into C:\Python27 because it's usually expected
+to be there.
 </p>
 <p>
-It's good idea to configure python to add itself into the PATH.
+It's good idea to configure python to add itself into the PATH. Although it may
+be you have to restart your computer to have the PATH rule go to effect.
 </p>
+<img src="contrib08.png">
 <p>
 Next you need to download &amp; install 
 <a href="https://www.microsoft.com/en-us/download/details.aspx?id=44266">
     Microsoft Visual C++ Compiler for Python 2.7</a>
 The Microsoft tends to mess up their URLs from time to time.
 If the link doesn't work, do a search to find this installer. Just make sure it
-comes from Microsoft owned -url.
+comes from Microsoft owned -url. Install it just like usual.
 </p>
+<img src="contrib09.png">
 <p>
 Now you should be able to open a command line for this compiler from the start
 menu of your Windows.
 </p>
+<img src="contrib10.png">
 <h3>4-3. Write the missing code</h3>
 <p>
 The prerequisite for implementing a function into Lever is that you know how to
@@ -249,17 +261,65 @@ found from the runtime/space/dictionary.py
 <p>
 Write your implementation for Dict_update.
 </p>
+<p>
+Here's a mini-guide for test your program after compiling. Press F5 and select
+'Lever Runtime'
+</p>
+<img src="contrib11.png">
+<p>
+Put "${file}" into the "program" -option, so that the currently shown file gets
+run instead of the 'main.lc'. You may also like to change the "lever_path" into
+"${workspaceRoot}", because we are developing Lever.
+</p>
+<img src="contrib12.png">
+<p>
+You should get this kind of ENOENT -error when you try to run your
+'dictionaries.lc'. This happens because your runtime doesn't have lever
+executable yet.
+</p>
+<img src="contrib13.png">
+<p>
+If you change the "lever_path" back to proper runtime, you should get the
+following error. It is clear that .update isn't there. If you do this, switch
+the lever's path back to this project, because you are going to compile a new
+runtime next.
+</p>
+<img src="contrib14.png">
+<p>
+There has been situation that my anti-virus software interferes with the
+debugger. If that happens then the debug console doesn't open. Restarting the
+Visual Studio Code seem to have helped when that happens.
+</p>
 <h3>4-4. Translate &amp; Test the runtime</h3>
 <p>
 To verify your implementation works, you need to translate the Lever runtime.
 </p>
 <p>
-Open the **TODO** add instructions
+To do it, you will do that from the command line tool obtained two sections
+back. With the "Visual C++ 2008 32-bit Command Prompt". Navigate to your lever
+directory with a 'cd' -command.
+<img src="contrib17.png">
 </p>
 <p>
-Use the 'cd' command to navigate to the lever directory. When you get there,
-write: 'python setup.py compile'
+In the Lever 0.8.0 there is one complication due to RPython bug. This bug has
+been reported and fixed days ago, and it will not be present in the next PyPy
+and next Lever release.
 </p>
+<p>
+Run the "python setup.py" -command, if it says 'is not recognized', check a
+troubleshoot for this few images below.
+</p>
+<p>
+For now you need to rewrite the following two lines in
+pypy2-v5.3.1-src/rpython/rlib/rposix.py
+</p>
+<img src="contrib15.png">
+<img src="contrib16.png">
+<p>Remember to save these changes before a running the next command:</p>
+<p>
+Write: 'python setup.py compile'
+</p>
+<img src="contrib18.png">
 <p>
 This triggers a full compile to your runtime and gives you a lever executable
 you can use to develop lib/ -features. If you're only working on the lib/, it is
@@ -268,11 +328,21 @@ commands use the bootstrapping compiler to compile everything in the lib/
 -directory. The later command forces recompile for all files in the lib/.
 </p>
 <p>
-You're about done with the implementation once it compiles and your sample
-program runs properly.
+There is also 'compile-nojit' command to provide shorter compile time. But the
+resulting interpreter won't be able to JIT the code.
 </p>
-
-<h3>4-4. New documentation</h3>
+<img src="contrib19.png">
+<p>And if it runs successfully, it should look about like this.</p>
+<img src="contrib20.png">
+<p>
+Now verify that your lever path refers to this runtime. You're about done with
+the implementation once your sample program runs properly.
+</p>
+<p>
+If you need the change immediately, there's the win32_dist.py -script that can
+create a new package with Lever.
+</p>
+<h3>4-5. New documentation</h3>
 <p>
 If you implemented a feature, remember to update the internal_documentation.txt
 to let people know that there's a feature for that now. This is all what feature
@@ -298,14 +368,56 @@ preferred format is PNG and it's nice, but optional to use
 Guides are directly written into html files at guides/ -directory.
 Creation of a new guide requires a similar analysis as what code did.
 </p>
+<h3>4-5. Troubleshooting</h3>
+<p>
+There's possible that something goes wrong. For example the error below comes if
+you didn't patch the rpython. It's a well-known problem and the solution is
+documented on this page, so only request troubleshooting if you get a new
+twist to it.
+</p>
+<p>
+This part of a guide will shorten considerably the time for you to get help with
+Lever. When you stumble upon an issue. Capture the logs and copy them. In the
+console you can do this by right clicking the window and pressing 'select all'.
+</p>
+<img src="contrib23.png">
+<p>
+The screen gets coloured white. In this mode press 'enter'. The screen recovers
+to what it was.
+</p>
+<img src="contrib24.png">
+<p>
+Go into <a href="gist.github.com">gist.github.com</a> and paste your error log
+there. Press 'create public gist'. You must be logged into github to do this.
+Any other pastebin site works as well.
+</p>
+<img src="contrib25.png">
+<p>
+On <a href="github.com/cheery/lever/issues">our issues page</a>, press 'new
+issue' button. Describe the problem you encountered. Add a link to the paste you
+created. Explain what changes you've done and how you've diverted from the
+instructions of the guide. You can use the 'snip' -tool on windows 10 to provide
+us screenshots.
+</p>
+<p>
+Details are fun. They provide us something we can react upon and provide the
+knowledge we need to troubleshoot.
+</p>
+<img src="contrib26.png">
+<p>
+This will let us know that you have a problem, and we will get to help you out
+asap.
+</p>
 <h2>5. Commit the changes and Push</h2>
 <p>
 You can do several commits, but please don't commit all the time. At worst,
 commit files once in a day after a productive session.
 </p>
+<img src="contrib21.png">
 <p>
 Push the files using your preferred way to you server.
 </p>
+<img src="contrib22.png">
 <p>
 When you think your work can be contributed, you can then finally write a pull
 request. There should be a 'new pull request' -button on the Lever repository.
