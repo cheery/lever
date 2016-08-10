@@ -326,6 +326,9 @@ I have clear vision on Lever and I'd like to have some coordination over lever d
         Put todo! messages dump into the console during docs compiling.
         Provide support to inject details from reference manual into the
         runtime.
+    STRATEGY: Make the MVP documentation for Lever.
+    TACTIC: Provide a detailed plan for lever learners.
+        restricts release of 0.9.0
 
 Long term mission of Lever is to prove the large scale viability of dynamic languages, and to evolve to remain as an always fresh programming environment.
 
