@@ -1,0 +1,133 @@
+\documentclass{article}
+\begin{document}
+\title{Documentation considerations}
+
+I have studied the use of TeX on documentation.
+
+
+
+Why I consider TeX, rather than Markdown, HTML or RST has
+following reasoning:
+
+\begin{itemize}
+\item
+    TeX syntax is older than Markdown or reStructuredText.
+        It was designed for more generic purpose of
+        typesetting documents. This better matches what I am
+        supposed to do with the language.
+\item
+    TeX is more generic than Markdown or reStructuredText,
+        with less of structures meant for constructing
+        certain kind of texts.
+\item
+    While I've been using Markdown in my blog posts, it has
+        shown that it is not entirely good for constructing
+        well-layouted and structured HTML pages. It
+        separates the layout and content too well, even if
+        by design guidelines the layout and style SHOULD
+        FOLLOW the content.
+\item
+    reStructuredText seem to share many problems of the
+        Markdown by trying to be too human readable as plain
+        text documentation.
+\item
+    HTML has TeX-like qualities, but it is ugly syntax and
+        would require further processing to allow targeting
+        for multiple purposes.
+\end{itemize}
+
+If you create a subset of TeX that has structures that can
+be understood by all your document processing targets, it
+could be very versatile platform for writing documentation.
+
+For example, there already exist many important pieces for
+writing hypertext documents, such as:
+
+\begin{verbatim}
+\href{http://domain}{description}
+\label{location}
+\ref{location}
+\end{verbatim}
+
+TeX doesn't come without problems though.
+
+TeX is meant to be read by a document processor that reads
+it command-by-command in from a text stream, considering
+every character as a command, that causes it to be perceived
+as turing complete. The document processor can change the
+meaning of its input stream. This is considered notorious
+because TeX can be only parsed by TeX.
+
+I consider it much worse that TeX has up to 10 control
+characters, with many of them being ordinary elements when
+typing modern programming related texts.
+
+\verb= # % & / ^ _ { } ~ $ =
+
+You can stuff most of code samples into verbatim blocks and
+prevent many issues here. But things like underscore can
+provide to be quite problematic when typing out variable
+names.
+
+But then, you could add a macro for constructing variable
+names and avoid these problems. That macro would also work
+for linking those names into reference.
+
+The backslash -character is easy to type on american
+keyboards but difficult on european keyboards. This would
+propose to change the symbol.
+
+Another gripe is that TeX does not consider the layout of
+the text. This would be very good quality for readability.
+
+Here's how I think a Lever documentation could look like:
+
+\begin{verbatim}
+#section
+    Title text here, goes to the end of a block.
+
+Here you see that title gobbles an indented block. The
+indentation must increase on next line.
+
+The indentation wouldn't be used for potentially long blocks
+of text, because that is rather ugly and demeaning to
+process on an editor when it could go on for pages far.
+
+The main differences to TeX:
+
+#begin itemize
+#item
+Different macro -letter. Differentiating from TeX
+#item
+3 special characters: #hash #lbra #rbra
+#item
+Braces still used for grouping at places.
+#item
+Indentation an available structuring element for
+simple elements such as titles. Optional elsewhere.
+#item
+Language extended before processing, not during
+processing.
+#item 
+Hyperref elements very much like in TeX:
+#href{http://example.org}{Test URL}
+#item
+Forms clear distinction between TeX.
+#item
+Similar to write as TeX on british keyboards. On european
+and american keyboards holds similar difficulties.
+#item
+Unformatted texts are less likely to trigger actions from
+the special characters list.
+#item
+High-level enough description to support all the
+targets we need:
+    #begin itemize
+    #item HTML
+    #item TeX & PDF documents
+    #item References in the runtime
+    #end
+#end
+\end{verbatim}
+
+\end{document}

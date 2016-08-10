@@ -318,6 +318,14 @@ I have clear vision on Lever and I'd like to have some coordination over lever d
         restricts release of 1.0.0
     TACTIC: Provide downloadable win32 binary.
     TACTIC: Plow the way out for SteamOS distributions.
+    STRATEGY: Implement documentation system
+        restricts release of 0.10.0
+    TACTIC: Form something like a text processor. Bit like TeX
+        Reuse the TeX syntax that has proven to be work?
+        Support conditional inclusion of notes into docs.
+        Put todo! messages dump into the console during docs compiling.
+        Provide support to inject details from reference manual into the
+        runtime.
 
 Long term mission of Lever is to prove the large scale viability of dynamic languages, and to evolve to remain as an always fresh programming environment.
 
