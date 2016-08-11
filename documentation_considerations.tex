@@ -36,11 +36,15 @@ easy to remember.
     # % & / ^ _ { } ~ $ \
 \end{verbatim}
 
+The behavior of / and ~ does not necessarily count as a
+control character.
+
 My current design reduces the amount of control characters
-to 3.
+to 4. To let this be fair comparison, I included all
+characters that have some 'control' meaning here.
 
 \begin{verbatim}
-    # { }
+    # { } ;
 \end{verbatim}
 
 This is intended to avoid plaintext that could 'hide'
@@ -90,6 +94,11 @@ The rules here is that if hash appears in the beginning or
 after a whitespace, it is a macro. All nonspace characters
 except left brace and right brace form the macro.
 
+Since in URLs, the hash character can only appear after a
+non-semicolon because semicolon is also a reserved character
+in URLs, doing it like this will prevent URLs from ever
+triggering a macro.
+
 The spaces around macro are never ignored or left out from
 the output stream. If there is a desire to form macro
 without spaces before or after it, it is done with placing a
@@ -97,10 +106,18 @@ semicolon before or after the macro. In that case the
 semicolon gets ignored. Otherwise semicolon behaves like an
 ordinary character.
 
-To avoid other macro characters, the 'hash' macro
-produces a hash character. Additionally any character can be
-escaped with macro in form of unicode notation U+0000 and
-two-character hexadecimals.
+To allow this, the semicolon can be treated with a
+lookahead, such that if there's hash character after it, its
+meaning changes. Otherwise it is treated like an ordinary
+character.
+
+To avoid other macro characters, the hash character without
+annything following it produces a hash character. With the
+help of the semicolon rule it allows easy escape of the
+control character anywhere. Additionally any character can
+be escaped with macro in form of unicode notation U+0000 and
+two-character hexadecimals. For example: \verb= #20 = would
+resolve to space character.
 
 The doubled hash character starts a math-mode and ends it.
 For example the \verb=## 1 + 2 * 3 ##= would render
@@ -119,20 +136,16 @@ Reference location #ref{location:here}
 The braces would behave as grouping element after a macro.
 Elsewhere they would be interpreted as ordinary character.
 
-Where we would diverge are macros that begin or end a
-larger block on a begin of a new line. There we want to omit
-the braces because they do not add important information.
-
 \begin{verbatim}
-#begin itemize
+#begin{itemize}
 #item
-    Item #hash;1
-    #begin itemize
+    Item #;1
+    #begin{itemize}
     #item
-        Subitem #hash;1
-        Subitem #hash;2
-    #end itemize
-#end itemize
+        Subitem #;1
+        Subitem #;2
+    #end{itemize}
+#end{itemize}
 \end{verbatim}
 
 We also introduce the concept of pre -macro. To let
@@ -140,10 +153,16 @@ everyone recognize when the given block is not desired to be
 processed:
 
 \begin{verbatim}
-#begin verbatim #pre
+#begin{verbatim} #pre
     Therefore
-#end verbatim
+#end{verbatim}
 \end{verbatim}
+
+There was idea that you could make braces around environment
+names such as 'verbatim' or 'itemize' optional because
+environment names do not necessarily have to contain spaces
+in them. There are some implementation details on parsing
+that have to be seen before the rules on this can be written.
 
 To avoid confusion with this rule, it requires the
 subsequent text to be prefixed right from the line where the
