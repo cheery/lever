@@ -317,10 +317,16 @@ def interpret(pc, block, regv, frame):
                         break
                 else:
                     raise
-    except StopIteration as stop:
-        unwinder = space.unwind(space.LUncatchedStopIteration())
-        unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.sources, frame.sourcemap, unit.path))
-        raise unwinder
+            except StopIteration as stop:
+                # Doing an exception check to see if .next() was called in try block.
+                unwinder = space.unwind(space.LUncatchedStopIteration())
+                for exc in excs:
+                    if exc.start < pc <= exc.stop:
+                        regv.store(exc.reg, unwinder.exception)
+                        pc = exc.label
+                        break
+                else:
+                    raise unwinder
     except space.Unwinder as unwinder:
         unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.sources, frame.sourcemap, unit.path))
         raise

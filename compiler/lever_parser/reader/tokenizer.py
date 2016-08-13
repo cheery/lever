@@ -110,12 +110,12 @@ def escape_sequence(stream):
 
 def get_hex(stream):
     if stream.current in "0123456789ABCDEFabcdef":
-        return stream.get_next()
+        return stream.advance()
     return ""
 
 def get_octal(stream):
     if stream.current in "01234567":
-        return stream.get_next()
+        return stream.advance()
     return ""
 
 escape_sequences = {"a": 0x07, "b": 0x08, "f": 0x0C, "n": 0x0A, "r": 0x0D, "t": 0x09, "v": 0x0B, "\\": 0x5C, "'": 0x27, "\"": 0x22, "?": 0x3F}

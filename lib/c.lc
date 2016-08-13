@@ -43,3 +43,263 @@
 #   This library should implement C tokenizing and parsing.
 #   The parts that are common when you need to this kind of things.
 
+import fs, json
+
+main = ():
+    stdio_h = "/usr/include/stdio.h"
+    source = fs.read_file(stdio_h)
+    getch = string_getch(source)
+    getch = trigraph_getch(getch) # Assume we run with -trigraphs, (for fun)
+
+    #ch = getch()
+    #while ch != ''
+    #    print(ch) # yaaay!!!
+    #    ch = getch()
+    stream = LogicalCharacterStream(getch, 1, stdio_h)
+
+    while stream.current != ""
+        print( token_chop(stream) )
+
+    # This is actually something exposed to user. The user can select a config
+    # The config comes from pytci's gcc_probe
+    # Ran it with gcc_probe.py gcc -m32
+    # and without the -m32
+    #config = json.read_file("/home/cheery/.local/cc-config-x86_64.json")
+
+    #for search_path in config["includes"]
+    #    readline_h = path(search_path) ++ "readline/readline.h"
+    #    if fs.exists(readline_h)
+    #        print(readline_h)
+    #    history_h = path(search_path) ++ "readline/history.h"
+    #    if fs.exists(history_h)
+    #        print(history_h)
+
+# The tokenizer has been copied from pytci and then updated to make more sense.
+
+# TODO: requires comment handler. for // and /**/ (conceptually replaced by spaces)
+# The preprocessor tokenizer, imitating the behavior of a popular C compiler.
+token_chop = (stream):
+    stream.skip_spaces()
+    while stream.current == '\n'
+        stream.advance()
+        stream.skip_spaces()
+        # Tokenizer must mark "#" as MACRO, if it
+        # appears in the beginning of a "logical" line
+        if stream.current == '#'
+            return token(stream.filename, stream.lno, "macro", stream.advance())
+    if stream.current == ""
+        return null
+    lno = stream.lno
+    # Identifier: any sequence of letters, digits, or underscores,
+    #             which begins with a letter or underscore
+    #             you may have to accept $ as a letter
+    if stream.current.is_alpha() or stream.current == '_'
+        value = stream.advance()
+        while stream.current.is_alpha() or stream.current.is_digit() or stream.current == '_'
+            value ++= stream.advance()
+        return token(stream.filename, lno, "identifier", value)
+    # String literals start with: " ", ' ' literals cannot cross lines.
+    # there is no way to escape backslash in #include <...>
+    if stream.current in ["'", '"']
+        stream.comments = false
+        terminal = stream.advance()
+        string = ""
+        while stream.current != terminal
+            assert stream.current, "unterminated string"
+            assert stream.current != "\n", "unterminated string"
+            character = stream.advance()
+            if character == '\\'
+                string ++= escape_sequence(stream)
+            else
+                string ++= character
+        stream.comments = true
+        terminal = stream.advance()
+        if terminal == "'"
+            return token(stream.filename, lno, "char", string)
+        elif terminal == '"'
+            return token(stream.filename, lno, "string", string)
+        else
+            assert false, "error in tokenizing"
+    # Preprocessing number: Formally, preprocessing numbers begin
+    #                       with an optional period, a required
+    #                       decimal digit, and then continue with
+    #                       any sequence of letters, digits, underscores,
+    #                       periods, and exponents. Exponents are the
+    #                       two-character sequences 
+    character = stream.advance()
+    if character.is_digit() or character == "." and stream.current.is_digit()
+        number = character
+        while stream.current.is_alpha() or stream.current.is_digit() or stream.current in ['.', '_']
+            character = stream.advance()
+            number ++= character
+            if character ++ stream.current in exponents
+                number ++= stream.advance()
+        return token(stream.filename, lno, "number", number)
+    # Comments. Defined such that comments are replaced with spaces.
+    # This works as well. Though in GCC you can disable single line comments.
+    if character == "/" and stream.current == "/"
+        while stream.current != "\n" and stream.current != ""
+            stream.advance()
+        return token_chop(stream)
+    if character == "/" and stream.current == "*"
+        stream.advance()
+        ch = stream.advance()
+        while ch != ""
+            ch = stream.advance()
+            if ch == "*" and stream.current == "/"
+                stream.advance()
+                return token_chop(stream)
+        assert false, "unterminated comment, an error?"
+    if character in punctuators
+        punc = character
+        pair = punc ++ stream.current
+        while pair in long_punctuators
+            punc ++= stream.advance()
+            pair = punc ++ stream.current
+        if pair in digraphs
+            punc = digraphs[punc ++ stream.advance()]
+        return token(stream.filename, lno, "punctuation", punc)
+    return token(stream.filename, lno, "other", current)
+
+escape_sequence = (stream):
+    if stream.current in escape_sequences
+        return stream.advance()
+    string = stream.advance()
+    #\xhh The character whose numerical value is given by hh interpreted as a hexadecimal number
+    if string == 'x'
+        code = get_hex(stream) ++ get_hex(stream)
+        if code.length == 2
+            return chr(int(code, 16))
+        return "\\" ++ string ++ code
+    #\nnn The character whose numerical value is given by nnn interpreted as an octal number
+    if is_octal_char(string)
+        string ++= get_octal(stream) ++ get_octal(stream)
+        if string.length == 3
+            return chr(int(string, 8))
+    return "\\" ++ string
+
+get_hex = (stream):
+    if stream.current in hex_alphabet
+        return stream.advance()
+    return ""
+
+get_octal = (stream):
+    if is_octal_char(stream.current)
+        return stream.advance()
+    return ""
+
+is_octal_char = (character):
+    return character in octal_alphabet
+
+token = (filename, lno, name, value=""):
+    return [filename, lno, name, value]
+
+
+hex_alphabet = set("0123456789ABCDEFabcdef")
+
+octal_alphabet = set("01234567")
+
+escape_sequences = {"a": 0x07, "b": 0x08, "f": 0x0C, "n": 0x0A, "r": 0x0D, "t": 0x09, "v": 0x0B, "\\": 0x5C, "'": 0x27, "\"": 0x22, "?": 0x3F}
+
+exponents = set(["e+", "e-", "E+", "E-", "p+", "p-", "P+", "P-"])
+
+punctuators = set([
+    "!", "#", "$", "%", "&", "(", ")", "*", "+", 
+    ",", "-", ".", "/", ":", ";", "<", "=", ">", "?", "[", 
+    "\\", "]", "^", "_", "{", "|", "}", "~",
+])
+
+long_punctuators = set([
+    "<=", ">=", "!=", "&&", "||", "++", "--", "==", "<<", ">>", "+=",
+    "-=", "*=", "/=", "%=", "&=", "^=", "|=", "->", "..", "##",
+    "...", "<<=", ">>="
+])
+
+digraphs = {"<%":"{", "&>":"}", "<:":"[", ":>":"]", "%:":"#", "%:%:":"##"}
+
+# The stream of characters that come in from a file is the physical stream.
+# We get logical character stream by translating trigraphs and joining lines
+# ending with backslash.
+
+# In concept you could also replace comments with space right here. But that
+# is tricky without handling strings somehow too.
+class LogicalCharacterStream
+    +init = (self, getch, lno=1, filename=""):
+        self.getch = getch
+        self.lno = lno
+        self.filename = filename
+        self.current = '\n' # Begins with newline to get a subsequent hash
+                            # character recognized as a macro token.
+        self.lookahead = self.getch()
+
+    advance = (self):
+        ch = self.current
+        self.current = self.lookahead
+        self.lookahead = self.getch()
+        if self.current == '\n'
+            self.lno += 1
+        # Flattens the physical lines into logical lines.
+        while self.current == '\\' and self.lookahead == '\n'
+            self.lno += 1
+            self.current = self.getch()
+            self.lookahead = self.getch()
+        return ch
+
+    is_space = (self):
+        return self.current in spaces
+
+    skip_spaces = (self):
+        while self.current in spaces
+            self.advance()
+
+    skip_spaces_and_newlines = (self):
+        while self.current in spaces_and_newlines
+            self.advance()
+
+spaces = set('\x00 \t')
+spaces_and_newlines = set('\x00 \t\n')
+
+# The one of the most beloved features of C/C++.
+# https://en.wikipedia.org/wiki/Digraphs_and_trigraphs#C
+#
+# If trigraphs are used, like they usually are,
+# it is put before the character stream.
+trigraph_getch = (getch):
+    ch0 = getch()
+    ch1 = getch()
+    return ():
+        ch2 = getch()
+        if ch0 == '?' and ch1 == '?'
+            try
+                ch = trigraphs[ch2]
+                ch0 := getch()
+                ch1 := getch()
+                return ch
+            except KeyError as _
+                null
+        ch = ch0
+        ch0 := ch1
+        ch1 := ch2
+        return ch
+
+trigraphs = {
+    "=": "#",
+    "/": "\\",
+    "(": "[",
+    ")": "]",
+    "!": "|",
+    "<": "{",
+    ">": "}",
+    "-": "~",
+}
+
+string_getch = (string):
+    gen = iter(string)
+    return ():
+        try
+            ch = gen.next()
+            if ch == '\r' # support CRLF, just in case some retards use them.
+                return gen.next()
+            return ch
+        except UncatchedStopIteration as stop
+            return ""
