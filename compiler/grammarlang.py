@@ -1,54 +1,3 @@
-"""
-# The grammarlang notated in itself:
-file =>
-    statement
-    concat(file statement): file newline statement
-
-statement =>
-    single_rule(symbol rule):    symbol arrow:"=>" rule
-    multiple_rule(symbol block): symbol arrow:"=>" indent block dedent
-    empty_list:                  special
-
-block =>
-    first: rule
-    append(block rule): block newline rule
-
-rule =>
-    implicit_pass_rule:
-        rhs
-    labelled_rule(symbol rhs):
-        symbol colon:":" rhs
-    labelled_mapped_rule(symbol mapping rhs): 
-        symbol lp:"(" mapping rp:")" colon:":" rhs
-
-rhs =>
-    empty_list:
-    items
-
-items =>
-    first: item
-    append: items item
-
-item =>
-    named_item(symbol item): symbol equals:"=" item
-    symbolic_item:           symbol
-    special
-    call(symbol arguments):  symbol lp:"(" arguments rp:")"
-
-mapping =>
-    empty_list:
-    append_arg_str: mapping symbol
-    append_arg_str: mapping string
-    append_arg_int: mapping int
-
-arguments =>
-    empty_list:
-    append_arg_item: arguments item
-    append_arg_str: arguments string
-    append_arg_int: arguments int
-
-special => special(symbol string): symbol colon:":" string
-"""
 from lever_parser import Parser, Rule
 import sys
 
@@ -62,6 +11,7 @@ symboltab = {
         ']': 'rb',
         '%': 'skip',
         '^': 'grab',
+        '@': 'at'
 }
 
 class Grab(object):
@@ -121,6 +71,7 @@ def build_language():
     rc = keyword("}")
     lb = keyword("[")
     rb = keyword("]")
+    at = keyword("@")
     skip = keyword("%")
     grab = keyword("^")
 
@@ -155,6 +106,10 @@ def build_language():
             Command("first", [Command("force_grab", [Grab(0)])])),
         Rule(inline_productions, [inline_productions, comma, production],
             Command("append", [Grab(0), Command("force_grab", [Grab(2)])])),
+        Rule(term, [skip, at, symbol],
+            Command("skip", [Command("terminal", [Grab(2)])])),
+        Rule(term, [grab, at, symbol],
+            Command("grab", [Command("terminal", [Grab(2)])])),
         Rule(term, [skip, symbol],
             Command("skip", [Command("symbol", [Grab(1)])])),
         Rule(term, [grab, symbol],
@@ -167,6 +122,8 @@ def build_language():
             Command("skip", [Command("string", [Grab(0)])])),
         Rule(term, [symbol],
             Command("grab", [Command("symbol", [Grab(0)])])),
+        Rule(term, [at, symbol],
+            Command("grab", [Command("terminal", [Grab(1)])])),
         Rule(term, [symbol, lc, rc],
             Command("command", [Grab(0)])),
         Rule(term, [symbol, lc, production, rc],
@@ -191,6 +148,9 @@ def post_grab(table, loc, arg):
     return {
         "name": "grab",
         "arg": arg}
+
+def post_terminal(table, loc, token):
+    return table.terminal(token.value)
 
 def post_symbol(table, loc, token):
     return table.nonterminal(token.value)
@@ -348,8 +308,8 @@ parse = Parser(symboltab, grammar, 'file')
 
 def load(functions, path):
     table = SymbolTable()
-    for t in ["indent", "dedent", "newline", "string", "symbol", "int", "hex", "float"]:
-        table.nonterminals[t] = table.terminal(t)
+    #for t in ["indent", "dedent", "newline", "string", "symbol", "int", "hex", "float"]:
+    #    table.nonterminals[t] = table.terminal(t)
     grammar = parse.from_file(globals(), [table], path)
     assert len(grammar) > 0, "empty grammar"
     return Parser(table.keywords, grammar, grammar[0].lhs)

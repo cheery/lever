@@ -41,8 +41,9 @@ read_tokens = (tokens, source=null):
         raise chartparser.SyntaxErrorExpected(parser.expect, token.stop, source, true)
     table = SymbolTable()
     # Some of the nonterminals are speudonyms to terminals. 
-    for t in ["indent", "dedent", "newline", "string", "symbol", "int", "hex", "float"]
-        table.nonterminals[t] = table.terminal(t)
+    # Except that it's a bad idea.
+    #for t in ["indent", "dedent", "newline", "string", "symbol", "int", "hex", "float"]
+    #    table.nonterminals[t] = table.terminal(t)
     post = invoker(actions, table)
     blank_lhs = (x): # Not used in this grammar.
         return null
@@ -78,6 +79,7 @@ build_language = ():
     rc = table.keyword("}")
     lb = table.keyword("[")
     rb = table.keyword("]")
+    at = table.keyword("@")
     skip = table.keyword("%")
     grab = table.keyword("^")
 
@@ -112,6 +114,10 @@ build_language = ():
             Command("first", [Command("force_grab", [Grab(0)])])),
         Rule(inline_productions, [inline_productions, comma, production],
             Command("append", [Grab(0), Command("force_grab", [Grab(2)])])),
+        Rule(term, [skip, at, symbol],
+            Command("skip", [Command("terminal", [Grab(2)])])),
+        Rule(term, [grab, at, symbol],
+            Command("grab", [Command("terminal", [Grab(2)])])),
         Rule(term, [skip, symbol],
             Command("skip", [Command("symbol", [Grab(1)])])),
         Rule(term, [grab, symbol],
@@ -124,6 +130,8 @@ build_language = ():
             Command("skip", [Command("string", [Grab(0)])])),
         Rule(term, [symbol],
             Command("grab", [Command("symbol", [Grab(0)])])),
+        Rule(term, [at, symbol],
+            Command("grab", [Command("terminal", [Grab(1)])])),
         Rule(term, [symbol, lc, rc],
             Command("command", [Grab(0)])),
         Rule(term, [symbol, lc, production, rc],
@@ -156,6 +164,8 @@ actions = :exnihilo()
         return :exnihilo()
             name = "grab"
             arg = arg
+    terminal = (table, token):
+        return table.terminal(token.string)
     symbol = (table, token):
         return table.nonterminal(token.string)
     string = (table, token):

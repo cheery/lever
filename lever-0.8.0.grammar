@@ -16,11 +16,11 @@ file =>
     statements
 
 block =>
-    {%indent statements %dedent}
+    {%@indent statements %@dedent}
 
 statements =>
     first  {block_statement}
-    append {statements %newline block_statement}
+    append {statements %@newline block_statement}
 
 block_statement =>
     statement
@@ -28,11 +28,11 @@ block_statement =>
     if     {"if"     statement block otherwise}
     while  {"while"  statement block}
     local_assign   {local_symbol      "="  block_statement}
-    upvalue_assign {symbol            ":=" block_statement}
+    upvalue_assign {@symbol           ":=" block_statement}
     op_assign      {slot op           "="  block_statement}
     setitem        {expr "[" expr "]" "="  block_statement}
-    setattr        {expr "." symbol   "="  block_statement}
-    for      {"for" symbol "in" statement block}
+    setattr        {expr "." @symbol  "="  block_statement}
+    for      {"for" @symbol "in" statement block}
     import   {"import" symbols_list}
     try      {"try" block excepts}
     raise    {"raise" statement}
@@ -44,30 +44,30 @@ block_statement =>
     assert   {"assert" statement block}
 
 class_header =>
-    class_header {symbol}
-    class_header {symbol "extends" expr}
+    class_header {@symbol}
+    class_header {@symbol "extends" expr}
 
 local_symbol =>
-    str_join {symbol}
-    str_join {^"+" symbol}
-    str_join {"%" string}
+    str_join {@symbol}
+    str_join {^"+" @symbol}
+    str_join {"%" @string}
 
 slot =>
-    lookup_slot {symbol}
-    attr_slot   {expr "." symbol}
+    lookup_slot {@symbol}
+    attr_slot   {expr "." @symbol}
     item_slot   {expr "[" expr "]"}
 
 otherwise =>
     done {}
-    elif {%newline "elif" statement block otherwise}
-    else {%newline "else" block}
+    elif {%@newline "elif" statement block otherwise}
+    else {%@newline "else" block}
 
 excepts =>
     first  {except}
-    append {excepts %newline except}
+    append {excepts %@newline except}
 
 except =>
-    except {"except" expr "as" symbol block}
+    except {"except" expr "as" @symbol block}
 
 statement =>
     expr
@@ -138,7 +138,7 @@ postfix =>
     call  {postfix "(" arguments ")"}
     callv {postfix "(" arguments "..." ")"}
     getitem {postfix "[" expr "]"}
-    getattr {postfix "." symbol}
+    getattr {postfix "." @symbol}
 
 arguments =>
     empty_list {}
@@ -150,26 +150,26 @@ arguments1 =>
     append {arguments1 "," expr}
 
 term =>
-    lookup {symbol}
-    int {int}
-    hex {hex}
-    float  {float}
-    string {string}
+    lookup {@symbol}
+    int {@int}
+    hex {@hex}
+    float  {@float}
+    string {@string}
     {"(" expr ")"}
     list     {"[" arguments "]"}
     function {"(" bindings ")" ":" block}
     dict     {"{" pairs "}"}
     dict     {"{" nl_pairs "}"}
     lookup   {"{" escaped_keyword "}"}
-    lookup   {"%" string}
+    lookup   {"%" @string}
     scopegrabber {":" expr block}
 
 bindings =>
     blank_bindings {}
     optionals
     optionals ","
-    with_variadic {optionals "," symbol "..."}
-    only_variadic {symbol "..."}
+    with_variadic {optionals "," @symbol "..."}
+    only_variadic {@symbol "..."}
 
 optionals =>
     first_optional {optional}
@@ -177,19 +177,19 @@ optionals =>
     mandatorys
 
 optional =>
-    optional {symbol "=" expr}
+    optional {@symbol "=" expr}
 
 mandatorys =>
-    mandatory {symbol}
-    append_mandatory {mandatorys "," symbol}
+    mandatory {@symbol}
+    append_mandatory {mandatorys "," @symbol}
 
-nl_pairs => %indent pairlines %dedent
+nl_pairs => %@indent pairlines %@dedent
 
 pairlines =>
     first  {pair}
-    append {pairlines %newline pair}
+    append {pairlines %@newline pair}
     first  {pair ","}
-    append {pairlines %newline pair ","}
+    append {pairlines %@newline pair ","}
 
 pairs =>
     empty_list {}
@@ -202,10 +202,10 @@ pairs1 =>
 
 pair =>
     {expr ":" expr}
-    {string {symbol} "=" expr}
+    {string {@symbol} "=" expr}
 
 escaped_keyword => ["import", "and", "or", "not"]
 
 symbols_list =>
-    first  {symbol}
-    append {symbols_list "," symbol}
+    first  {@symbol}
+    append {symbols_list "," @symbol}
