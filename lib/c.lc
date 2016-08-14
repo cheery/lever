@@ -43,6 +43,8 @@
 #   This library should implement C tokenizing and parsing.
 #   The parts that are common when you need to this kind of things.
 
+# for final revision: implement int.to_string() and parse_int(str, radix)
+
 import fs, json
 
 main = ():
@@ -57,6 +59,7 @@ main = ():
     #    ch = getch()
     stream = LogicalCharacterStream(getch, 1, stdio_h)
 
+    # Printing tokens out is easy way to see that the stream is correctly tokenized.
     file = stdio_h
     lno = 1
     unprinted = []
