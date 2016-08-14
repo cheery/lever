@@ -84,6 +84,8 @@ The following is being inserted into base in base.py:
           stop,
     input(prompt)
     print_traceback(exception)
+    parse_int(string, base=10)
+    parse_float(string)
 
 Additionally base.py adds errors, operators and vector arithmetic objects
 into base.
@@ -874,6 +876,8 @@ Basic structures for floats, integers and booleans.
 
 Strings cannot be directly coerced into integers or floats btw. You need to
 convert them by parsing.
+
+File provides int.to_string(base=10) and float.to_string()
 
 
 
