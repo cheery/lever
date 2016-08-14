@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Lever curriculum</title>
+    <link rel="stylesheet" href="../../stylesheet.css">
+<style>
+body { margin-left: 60px; margin-right: 60px; }
+p { text-align: justify; }
+.editalert { color: #990000; font-weight: bold; font-style: italic; display: none; }
+.secttitle { color: #996103; font-weight: bold; }
+</style>    
+</head>
+<body>
+
+<ul class="nav">
+<li><a href="../../"><img src="../../logo.png" alt="LEVER"></a></li>
+<li><a class="nav_button" href="https://github.com/cheery/lever/">repository</a></li>
+<li><a class="nav_button" href="/index.html#download">download</a></li>
+</ul>
+<h1 class="embed-header">Curriculum to Lever</h1>
+<p>
+This guide will present a learning path to Lever programming.
+</p>
+Prerequisite for working through this guide is that you have
+setup your programming environment. It is important that you
+can write and run Lever programs. The earlier guides provide
+a starting point for obtaining such environment.
+</p>
+<p>
+After you've worked through this guide, you'll be on your
+way to learning Lever language and programming.
+</p>
+<h2>1. Introduction</h2>
+<p>
+Some other languages, in odd cases even fringe ones, have
+tens to hundreds of contributors. Lever has so far only few
+active contributors. At the current rate that we are capable
+of publishing documentation we cannot form manuals that are
+comparable to those of established programming languages.
+</p>
+<p>
+Having your resources tight and constrained is a relative state.
+Perspective you take either makes it a flaw or benefit. Many
+great properties in Lever have originated from the attempts
+to do better than others with what you have dealt at hand.
+</p>
+<p>
+It is also important to understand that you, as a reader of
+this guide necessarily do not have all resources to put into
+learning a new and still unproven language.
+</p>
+<p>
+We will be updating this part of a guide as we figure out
+better ways to learn Lever. Overall it may be good idea to
+return to this guide from time to time. Read it again and
+see if you forgot anything. It is meant that there is lot of
+things in this guide, condensed and available for you when
+you need it.
+</p>
+<h2>2. What is programming?</h2>
+<p>
+To learn programming, it is important to understand what it
+is. Even if you think you know what programming is, it is
+good idea to revisit those ideas from time to time.
+</p>
+<p>
+Everyone knows that programmers write programs. Some know
+that programmers troubleshoot and debug programs. Few know
+that programmers discover problems.
+</p>
+<p>
+Most important thing to understand about programming is how
+much it extends beyond writing commands to a screen. And
+nothing of it happens in particular order. 
+</p>
+<p>
+How a program should have been written is commonly discovered
+along writing the program. Programmers rewrite and reiterate
+their code for this reason. And they write down what they
+found out.
+</p>
+<p>
+Programmers constantly discover patterns in problems they
+solve. With the little information they get they can make
+complex deductions. Then they put these deductions into test
+and see which part of it was wrong. If there is too little
+or irrelevant information to do conclusions, they conceive
+ways to filter and obtain relevant information.
+</p>
+<p>
+Little anything of this can be learned in single sitting.
+And nothing can be learned by standing. You learn your most
+important lessons when you work.
+</p>
+<p>
+To learn it, you want to make sure you acknowledge that
+programming is all of this above, including teaching what
+you learnt. And it needs to be learned short steps at a
+time.
+</p>
+<p>
+The teachers also have to acknowledge it.
+</p>
+<h2>3. Curriculum</h2>
+<p>
+A good programming curriculum would acknowledge that
+programmer must build up more than one skill. And the build
+up of these skills should happen gradually and in parallel.
+You might categorize these skills like this:
+</p>
+<ul>
+    <li>Knowledge of a programming language</li>
+    <li>Writing instructions in that language</li>
+    <li>Observation and analysis</li>
+    <li>Filtering and extraction of cues for deduction</li>
+    <li>Deduction of what's going on</li>
+    <li>Verification that you are correct about your
+        deductions</li>
+    <li>Writing explanations and informational notes</li>
+    <li>Writing documentation</li>
+    <li>Learning skills and techniques</li>
+    <li>Vast collection of mathematics and theory to fuel
+        deduction</li>
+    <li>Teaching of the skills ahead</li>
+</ul>
+
+<p>
+Learning of these skills should generally happen in
+parallel, such that it builds up together into a complex
+composite skill.
+</p>
+
+<p>
+To step it down, you could learn little bit of each at a
+time, and then combine all of it into one as you progress.
+</p>
+
+<h2>4. Resources</h2>
+<p>
+Here I have listed most notable resources there are for
+learning Lever.
+</p>
+<p>
+There are links to guides on the frontpage. There will be
+more of them over the time. This is meant as a centralized
+location for Lever related guides. They will be roughly in
+order they are meant to be read.
+</p>
+
+<h3>4-1. Grammar files</h3>
+<p>
+Lever programs consists of sequence of tokens. These tokens
+form structures. They have a syntax that is rigid during
+reading of the file.
+</p>
+<p>
+Lever's syntax changes frequently, and can be changed.
+Therefore it is insufficient to learn just the syntax.
+</p>
+<p>
+At some point you will want to learn the syntax in its
+entirety though. To do that you need to learn about
+Context-free grammars. Then you need to know that Lever's
+context-free grammar is found at 
+<a href="https://github.com/cheery/lever/blob/master/lever-0.8.0.grammar">lever-0.8.0.grammar</a>.
+</p>
+<p>
+When you change this grammar, the syntax of Lever changes.
+Those grammar rules are labelled with the respective semantics.
+</p>
+
+<h3>4-2. Semantics documentation</h3>
+<p>
+Semantics documentation tells you exactly how Lever programs
+fit together. It can be considered that semantics of
+Lever will rarely change. This is the part of the language
+that stays put. As long as it is Lever that you read.
+</p>
+<p>
+For now the semantics are documented in a text file called
+<a href="https://github.com/cheery/lever/blob/master/semantics_documentation.txt">semantics_documentation.txt</a>.
+It is sectioned by semantic labels from the simplest
+construct to most difficult one, and should be feasible to
+read from top to down without problems.
+</p>
+<p>
+Semantics of any language extend to language references. It
+is not even limited to the language. The programmers create
+more semantics to their languages.
+</p>
+
+<h3>4-3. Internal documentation</h3>
+<p>
+Lever's documentation start from the source code. It first
+flows into internal documentation files, and soon into
+reference documentation. From there it flows to guides.
+</p>
+<p>
+For now the internal documentation is in a text file called
+<a href="https://github.com/cheery/lever/blob/master/internal_documentation.txt">internal_documentation.txt</a>.
+This documentation is sectioned by source files. It is not
+perfect setting to learn, but it has large role in how the
+documentation will form.
+</p>
+<p>
+There's no reference documentation yet. This would be the
+most valuable documentation of Lever and it will be
+accessible in the runtime. For now the internal
+documentation contains a quick reference that contains all
+built-in functions.
+</p>
+<h3>4-4. Source code</h3>
+<p>
+When you understand the source code, you can discover lot of
+things by reading the Lever sources. The documentation is
+gradually starting to be longer than the source code. So if
+you can, it's a good resource in itself.
+</p>
+<p>
+Especially the .lc files in the lib/ directory are worth
+reading through.
+</p>
+<h3>4-5. Sample programs</h3>
+<p>
+Sample programs are the next in the queue of what's going to
+change and improve. You can find some of these in samples/
+directory.
+</p>
+
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script>
+
+</body>
+</html>
