@@ -397,7 +397,7 @@ class Closure extends Cell
         for opt in self.bindings.opts
             localv.append(opt.var.string)
             cond = Cond([[
-                Code("not", Getvar(opt.var.string)), [
+                Code("isnull", Getvar(opt.var.string)), [
                     Setvar("local", opt.var.string, opt.expr)
                 ]]], null)
             header.append(cond)

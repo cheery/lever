@@ -295,6 +295,11 @@ def interpret(pc, block, regv, frame):
                         regv.store(block[ix+0], space.true)
                     else:
                         regv.store(block[ix+0], space.false)
+                elif opcode == opcode_of('isnull'):
+                    if regv.load(block[ix+1]) is space.null:
+                        regv.store(block[ix+0], space.true)
+                    else:
+                        regv.store(block[ix+0], space.false)
                 elif opcode == opcode_of('contains'):
                     v0 = regv.load(block[ix+1])
                     v1 = regv.load(block[ix+2])

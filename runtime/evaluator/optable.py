@@ -10,6 +10,7 @@ source = [
     ('not',      0x41, True,  'vreg'),
     ('contains', 0x42, True,  'vreg vreg'),
     ('callv',    0x45, True,  'vreg vreg vreg*'),
+    ('isnull',   0x48, True,  'vreg'),
     ('return',   0x50, False, 'vreg'),
     ('jump',     0x60, False, 'block'),
     ('cond',     0x70, False, 'vreg block block'),

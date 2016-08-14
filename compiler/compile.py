@@ -140,7 +140,7 @@ class Closure(Cell):
         for variable, expr in (optionals if optionals else []):
             localv.append(variable.value)
             cond = Cond([[self.loc,
-                Code(self.loc, "not", Getvar(self.loc, variable.value)), [
+                Code(self.loc, "isnull", Getvar(self.loc, variable.value)), [
                     Setvar(self.loc, "local", variable.value, expr)
                 ]]], None)
             header.append(cond)
