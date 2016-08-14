@@ -83,6 +83,21 @@ build_language = ():
     skip = table.keyword("%")
     grab = table.keyword("^")
 
+    # There will be lot of things asked, such as. Why pick @ as a symbol to
+    # name classes of tokens?
+    # '=' would be confused to arrow =>
+    # Symbols such as +, -, ?, * didn't go because they appear in regexes.
+    # '#' was a good contender.. might work as well. I liked the round char here
+    #                            for some reason.
+    # ':' was not picked because we are going to use it for argument ordering
+    # like this: op { 1:lhs 0:op 2:rhs }
+    # There would have been easy confusion when someone forgets a colon.
+
+    # The terminals needed to be identified in grammars though.
+    # Mixing up nonterminals and terminals would easily lead to grammar
+    # bugs. And this makes grammars bit more generic so that nobody doesn't
+    # need to pass a list of understood tokens to the grammar.
+
     grammar = [
         Rule(file, [rule],
             Grab(0)),
