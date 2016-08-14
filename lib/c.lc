@@ -43,8 +43,6 @@
 #   This library should implement C tokenizing and parsing.
 #   The parts that are common when you need to this kind of things.
 
-# for final revision: implement int.to_string() and parse_int(str, radix)
-
 import fs, json
 
 main = ():
@@ -127,9 +125,10 @@ escape_string = (string, terminal='"', esc=escape_sequences):
             if ch == terminal
                 ch = '\\' ++ ch
         else
-            # Following javascript style with converting numbers to strings.
-            # Though, we are not doing implicit conversions to strings on numbers!
-            ch = '\\x' ++ n.to_string(16)
+            # Note this only works on unprintable ascii character range.
+            a = "0123456789abcdef"[n >> 4]
+            b = "0123456789abcdef"[n & 15]
+            ch = '\\x' ++ a ++ b
             for item in esc.items()
                 if item[1] == n
                     ch = '\\' ++ item[0]
@@ -243,7 +242,7 @@ escape_sequence = (stream):
     if string == 'x'
         code = get_hex(stream) ++ get_hex(stream)
         if code.length == 2
-            return chr(parse_int(code, 16)) # these 'parse_int' -functions coming soon...
+            return chr(parse_int(code, 16))
         return "\\" ++ string ++ code
     #\nnn The character whose numerical value is given by nnn interpreted as an octal number
     if is_octal_char(string)

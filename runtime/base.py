@@ -309,3 +309,40 @@ def print_traceback(exception):
     out += u":\033[0m"
     write(STDERR, out + u" " + exception.repr() + u"\n")
 builtin(signature(Object)(print_traceback))
+
+# These two functions are used by the lever compiler, so changing
+# them will change the language. Take care..
+@builtin
+@signature(String, Integer, optional=1)
+def parse_int(string, base):
+    base = 10 if base is None else base.value
+    value = 0
+    for ch in string.string:
+        if u'0' <= ch and ch <= u'9':
+            digit = ord(ch) - ord('0')
+        elif u'a' <= ch and ch <= u'z':
+            digit = ord(ch) - ord('a')
+        elif u'A' <= ch and ch <= u'Z':
+            digit = ord(ch) - ord('A')
+        else:
+            raise unwind(LError(u"invalid digit char: " + ch))
+        value = value * base + digit
+    return Integer(value)
+
+# This needs to be extended. I would prefer partial or whole C-compatibility.
+@builtin
+@signature(String)
+def parse_float(string):
+    value = 0.0
+    inv_scale = 1
+    divider = 1
+    for ch in string.string:
+        if u'0' <= ch and ch <= u'9':
+            digit = ord(ch) - ord(u'0')
+            value = value * 10.0 + digit
+            inv_scale *= divider
+        elif u'.' == ch:
+            divider = 10
+        else:
+            raise unwind(LError(u"invalid digit char: " + ch))
+    return Float(value / inv_scale)

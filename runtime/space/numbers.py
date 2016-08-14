@@ -1,7 +1,11 @@
+from rpython.rlib.rfloat import (
+    DTSF_ADD_DOT_0, DTSF_STR_PRECISION, INFINITY, NAN, copysign,
+    float_as_rbigint_ratio, formatd, isfinite, isinf, isnan)
 from interface import Object, null, cast_for
 from rpython.rlib.objectmodel import compute_hash
 from builtin import signature
 from errors import OldError
+import space
 
 class Float(Object):
     _immutable_fields_ = ['number']
@@ -11,7 +15,7 @@ class Float(Object):
         self.number = number
 
     def repr(self):
-        return u"%f" % self.number
+        return float_to_string(self.number)
 
     def hash(self):
         return compute_hash(self.number)
@@ -20,6 +24,24 @@ class Float(Object):
         if isinstance(other, Float):
             return self.number == other.number
         return False
+
+# There is potentially a lot more to consider on generic case of
+# stringifying floats, but we get ahead with this for a while.
+@Float.method(u"to_string", signature(Float))
+def Float_to_string(self):
+    return space.String(float_to_string(self.number))
+
+def float_to_string(x, code='g', precision=DTSF_STR_PRECISION):
+    if isfinite(x):
+        s = formatd(x, code, precision, DTSF_ADD_DOT_0)
+    elif isinf(x):
+        if x > 0.0:
+            s = "inf"
+        else:
+            s = "-inf"
+    else:  # isnan(x):
+        s = "nan"
+    return s.decode('utf-8')
 
 class Integer(Object):
     _immutable_fields_ = ['value']
@@ -38,6 +60,30 @@ class Integer(Object):
         if isinstance(other, Integer):
             return self.value == other.value
         return False
+
+# We are not doing implicit conversion of strings to numbers.
+# although this method is named similarly as the one in javascript.
+@Integer.method(u"to_string", signature(Integer, Integer, optional=1))
+def Integer_to_string(integer, base):
+    base = 10 if base is None else base.value
+    if base >= len(digits):
+        raise space.unwind(space.LError(u"not enough digits to represent this base %d" % base))
+    if base < 0:
+        raise space.unwind(space.LError(u"negative base not supported"))
+    if integer.value < 0:
+        integer = -integer.value
+        sign = u"-"
+    else:
+        integer = integer.value
+        sign = u""
+    out = []
+    while integer > 0:
+        out.append(digits[integer % base])
+        integer /= base
+    out.reverse()
+    return space.String(sign + u"".join(out))
+
+digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 class Boolean(Object):
     _immutable_fields_ = ['flag']

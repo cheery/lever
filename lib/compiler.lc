@@ -285,35 +285,6 @@ actions = :exnihilo()
             out.append(item.string)
         return "".join(out)
 
-parse_int = (string, base):
-    value = 0
-    for ch in string
-        if '0' <= ch and ch <= '9'
-            digit = ord(ch) - ord('0')
-        elif 'a' <= ch and ch <= 'z'
-            digit = ord(ch) - ord('a')
-        elif 'A' <= ch and ch <= 'Z'
-            digit = ord(ch) - ord('A')
-        else
-            raise Exception("invalid digit char: " ++ ch)
-        value = value * base + digit
-    return value
-
-parse_float = (string):
-    value = 0
-    inv_scale = 1
-    divider = 1
-    for ch in string
-        if '0' <= ch and ch <= '9'
-            digit = ord(ch) - ord('0')
-            value = value * 10 + digit
-            inv_scale *= divider
-        elif '.' == ch
-            divider = 10
-        else
-            raise Exception("invalid digit char: " ++ ch)
-    return value / inv_scale
-
 class Context
     +init = (self, closures):
         self.closures = closures
