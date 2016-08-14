@@ -57,8 +57,38 @@ main = ():
     #    ch = getch()
     stream = LogicalCharacterStream(getch, 1, stdio_h)
 
+    file = stdio_h
+    lno = 1
+    unprinted = []
     while stream.current != ""
-        print( token_chop(stream) )
+        token = token_chop(stream)
+        if not token
+            break
+        filename = token[0]
+        line = token[1]
+        name = token[2]
+        value = token[3]
+        # This thing here is trying to imitate the weird line switching logic
+        # of gcc token printer. I think I get it wrong. But then I'm not yet
+        # handling macros either.
+        if line != lno or filename != file
+            if filename == file
+                print(" ".join(unprinted))
+                if lno < line and line < lno + 6
+                    for i in range(lno, line-1)
+                        print("")
+                else
+                    print("")
+                    print("#", line, escape_string(filename))
+            else
+                print("")
+                print("#", line, escape_string(filename))
+            file = filename
+            lno = line
+            unprinted = []
+        unprinted.append(stringify_token(name, value))
+    if unprinted.length > 0
+        print(" ".join(unprinted))
 
     # This is actually something exposed to user. The user can select a config
     # The config comes from pytci's gcc_probe
@@ -74,19 +104,51 @@ main = ():
     #    if fs.exists(history_h)
     #        print(history_h)
 
-# The tokenizer has been copied from pytci and then updated to make more sense.
+# This will not properly stringify macros, but they are easy to handle
+# manually if it is ever needed.
+stringify_token = (name, value):
+    if name == 'string'
+        return escape_string(value)
+    elif name == 'char'
+        return escape_string(value, "'")
+    else
+        return value
 
-# TODO: requires comment handler. for // and /**/ (conceptually replaced by spaces)
+# hilariously, this will probably also work for Lever itself just fine.
+# and perhaps I should provide it is as a library function.
+escape_string = (string, terminal='"', esc=escape_sequences):
+    out = [terminal]
+    for ch in string
+        n = ord(ch)
+        if 0x20 <= n and n <= 0x7E or 0xFF < n  # who does remember this range? :)
+            if ch == terminal
+                ch = '\\' ++ ch
+        else
+            # Following javascript style with converting numbers to strings.
+            # Though, we are not doing implicit conversions to strings on numbers!
+            ch = '\\x' ++ n.to_string(16)
+            for item in esc.items()
+                if item[1] == n
+                    ch = '\\' ++ item[0]
+        out.append(ch)
+    out.append(terminal)
+    return "".join(out)
+
+
+# The tokenizer has been copied from pytci and then updated to make more sense.
 # The preprocessor tokenizer, imitating the behavior of a popular C compiler.
 token_chop = (stream):
     stream.skip_spaces()
+    line_begin = false
     while stream.current == '\n'
         stream.advance()
         stream.skip_spaces()
         # Tokenizer must mark "#" as MACRO, if it
         # appears in the beginning of a "logical" line
-        if stream.current == '#'
-            return token(stream.filename, stream.lno, "macro", stream.advance())
+        # If you follow where this is going to, you will see it will also
+        # accept %: as macro token, because it is translated to "#".
+        # But then ## and %:%: aren't accepted.
+        line_begin = true
     if stream.current == ""
         return null
     lno = stream.lno
@@ -105,7 +167,7 @@ token_chop = (stream):
         terminal = stream.advance()
         string = ""
         while stream.current != terminal
-            assert stream.current, "unterminated string"
+            assert stream.current != "", "unterminated string"
             assert stream.current != "\n", "unterminated string"
             character = stream.advance()
             if character == '\\'
@@ -137,6 +199,7 @@ token_chop = (stream):
         return token(stream.filename, lno, "number", number)
     # Comments. Defined such that comments are replaced with spaces.
     # This works as well. Though in GCC you can disable single line comments.
+    # Once there's need, we may do the same. Flag for the character stream should take care of it well.
     if character == "/" and stream.current == "/"
         while stream.current != "\n" and stream.current != ""
             stream.advance()
@@ -150,6 +213,7 @@ token_chop = (stream):
                 stream.advance()
                 return token_chop(stream)
         assert false, "unterminated comment, an error?"
+    # Valid punctuation characters are listed lower below.
     if character in punctuators
         punc = character
         pair = punc ++ stream.current
@@ -158,7 +222,14 @@ token_chop = (stream):
             pair = punc ++ stream.current
         if pair in digraphs
             punc = digraphs[punc ++ stream.advance()]
-        return token(stream.filename, lno, "punctuation", punc)
+            if pair == "%:" and stream.current == "%" and stream.next_current == ":"
+                stream.advance() # Hack to handle 4-character digraphs.
+                stream.advance() # Only reason to look ahead twice.
+                punc = "##"
+            # Bit of C-trivia. GCC doesn't translate %:# to ##. Neither does this!
+        if punc == '#' and line_begin
+            return token(stream.filename, stream.lno, "macro", punc)
+        return token(stream.filename, lno, punc, punc) # punctuation is named for parsing.
     return token(stream.filename, lno, "other", current)
 
 escape_sequence = (stream):
@@ -169,13 +240,13 @@ escape_sequence = (stream):
     if string == 'x'
         code = get_hex(stream) ++ get_hex(stream)
         if code.length == 2
-            return chr(int(code, 16))
+            return chr(parse_int(code, 16)) # these 'parse_int' -functions coming soon...
         return "\\" ++ string ++ code
     #\nnn The character whose numerical value is given by nnn interpreted as an octal number
     if is_octal_char(string)
         string ++= get_octal(stream) ++ get_octal(stream)
         if string.length == 3
-            return chr(int(string, 8))
+            return chr(parse_int(string, 8))
     return "\\" ++ string
 
 get_hex = (stream):
@@ -221,8 +292,9 @@ digraphs = {"<%":"{", "&>":"}", "<:":"[", ":>":"]", "%:":"#", "%:%:":"##"}
 # We get logical character stream by translating trigraphs and joining lines
 # ending with backslash.
 
-# In concept you could also replace comments with space right here. But that
-# is tricky without handling strings somehow too.
+# The tokenizer needs to look ahead two characters, but because C has escape
+# for end of line, this will need some more character lookaheads to translate
+# the physical lines into logical lines.
 class LogicalCharacterStream
     +init = (self, getch, lno=1, filename=""):
         self.getch = getch
@@ -230,31 +302,45 @@ class LogicalCharacterStream
         self.filename = filename
         self.current = '\n' # Begins with newline to get a subsequent hash
                             # character recognized as a macro token.
-        self.lookahead = self.getch()
+        self.ch1 = self.getch()
+        self.ch2 = self.getch()
+        self.ch3 = self.getch()
+
+    # It's so simple to keep track of line numbers when you transform the
+    # logical newline at the last possible moment.
+    next_current = :property()
+        get = (self):
+            if self.ch1 == '\\' and self.ch2 == '\n'
+                return self.ch3
+            return self.ch1
 
     advance = (self):
         ch = self.current
-        self.current = self.lookahead
-        self.lookahead = self.getch()
+        self.current = self.ch1
+        self.ch1 = self.ch2
+        self.ch2 = self.ch3
+        self.ch3 = self.getch()
         if self.current == '\n'
             self.lno += 1
-        # Flattens the physical lines into logical lines.
-        while self.current == '\\' and self.lookahead == '\n'
-            self.lno += 1
-            self.current = self.getch()
-            self.lookahead = self.getch()
+        # Here the physical lines turn into logical ones.
+        while self.current == '\\' and self.ch1 == '\n'
+            self.lno += 1             # Tracking by physical line numbers
+            self.current = self.ch2   # is bit more difficult than it sounds
+            self.ch1 = self.ch3       # at first.
+            self.ch2 = self.getch()
+            self.ch3 = self.getch()
         return ch
 
-    is_space = (self):
+    is_space = (self):                  # Matters for 'define' macro after tokenizing.
         return self.current in spaces
 
-    skip_spaces = (self):
+    skip_spaces = (self):               # The tokenizer uses this twice.
         while self.current in spaces
             self.advance()
 
-    skip_spaces_and_newlines = (self):
-        while self.current in spaces_and_newlines
-            self.advance()
+    skip_spaces_and_newlines = (self):  # Though I have forgotten why this was here...
+        while self.current in spaces_and_newlines # And twice use of the above function
+            self.advance()              # is also bit low to reason a break into function.
 
 spaces = set('\x00 \t')
 spaces_and_newlines = set('\x00 \t\n')
@@ -262,17 +348,16 @@ spaces_and_newlines = set('\x00 \t\n')
 # The one of the most beloved features of C/C++.
 # https://en.wikipedia.org/wiki/Digraphs_and_trigraphs#C
 #
-# If trigraphs are used, like they usually are,
-# it is put before the character stream.
+# When trigraphs are used this happens before the logical character stream.
 trigraph_getch = (getch):
     ch0 = getch()
     ch1 = getch()
     return ():
         ch2 = getch()
-        if ch0 == '?' and ch1 == '?'
-            try
-                ch = trigraphs[ch2]
-                ch0 := getch()
+        if ch0 == '?' and ch1 == '?' # This is equivalent to how big compilers
+            try                      # are doing it.
+                ch = trigraphs[ch2]  # Three-character window and checking if
+                ch0 := getch()       # There's a trigraph on it.
                 ch1 := getch()
                 return ch
             except KeyError as _
@@ -293,6 +378,8 @@ trigraphs = {
     "-": "~",
 }
 
+# The getch function works better for a tokenizer than an iterator, so
+# we have this function to transform a string into a getch function.
 string_getch = (string):
     gen = iter(string)
     return ():
@@ -302,4 +389,5 @@ string_getch = (string):
                 return gen.next()
             return ch
         except UncatchedStopIteration as stop
-            return ""
+            return "" # Some things are simpler when everything
+                      # is a string. Therefore this is not a null.
