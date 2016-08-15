@@ -132,6 +132,22 @@ main = ():
 
     # The resulting token is available for further macro replacement?! :o
 
+    # I can use a following tactic here:
+    #   form a stack from the expanded macros, such that
+    #   the context is aware of the word considered for
+    #   expansion.
+
+    #   if a token is a valid macro word, push replacement
+    #   into the stack.
+
+    #   if the token is valid macro function, push it into
+    #   a stack and wait for '('.
+    
+    #   this lets you to suppress recursive macros.
+
+    #   if you got a macro function pending and the next token is not '(', flush
+    #   the macro token.
+
 
     # Printing tokens out is easy way to see that the stream is correctly tokenized.
     filename = stdio_h
@@ -180,6 +196,8 @@ main = ():
                 # The preprocessor should generate an error message from
                 # a redefined macro whose replacement list is not identical
                 # with the earlier list.
+                assert identifier.value != "defined"
+                    format_source(identifier) ++ "defined cannot be used as a macro name"
                 if identifier.value in macro_replacements
                     mac = macro_replacements[identifier.value]
                     assert mac.parameters == parameters and mac.replacement == replacement
@@ -214,6 +232,8 @@ main = ():
             # support #if, #elif, #else, #ifdef, #ifndef
             # note that these can be nested, and they may or may not trigger macros or
             # group being processed.
+            
+            # also, the macros of these things should expand inside them.
 
             # #include "" -- search is implementation defined
             # #include <> -- implementation defined too? :/
