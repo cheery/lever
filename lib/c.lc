@@ -236,7 +236,10 @@ main = ():
             # also, the macros of these things should expand inside them.
 
             # #include "" -- search is implementation defined
+            #                gcc approach would be to look in the directory of the script, or then
+            #                in the directories given with '-I'
             # #include <> -- implementation defined too? :/
+            #                search from global includes.
             # check from these how it's done in GCC and imitate. The detail is important
             # although spec ignores it.
 
