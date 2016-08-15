@@ -51,43 +51,202 @@ main = ():
     getch = string_getch(source)
     getch = trigraph_getch(getch) # Assume we run with -trigraphs, (for fun)
 
+    # There is one name space for macro names, despite there are function
+    # macros.
+    macro_replacements = {}
+    # predefined macros
+    # __DATE__, literal of the form "Mmm dd yyyy"
+    # __FILE__, __LINE__
+    # __STDC__ should be '1'
+    # __STDC_HOSTED__ should be '1' if implementation is hosted implementation ?whateverthatmeans?
+    #                 or '0' if it's not. Lets use '1' like gcc.
+    # __STDC_MB_MIGHT_NEQ_WC__ not sure what this means..
+    # "The integer constant 1, intended to indicate that, in
+    # the encoding for wchar_t,a member of the basic character set need not
+    # have a code value equal to its value when used as the lone character in an
+    # integer character constant"
+
+    # __STDC_VERSION__ The integer constant 199901L
+    # __TIME__ The time of translation of the preprocessing translation unit. "hh:mm:ss"
+
+    # __STDC_IEC_559__ The integer constant 1, intended to indicate conformance to the
+    #                  specifications in annexF(IEC 60559 floating-point arithmetic)
+
+    # __STDC_IEC_559_COMPLEX__ The integer constant 1, intended to indicate
+    #                          adherence to the specifications in informative annexG(IEC 60559
+    #                          compatible complex arithmetic).
+
+    # umm.. not sure what this is.
+    # __STDC_ISO_10646__ An integer constant of the form yyyymmL (for example,
+    # 199712L). If this symbol is defined, then every character in the Unicode
+    # required set, when stored in an object of type wchar_t, has the same
+    # value as the short identifier of that character. The Unicode required set
+    # consists of all the characters that are defined by ISO/IEC 10646, along with
+    # all amendments and technical corrigenda, as of the specified year and
+    # month
+    
+    # _Pragma(args) should apparently have same behavior as #pragma.. implementing this later if it appears?
+
     #ch = getch()
     #while ch != ''
     #    print(ch) # yaaay!!!
     #    ch = getch()
     stream = LogicalCharacterStream(getch, 1, stdio_h)
 
+    # Once there's the macro expansion, it must
+    # match parentheses until it hits a matching ')'
+    # The macro expansion must be triggered by '('
+    # if there's parameter list present.
+
+    # The identifier __VA_ARGS__ shall occur only in the replacement-list
+    # of a function macro that ends with ellipsis notation.
+    # The ellipsis cause remaining argument tokens to be swallowed, including commas,
+    # into the last argument list.
+
+    # After the arguments have been identified, arguments are substituted.
+    # If parameter precedes '#' or '##', or is followed by '##', it is handled differently.
+    # When parameter appears in a replacement list, it is replaced by the corresponding
+    # argument after all macros contained in the argument are expanded.
+
+    # What does this mean? "Before being substituted, each argument’s preprocessing tokens are
+    #                       completely macro replaced as if they formed the rest of the preprocessing file; no other
+    #                       preprocessing tokens are available"
+
+    # if '#' appears in replacement list after parameter, the following
+    # parameter is replaced by string literal that contains the spelling of the
+    # token sequence for the argument.
+
+    # if '#' and '##' are mixed, the behavior is unspecified. Maybe best idea to throw error here.
+
+    # If, in the replacement list of a function-like macro, a parameter is immediately preceded
+    # or followed by a ## preprocessing token, the parameter is replaced by the corresponding
+    # argument’s preprocessing token sequence; however, if an argument consists of no
+    # preprocessing tokens, the parameter is replaced by a placemarker preprocessing token
+    # instead. -- not sure what this means..
+
+    # Apparently the parameter list is immediately replaced and the '##' is re-examined.
+    # The placemarker is just marking place so the '##' won't misbehave.
+    # Because this thing is supposed to merge tokens.
+
+    # Again if the merged token is not valid preprocessing token, the behavior can be undefined.
+
+    # The resulting token is available for further macro replacement?! :o
+
+
     # Printing tokens out is easy way to see that the stream is correctly tokenized.
-    file = stdio_h
+    filename = stdio_h
     lno = 1
     unprinted = []
     while stream.current != ""
         token = token_chop(stream)
         if not token
             break
-        filename = token[0]
-        line = token[1]
-        name = token[2]
-        value = token[3]
+        # Here the lines beginning with '#' are interpreted.
+        if token.name == "macro"
+            macro = token_chop(stream, true)
+            assert macro and macro.name == "identifier"
+                format_source(stream) ++ "macro statement must start with identifier"
+            if macro.value == "define"
+                identifier = token_chop(stream, true)
+                assert identifier and identifier.name == "identifier"
+                    format_source(macro) ++ "'#define' must start with identifier"
+                parameters = null
+                if stream.current == '('
+                    stream.advance()
+                    parameters = []
+                    token = token_chop(stream, true)
+                    while token and token.name != ')'
+                        parameters.append(token.value)
+                        assert token.name == 'identifier' or token.name == "..."
+                            format_source(macro) ++ "malformed parameter list, expected identifier or '...'"
+                        if token.value == "..."
+                            token = token_chop(stream, true)
+                            break
+                        token = token_chop(stream, true)
+                        if token.name == ")"
+                            break
+                        assert token and token.name == ","
+                            format_source(macro) ++ "malformed parameter list, expected ','"
+                        token = token_chop(stream, true)
+                    assert token and token.name == ')'
+                        format_source(macro) ++
+                        "'#define' parameter list must end with ')'"
+                replacement = []
+                token = token_chop(stream, true)
+                while token
+                    replacement.append(token)
+                    token = token_chop(stream, true)
+                print("DEFINE", identifier.value, parameters, replacement)
+                # The preprocessor should generate an error message from
+                # a redefined macro whose replacement list is not identical
+                # with the earlier list.
+                if identifier.value in macro_replacements
+                    mac = macro_replacements[identifier.value]
+                    assert mac.parameters == parameters and mac.replacement == replacement
+                        format_source(macro) ++ "redefined macro not identical with already defined macro"
+                else
+                    macro_replacements[identifier.value] = :exnihilo()
+                        parameters = parameters
+                        replacement = replacement
+                continue
+
+            # you need to implement #undef
+
+            # need to implement #line digits newline-
+            # need to implement #line filename digits newline-
+            # also..  stuff inside #line can macroexpand
+
+            # diagnostic message #error produces sequence of preprocessing tokens.
+
+            # #pragma STDC -- no macroexpansion on directive
+            # -- and you should provide FP_CONTRACT, FENV_ACCESS, CX_LIMITED_RANGE
+            # -- otherwise implementation dependent
+
+            # handle #pragma once?
+
+            # null directive '#' should not have effect.
+
+            # defined identifier and defined ( identifier )
+            # should be supported inside conditional exec. it should return '0' or '1'
+
+            # nonprocessed tokens here translate into '0'
+
+            # support #if, #elif, #else, #ifdef, #ifndef
+            # note that these can be nested, and they may or may not trigger macros or
+            # group being processed.
+
+            # #include "" -- search is implementation defined
+            # #include <> -- implementation defined too? :/
+            # check from these how it's done in GCC and imitate. The detail is important
+            # although spec ignores it.
+
+            macroseq = []
+            token = token_chop(stream, true)
+            while token
+                macroseq.append(token)
+                token = token_chop(stream, true)
+            print("MACRO", macro.value, macroseq)
+            continue
+
         # This thing here is trying to imitate the weird line switching logic
         # of gcc token printer. I think I get it wrong. But then I'm not yet
         # handling macros either.
-        if line != lno or filename != file
-            if filename == file
+        if token.lno != lno or token.filename != filename
+            if token.filename == filename
                 print(" ".join(unprinted))
-                if lno < line and line < lno + 6
-                    for i in range(lno, line-1)
+                if lno < token.lno and token.lno < lno + 6
+                    for i in range(lno, token.lno-1)
                         print("")
                 else
                     print("")
-                    print("#", line, escape_string(filename))
+                    print("#", token.lno, escape_string(filename))
             else
                 print("")
-                print("#", line, escape_string(filename))
-            file = filename
-            lno = line
+                print("#", token.lno, escape_string(filename))
+            filename = token.filename
+            lno = token.lno
             unprinted = []
-        unprinted.append(stringify_token(name, value))
+        unprinted.append(stringify_token(token.name, token.value))
     if unprinted.length > 0
         print(" ".join(unprinted))
 
@@ -104,6 +263,10 @@ main = ():
     #    history_h = path(search_path) ++ "readline/history.h"
     #    if fs.exists(history_h)
     #        print(history_h)
+
+# works on both tokens and streams because HONK! HONK!
+format_source = (token):
+    return token.filename ++ ":" ++ token.lno.to_string() ++ " "
 
 # This will not properly stringify macros, but they are easy to handle
 # manually if it is ever needed.
@@ -136,13 +299,14 @@ escape_string = (string, terminal='"', esc=escape_sequences):
     out.append(terminal)
     return "".join(out)
 
-
 # The tokenizer has been copied from pytci and then updated to make more sense.
 # The preprocessor tokenizer, imitating the behavior of a popular C compiler.
-token_chop = (stream):
+token_chop = (stream, macroline=false):
     stream.skip_spaces()
     line_begin = false
     while stream.current == '\n'
+        if macroline    # Macro should not go over newline.
+            return null # Here we make that certain.
         stream.advance()
         stream.skip_spaces()
         # Tokenizer must mark "#" as MACRO, if it
@@ -161,7 +325,7 @@ token_chop = (stream):
         value = stream.advance()
         while stream.current.is_alpha() or stream.current.is_digit() or stream.current == '_'
             value ++= stream.advance()
-        return token(stream.filename, lno, "identifier", value)
+        return Token(stream.filename, lno, "identifier", value)
     # String literals start with: " ", ' ' literals cannot cross lines.
     # there is no way to escape backslash in #include <...>
     if stream.current in ["'", '"']
@@ -179,9 +343,9 @@ token_chop = (stream):
         stream.comments = true
         terminal = stream.advance()
         if terminal == "'"
-            return token(stream.filename, lno, "char", string)
+            return Token(stream.filename, lno, "char", string)
         elif terminal == '"'
-            return token(stream.filename, lno, "string", string)
+            return Token(stream.filename, lno, "string", string)
         else
             assert false, "error in tokenizing"
     # Preprocessing number: Formally, preprocessing numbers begin
@@ -198,14 +362,14 @@ token_chop = (stream):
             number ++= character
             if character ++ stream.current in exponents
                 number ++= stream.advance()
-        return token(stream.filename, lno, "number", number)
+        return Token(stream.filename, lno, "number", number)
     # Comments. Defined such that comments are replaced with spaces.
     # This works as well. Though in GCC you can disable single line comments.
     # Once there's need, we may do the same. Flag for the character stream should take care of it well.
     if character == "/" and stream.current == "/"
         while stream.current != "\n" and stream.current != ""
             stream.advance()
-        return token_chop(stream)
+        return token_chop(stream, macroline) # macroline still works here.
     if character == "/" and stream.current == "*"
         stream.advance()
         ch = stream.advance()
@@ -213,7 +377,7 @@ token_chop = (stream):
             ch = stream.advance()
             if ch == "*" and stream.current == "/"
                 stream.advance()
-                return token_chop(stream)
+                return token_chop(stream, macroline)
         assert false, "unterminated comment, an error?"
     # Valid punctuation characters are listed lower below.
     if character in punctuators
@@ -230,9 +394,9 @@ token_chop = (stream):
                 punc = "##"
             # Bit of C-trivia. GCC doesn't translate %:# to ##. Neither does this!
         if punc == '#' and line_begin
-            return token(stream.filename, stream.lno, "macro", punc)
-        return token(stream.filename, lno, punc, punc) # punctuation is named for parsing.
-    return token(stream.filename, lno, "other", current)
+            return Token(stream.filename, stream.lno, "macro", punc)
+        return Token(stream.filename, lno, punc, punc) # punctuation is named for parsing.
+    return Token(stream.filename, lno, "other", current)
 
 escape_sequence = (stream):
     if stream.current in escape_sequences
@@ -264,8 +428,28 @@ get_octal = (stream):
 is_octal_char = (character):
     return character in octal_alphabet
 
-token = (filename, lno, name, value=""):
-    return [filename, lno, name, value]
+class Token
+    +init = (self, filename, lno, name, value=""):
+        self.filename = filename
+        self.lno = lno
+        self.name = name
+        self.value = value
+
+    # Even if stringify_token is defined above, this piece
+    # is not significant enough dependency that this class
+    # should be moved higher.
+    +repr = (self):
+        return stringify_token(self.name, self.value)
+    
+# Two replacement lists are identical if, and only if the preprocessing
+# tokens in both have the same number, ordering, spelling and white-space
+# separation, where all white-space separations are considered identical.
+
+# This is meant for that comparison.
+# Implementing this method allows us to compare two token lists directly.
+%"=="[[Token, Token]] = (a, b):
+    return a.name == b.name and a.value == b.value
+    
 
 
 hex_alphabet = set("0123456789ABCDEFabcdef")
