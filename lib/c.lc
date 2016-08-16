@@ -56,7 +56,7 @@ main = ():
     macro_replacements = {}
     # predefined macros
     # __DATE__, literal of the form "Mmm dd yyyy"
-    # __FILE__, __LINE__
+    # __FILE__, __LINE__, dynamically defined.
     # __STDC__ should be '1'
     # __STDC_HOSTED__ should be '1' if implementation is hosted implementation ?whateverthatmeans?
     #                 or '0' if it's not. Lets use '1' like gcc.
@@ -92,6 +92,13 @@ main = ():
     #    print(ch) # yaaay!!!
     #    ch = getch()
     stream = LogicalCharacterStream(getch, 1, stdio_h)
+
+    # This is actually something exposed to user. The user can select a config
+    # The config comes from pytci's gcc_probe
+    # Ran it with gcc_probe.py gcc -m32
+    # and without the -m32
+    config = json.read_file("/home/cheery/.local/cc-config-x86_64.json")
+    preprocessor = Preprocessor(config, macro_replacements)
 
     # Once there's the macro expansion, it must
     # match parentheses until it hits a matching ')'
@@ -154,15 +161,52 @@ main = ():
     lno = 1
     unprinted = []
     while stream.current != ""
+        token = preprocessor.step(stream)
+        if not token # preprocessor returns 'null' also 
+            continue # when macro processing is happening.
+
+
+        # This thing here is trying to imitate the weird line switching logic
+        # of gcc token printer. I think I get it wrong. But then I'm not yet
+        # handling macros either.
+        if token.lno != lno or token.filename != filename
+            if token.filename == filename
+                print(" ".join(unprinted))
+                if lno < token.lno and token.lno < lno + 6
+                    for i in range(lno, token.lno-1)
+                        print("")
+                else
+                    print("")
+                    print("#", token.lno, escape_string(filename))
+            else
+                print("")
+                print("#", token.lno, escape_string(filename))
+            filename = token.filename
+            lno = token.lno
+            unprinted = []
+        unprinted.append(stringify_token(token.name, token.value))
+    if unprinted.length > 0
+        print(" ".join(unprinted))
+
+class Preprocessor
+    +init = (self, config, macro_replacements):
+        self.config = config
+        self.macro_replacements = macro_replacements
+        self.stack = []
+        self.mode = "on"
+
+    step = (self, stream):
         token = token_chop(stream)
         if not token
-            break
+            return null
         # Here the lines beginning with '#' are interpreted.
         if token.name == "macro"
             macro = token_chop(stream, true)
-            assert macro and macro.name == "identifier"
+            if not macro     # null directive '#' should not have effect.
+                return null 
+            assert macro.name == "identifier"
                 format_source(stream) ++ "macro statement must start with identifier"
-            if macro.value == "define"
+            if macro.value == "define" and self.mode == "on"
                 identifier = token_chop(stream, true)
                 assert identifier and identifier.name == "identifier"
                     format_source(macro) ++ "'#define' must start with identifier"
@@ -192,100 +236,180 @@ main = ():
                 while token
                     replacement.append(token)
                     token = token_chop(stream, true)
-                print("DEFINE", identifier.value, parameters, replacement)
                 # The preprocessor should generate an error message from
                 # a redefined macro whose replacement list is not identical
                 # with the earlier list.
                 assert identifier.value != "defined"
                     format_source(identifier) ++ "defined cannot be used as a macro name"
-                if identifier.value in macro_replacements
-                    mac = macro_replacements[identifier.value]
+                if identifier.value in self.macro_replacements
+                    mac = self.macro_replacements[identifier.value]
                     assert mac.parameters == parameters and mac.replacement == replacement
                         format_source(macro) ++ "redefined macro not identical with already defined macro"
                 else
-                    macro_replacements[identifier.value] = :exnihilo()
+                    self.macro_replacements[identifier.value] = :exnihilo()
                         parameters = parameters
                         replacement = replacement
-                continue
+            elif macro.value == "undef" and self.mode == "on"
+                identifier = token_chop(stream, true)
+                assert identifier and identifier.name == "identifier"
+                    format_source(macro) ++ "'#undef' must start with identifier"
+                token = token_chop(stream, true)
+                assert not token
+                    format_source(macro) ++ "'#undef' contains trash here"
+                # ?? What should this do if the macro isn't there? hmm.
+                self.macro_replacements.pop(identifier.value)
+            elif macro.value == "ifdef" and self.mode == "on"
+                identifier = token_chop(stream, true)
+                assert identifier and identifier.name == "identifier"
+                    format_source(macro) ++ "'#ifdef' must start with identifier"
+                print(format_source(macro), "PUSH")
+                self.stack.append(self.mode)
+                if identifier.value in self.macro_replacements
+                    self.mode = "on"
+                else
+                    self.mode = "skip"
+            elif macro.value == "ifndef" and self.mode == "on"
+                identifier = token_chop(stream, true)
+                assert identifier and identifier.name == "identifier"
+                    format_source(macro) ++ "'#ifndef' must start with identifier"
+                print(format_source(macro), "PUSH")
+                self.stack.append(self.mode)
+                if identifier.value not in self.macro_replacements
+                    self.mode = "on"
+                else
+                    self.mode = "skip"
+            # support #if, #elif
+            # note that these can be nested, and they may or may not trigger macros or
+            # group being processed.
+            # also, the macros of these things should expand inside them.
 
-            # you need to implement #undef
+            # defined identifier and defined ( identifier )
+            # should be supported inside conditional exec. it should return '0' or '1'
+            # nonprocessed tokens here translate into '0'
+            elif macro.value == "if" and self.mode == "on"
+                macroseq = []
+                token = token_chop(stream, true)
+                while token
+                    macroseq.append(token)
+                    token = token_chop(stream, true)
+                print(format_source(macro), "PUSH")
+                self.stack.append(self.mode)
+                print("#error IF NOT IMPL")
+                if true # haha.
+                    self.mode = "on"
+                else
+                    self.mode = "skip"
+            elif macro.value == "elif" and self.mode == "on"
+                assert self.stack.length > 0
+                    format_source(macro) ++ "'#elif' without if"
+                token = token_chop(stream, true)
+                while token
+                    token = token_chop(stream, true)
+                self.mode = "off" # we were in '#if' 
+            elif macro.value == "elif" and self.mode == "skip"
+                macroseq = []
+                token = token_chop(stream, true)
+                while token
+                    macroseq.append(stringify_token(token.name, token.value))
+                    token = token_chop(stream, true)
+                print("#error ELIF NOT IMPL")
+                if true # haha.
+                    self.mode = "on"
+                else
+                    self.mode = "skip"
+            # #include <> -- implementation defined too? :/
+            #                search from global includes.
+            # #include "" -- search is implementation defined
+            #                gcc approach would be to look in the directory of the script, or then
+            #                in the directories given with '-I'
+            # check from these how it's done in GCC and imitate. The detail is important
+            # although spec ignores it.
+            elif macro.value == "include" and self.mode == "on"
+                stream.skip_spaces()
+                if stream.current == '<'
+                    stream.advance()
+                    string = ""
+                    while stream.current != '>' and stream.current != '\n' and stream.current != ''
+                        string ++= stream.advance()
+                    assert stream.current == '>'
+                        format_source(macro) ++ "#include < should end with >"
+                    stream.advance()
+                    local = false
+                else
+                    string = token_chop(stream, true)
+                    assert string.name == "string"
+                        format_source(macro) ++ "#include expects string or '<'"
+                    string = string.value
+                    local = true
+                stream.skip_spaces()
+                assert stream.current == '\n' or stream.current == ''
+                    format_source(macro) ++ "garbage in #include"
+
+                for search_path in self.config["includes"]
+                    header = path(search_path) ++ string
+                    if fs.exists(header)
+                        print("include found", header)
+                        return null
+                assert false, format_source(macro) ++ "#include did not find this file"
+                return null
 
             # need to implement #line digits newline-
             # need to implement #line filename digits newline-
             # also..  stuff inside #line can macroexpand
-
-            # diagnostic message #error produces sequence of preprocessing tokens.
 
             # #pragma STDC -- no macroexpansion on directive
             # -- and you should provide FP_CONTRACT, FENV_ACCESS, CX_LIMITED_RANGE
             # -- otherwise implementation dependent
 
             # handle #pragma once?
-
-            # null directive '#' should not have effect.
-
-            # defined identifier and defined ( identifier )
-            # should be supported inside conditional exec. it should return '0' or '1'
-
-            # nonprocessed tokens here translate into '0'
-
-            # support #if, #elif, #else, #ifdef, #ifndef
-            # note that these can be nested, and they may or may not trigger macros or
-            # group being processed.
-            
-            # also, the macros of these things should expand inside them.
-
-            # #include "" -- search is implementation defined
-            #                gcc approach would be to look in the directory of the script, or then
-            #                in the directories given with '-I'
-            # #include <> -- implementation defined too? :/
-            #                search from global includes.
-            # check from these how it's done in GCC and imitate. The detail is important
-            # although spec ignores it.
-
-            macroseq = []
-            token = token_chop(stream, true)
-            while token
-                macroseq.append(token)
+            elif macro.value == "else"
                 token = token_chop(stream, true)
-            print("MACRO", macro.value, macroseq)
-            continue
-
-        # This thing here is trying to imitate the weird line switching logic
-        # of gcc token printer. I think I get it wrong. But then I'm not yet
-        # handling macros either.
-        if token.lno != lno or token.filename != filename
-            if token.filename == filename
-                print(" ".join(unprinted))
-                if lno < token.lno and token.lno < lno + 6
-                    for i in range(lno, token.lno-1)
-                        print("")
-                else
-                    print("")
-                    print("#", token.lno, escape_string(filename))
+                assert not token
+                    format_source(macro) ++ "'#else' contains trash here"
+                assert self.stack.length > 0
+                    format_source(macro) ++ "'#else' without if"
+                if self.mode == "on"
+                    self.mode = "off"
+                elif self.mode == "skip"
+                    self.mode = "on"
+            elif macro.value == "endif"
+                token = token_chop(stream, true)
+                assert not token
+                    format_source(macro) ++ "'#endif' contains trash here"
+                assert self.stack.length > 0
+                    format_source(macro) ++ "excessive #endif here"
+                print(format_source(macro), "POP")
+                self.mode = self.stack.pop()
+            # diagnostic message #error produces sequence of preprocessing tokens.
+            elif macro.value == "error" and self.mode == "on"
+                # ?? Should this expand args?
+                message = []
+                token = token_chop(stream, true)
+                while token
+                    message.append(stringify_token(token.name, token.value))
+                    token = token_chop(stream, true)
+                assert false
+                    format_source(macro) ++ "#error: " ++ " ".join(message)
+            elif self.mode == "off" or self.mode == "skip"
+                if macro.value in ["if", "ifdef", "ifndef"]
+                    self.stack.append(self.mode)
+                token = token_chop(stream, true)     # If we are currently skipping a group.
+                while token                          # then it mustn't matter if the macro
+                    token = token_chop(stream, true) # is valid or not.
+                return null
             else
-                print("")
-                print("#", token.lno, escape_string(filename))
-            filename = token.filename
-            lno = token.lno
-            unprinted = []
-        unprinted.append(stringify_token(token.name, token.value))
-    if unprinted.length > 0
-        print(" ".join(unprinted))
+                macroseq = []
+                token = token_chop(stream, true)
+                while token
+                    macroseq.append(stringify_token(token.name, token.value))
+                    token = token_chop(stream, true)
+                assert false
+                    format_source(macro) ++ " not implemented #" ++
+                    macro.value ++ " " ++ " ".join(macroseq)
+            return null
+        # should macroexpand here 
+        return token
 
-    # This is actually something exposed to user. The user can select a config
-    # The config comes from pytci's gcc_probe
-    # Ran it with gcc_probe.py gcc -m32
-    # and without the -m32
-    #config = json.read_file("/home/cheery/.local/cc-config-x86_64.json")
-
-    #for search_path in config["includes"]
-    #    readline_h = path(search_path) ++ "readline/readline.h"
-    #    if fs.exists(readline_h)
-    #        print(readline_h)
-    #    history_h = path(search_path) ++ "readline/history.h"
-    #    if fs.exists(history_h)
-    #        print(history_h)
 
 # works on both tokens and streams because HONK! HONK!
 format_source = (token):
