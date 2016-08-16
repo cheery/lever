@@ -194,222 +194,253 @@ class Preprocessor
         self.macro_replacements = macro_replacements
         self.stack = []
         self.mode = "on"
+        self.context = null
+        # should consider what the #include does. Makes a context? Bit weird.
 
     step = (self, stream):
-        token = token_chop(stream)
+        context = self.context
+        while context and context.tokens.length == 0
+            context = context.parent
+        self.context = context
+        if context
+            token = context.tokens.pop(0)
+        else
+            token = token_chop(stream)
         if not token
             return null
-        # Here the lines beginning with '#' are interpreted.
-        if token.name == "macro"
-            macro = token_chop(stream, true)
-            if not macro     # null directive '#' should not have effect.
-                return null 
-            assert macro.name == "identifier"
-                format_source(stream) ++ "macro statement must start with identifier"
-            if macro.value == "define" and self.mode == "on"
-                identifier = token_chop(stream, true)
-                assert identifier and identifier.name == "identifier"
-                    format_source(macro) ++ "'#define' must start with identifier"
-                parameters = null
-                if stream.current == '('
-                    stream.advance()
-                    parameters = []
-                    token = token_chop(stream, true)
-                    while token and token.name != ')'
-                        parameters.append(token.value)
-                        assert token.name == 'identifier' or token.name == "..."
-                            format_source(macro) ++ "malformed parameter list, expected identifier or '...'"
-                        if token.value == "..."
-                            token = token_chop(stream, true)
-                            break
-                        token = token_chop(stream, true)
-                        if token.name == ")"
-                            break
-                        assert token and token.name == ","
-                            format_source(macro) ++ "malformed parameter list, expected ','"
-                        token = token_chop(stream, true)
-                    assert token and token.name == ')'
-                        format_source(macro) ++
-                        "'#define' parameter list must end with ')'"
-                replacement = []
-                token = token_chop(stream, true)
-                while token
-                    replacement.append(token)
-                    token = token_chop(stream, true)
-                # The preprocessor should generate an error message from
-                # a redefined macro whose replacement list is not identical
-                # with the earlier list.
-                assert identifier.value != "defined"
-                    format_source(identifier) ++ "defined cannot be used as a macro name"
-                if identifier.value in self.macro_replacements
-                    mac = self.macro_replacements[identifier.value]
-                    assert mac.parameters == parameters and mac.replacement == replacement
-                        format_source(macro) ++ "redefined macro not identical with already defined macro"
-                else
-                    self.macro_replacements[identifier.value] = :exnihilo()
-                        parameters = parameters
-                        replacement = replacement
-            elif macro.value == "undef" and self.mode == "on"
-                identifier = token_chop(stream, true)
-                assert identifier and identifier.name == "identifier"
-                    format_source(macro) ++ "'#undef' must start with identifier"
-                token = token_chop(stream, true)
-                assert not token
-                    format_source(macro) ++ "'#undef' contains trash here"
-                # ?? What should this do if the macro isn't there? hmm.
-                self.macro_replacements.pop(identifier.value)
-            elif macro.value == "ifdef" and self.mode == "on"
-                identifier = token_chop(stream, true)
-                assert identifier and identifier.name == "identifier"
-                    format_source(macro) ++ "'#ifdef' must start with identifier"
-                print(format_source(macro), "PUSH")
-                self.stack.append(self.mode)
-                if identifier.value in self.macro_replacements
-                    self.mode = "on"
-                else
-                    self.mode = "skip"
-            elif macro.value == "ifndef" and self.mode == "on"
-                identifier = token_chop(stream, true)
-                assert identifier and identifier.name == "identifier"
-                    format_source(macro) ++ "'#ifndef' must start with identifier"
-                print(format_source(macro), "PUSH")
-                self.stack.append(self.mode)
-                if identifier.value not in self.macro_replacements
-                    self.mode = "on"
-                else
-                    self.mode = "skip"
-            # support #if, #elif
-            # note that these can be nested, and they may or may not trigger macros or
-            # group being processed.
-            # also, the macros of these things should expand inside them.
-
-            # defined identifier and defined ( identifier )
-            # should be supported inside conditional exec. it should return '0' or '1'
-            # nonprocessed tokens here translate into '0'
-            elif macro.value == "if" and self.mode == "on"
-                macroseq = []
-                token = token_chop(stream, true)
-                while token
-                    macroseq.append(token)
-                    token = token_chop(stream, true)
-                print(format_source(macro), "PUSH")
-                self.stack.append(self.mode)
-                print("#error IF NOT IMPL")
-                if true # haha.
-                    self.mode = "on"
-                else
-                    self.mode = "skip"
-            elif macro.value == "elif" and self.mode == "on"
-                assert self.stack.length > 0
-                    format_source(macro) ++ "'#elif' without if"
-                token = token_chop(stream, true)
-                while token
-                    token = token_chop(stream, true)
-                self.mode = "off" # we were in '#if' 
-            elif macro.value == "elif" and self.mode == "skip"
-                macroseq = []
-                token = token_chop(stream, true)
-                while token
-                    macroseq.append(stringify_token(token.name, token.value))
-                    token = token_chop(stream, true)
-                print("#error ELIF NOT IMPL")
-                if true # haha.
-                    self.mode = "on"
-                else
-                    self.mode = "skip"
-            # #include <> -- implementation defined too? :/
-            #                search from global includes.
-            # #include "" -- search is implementation defined
-            #                gcc approach would be to look in the directory of the script, or then
-            #                in the directories given with '-I'
-            # check from these how it's done in GCC and imitate. The detail is important
-            # although spec ignores it.
-            elif macro.value == "include" and self.mode == "on"
-                stream.skip_spaces()
-                if stream.current == '<'
-                    stream.advance()
-                    string = ""
-                    while stream.current != '>' and stream.current != '\n' and stream.current != ''
-                        string ++= stream.advance()
-                    assert stream.current == '>'
-                        format_source(macro) ++ "#include < should end with >"
-                    stream.advance()
-                    local = false
-                else
-                    string = token_chop(stream, true)
-                    assert string.name == "string"
-                        format_source(macro) ++ "#include expects string or '<'"
-                    string = string.value
-                    local = true
-                stream.skip_spaces()
-                assert stream.current == '\n' or stream.current == ''
-                    format_source(macro) ++ "garbage in #include"
-
-                for search_path in self.config["includes"]
-                    header = path(search_path) ++ string
-                    if fs.exists(header)
-                        print("include found", header)
-                        return null
-                assert false, format_source(macro) ++ "#include did not find this file"
-                return null
-
-            # need to implement #line digits newline-
-            # need to implement #line filename digits newline-
-            # also..  stuff inside #line can macroexpand
-
-            # #pragma STDC -- no macroexpansion on directive
-            # -- and you should provide FP_CONTRACT, FENV_ACCESS, CX_LIMITED_RANGE
-            # -- otherwise implementation dependent
-
-            # handle #pragma once?
-            elif macro.value == "else"
-                token = token_chop(stream, true)
-                assert not token
-                    format_source(macro) ++ "'#else' contains trash here"
-                assert self.stack.length > 0
-                    format_source(macro) ++ "'#else' without if"
-                if self.mode == "on"
-                    self.mode = "off"
-                elif self.mode == "skip"
-                    self.mode = "on"
-            elif macro.value == "endif"
-                token = token_chop(stream, true)
-                assert not token
-                    format_source(macro) ++ "'#endif' contains trash here"
-                assert self.stack.length > 0
-                    format_source(macro) ++ "excessive #endif here"
-                print(format_source(macro), "POP")
-                self.mode = self.stack.pop()
-            # diagnostic message #error produces sequence of preprocessing tokens.
-            elif macro.value == "error" and self.mode == "on"
-                # ?? Should this expand args?
-                message = []
-                token = token_chop(stream, true)
-                while token
-                    message.append(stringify_token(token.name, token.value))
-                    token = token_chop(stream, true)
-                assert false
-                    format_source(macro) ++ "#error: " ++ " ".join(message)
-            elif self.mode == "off" or self.mode == "skip"
-                if macro.value in ["if", "ifdef", "ifndef"]
-                    self.stack.append(self.mode)
-                token = token_chop(stream, true)     # If we are currently skipping a group.
-                while token                          # then it mustn't matter if the macro
-                    token = token_chop(stream, true) # is valid or not.
-                return null
-            else
-                macroseq = []
-                token = token_chop(stream, true)
-                while token
-                    macroseq.append(stringify_token(token.name, token.value))
-                    token = token_chop(stream, true)
-                assert false
-                    format_source(macro) ++ " not implemented #" ++
-                    macro.value ++ " " ++ " ".join(macroseq)
+        # macroexpand takes place here, but it should also take place um.. lower there as well... in macros.
+        # also inside macro should handle 'defined'
+        if token.name == "identifier" and token.value in self.macro_replacements
+            mac = self.macro_replacements[token.value]
+            while context                     # this prevents self-referential macros
+                if context.ref == token.value # from running at all.
+                    return token
+                context = context.parent
+            # here if there are parameters, we should go and see if there's '('
+            # somewhere ahead in the context.
+            # if not, we should make a 'putback' context that puts the token back
+            # that was not a '('
+            assert not mac.parameters, "macro parameters notimpl"
+            replacement = []
+            for rtoken in mac.replacement
+                replacement.append(rtoken) # TODO: copy & ref to replaced token here
+                                           # TODO: implement '#' and '##' here.
+                                           # aand... argument substitution would happen afterwards
+                                           # here as well..
+            self.context = :exnihilo()
+                ref = token.value
+                parent = self.context
+                tokens = replacement
             return null
-        # should macroexpand here 
-        return token
+        elif token.name != "macro"
+            return token
+        # Here the lines beginning with '#' are interpreted.
+        macro = token_chop(stream, true)
+        if not macro     # null directive '#' should not have effect.
+            return null 
+        assert macro.name == "identifier"
+            format_source(stream) ++ "macro statement must start with identifier"
+        if macro.value == "define" and self.mode == "on"
+            identifier = token_chop(stream, true)
+            assert identifier and identifier.name == "identifier"
+                format_source(macro) ++ "'#define' must start with identifier"
+            parameters = null
+            if stream.current == '('
+                stream.advance()
+                parameters = []
+                token = token_chop(stream, true)
+                while token and token.name != ')'
+                    parameters.append(token.value)
+                    assert token.name == 'identifier' or token.name == "..."
+                        format_source(macro) ++ "malformed parameter list, expected identifier or '...'"
+                    if token.value == "..."
+                        token = token_chop(stream, true)
+                        break
+                    token = token_chop(stream, true)
+                    if token.name == ")"
+                        break
+                    assert token and token.name == ","
+                        format_source(macro) ++ "malformed parameter list, expected ','"
+                    token = token_chop(stream, true)
+                assert token and token.name == ')'
+                    format_source(macro) ++
+                    "'#define' parameter list must end with ')'"
+            replacement = []
+            token = token_chop(stream, true)
+            while token
+                replacement.append(token)
+                token = token_chop(stream, true)
+            # The preprocessor should generate an error message from
+            # a redefined macro whose replacement list is not identical
+            # with the earlier list.
+            assert identifier.value != "defined"
+                format_source(identifier) ++ "defined cannot be used as a macro name"
+            if identifier.value in self.macro_replacements
+                mac = self.macro_replacements[identifier.value]
+                assert mac.parameters == parameters and mac.replacement == replacement
+                    format_source(macro) ++ "redefined macro not identical with already defined macro"
+            else
+                self.macro_replacements[identifier.value] = :exnihilo()
+                    parameters = parameters
+                    replacement = replacement
+        elif macro.value == "undef" and self.mode == "on"
+            identifier = token_chop(stream, true)
+            assert identifier and identifier.name == "identifier"
+                format_source(macro) ++ "'#undef' must start with identifier"
+            token = token_chop(stream, true)
+            assert not token
+                format_source(macro) ++ "'#undef' contains trash here"
+            # ?? What should this do if the macro isn't there? hmm.
+            self.macro_replacements.pop(identifier.value)
+        elif macro.value == "ifdef" and self.mode == "on"
+            identifier = token_chop(stream, true)
+            assert identifier and identifier.name == "identifier"
+                format_source(macro) ++ "'#ifdef' must start with identifier"
+            print(format_source(macro), "PUSH")
+            self.stack.append(self.mode)
+            if identifier.value in self.macro_replacements
+                self.mode = "on"
+            else
+                self.mode = "skip"
+        elif macro.value == "ifndef" and self.mode == "on"
+            identifier = token_chop(stream, true)
+            assert identifier and identifier.name == "identifier"
+                format_source(macro) ++ "'#ifndef' must start with identifier"
+            print(format_source(macro), "PUSH")
+            self.stack.append(self.mode)
+            if identifier.value not in self.macro_replacements
+                self.mode = "on"
+            else
+                self.mode = "skip"
+        # support #if, #elif
+        # note that these can be nested, and they may or may not trigger macros or
+        # group being processed.
+        # also, the macros of these things should expand inside them.
 
+        # defined identifier and defined ( identifier )
+        # should be supported inside conditional exec. it should return '0' or '1'
+        # nonprocessed tokens here translate into '0'
+        elif macro.value == "if" and self.mode == "on"
+            macroseq = []
+            token = token_chop(stream, true)
+            while token
+                macroseq.append(token)
+                token = token_chop(stream, true)
+            print(format_source(macro), "PUSH")
+            self.stack.append(self.mode)
+            print("#error IF NOT IMPL")
+            if true # haha.
+                self.mode = "on"
+            else
+                self.mode = "skip"
+        elif macro.value == "elif" and self.mode == "on"
+            assert self.stack.length > 0
+                format_source(macro) ++ "'#elif' without if"
+            token = token_chop(stream, true)
+            while token
+                token = token_chop(stream, true)
+            self.mode = "off" # we were in '#if' 
+        elif macro.value == "elif" and self.mode == "skip"
+            macroseq = []
+            token = token_chop(stream, true)
+            while token
+                macroseq.append(stringify_token(token.name, token.value))
+                token = token_chop(stream, true)
+            print("#error ELIF NOT IMPL")
+            if true # haha.
+                self.mode = "on"
+            else
+                self.mode = "skip"
+        # #include <> -- implementation defined too? :/
+        #                search from global includes.
+        # #include "" -- search is implementation defined
+        #                gcc approach would be to look in the directory of the script, or then
+        #                in the directories given with '-I'
+        # check from these how it's done in GCC and imitate. The detail is important
+        # although spec ignores it.
+        elif macro.value == "include" and self.mode == "on"
+            stream.skip_spaces()
+            if stream.current == '<'
+                stream.advance()
+                string = ""
+                while stream.current != '>' and stream.current != '\n' and stream.current != ''
+                    string ++= stream.advance()
+                assert stream.current == '>'
+                    format_source(macro) ++ "#include < should end with >"
+                stream.advance()
+                local = false
+            else
+                string = token_chop(stream, true)
+                assert string.name == "string"
+                    format_source(macro) ++ "#include expects string or '<'"
+                string = string.value
+                local = true
+            stream.skip_spaces()
+            assert stream.current == '\n' or stream.current == ''
+                format_source(macro) ++ "garbage in #include"
+
+            for search_path in self.config["includes"]
+                header = path(search_path) ++ string
+                if fs.exists(header)
+                    print("include found", header)
+                    return null
+            assert false, format_source(macro) ++ "#include did not find this file"
+            return null
+
+        # need to implement #line digits newline-
+        # need to implement #line filename digits newline-
+        # also..  stuff inside #line can macroexpand
+
+        # #pragma STDC -- no macroexpansion on directive
+        # -- and you should provide FP_CONTRACT, FENV_ACCESS, CX_LIMITED_RANGE
+        # -- otherwise implementation dependent
+
+        # handle #pragma once?
+        elif macro.value == "else"
+            token = token_chop(stream, true)
+            assert not token
+                format_source(macro) ++ "'#else' contains trash here"
+            assert self.stack.length > 0
+                format_source(macro) ++ "'#else' without if"
+            if self.mode == "on"
+                self.mode = "off"
+            elif self.mode == "skip"
+                self.mode = "on"
+        elif macro.value == "endif"
+            token = token_chop(stream, true)
+            assert not token
+                format_source(macro) ++ "'#endif' contains trash here"
+            assert self.stack.length > 0
+                format_source(macro) ++ "excessive #endif here"
+            print(format_source(macro), "POP")
+            self.mode = self.stack.pop()
+        # diagnostic message #error produces sequence of preprocessing tokens.
+        elif macro.value == "error" and self.mode == "on"
+            # ?? Should this expand args?
+            message = []
+            token = token_chop(stream, true)
+            while token
+                message.append(stringify_token(token.name, token.value))
+                token = token_chop(stream, true)
+            assert false
+                format_source(macro) ++ "#error: " ++ " ".join(message)
+        elif self.mode == "off" or self.mode == "skip"
+            if macro.value in ["if", "ifdef", "ifndef"]
+                self.stack.append(self.mode)
+            token = token_chop(stream, true)     # If we are currently skipping a group.
+            while token                          # then it mustn't matter if the macro
+                token = token_chop(stream, true) # is valid or not.
+            return null
+        else
+            macroseq = []
+            token = token_chop(stream, true)
+            while token
+                macroseq.append(stringify_token(token.name, token.value))
+                token = token_chop(stream, true)
+            assert false
+                format_source(macro) ++ " not implemented #" ++
+                macro.value ++ " " ++ " ".join(macroseq)
+        return null
 
 # works on both tokens and streams because HONK! HONK!
 format_source = (token):
