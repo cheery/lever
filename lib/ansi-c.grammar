@@ -1,0 +1,324 @@
+# Many .grammar files in lever are used such that
+# they parse the whole file in one go. 
+
+# But with C, translation unit can introduce new types that
+# will change how the language is parsed. We should acknowledge it.
+
+# So this is ignored entirely...
+# translation_unit =>
+#     first { external_declaration }
+#     append { translation_unit external_declaration }
+
+# And this is used instead.
+external_declaration =>
+    function_definition
+    declaration
+
+# It is apparent that two of the constructs are optional here.
+# will be adjusted to consider that soon.
+function_definition =>
+    function { declaration_specifiers_opt
+               declarator declaration_list_opt compound_statement }
+
+declaration_list_opt =>
+    empty_list {}
+    declaration_list
+
+declaration_list =>
+    first  { declaration }
+    append { declaration_list declaration }
+
+declaration =>
+    declaration { declaration_specifiers init_declarator_list_opt ";" }
+
+declaration_specifiers_opt =>
+    empty_list {}
+    declaration_specifiers
+
+declaration_specifiers =>
+    first { storage_class_specifier }
+    r_append { storage_class_specifier declaration_specifiers }
+    first { type_specifier }
+    r_append { type_specifier declaration_specifiers }
+    first { type_qualifier }
+    r_append { type_qualifier declaration_specifiers }
+
+init_declarator_list_opt =>
+    empty_list {}
+    init_declarator_list
+
+initializer_list =>
+    initializer
+    initializer_list "," initializer
+
+initializer =>
+    assignment_expression
+    '{' initializer_list '}'
+    '{' initializer_list ',' '}'
+
+init_declarator_list =>
+    first  { init_declarator }
+    append { init_declarator_list "," init_declarator }
+
+init_declarator =>
+    declarator
+    declarator "=" initializer
+
+storage_class_specifier => ["typedef", "extern", "static", "auto", "register"]
+
+type_specifier => ["void", "char", "short", "int", "long", "float", "double",
+                   "signed", "unsigned"]
+
+type_specifier =>
+    struct_or_union_specifier
+    enum_specifier
+    @identifier         #type_name yay. introduced ambiguity.
+
+struct_or_union_specifier =>
+    struct_or_union @identifier "{" struct_declaration_list "}"
+    struct_or_union             "{" struct_declaration_list "}"
+    struct_or_union @identifier
+
+struct_or_union => ["struct", "union"]
+
+struct_declaration_list =>
+    first  { struct_declaration }
+    append { struct_declaration_list struct_declaration }
+
+struct_declaration =>
+    specifier_qualifier_list struct_declarator_list ';'
+
+specifier_qualifier_list =>
+    type_specifier specifier_qualifier_list
+    type_specifier
+    type_qualifier specifier_qualifier_list
+    type_qualifier
+
+struct_declarator_list =>
+    first  { struct_declarator }
+    append { struct_declarator_list ',' struct_declarator }
+
+struct_declarator =>
+    declarator
+    ':' constant_expression
+    declarator ':' constant_expression
+
+enum_specifier =>
+    "enum"             "{" enumerator_list "}"
+    "enum" @identifier "{" enumerator_list "}"
+    "enum" @identifier 
+
+enumerator_list =>
+    first  { enumerator }
+    append { enumerator_list ',' enumerator }
+
+enumerator =>
+    @identifier
+    @identifier '=' constant_expression
+
+type_qualifier => ["const", "volatile"]
+
+declarator =>
+    %pointer direct_declarator # ignoring pointer to get it parsed at first..
+    direct_declarator
+
+pointer =>
+    '*'
+    '*' type_qualifier_list
+    '*' pointer
+    '*' type_qualifier_list pointer
+
+direct_declarator =>
+    @identifier
+    "(" declarator ")"
+    direct_declarator '[' constant_expression ']'
+    direct_declarator '[' ']'
+    direct_declarator '(' parameter_type_list ')'
+    direct_declarator '(' identifier_list ')'
+    direct_declarator '(' ')'
+
+expression =>
+    assignment_expression
+    expression ',' assignment_expression
+
+assignment_expression =>
+    conditional_expression
+    unary_expression assignment_operator assignment_expression
+
+assignment_operator => ['=', "*=", "/=", "%=", "+=", "-=",
+                        "<<=", ">>=", "&=", "^=", "|="]
+
+type_qualifier_list =>
+    first  { type_qualifier }
+    append { type_qualifier_list type_qualifier }
+
+parameter_type_list =>
+    parameter_list
+    parameter_list ',' "..."
+
+parameter_list =>
+    first  { parameter_declaration }
+    append { parameter_list ',' parameter_declaration }
+
+parameter_declaration =>
+    declaration_specifiers declarator
+    declaration_specifiers abstract_declarator
+    declaration_specifiers
+
+identifier_list =>
+    first  { @identifier }
+    append { identifier_list ',' @identifier }
+
+abstract_declarator =>
+    pointer
+    direct_abstract_declarator
+    pointer direct_abstract_declarator
+
+direct_abstract_declarator =>
+    '(' abstract_declarator ')'
+    '[' ']'
+    '[' constant_expression ']'
+    direct_abstract_declarator '[' ']'
+    direct_abstract_declarator '[' constant_expression ']'
+    '(' ')'
+    '(' parameter_type_list ')'
+    direct_abstract_declarator '(' ')'
+    direct_abstract_declarator '(' parameter_type_list ')'
+
+statement =>
+    labeled_statement
+    compound_statement
+    expression_statement
+    selection_statement
+    iteration_statement
+    jump_statement
+
+labeled_statement =>
+    @identifier ":" statement
+    "case" constant_expression ":" statement
+    "default" ":" statement
+
+compound_statement =>
+    '{' '}'
+    '{' statement_list '}'
+    '{' declaration_list '}'
+    '{' declaration_list statement_list '}'
+
+statement_list =>
+    first  { statement }
+    append { statement_list statement }
+
+expression_statement =>
+    ";"
+    expression ';'
+
+selection_statement =>
+    "if" "(" expression ")" statement
+    "if" "(" expression ")" statement "else" statement
+    "switch" "(" expression ")" statement
+
+iteration_statement =>
+    "while" "(" expression ")" statement
+    "do" statement "while" "(" expression ")" ";"
+    "for" "(" expression_statement expression_statement ")" statement
+    "for" "(" expression_statement expression_statement expression ")" statement
+
+jump_statement =>
+    "goto" @identifier ";"
+    "continue" ";"
+    "break" ";"
+    "return" ";"
+    "return" expression ";"
+
+constant_expression => conditional_expression
+
+conditional_expression =>
+    logical_or_expression
+    logical_or_expression '?' expression ':' conditional_expression
+
+logical_or_expression =>
+    logical_and_expression
+    logical_or_expression "||" logical_and_expression
+
+logical_and_expression =>
+    inclusive_or_expression
+    logical_and_expression "&&" inclusive_or_expression
+
+inclusive_or_expression =>
+    exclusive_or_expression
+    inclusive_or_expression '|' exclusive_or_expression
+
+exclusive_or_expression =>
+    and_expression
+    exclusive_or_expression '^' and_expression
+
+and_expression =>
+    equality_expression
+    and_expression '&' equality_expression
+
+equality_expression =>
+    relational_expression
+    equality_expression "==" relational_expression
+    equality_expression "!=" relational_expression
+
+relational_expression =>
+    shift_expression
+    relational_expression '<' shift_expression
+    relational_expression '>' shift_expression
+    relational_expression "<=" shift_expression
+    relational_expression ">=" shift_expression
+
+shift_expression =>
+    additive_expression
+    shift_expression "<<" additive_expression
+    shift_expression ">>" additive_expression
+
+additive_expression =>
+    multiplicative_expression
+    additive_expression '+' multiplicative_expression
+    additive_expression '-' multiplicative_expression
+
+multiplicative_expression =>
+    cast_expression
+    multiplicative_expression '*' cast_expression
+    multiplicative_expression '/' cast_expression
+    multiplicative_expression '%' cast_expression
+
+cast_expression =>
+    unary_expression
+    '(' type_name_clause ')' cast_expression
+
+unary_expression =>
+    postfix_expression
+    "++" unary_expression
+    "--" unary_expression
+    unary_operator cast_expression
+    "sizeof" unary_expression
+    "sizeof" '(' type_name_clause ')' # hmm? should all the types be with @type_name?
+
+type_name_clause =>
+    specifier_qualifier_list
+    specifier_qualifier_list abstract_declarator
+
+unary_operator => ["&", "*", "+", "-", "~", "!"]
+
+postfix_expression =>
+    primary_expression
+    postfix_expression '[' expression ']'
+    postfix_expression '(' ')'
+    postfix_expression '(' argument_expression_list ')'
+    postfix_expression '.' @identifier
+    postfix_expression "->" @identifier
+    postfix_expression "++"
+    postfix_expression "--"
+
+argument_expression_list =>
+    first  { assignment_expression }
+    append { argument_expression_list "," assignment_expression }
+
+primary_expression =>
+    @identifier
+    @number
+    @string
+    @char
+    "(" expression ")"

@@ -1,108 +1,14 @@
-# Completion of this strategy is due to 0.9.0 milestone
-# STRATEGY: Improve foreign function interface to extend it's capabilities.
-#           Provide complete REPL+Integrated Editor suite for lever.
-# 
-# I want people to frown when they see lever FFI and then contempt their
-# language do not have this kind of system. To do this it needs to be
-# slightly better and get some more exposure.
+# This library implements C tokenizing and parsing.
+# If you need to read C headers or parse C code, this should fit the bill.
 
-# Powerful interactive programming is lever's staple feature. This means we
-# need really powerfull integrated development environment embedded into the
-# runtime. The first step would be to provide a REPL that does bit more than
-# reading a line and printing another out.
-
-# TACTIC: use readline via FFI
-# motivation: 
-#   Line-editing tools in console are a great way to prepare
-#   for the needs of a real IDE early on. It is also a feature many
-#   other dynamic language implementations lack.
-#
-# requirements:
-#   Use of readline requires that callbacks are implemented,
-#   It also requires that library variables are handled more like
-#   ordinary memory entries, because readline relies on global variables.
-
-#   Use of readline requires dynamic loading that interrupts if the
-#   library isn't available.
-
-#   Also we may want to use this feature async. Async readline that doesn't
-#   get confused by printing lines out would be so
-#   awesome that it gives a new meaning for awesome.
-
-#   Use of readline requires good C header generation. The cffi-gen library
-#   is clumsy to use and update. Partially my own fault because I relied on
-#   LR parsing. 
-
-#   I believe it'd be the time to implement cffi header generator in lever.
-
-#   To do that we need a C parser. Wholly functioning C parser! With macro
-#   preprocessor.
-
-#   This motivates the storyline of c.lc
-
-#   This library should implement C tokenizing and parsing.
-#   The parts that are common when you need to this kind of things.
-
+# It combines two of my earlier python projects: cffi-gen and pytci
 import chartparser, grammar_language
 import fs, json
 
+# Note this program doesn't test for the grammar. 
 main = ():
     stdio_h = "/usr/include/stdio.h"
-
-    # There is one name space for macro names, despite there are function
-    # macros.
-
-    # predefined macros
-    macro_replacements = {
-        # __DATE__, literal of the form "Mmm dd yyyy", TODO
-        "__DATE__": :exnihilo()
-            parameters = null
-            replacement = [ Token(path(""), 0, "string", "Mmm dd yyyy") ]
-        # __STDC__ should be '1'
-        "__STDC__": :exnihilo()
-            parameters = null
-            replacement = [ Token(path(""), 0, "number", "1") ]
-        # __STDC_HOSTED__ should be '1' if implementation is hosted implementation ?whateverthatmeans?
-        #                 or '0' if it's not. Lets use '1' like gcc.
-        "__STDC_HOSTED__": :exnihilo()
-            parameters = null
-            replacement = [ Token(path(""), 0, "number", "1") ]
-        # __STDC_MB_MIGHT_NEQ_WC__ not sure what this means..
-        # "The integer constant 1, intended to indicate that, in
-        # the encoding for wchar_t,a member of the basic character set need not
-        # have a code value equal to its value when used as the lone character in an
-        # integer character constant"
-        "__STDC_HOSTED__": :exnihilo()
-            parameters = null
-            replacement = [ Token(path(""), 0, "number", "199901L") ]
-        "__TIME__": :exnihilo()
-            parameters = null
-            replacement = [ Token(path(""), 0, "string", "hh:mm:ss") ]
-
-        # __STDC_IEC_559__ The integer constant 1, intended to indicate conformance to the
-        #                  specifications in annexF(IEC 60559 floating-point arithmetic)
-        "__STDC_IEC_559__": :exnihilo()
-            parameters = null
-            replacement = [ Token(path(""), 0, "number", "1") ]
-        # __STDC_IEC_559_COMPLEX__ The integer constant 1, intended to indicate
-        #                          adherence to the specifications in informative annexG(IEC 60559
-        #                          compatible complex arithmetic).
-        "__STDC_IEC_559_COMPLEX__": :exnihilo()
-            parameters = null
-            replacement = [ Token(path(""), 0, "number", "1") ]
-    }
-
-    # umm.. not sure what this is.
-    # __STDC_ISO_10646__ An integer constant of the form yyyymmL (for example,
-    # 199712L). If this symbol is defined, then every character in the Unicode
-    # required set, when stored in an object of type wchar_t, has the same
-    # value as the short identifier of that character. The Unicode required set
-    # consists of all the characters that are defined by ISO/IEC 10646, along with
-    # all amendments and technical corrigenda, as of the specified year and
-    # month
-    
-    # _Pragma(args) should apparently have same behavior as #pragma.. implementing this later if it appears?
-
+    macro_replacements = std_macro_env()
     # This is actually something exposed to user. The user can select a config
     # The config comes from pytci's gcc_probe
     # Ran it with gcc_probe.py gcc -m32
@@ -121,7 +27,6 @@ main = ():
         token = preprocessor.step()
         if not token # preprocessor returns 'null' also 
             continue # when macro processing is happening.
-
 
         # This thing here is trying to imitate the weird line switching logic
         # of gcc token printer. I think I get it wrong. But then I'm not yet
@@ -145,9 +50,65 @@ main = ():
     if unprinted.length > 0
         print(" ".join(unprinted))
 
+# The semantic labels of ansi_c grammar and the macroeval grammar differ
+# for no reason. If they need to be unified later, then the macroeval file
+# will receive changes.
+language = grammar_language.read_file(dir ++ "ansi-c.grammar")
+language.new_parser = chartparser.preprocess(
+    language.grammar,
+    language.table.nonterminal("external_declaration"))
+
+std_macro_env = ():
+    return {
+        # __DATE__, literal of the form "Mmm dd yyyy", TODO
+        "__DATE__": macrodef_string("Mmm dd yyyy")
+        # __STDC__ should be '1'
+        "__STDC__": macrodef_number("1")
+        # __STDC_HOSTED__ should be '1' if implementation is hosted implementation ?whateverthatmeans?
+        #                 or '0' if it's not. Lets use '1' like gcc.
+        "__STDC_HOSTED__": macrodef_number("1")
+        # __STDC_MB_MIGHT_NEQ_WC__ not sure what this means..
+        # "The integer constant 1, intended to indicate that, in
+        # the encoding for wchar_t,a member of the basic character set need not
+        # have a code value equal to its value when used as the lone character in an
+        # integer character constant"
+        "__STDC_HOSTED__": macrodef_number("199901L")
+        "__TIME__": macrodef_string("hh:mm:ss")
+        # __STDC_IEC_559__ The integer constant 1, intended to indicate conformance to the
+        #                  specifications in annexF(IEC 60559 floating-point arithmetic)
+        "__STDC_IEC_559__": macrodef_number("1")
+        # __STDC_IEC_559_COMPLEX__ The integer constant 1, intended to indicate
+        #                          adherence to the specifications in informative annexG(IEC 60559
+        #                          compatible complex arithmetic).
+        "__STDC_IEC_559_COMPLEX__": macrodef_number("1")
+    }
+    # umm.. not sure what this is.
+    # __STDC_ISO_10646__ An integer constant of the form yyyymmL (for example,
+    # 199712L). If this symbol is defined, then every character in the Unicode
+    # required set, when stored in an object of type wchar_t, has the same
+    # value as the short identifier of that character. The Unicode required set
+    # consists of all the characters that are defined by ISO/IEC 10646, along with
+    # all amendments and technical corrigenda, as of the specified year and
+    # month
+    # _Pragma(args) should apparently have same behavior as #pragma.. implementing this later if it appears?
+
+macrodef_string = (string):
+    return :exnihilo()
+        parameters = null
+        replacement = [ Token(path(""), 0, "string", string) ]
+
+macrodef_number = (number):
+    if isinstance(number, int)
+        number = number.to_string()
+    return :exnihilo()
+        parameters = null
+        replacement = [ Token(path(""), 0, "number", number) ]
+
 class Preprocessor
     +init = (self, config, macro_replacements, stream):
         self.config = config
+        # There is one name space for macro names, despite there are function
+        # macros.
         self.macro_replacements = macro_replacements
         self.file_stack = [] # stack for #include.
 
@@ -455,8 +416,8 @@ class Preprocessor
             if identifier.value in self.macro_replacements
                 mac = self.macro_replacements[identifier.value]
                 assert mac.parameters == parameters and mac.replacement == replacement
-                    print("old", mac.parameters, mac.replacement)
-                    print("new", parameters, replacement)
+                    print("old", identifier, mac.parameters, mac.replacement)
+                    print("new", identifier, parameters, replacement)
                     format_source(macro) ++ "redefined macro not identical with already defined macro"
             else
                 self.macro_replacements[identifier.value] = :exnihilo()
