@@ -1,0 +1,63 @@
+# Few omissions here, but otherwise lots of stuff gets parsed.
+# This grammar is used when #if and #elif macros get evaluated in
+# levers C preprocessor
+
+expr =>
+    conditional_expression
+
+conditional_expression =>
+    logical_or_expression
+    cond { logical_or_expression "?" expr ":" conditional_expression }
+
+logical_or_expression =>
+    logical_and_expression
+    logical_or { logical_or_expression "||" logical_and_expression }
+
+logical_and_expression =>
+    inclusive_or_expression
+    logical_and { logical_and_expression "&&" inclusive_or_expression }
+
+inclusive_or_expression =>
+    equality_expression
+
+equality_expression =>
+    relational_expression
+    eq { equality_expression "==" relational_expression }
+    ne { equality_expression "!=" relational_expression }
+
+relational_expression =>
+    shift_expression
+    lt { relational_expression "<" shift_expression }
+    gt { relational_expression ">" shift_expression }
+    le { relational_expression "<=" shift_expression }
+    ge { relational_expression ">=" shift_expression }
+
+shift_expression =>
+    additive_expression
+    # TODO: add shift expressions << >>
+
+additive_expression =>
+    multiplicative_expression
+    add { additive_expression '+' multiplicative_expression }
+    sub { additive_expression '-' multiplicative_expression }
+
+multiplicative_expression =>
+    unary_expression
+    mul { multiplicative_expression '*' cast_expression }
+    div { multiplicative_expression '/' cast_expression }
+    mod { multiplicative_expression '%' cast_expression }
+
+unary_expression =>
+    primary_expression
+    unary_not { "!" primary_expression }
+    unary_neg { "-" primary_expression }
+    unary_pos { "+" primary_expression }
+    # unary_complement { "~" primary_expression }
+    # TODO: add this last operator into lever grammar
+    #       and then into runtime.
+
+primary_expression =>
+    identifier { @identifier }
+    number { @number }
+    char { @char }
+    "(" expr ")"

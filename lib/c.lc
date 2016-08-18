@@ -43,6 +43,7 @@
 #   This library should implement C tokenizing and parsing.
 #   The parts that are common when you need to this kind of things.
 
+import chartparser, grammar_language
 import fs, json
 
 main = ():
@@ -113,7 +114,7 @@ main = ():
     preprocessor = Preprocessor(config, macro_replacements, open_token_stream(stdio_h))
 
     # Printing tokens out is easy way to see that the stream is correctly tokenized.
-    filename = stdio_h
+    filename = preprocessor.filename
     lno = 1
     unprinted = []
     while not preprocessor.empty
@@ -133,10 +134,10 @@ main = ():
                         print("")
                 else
                     print("")
-                    print("#", token.lno, escape_string(filename))
+                    print("#", token.lno, escape_string(filename.to_string()))
             else
                 print("")
-                print("#", token.lno, escape_string(filename))
+                print("#", token.lno, escape_string(filename.to_string()))
             filename = token.filename
             lno = token.lno
             unprinted = []
@@ -203,20 +204,22 @@ class Preprocessor
             # should be supported inside conditional exec. it should return '0' or '1'
             if macroline and token.value == "defined"
                 token.name = "defined"
-                t = self.next_token(macroline)
-                assert t
-                    format_source(token) ++ "'defined' without identifier"
-                if t.name != "identifier"
-                    assert t.value == "("
+                env = self.capture(token, ["defined"], macroline)
+                if env
+                    defined = env["defined"]
+                    assert defined.length == 1 and defined[0].name == "identifier"
+                        format_source(token) ++ "'defined' with bad argument"
+                    defined = defined[0]
+                else
+                    defined = self.next_token(macroline)
+                    assert defined and defined.name == "identifier"
                         format_source(token) ++ "'defined' without identifier"
-                    t = self.next_token(macroline)
-                    u = self.next_token(macroline)
-                    assert t and t.name == "identifier"
-                        format_source(token) ++ "'defined' without identifier"
-                    assert u and u.value == ")"
-                        format_source(token) ++ "'defined' without identifier"
-                token.value = t.value
-                return token
+                if defined.value in self.macro_replacements
+                    result = '1'
+                else
+                    result = '0'
+                return :Token(token.filename, token.lno, "number", result)
+                    macro = token.macro
             if token.value == "__FILE__" # dynamically defined macros.
                 token.name = "string"
                 token.value = self.stream.filename.to_string()
@@ -236,7 +239,7 @@ class Preprocessor
             # here if there are parameters, we should go and see if there's '('
             # somewhere ahead in the context.
             if subs.parameters
-                env = self.capture(subs.parameters, macroline)
+                env = self.capture(token, subs.parameters, macroline)
                 if not env       # This macro function didn't get any
                     return token # parameters, so it cannot expand.
             else
@@ -256,7 +259,7 @@ class Preprocessor
     # match parentheses until it hits a matching ')'
     # The macro expansion must be triggered by '('
     # if there's parameter list present.
-    capture = (self, parameters, macroline):
+    capture = (self, macro, parameters, macroline):
         token = self.next_token(macroline)
         if not token or token.value != '('
             self.putback.append(token)
@@ -272,8 +275,9 @@ class Preprocessor
             if token and token.value == ')'
                 depth -= 1
         assert depth == 0
-            format_source(self.stream) ++ "unterminated argument list invoking macro"
+            format_source(self.stream) ++ "unterminated argument list invoking macro " ++ repr(macro)
         env = {}
+        args = 0
         for param in parameters
             # The identifier __VA_ARGS__ shall occur only in the replacement-list
             # of a function macro that ends with ellipsis notation.
@@ -282,24 +286,35 @@ class Preprocessor
             if param == "..."            # this is always as last.
                 env["__VA_ARGS__"] = cap # we check it at #define
                 cap = []
-            elif args.length + 1 == parameters.length # last argument.
+            elif args + 1 == parameters.length # last argument.
+                depth = 0
                 for t in cap
-                    assert t.value != ","
-                        format_source(self.stream) ++ "too many arguments passed to macro"
+                    if t.value == '('
+                        depth += 1
+                    if t.value == ')'
+                        depth -= 1
+                    assert t.value != "," or depth > 0
+                        format_source(self.stream) ++ "too many arguments passed to macro " ++ repr(macro)
                 env[param] = cap
                 cap = []
             else
                 arg = []
                 comma = false
+                depth = 0
                 while cap.length > 0
                     t = cap.pop(0)
-                    if t.value == ","
+                    if t.value == '('
+                        depth += 1
+                    if t.value == ')'
+                        depth -= 1
+                    if t.value == "," and depth == 0
                         comma = true
                         break
                     arg.append(t)
-                assert comma
+                assert comma and depth == 0
                     format_source(self.stream) ++ "too few arguments passed to macro"
                 env[param] = arg
+            args += 1
         return env
 
     skip_group = (self, skipper_macro):
@@ -352,7 +367,7 @@ class Preprocessor
     step = (self):
         token = self.macroexpand()
         while not token and self.file_stack.length > 0
-            assert self.depth == 0, "missing #endif"
+            assert self.depth == 0, "missing #endif at " ++ self.filename.to_string()
             entry = self.file_stack.pop()
             self.filename = entry.filename
             self.stream = entry.stream
@@ -371,6 +386,7 @@ class Preprocessor
             return null 
         assert macro.name == "identifier"
             format_source(self.stream) ++ "macro statement must start with identifier"
+
         # First here's support for #if and #elif, note that these groups can
         # be nested and they may trigger a skip.
         if macro.value == "if"
@@ -439,6 +455,8 @@ class Preprocessor
             if identifier.value in self.macro_replacements
                 mac = self.macro_replacements[identifier.value]
                 assert mac.parameters == parameters and mac.replacement == replacement
+                    print("old", mac.parameters, mac.replacement)
+                    print("new", parameters, replacement)
                     format_source(macro) ++ "redefined macro not identical with already defined macro"
             else
                 self.macro_replacements[identifier.value] = :exnihilo()
@@ -554,8 +572,89 @@ class Preprocessor
 
     # nonprocessed tokens here translate into '0'
     macroeval = (self, macroseq):
+        keywords = macroeval_language.table.keywords
+        terminals = macroeval_language.table.terminals
+        parser = macroeval_language.new_parser()
+        for token in macroseq
+            term = terminals[keywords.get(token.name, token.name)]
+            assert parser.expecting(term)
+                seq = []
+                for m in macroseq
+                    seq.append(repr(m))
+                print("in eval expr", " ".join(seq))
+                print(parser.expect...)
+                print(term, token)
+                print(token.filename, token.lno)
+                "macroeval failed"
+                #raise chartparser.SyntaxErrorExpected(parser.expect, token, source)
+            parser.step(term, token, token, token)
+        assert parser.accepted
+            seq = []
+            for m in macroseq
+                seq.append(repr(m))
+            print("in eval expr", " ".join(seq))
+            print(parser.expect...) # TODO: improve the messaging
+            "macroeval accept failed"
+            # same here
+            #raise chartparser.SyntaxErrorExpected(parser.expect, token.stop, source, true)
         # TODO: parse and evaluate the macro sequence.
-        return true
+        actions = :exnihilo()
+            identifier = (token):
+                return 0
+            number = (token):
+                return parse_int(token.value)
+            char = (token):
+                return ord(token.value)
+            unary_not = (expr):
+                return int(expr == 0)
+            logical_and = (a, b):
+                return int(a != 0 and b != 0)
+            logical_or = (a, b):
+                return int(a != 0 or b != 0)
+            eq = (a, b):
+                return int(a == b)
+            ne = (a, b):
+                return int(a != b)
+            lt = (a, b):
+                return int(a < b)
+            gt = (a, b):
+                return int(a > b)
+            le = (a, b):
+                return int(a <= b)
+            ge = (a, b):
+                return int(a >= b)
+            add = (a, b):
+                return a + b
+            sub = (a, b):
+                return a - b
+            mul = (a, b):
+                return a * b
+            div = (a, b):
+                return int(a / b)
+            mod = (a, b):
+                return a % b
+            cond = (a, t, f):
+                if a != 0
+                    return t
+                else
+                    return f
+        post = (rule, args, start, stop):
+            return rule.annotation(actions, args, [])
+        result = parser.traverse(post, null)
+
+        ## use if you get a problem with macro evaluator.
+        #seq = []
+        #for m in macroseq
+        #    seq.append(repr(m))
+        #print("eval", " ".join(seq))
+        #print("res =", result)
+        return result != 0
+
+macroeval_language = grammar_language.read_file(dir ++ "c-macroeval.grammar")
+macroeval_language.new_parser = chartparser.preprocess(
+    macroeval_language.grammar,
+    macroeval_language.table.nonterminal("expr"))
+
 
 open_token_stream = (filename):    
     filename = path(filename)
@@ -580,6 +679,7 @@ stringify_token = (name, value):
 
 # hilariously, this will probably also work for Lever itself just fine.
 # and perhaps I should provide it is as a library function.
+# Though this should still leave here, because Lever strings aren't necessarily always C strings
 escape_string = (string, terminal='"', esc=escape_sequences):
     out = [terminal]
     for ch in string
@@ -618,6 +718,7 @@ token_chop = (stream, macroline=false):
     if stream.current == ""
         return null
     lno = stream.lno
+
     # Identifier: any sequence of letters, digits, or underscores,
     #             which begins with a letter or underscore
     #             you may have to accept $ as a letter
@@ -655,7 +756,7 @@ token_chop = (stream, macroline=false):
     #                       periods, and exponents. Exponents are the
     #                       two-character sequences 
     character = stream.advance()
-    if character.is_digit() or character == "." and stream.current.is_digit()
+    if character.is_digit() or (character == "." and stream.current.is_digit())
         number = character
         while stream.current.is_alpha() or stream.current.is_digit() or stream.current in ['.', '_']
             character = stream.advance()
@@ -674,10 +775,10 @@ token_chop = (stream, macroline=false):
         stream.advance()
         ch = stream.advance()
         while ch != ""
-            ch = stream.advance()
             if ch == "*" and stream.current == "/"
                 stream.advance()
                 return token_chop(stream, macroline)
+            ch = stream.advance()
         assert false, "unterminated comment, an error?"
     # Valid punctuation characters are listed lower below.
     if character in punctuators
