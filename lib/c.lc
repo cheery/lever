@@ -228,11 +228,13 @@ class Preprocessor
         cap = []
         token = self.next_token(macroline)
         depth = 1
+        if token and token.value == ')'
+            depth -= 1
         while token and (depth > 0 or token.name == "macro")
-            cap.append(token)
-            token = self.next_token(macroline)
             if token and token.value == '('
                 depth += 1
+            cap.append(token)
+            token = self.next_token(macroline)
             if token and token.value == ')'
                 depth -= 1
         assert depth == 0

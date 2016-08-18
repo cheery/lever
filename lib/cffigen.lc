@@ -1,4 +1,4 @@
-import c, json
+import c, chartparser, json
 # Completion of this strategy is due to 0.9.0 milestone
 # STRATEGY: Improve foreign function interface to extend it's capabilities.
 #           Provide complete REPL+Integrated Editor suite for lever.
@@ -49,13 +49,12 @@ main = ():
     # Ran it with gcc_probe.py gcc -m32
     # and without the -m32
     config = json.read_file("/home/cheery/.local/cc-config-x86_64.json")
-    ambiguity = (sppf):
-        print("ambiguity report", sppf.cell)
+    ambiguity = (sppf, traverse):
+        print("ambiguity resolution")
+        out = ["AMBIGUOUS"]
         for x in sppf
-            print("SPPF")
-            for y in x
-                print(y.cell)
-        assert false, "ambiguity"
+            out.append(traverse(x))
+        return chartparser.Resolve(out)
 
     # giving the preprocessor a stream allows you to stream
     # from elsewhere than files. Although this uses the include like usual.
@@ -105,7 +104,6 @@ main = ():
 #            term = terminals["type_name"]
         else
             term = terminals[keywords.get(token.name, token.name)]
-        print(term, token)
         assert parser.expecting(term)
             print("EXPECTED", parser.expect...)
             print(c.format_source(token), "GOT", term, token)
@@ -117,4 +115,4 @@ main = ():
             parser = c.language.new_parser()
             parser.default_ambiguity_resolution = ambiguity
 
-    assert parser.chart.length == 0, "parser not finished?"
+    assert parser.chart.length == 1, "parser not finished?"

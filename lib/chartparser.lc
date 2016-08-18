@@ -202,7 +202,9 @@ class Parser
             sppf = resolve_ambiguity(null, self.output)
         else
             sppf = self.output[0]
-        return traverse_sppf(sppf, postorder_callback, blank_callback, resolve_ambiguity)
+        res = traverse_sppf([sppf], postorder_callback, blank_callback, resolve_ambiguity)
+        assert res.length == 1, "broken parser traverse"
+        return res[0]
 
     default_ambiguity_resolution = (self, sppf):
         raise Exception(sppf)
@@ -248,11 +250,10 @@ shift_eim = (current, nodes, eim, bb, cc):
         nodes[eim] = sppf = SPPF(start, cc.stop, eim.rule, Link(bb, cc))
         current.append(eim)
 
-traverse_sppf = (sppf, postorder_callback, blank_callback, resolve_ambiguity):
+traverse_sppf = (stack, postorder_callback, blank_callback, resolve_ambiguity):
     rcount = 1
     sstack = []
     rstack = []
-    stack = [sppf]
     while stack.length > 0
         sppf = stack.pop()
         if sppf.is_leaf()
@@ -261,14 +262,19 @@ traverse_sppf = (sppf, postorder_callback, blank_callback, resolve_ambiguity):
         else
             result = sppf.single()
             if result == null
-                result = resolve_ambiguity(sppf)
-            rstack.append(:exnihilo()
-                rcount = rcount - 1
-                rlen = result.length
-                sppf = sppf
-            )
-            rcount = len(result)
-            stack.extend(reversed(result))
+                result = resolve_ambiguity(sppf, ambiguity_traverser(sppf,
+                    postorder_callback, blank_callback, resolve_ambiguity))
+            if isinstance(result, Resolve)
+                sstack.append(result.value)
+                rcount -= 1
+            else
+                rstack.append(:exnihilo()
+                    rcount = rcount - 1
+                    rlen = result.length
+                    sppf = sppf
+                )
+                rcount = len(result)
+                stack.extend(reversed(result))
         while rcount == 0 and len(rstack) > 0
             s = rstack.pop()
             rcount = s.rcount
@@ -282,8 +288,21 @@ traverse_sppf = (sppf, postorder_callback, blank_callback, resolve_ambiguity):
             #       That information is available in the sppf.
             sstack.append(postorder_callback(expand(
                 sppf.start, sppf.stop, sppf.cell, blank_callback, iter(a))...))
-    #assert len(sstack) == 1
-    return sstack[0]
+    sstack.reverse() # won't hurt.
+    return sstack
+
+ambiguity_traverser = (sppf, postorder_callback, blank_callback, resolve_ambiguity):
+    return (stack):
+        seq = traverse_sppf(stack,
+            postorder_callback,
+            blank_callback,
+            resolve_ambiguity)
+        return postorder_callback(expand(
+            sppf.start, sppf.stop, sppf.cell, blank_callback, iter(seq))...)
+
+class Resolve
+    +init = (self, value):
+        self.value = value
 
 expand = (start, stop, cell, blank_callback, seq):
     if isinstance(cell.annotation, NNF)

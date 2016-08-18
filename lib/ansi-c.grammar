@@ -1,3 +1,7 @@
+# This grammar has been obtained from the following link:
+# https://www.lysator.liu.se/c/ANSI-C-grammar-y.html
+# it has been translated to Lever's grammar notation.
+
 # Many .grammar files in lever are used such that
 # they parse the whole file in one go. 
 
