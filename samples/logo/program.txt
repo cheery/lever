@@ -1,10 +1,17 @@
 penup
 backward 10
 pendown
-forward 10
-left 20
-forward 10
-right 20
-forward 5
-right 90
-forward 10
+repeat {
+    repeat 3 {
+        forward 7
+        left 20
+        forward 2
+    }
+    repeat 3 {
+        right 10
+        forward 5
+        right 90
+        forward 10
+    }
+    left 33
+}

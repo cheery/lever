@@ -9,3 +9,8 @@ motion =>
     right { "right" @int }
     penup   { "penup" }
     pendown { "pendown" }
+    repeat { "repeat" opt_int "{" file "}" }
+
+opt_int =>
+    no_int {}
+    int_num {@int}

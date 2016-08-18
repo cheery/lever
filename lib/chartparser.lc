@@ -37,9 +37,9 @@ preprocess = (user_grammar, default_accept):
     for rule in build_nnf(user_grammar, nullable)
         if rule.rhs.length == 0
             try
-                blankset[rule.lhs].append(rule.annotation.rule)
+                blankset[rule.lhs].append(rule)
             except KeyError as _
-                blankset[rule.lhs] = [rule.annotation.rule]
+                blankset[rule.lhs] = [rule]
         else
             try
                 grammar[rule.lhs].append(rule)
@@ -47,7 +47,7 @@ preprocess = (user_grammar, default_accept):
                 grammar[rule.lhs] = [rule]
 
     new_parser = (accept=default_accept):
-        parser = Parser(grammar, accept, [])
+        parser = Parser(grammar, blankset, accept, [])
         # In an earley parser that uses NNF, empty input is a special case, that is taken care of here.
         if accept in nullable
             for rule in user_grammar
@@ -67,9 +67,7 @@ preprocess = (user_grammar, default_accept):
             cache_transitions(transitions, eim, null)
         parser.chart.append(transitions)
         return parser
-    return :Preprocessed(new_parser)
-        blankset = blankset
-        nullable = nullable
+    return Preprocessed(new_parser, blankset, nullable)
 
 find_nullable = (grammar):
     nullable = set()
@@ -146,15 +144,18 @@ nihilist_rule = (rule, index, nullable):
     return Rule(rule.lhs, rhs, NNF(rule, present))
 
 class Preprocessed
-    +init = (self, function):
+    +init = (self, function, blankset, nullable):
         self.function = function
+        self.blankset = blankset
+        self.nullable = nullable
 
     +call = (self, args...):
         return self.function(args...)
 
 class Parser
-    +init = (self, grammar, accept, output):
+    +init = (self, grammar, blankset, accept, output):
         self.chart = []
+        self.blankset = blankset
         self.grammar = grammar
         self.accept = accept
         self.output = output
@@ -194,7 +195,9 @@ class Parser
     expecting = (self, symbol):
         return symbol in self.chart[self.chart.length - 1]
  
-    traverse = (self, postorder_callback, blank_callback, resolve_ambiguity=self.default_ambiguity_resolution):
+    traverse = (self, postorder_callback,
+            blank_callback=make_default_blank(self, postorder_callback),
+            resolve_ambiguity=self.default_ambiguity_resolution):
         if self.output.length > 1
             sppf = resolve_ambiguity(null, self.output)
         else
@@ -203,6 +206,15 @@ class Parser
 
     default_ambiguity_resolution = (self, sppf):
         raise Exception(sppf)
+
+make_default_blank = (parser, postorder_callback):
+    blank_callback = (symbol):
+        blanks = parser.blankset[symbol]
+        if blanks.length != 1
+            raise Exception("default_blank ambiguity")
+        cell = blanks[0]
+        return postorder_callback(expand(null, null, cell, blank_callback, iter([]))...)
+    return blank_callback
 
 prediction = (current, nodes, grammar, location, postdot):
     if isinstance(postdot, Nonterminal)
@@ -265,6 +277,9 @@ traverse_sppf = (sppf, postorder_callback, blank_callback, resolve_ambiguity):
             a = []
             for i in range(rlen)
                 a.append(sstack.pop(sstack.length+i-rlen))
+            # TODO: Here we do not really identify where the blank rule appears.
+            #       That feature could be really useful sometimes. 
+            #       That information is available in the sppf.
             sstack.append(postorder_callback(expand(
                 sppf.start, sppf.stop, sppf.cell, blank_callback, iter(a))...))
     #assert len(sstack) == 1

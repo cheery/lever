@@ -28,37 +28,58 @@ green = vec3(0, 1, 0)
 blue = vec3(0, 0, 1)
 
 plotter = (clean, plot):
+    sleepdur = 0.1
+
     clean()
     turtle = :exnihilo()
         is_down = true
         pos = vec3(0, 0)
         dir = vec3(0, 1)
         forward = (num):
-            d = parse_int(num.string) / 50
-            was = pos
-            pos := pos + dir * d
-            if is_down
-                plot(was, white)
-                plot(pos, white)
-                sleep(0.5)
+            return ():
+                d = parse_int(num.string) / 50
+                was = pos
+                pos := pos + dir * d
+                if is_down
+                    plot(was, white)
+                    plot(pos, white)
+                    sleep(sleepdur)
         backward = (num):
-            d = parse_int(num.string) / 50
-            was = pos
-            pos := pos - dir * d
-            if is_down
-                plot(was, white)
-                plot(pos, white)
-                sleep(0.5)
+            return ():
+                d = parse_int(num.string) / 50
+                was = pos
+                pos := pos - dir * d
+                if is_down
+                    plot(was, white)
+                    plot(pos, white)
+                    sleep(sleepdur)
         left = (num):
-            d = parse_int(num.string)
-            dir := axisangle(vec3(0, 0, 1), d * pi / 180) * dir
+            return ():
+                d = parse_int(num.string)
+                dir := axisangle(vec3(0, 0, 1), d * pi / 180) * dir
         right = (num):
-            d = parse_int(num.string)
-            dir := axisangle(vec3(0, 0,-1), d * pi / 180) * dir
+            return ():
+                d = parse_int(num.string)
+                dir := axisangle(vec3(0, 0,-1), d * pi / 180) * dir
         penup = ():
-            is_down := false
+            return ():
+                is_down := false
         pendown = ():
-            is_down := true
+            return ():
+                is_down := true
+        repeat = (count, block):
+            return ():
+                i = 0
+                while count == null or i < count
+                    for command in block
+                        command()
+                    sleep(0)
+                    i += 1
+        no_int = ():
+            return null
+        int_num = (x):
+            return parse_int(x.string)
+
         first = (a):
             return [a]
         append = (a, b):
@@ -68,9 +89,8 @@ plotter = (clean, plot):
     argl = []
     post = (rule, args, start, stop):
         return rule.annotation(turtle, args, argl)
-    blank_lhs = (x): # Not used in this grammar.
-        return null
-    parser.traverse(post, blank_lhs)
+    for command in parser.traverse(post)
+        command()
 
 # This will eventually go to stdlib, but not sure where it should go there.
 parse_int = (string, base=10):
