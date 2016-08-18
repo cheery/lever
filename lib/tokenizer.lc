@@ -75,14 +75,14 @@ escape_sequence = (stream):
     #\xhh The character whose numerical value is given by hh interpreted as a hexadecimal number
     if string == 'x'
         code = stream.get_digit(16) ++ stream.get_digit(16)
-        if string.length == 2
-            return chr(int(string, 16))
+        if code.length == 2
+            return chr(parse_int(code, 16))
         return "\\x" ++ code
     #\nnn The character whose numerical value is given by nnn interpreted as an octal number
     if string.is_digit(8)
         string ++= stream.get_digit(8) ++ stream.get_digit(8)
         if string.length == 3
-            return chr(int(string, 8))
+            return chr(parse_int(string, 8))
     return "\\" ++ string
 
 escape_sequences = {"a": 0x07, "b": 0x08, "f": 0x0C, "n": 0x0A, "r": 0x0D, "t": 0x09, "v": 0x0B, "\\": 0x5C, "'": 0x27, "\"": 0x22, "?": 0x3F}

@@ -321,9 +321,9 @@ def parse_int(string, base):
         if u'0' <= ch and ch <= u'9':
             digit = ord(ch) - ord('0')
         elif u'a' <= ch and ch <= u'z':
-            digit = ord(ch) - ord('a')
+            digit = ord(ch) - ord('a') + 10
         elif u'A' <= ch and ch <= u'Z':
-            digit = ord(ch) - ord('A')
+            digit = ord(ch) - ord('A') + 10
         else:
             raise unwind(LError(u"invalid digit char: " + ch))
         value = value * base + digit
