@@ -333,7 +333,7 @@ I have clear vision on Lever and I'd like to have some coordination over lever d
         restricts release of 0.9.0
     TACTIC: Provide 're' -library
     TACTIC: Provide some sockets and http handling.
-
+    TACTIC: Provide tar.gz and zip support.
 
 Long term mission of Lever is to prove the large scale viability of dynamic languages, and to evolve to remain as an always fresh programming environment.
 
