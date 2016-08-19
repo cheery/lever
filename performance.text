@@ -120,5 +120,14 @@ they come up with their GC-integration and call/cc -support.
 
 There's very, very long run to this. But it would allow both
 the translation framework and Lever itself use WebAssembly
-as a target language. That would be likely, inevitable
-success for Lever.
+as a target language. That would be sort of nice.
+
+#section Background on performance.text
+
+I made this text when someone mentioned Lever should perform
+at the
+#href{https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/891637-lever-yet-another-general-purpose-programming-language#post891655}
+{Phoronix.com -article comments}.
+
+I realised I should probably mention my plans to get Lever
+to perform somewhere.
