@@ -39,8 +39,6 @@ import c, chartparser, json
 #   To do that we need a C parser. Wholly functioning C parser! With macro
 #   preprocessor.
 
-
-
 main = ():
     stdio_h = "/usr/include/stdio.h"
     macro_env = c.std_macro_env()
@@ -49,12 +47,6 @@ main = ():
     # Ran it with gcc_probe.py gcc -m32
     # and without the -m32
     config = json.read_file("/home/cheery/.local/cc-config-x86_64.json")
-    ambiguity = (sppf, traverse):
-        print("ambiguity resolution")
-        out = ["AMBIGUOUS"]
-        for x in sppf
-            out.append(traverse(x))
-        return chartparser.Resolve(out)
 
     # giving the preprocessor a stream allows you to stream
     # from elsewhere than files. Although this uses the include like usual.
@@ -64,55 +56,308 @@ main = ():
     keywords = c.language.table.keywords
     terminals = c.language.table.terminals
 
-    typetable = set([
-        "__builtin_va_list"
-    ])
-
     actions = :exnihilo()
+        declaration = (specifier, declarator):
+            return (scope):
+                spec_or_decl = specifier(scope)
+                declarator = declarator(scope)
+                declarator.specifier = spec_or_decl.specifier
+                if spec_or_decl != spec_or_decl.specifier
+                    declarator.last = spec_or_decl
+                scope.declare(declarator)
+                return declarator
+
+        declarator = (identifier):
+            return (scope):
+                return Declarator(identifier)
+        pointer_declarator = (ptr, base):
+            return (scope):
+                declarator = base(scope)
+                declarator.stack = :exnihilo()
+                    next = declarator.stack
+                    type = "pointer"
+                    ptr = ptr
+                return declarator
+        array_declarator = (base, const):
+            return (scope):
+                declarator = base(scope)
+                declarator.stack = :exnihilo()
+                    next = declarator.stack
+                    type = "array"
+                    if const
+                        size = const(scope)
+                    else
+                        size = null
+                return declarator
+        function_declarator = (base, arglist):
+            return (scope):
+                declarator = base(scope)
+                # The arglists contain spiders.
+                args = []
+                print(arglist)
+                for arg in arglist
+                    args.append(arg(scope)) # and spiders want out.
+                declarator.stack = :exnihilo()
+                    next = declarator.stack
+                    type = "function"
+                    args = args 
+                return declarator
+        parameter = (specifier, declarator):
+            return (scope):
+                spec_or_decl = specifier(scope)
+                declarator = declarator(scope)
+                declarator.specifier = spec_or_decl.specifier
+                # This 'declarator' is also a declarator.
+                # Note that parameter list can also contain specifiers.
+                return declarator
+        va_args = (parameters):
+            fn = (scope):
+                return "..."
+            parameters.append(fn)
+            return parameters
+
+        specifier = ():
+            return (scope):
+                return Specifier()
+        set_storage_class_specifier = (specifier, storage):
+            return (scope):
+                # Multiple storage classes is an error.
+                # We don't check it yet.
+                specifier = specifier(scope)
+                specifier.storage = storage.value
+                return specifier
+        add_type_specifier = (specifier, type):
+            return (scope):
+                specifier = specifier(scope)
+                specifier.typespec.append(type(scope))
+                return specifier
+        add_type_qualifier = (specifier, qualifier):
+            return (scope):
+                specifier = specifier(scope)
+                specifier.qualifiers.add(qualifier.value)
+                return specifier
+
+        primitive_type = (identifier):
+            return (scope):
+                return identifier.value
+
+        as_type = (identifier):
+            return (scope):
+                if not scope.is_type(identifier.value)
+                    raise Conflict(identifier, "type")
+                return identifier.value
+
+        data_specifier = (which, name, fields):
+            return (scope):
+                return DataSpecifier(which, name, fields) # we won't 'open' this yet..
+
+        enum_specifier = (name, enums):
+            return (scope):
+                return EnumSpecifier(name) # The 'enums' should be opened too.
+        enumerator = (name, const):
+            return (scope, enum, index):
+                return 0
+
         nil = ():
             return null
-        empty_list = ():
-            return []
+        list = (args...):
+            return args
         first = (a):
             return [a]
         append = (a, b):
             a.append(b)
             return a
-        r_append = (a, b):
-            return [a] ++ b
-        declaration = (specifiers, declarators):
-#            for token in specifiers
-#                if isinstance(token, c.Token) and token.value == "typedef"
-#                    for decl in declarators
-#                        print("NEW TYPEDEF", decl)
-#                        typetable.add(decl.value)
-            return [specifiers, declarators]
+#        r_append = (a, b):
+#            return [a] ++ b
+#        declaration = (specifiers, declarators):
+#            return (typetable):
+#                typedef = false
+#                for token in specifiers
+#                    if isinstance(token, c.Token) and token.value == "typedef"
+#                        typedef = true
+#
+#                decls = []
+#                for declarator in declarators
+#                    decl = declarator(typetable, typedef)
+#                    decl.specifiers = specifiers
+#                    decls.append(decl)
+#                return decls
+#        
+#        typedef_barrier = (declarator, initializer):
+#            return (typetable, typedef):
+#                decl = declarator(typetable)
+#                # The typetable goes through our parse tree like a batarang.
+#                # It's here because it takes effect quickly.
+#                if typedef              # The terror.
+#                    typetable.add(decl)
+#                if initializer
+#                    decl.initializer = initializer(typetable)
+#                else
+#                    decl.initializer = null
+#                return decl
+#
+#        declarator_ptr = (pointers, declarator):
+#            # lets still ignore pointers for a moment.
+#            return declarator
+#
+#        plain_declarator = (identifier):
+#            return (typetable):
+#                return :exnihilo()
+#                    type = "plain"
+#                    name = identifier(typetable)
+#
+#        as_name = (identifier):
+#            return (typetable):
+#                if identifier in typetable
+#                    raise Drop()
+#                return identifier.value
+#
+#        as_type = (identifier):
+#            return (typetable):
+#                if identifier not in typetable
+#                    raise Drop()
+#                return identifier.value
 
     post = (rule, args, start, stop):
         res = rule.annotation(actions, args, [])
         #print(rule, args, "->", res)
         return res
 
+
+    scope = Scope()
+    
+    # hmm...
+    scope.variables["__builtin_va_list"] = :exnihilo()
+        type = "type"
+        declarator = null
+
+    toks = []
     while not preprocessor.empty
         token = preprocessor.step()
         if not token
             continue
+        toks.append(token)
         if token.name == "identifier" and token.value in keywords
-            term = terminals[keywords[token.value]]
+            term = terminals.get(keywords.get(token.value))
 # ... interesting......
 #        elif token.name == "identifier" and token.value in typetable
 #            term = terminals["type_name"]
         else
-            term = terminals[keywords.get(token.name, token.name)]
+            term = terminals.get(keywords.get(token.name, token.name))
         assert parser.expecting(term)
+            print(toks...)
             print("EXPECTED", parser.expect...)
             print(c.format_source(token), "GOT", term, token)
             "C parsing failed"
         parser.step(term, token, token, token)
         if parser.accepted
+            toks = []
             result = parser.traverse(post)
-            print(result)
+            print(result(scope))
+            print(scope.variables.keys()...)
+            #print(result(all_types))
             parser = c.language.new_parser()
             parser.default_ambiguity_resolution = ambiguity
 
     assert parser.chart.length == 1, "parser not finished?"
+
+# Yes, this is hairy the spider.
+# You'll be fine as long as you don't touch it.
+# The hairy takes care of ambiguity in C grammar.
+
+# Note that hairy doesn't corrupt scope, because declaration
+# is no longer ambiguous when the declaration() gets called.
+
+# Note that hairy neither messes up with list/first/append
+# because there is no ambiguity in C list rules.
+# well.. with the grammar we use..
+ambiguity = (sppf, traverse):
+    print("ambiguity detected on", sppf.cell, c.format_source(sppf.start))
+    print(sppf.start, sppf.stop)
+    for branch in sppf
+        print("BRANCH")
+        for sub in branch
+            print("  ", sub.cell)
+            print("    ", sub.start, sub.stop)
+            
+    fn = (scope, args...):
+        res = []
+        for branch in sppf
+            try
+                res.append(traverse(x)(scope, args...))
+            except Conflict as conflict
+                null
+        if res.length == 0 # A merit in storing traceback on your exception.
+            print("second raise")
+            raise conflict # This retains the traceback.
+        assert res.length == 1, "unable to resolve ambiguity" # should never happen in C.
+        return res[0]
+    return chartparser.Resolve(fn)
+
+class Conflict extends Exception
+    +init = (self, token, which):
+        self.traceback = null
+        self.token = token
+        self.which = which
+
+    +repr = (self):
+        return c.format_source(self.token) ++ "Conflict on " ++ repr(self.token) ++
+            ", it was expected to be " ++ self.which
+
+class Scope
+    +init = (self):
+        self.variables = {}
+
+    is_type = (self, name):
+        try
+            info = self.variables[name]
+            return info.type == "type"
+        except KeyError as _
+            return false
+
+    declare = (self, declarator):
+        self.variables[declarator.name] = :exnihilo()
+            if declarator.specifier.storage == "typedef"
+                type = "type"
+            else
+                type = "variable"
+            declarator = declarator
+
+class Declarator
+    +init = (self, token):
+        self.token = token
+        self.name = token.value
+        self.specifier = null
+        self.stack = null
+        self.last = null
+
+    +repr = (self):
+        return "Declarator{" ++ repr(self.specifier) ++ ", " ++ self.name ++ "}"
+
+
+class Specifier
+    +init = (self):
+        self.storage = null
+        self.typespec = []
+        self.qualifiers = set()
+        self.specifier = self
+
+    +repr = (self):
+        out = []
+        if self.storage
+            out.append(self.storage)
+        for spec in self.typespec
+            out.append(repr(spec))
+        out.extend(self.qualifiers)
+        return "Specifier{" ++ " ".join(out) ++ "}"
+
+class DataSpecifier
+    +init = (self, token, name, fields):
+        self.token = token
+        self.name = name
+        self.fields = fields
+
+class EnumSpecifier
+    +init = (self, name):
+        self.name = name
+        self.enums = []

@@ -2,177 +2,114 @@
 # https://www.lysator.liu.se/c/ANSI-C-grammar-y.html
 # it has been translated to Lever's grammar notation.
 
+# This grammar is ambiguous, and the ambiguity is resolved
+# when the parse tree is traversed.
+
 # Many .grammar files in lever are used such that
 # they parse the whole file in one go. 
+translation_unit =>
+    first { external_declaration }
+    append { translation_unit external_declaration }
 
-# But with C, translation unit can introduce new types that
-# will change how the language is parsed. We should acknowledge it.
-
-# So this is ignored entirely...
-# translation_unit =>
-#     first { external_declaration }
-#     append { translation_unit external_declaration }
-
-# And this is used instead.
+# Though this is likely used more often, because it's fun to
+# 'stream' C code, declaration by declaration.
 external_declaration =>
-    function_definition
     declaration
 
-# It is apparent that two of the constructs are optional here.
-# will be adjusted to consider that soon.
-function_definition =>
-    function { declaration_specifiers_opt
-               declarator declaration_list_opt compound_statement }
-
-declaration_list_opt =>
-    empty_list {}
-    declaration_list
-
-declaration_list =>
-    first  { declaration }
-    append { declaration_list declaration }
-
 declaration =>
-    declaration { declaration_specifiers init_declarator_list_opt ";" }
+    declaration_declarator_init ";"
+    # declaration_specifiers ";"      # This is bit weird, but was in the ANSI grammar.
+                                      # It appears there's a bug in chartparser,
+                                      # It does not recognize ambiguity here.
+                                      # but I didn't figure its location yet.
 
-declaration_specifiers_opt =>
-    empty_list {}
-    declaration_specifiers
+    struct_or_union_specifier ";"     # use of it appeared on stream, so lets try
+                                      # avoid it for a moment.
+    enum_specifier ";"
 
+# The error seem to occur when I have rule: X Y | X, and the
+# first can consume latter.
+# How deep it is in the chart doesn't seem to matter.
+
+# Constructing an ambiguous grammar to test.
+
+
+# The prefix in the C syntax that specifies the type and
+# storage for variable.
 declaration_specifiers =>
-    first { storage_class_specifier }
-    r_append { storage_class_specifier declaration_specifiers }
-    first { type_specifier }
-    r_append { type_specifier declaration_specifiers }
-    first { type_qualifier }
-    r_append { type_qualifier declaration_specifiers }
+    set_storage_class_specifier { specifier{}            storage_class_specifier }
+    set_storage_class_specifier { declaration_specifiers storage_class_specifier }
+    add_type_specifier { specifier{}            type_specifier }
+    add_type_specifier { declaration_specifiers type_specifier }
+    add_type_qualifier { specifier{}            type_qualifier }
+    add_type_qualifier { declaration_specifiers type_qualifier }
 
-init_declarator_list_opt =>
-    empty_list {}
-    init_declarator_list
 
-initializer_list =>
-    initializer
-    initializer_list "," initializer
+# The declarations lay out like onions above the specifier.
+# Described this way, the LR-parser can manhandle 'typedef'
+declaration_declarator =>
+    declaration { declaration_specifiers declarator }
+    declaration { declaration_declarator_init "," declarator }
 
-initializer =>
-    assignment_expression
-    '{' initializer_list '}'
-    '{' initializer_list ',' '}'
+# The really finicky and little-known detail about C is that
+# new variable declarations can cover typedef aliases.
+# It takes effect immediately after. That is the initializer
+# of declarator takes the variable in declarator as variable.
+# Although in 'typedef' initializer is disallowed.
+declaration_declarator_init =>
+    declaration_declarator
+    initializer { declaration_declarator "=" initializer }
 
-init_declarator_list =>
-    first  { init_declarator }
-    append { init_declarator_list "," init_declarator }
-
-init_declarator =>
-    declarator
-    declarator "=" initializer
-
-storage_class_specifier => ["typedef", "extern", "static", "auto", "register"]
-
-type_specifier => ["void", "char", "short", "int", "long", "float", "double",
-                   "signed", "unsigned"]
-
-type_specifier =>
-    struct_or_union_specifier
-    enum_specifier
-    @identifier         #type_name yay. introduced ambiguity.
-
-struct_or_union_specifier =>
-    struct_or_union @identifier "{" struct_declaration_list "}"
-    struct_or_union             "{" struct_declaration_list "}"
-    struct_or_union @identifier
-
-struct_or_union => ["struct", "union"]
-
-struct_declaration_list =>
-    first  { struct_declaration }
-    append { struct_declaration_list struct_declaration }
-
-struct_declaration =>
-    specifier_qualifier_list struct_declarator_list ';'
-
-specifier_qualifier_list =>
-    type_specifier specifier_qualifier_list
-    type_specifier
-    type_qualifier specifier_qualifier_list
-    type_qualifier
-
-struct_declarator_list =>
-    first  { struct_declarator }
-    append { struct_declarator_list ',' struct_declarator }
-
-struct_declarator =>
-    declarator
-    ':' constant_expression
-    declarator ':' constant_expression
-
-enum_specifier =>
-    "enum"             "{" enumerator_list "}"
-    "enum" @identifier "{" enumerator_list "}"
-    "enum" @identifier 
-
-enumerator_list =>
-    first  { enumerator }
-    append { enumerator_list ',' enumerator }
-
-enumerator =>
-    @identifier
-    @identifier '=' constant_expression
-
-type_qualifier => ["const", "volatile"]
-
+# Declarators appear widespread. They also 'stack' over each
+# other. The return value of function declarator stacks over it.
 declarator =>
-    %pointer direct_declarator # ignoring pointer to get it parsed at first..
     direct_declarator
-
-pointer =>
-    '*'
-    '*' type_qualifier_list
-    '*' pointer
-    '*' type_qualifier_list pointer
+    pointer_declarator { pointer direct_declarator }
 
 direct_declarator =>
-    @identifier
+    declarator { @identifier }
     "(" declarator ")"
-    direct_declarator '[' constant_expression ']'
-    direct_declarator '[' ']'
-    direct_declarator '(' parameter_type_list ')'
-    direct_declarator '(' identifier_list ')'
-    direct_declarator '(' ')'
+    array_declarator { direct_declarator '[' constant_expression ']' }
+    array_declarator { direct_declarator '[' nil{}               ']' }
+    function_declarator { direct_declarator '(' parameter_type_list ')' }
+    function_declarator { direct_declarator '(' identifier_list     ')' }
+    function_declarator { direct_declarator '(' list{}              ')' }
 
-expression =>
-    assignment_expression
-    expression ',' assignment_expression
-
-assignment_expression =>
-    conditional_expression
-    unary_expression assignment_operator assignment_expression
-
-assignment_operator => ['=', "*=", "/=", "%=", "+=", "-=",
-                        "<<=", ">>=", "&=", "^=", "|="]
+pointer =>
+    first  { '*' list{}                      }
+    first  { '*' type_qualifier_list         }
+    append { '*' list{}              pointer }
+    append { '*' type_qualifier_list pointer }
 
 type_qualifier_list =>
     first  { type_qualifier }
     append { type_qualifier_list type_qualifier }
 
+# parameter_type_list appears in function declarator and definition.
 parameter_type_list =>
     parameter_list
-    parameter_list ',' "..."
+    va_args { parameter_list ',' "..." }
 
 parameter_list =>
     first  { parameter_declaration }
     append { parameter_list ',' parameter_declaration }
 
 parameter_declaration =>
-    declaration_specifiers declarator
-    declaration_specifiers abstract_declarator
+    parameter_declaration_hack # Without this, the hairy
+                               # ends up bulldozed by an append.
+
+parameter_declaration_hack =>
+    parameter { declaration_specifiers declarator }
+    parameter { declaration_specifiers abstract_declarator }
     declaration_specifiers
 
 identifier_list =>
-    first  { @identifier }
-    append { identifier_list ',' @identifier }
+    first  { as_name { @identifier } }
+    append { identifier_list ',' as_name { @identifier } }
 
+# The abstract declarator means for declarations without a
+# name. They happen often when you pass pointers as
+# arguments and don't bother to name them.
 abstract_declarator =>
     pointer
     direct_abstract_declarator
@@ -189,50 +126,157 @@ direct_abstract_declarator =>
     direct_abstract_declarator '(' ')'
     direct_abstract_declarator '(' parameter_type_list ')'
 
-statement =>
-    labeled_statement
-    compound_statement
-    expression_statement
-    selection_statement
-    iteration_statement
-    jump_statement
+# When you want to initialize a variable while you define
+# it, you make an initializer.
+initializer =>
+    assignment_expression
+    '{' initializer_list '}'
+    '{' initializer_list ',' '}'
 
-labeled_statement =>
-    @identifier ":" statement
-    "case" constant_expression ":" statement
-    "default" ":" statement
+initializer_list =>
+    initializer
+    initializer_list "," initializer
 
-compound_statement =>
-    '{' '}'
-    '{' statement_list '}'
-    '{' declaration_list '}'
-    '{' declaration_list statement_list '}'
+# as_type is used to resolve ambiguity here. Roughly, on
+# ambiguity point we visit both branches and discard the
+# ones that hit as_type or as_name for wrong variables.
 
-statement_list =>
-    first  { statement }
-    append { statement_list statement }
+type_specifier =>
+    as_type { @identifier }
+    primitive_type { type_specifier_kw }
 
-expression_statement =>
-    ";"
-    expression ';'
+storage_class_specifier => ["typedef", "extern", "static",
+                            "auto", "register"]
+type_specifier_kw => ["void", "char", "short", "int", "long",
+                      "float", "double", "signed", "unsigned"]
+type_qualifier => ["const", "volatile"]
 
-selection_statement =>
-    "if" "(" expression ")" statement
-    "if" "(" expression ")" statement "else" statement
-    "switch" "(" expression ")" statement
 
-iteration_statement =>
-    "while" "(" expression ")" statement
-    "do" statement "while" "(" expression ")" ";"
-    "for" "(" expression_statement expression_statement ")" statement
-    "for" "(" expression_statement expression_statement expression ")" statement
+# 'struct', 'enum', 'union' gets described here.
+type_specifier =>
+    struct_or_union_specifier
+    enum_specifier
 
-jump_statement =>
-    "goto" @identifier ";"
-    "continue" ";"
-    "break" ";"
-    "return" ";"
-    "return" expression ";"
+# Note that identifier isn't checked here. On LR parser, if
+# it is after these three keywords, you should keep it as-it!
+# Remember that all declaration list can have ambiguity..
+struct_or_union_specifier =>
+    data_specifier { struct_or_union @identifier "{" struct_declaration_list "}" }
+    data_specifier { struct_or_union nil{}       "{" struct_declaration_list "}" }
+    data_specifier { struct_or_union @identifier     list{} }
+
+struct_or_union => ["struct", "union"]
+
+struct_declaration_list =>
+    first  { struct_declaration }
+    append { struct_declaration_list struct_declaration }
+
+struct_declaration =>
+    specifier_qualifier_list struct_declarator_list ';'
+
+specifier_qualifier_list =>
+    add_type_specifier { specifier{}            type_specifier }
+    add_type_specifier { declaration_specifiers type_specifier }
+    add_type_qualifier { specifier{}            type_qualifier }
+    add_type_qualifier { declaration_specifiers type_qualifier }
+
+struct_declarator_list =>
+    first  { struct_declarator }
+    append { struct_declarator_list ',' struct_declarator }
+
+struct_declarator =>
+    declarator
+    bitfield { nil{}      ':' constant_expression }
+    bitfield { declarator ':' constant_expression }
+
+enum_specifier =>
+    enum_specifier { "enum" nil{}       "{" enumerator_list "}" }
+    enum_specifier { "enum" @identifier "{" enumerator_list "}" }
+    enum_specifier { "enum" @identifier     list{} }
+
+enumerator_list =>
+    first  { enumerator }
+    append { enumerator_list ',' enumerator }
+
+enumerator =>
+    enumerator { @identifier     nil{} }
+    enumerator { @identifier '=' constant_expression }
+
+
+# external_declaration =>
+#    function_definition   #  whoever uses this first time
+#                          #  adjust to your needs.
+#
+#function_definition =>
+#    function { declaration_specifiers declarator declaration_list compound_statement }
+#    function { nil{}                  declarator declaration_list compound_statement }
+#    function { declaration_specifiers declarator nil{}            compound_statement }
+#    function { nil{}                  declarator nil{}            compound_statement }
+#
+## Declarations appear with "declaration" semantic label.
+## Details in the declaration list can come ambiguous, so
+## this tends to be wrapped with a function to pass type details
+## in and resolve ambiguity.
+#declaration_list =>
+#    first  { declaration }
+#    append { declaration_list declaration }
+
+#compound_statement =>
+#    '{' '}'
+#    '{' statement_list '}'
+#    '{' declaration_list '}'
+#    '{' declaration_list statement_list '}'
+#
+#statement =>
+#    labeled_statement
+#    compound_statement
+#    expression_statement
+#    selection_statement
+#    iteration_statement
+#    jump_statement
+#
+#labeled_statement =>
+#    @identifier ":" statement
+#    "case" constant_expression ":" statement
+#    "default" ":" statement
+#
+#statement_list =>
+#    first  { statement }
+#    append { statement_list statement }
+#
+#expression_statement =>
+#    ";"
+#    expression ';'
+#
+#selection_statement =>
+#    "if" "(" expression ")" statement
+#    "if" "(" expression ")" statement "else" statement
+#    "switch" "(" expression ")" statement
+#
+#iteration_statement =>
+#    "while" "(" expression ")" statement
+#    "do" statement "while" "(" expression ")" ";"
+#    "for" "(" expression_statement expression_statement ")" statement
+#    "for" "(" expression_statement expression_statement expression ")" statement
+#
+#jump_statement =>
+#    "goto" @identifier ";"
+#    "continue" ";"
+#    "break" ";"
+#    "return" ";"
+#    "return" expression ";"
+
+
+expression =>
+    assignment_expression
+    expression ',' assignment_expression
+
+assignment_expression =>
+    conditional_expression
+    unary_expression assignment_operator assignment_expression
+
+assignment_operator => ['=', "*=", "/=", "%=", "+=", "-=",
+                        "<<=", ">>=", "&=", "^=", "|="]
 
 constant_expression => conditional_expression
 
@@ -298,9 +342,9 @@ unary_expression =>
     "--" unary_expression
     unary_operator cast_expression
     "sizeof" unary_expression
-    "sizeof" '(' type_name_clause ')' # hmm? should all the types be with @type_name?
+    "sizeof" '(' in_sizeof ')'
 
-type_name_clause =>
+in_sizeof =>
     specifier_qualifier_list
     specifier_qualifier_list abstract_declarator
 
@@ -321,7 +365,7 @@ argument_expression_list =>
     append { argument_expression_list "," assignment_expression }
 
 primary_expression =>
-    @identifier
+    as_name { @identifier }
     @number
     @string
     @char
