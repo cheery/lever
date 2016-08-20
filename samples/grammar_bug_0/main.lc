@@ -1,0 +1,27 @@
+# Here's an illustration of how a sample program can be used to
+# discover very hard to spot errors.
+
+# This bug appeared when parsing C. C has ambiguity as long
+# as typedefs aren't resolved. LR parsing required us to solve
+# the ambiguity ahead of time.
+import chartparser, grammar_language
+
+language = grammar_language.read_file(dir ++ "bug.grammar")
+language.new_parser = chartparser.preprocess(
+    language.grammar,
+    language.table.nonterminal("a"))
+
+parser = language.new_parser()
+parser.step(language.table.terminal("t"), "long", 0, 1)
+parser.step(language.table.terminal("t"), "int", 1, 2)
+parser.step(language.table.terminal("t"), "flubbar", 2, 3)
+parser.step(language.table.terminal("sc"), ";", 3, 4)
+
+post = (rule, args, start, stop):
+    return rule.annotation(null, args, [])
+print("accept", parser.accepted)
+print("result", parser.traverse(post))
+# This should produce error due to ambiguity.
+
+# Current behavior is that it finds
+# only one interpretation of input.
