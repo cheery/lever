@@ -2,14 +2,14 @@
 # 27f5da516528eadc15982020d806961043abaae1
 
 # When you preprocess with 'b', rather than 'a'
-# This grammar will work correctly.
+# This grammar worked correctly.
 
-# With the 'a' it works incorrectly.
+# With the 'a' it worked incorrectly.
 a => b
 
 b =>
-    g @sc
-    x @sc
+    g
+    x
 
 g =>
     x @t

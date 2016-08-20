@@ -199,6 +199,8 @@ class Parser
             blank_callback=make_default_blank(self, postorder_callback),
             resolve_ambiguity=self.default_ambiguity_resolution):
         if self.output.length > 1
+            # This is really weird in current context.. I should probably
+            # rethink this whole ambiguity resolution -thing.
             sppf = resolve_ambiguity(null, self.output)
         else
             sppf = self.output[0]
@@ -227,8 +229,8 @@ prediction = (current, nodes, grammar, location, postdot):
                 current.append(eim)
 
 cache_transitions = (transitions, eim, cc):
-    postdot = eim.postdot()
     if not eim.is_completed()
+        postdot = eim.postdot()
         trans = :exnihilo()
             eim = eim
             cc = cc
@@ -351,7 +353,7 @@ class Terminal
         self.name = name
 
     +repr = (self):
-        return "T" ++ self.name
+        return "@" ++ self.name
 
 class Nonterminal
     +init = (self, name):
@@ -406,6 +408,13 @@ class EIM
     +hash = (self):
         return hash([self.rule, self.pos, self.origin])
 
+    # Sometimes to resolve bugs, we need to see what's going on.
+    +repr = (self):
+        return repr(self.origin) ++ ":" ++
+            repr(self.pos) ++ 
+            ":" ++ repr(self.rule)
+        
+
 #    # TODO: String formatting
 #    #    if isinstance(self.rule, Rule):
 #    #    lhs = repr(self.rule.lhs)
@@ -454,6 +463,8 @@ class SPPF # Shared packed parse forest
                 return null
             result.append(link.right)
             link = link.left.link
+        if link.link    # Fixed the samples/grammar_bug_0
+            return null
         result.append(link.right)
         result.reverse()
         return result
