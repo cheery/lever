@@ -64,6 +64,7 @@ read_tokens = (tokens, source=null):
     rootdef = :exnihilo()
         body = parser.traverse(post, blank_lhs)
         scope = Scope(null, 0, 0, 0, [])
+        origin = null
     context = Context([rootdef])
     for funcdef in context.closures
         context.scope = scope = funcdef.scope
@@ -76,7 +77,7 @@ read_tokens = (tokens, source=null):
             context.op('return', val)
         functions.append(dump(
             scope.flags, scope.argc, scope.topc, scope.localv,
-            entry, consttab))
+            entry, consttab, funcdef.origin))
     code = {
         "functions": functions,
         "constants": consttab.constants,
@@ -406,6 +407,7 @@ class Closure extends Cell
             flags |= 1
         handle = Function(context.closures.length)
         context.closures.append(:exnihilo()
+            origin = context.origin
             body = header ++ self.body
             scope = Scope(context.scope, flags, argc, topc, localv)
         )
@@ -720,7 +722,7 @@ setvar = (context, flavor, name, value):
             scope = scope.parent
     return context.op("setglob", name, value)
 
-dump = (flags, argc, topc, localv, entry_block, consttab):
+dump = (flags, argc, topc, localv, entry_block, consttab, origin):
     blocks = reverse_postorder(entry_block)
     tmpc = allocate_tmp(blocks)
     block = []
@@ -732,7 +734,7 @@ dump = (flags, argc, topc, localv, entry_block, consttab):
             block.extend(encode_op(op, consttab))
     exceptions = find_exception_ranges(blocks, block.length)
     block = []
-    sourcemap = SourcemapBuilder()
+    sourcemap = SourcemapBuilder(origin)
     for bb in blocks
         for op in bb
             if isinstance(op, Exc)
@@ -1037,10 +1039,13 @@ class ConstantTable
 
 # If this code was where it is used, it'd look complicated.
 class SourcemapBuilder
-    +init = (self):
+    +init = (self, origin):
         self.buf = []
         self.count = 0
         self.entry = []
+        if origin
+            self.add(0, origin)
+            self.buf = self.get(true)
 
     add = (self, count, origin):
         entry = [0, 0, 0, 0, 0]
@@ -1057,8 +1062,8 @@ class SourcemapBuilder
         else
             self.count += count
 
-    get = (self):
-        if self.count > 0
+    get = (self, force=false):
+        if self.count > 0 or force
             raw_entry = enc_vlq(self.count)
             for value in self.entry
                 raw_entry.extend(enc_vlq(value))
