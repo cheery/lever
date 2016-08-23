@@ -15,6 +15,7 @@ translation_unit =>
 # 'stream' C code, declaration by declaration.
 external_declaration =>
     declaration
+    function_definition
 
 declaration =>
     declaration_declarator_init ";"
@@ -191,69 +192,65 @@ enumerator =>
     enumerator { @identifier     nil{} }
     enumerator { @identifier '=' constant_expression }
 
+# Sometimes, when you are really near to something great, you tend to want to
+# make a sneak peek in. Code isn't an exception. When this thing was ready to
+# generate headers, there were only 10 rules left that do not appear in headers.
+function_definition =>
+    function { declaration_specifiers declarator declaration_list compound_statement }
+    function { specifier{}            declarator declaration_list compound_statement }
+    function { declaration_specifiers declarator list{}           compound_statement }
+    function { specifier{}            declarator list{}           compound_statement }
 
-# external_declaration =>
-#    function_definition   #  whoever uses this first time
-#                          #  adjust to your needs.
-#
-#function_definition =>
-#    function { declaration_specifiers declarator declaration_list compound_statement }
-#    function { nil{}                  declarator declaration_list compound_statement }
-#    function { declaration_specifiers declarator nil{}            compound_statement }
-#    function { nil{}                  declarator nil{}            compound_statement }
-#
-## Declarations appear with "declaration" semantic label.
-## Details in the declaration list can come ambiguous, so
-## this tends to be wrapped with a function to pass type details
-## in and resolve ambiguity.
-#declaration_list =>
-#    first  { declaration }
-#    append { declaration_list declaration }
+declaration_list =>
+    first  { declaration }
+    append { declaration_list declaration }
 
-#compound_statement =>
-#    '{' '}'
-#    '{' statement_list '}'
-#    '{' declaration_list '}'
-#    '{' declaration_list statement_list '}'
-#
-#statement =>
-#    labeled_statement
-#    compound_statement
-#    expression_statement
-#    selection_statement
-#    iteration_statement
-#    jump_statement
-#
-#labeled_statement =>
-#    @identifier ":" statement
-#    "case" constant_expression ":" statement
-#    "default" ":" statement
-#
-#statement_list =>
-#    first  { statement }
-#    append { statement_list statement }
-#
-#expression_statement =>
-#    ";"
-#    expression ';'
-#
-#selection_statement =>
-#    "if" "(" expression ")" statement
-#    "if" "(" expression ")" statement "else" statement
-#    "switch" "(" expression ")" statement
-#
-#iteration_statement =>
-#    "while" "(" expression ")" statement
-#    "do" statement "while" "(" expression ")" ";"
-#    "for" "(" expression_statement expression_statement ")" statement
-#    "for" "(" expression_statement expression_statement expression ")" statement
-#
-#jump_statement =>
-#    "goto" @identifier ";"
-#    "continue" ";"
-#    "break" ";"
-#    "return" ";"
-#    "return" expression ";"
+compound_statement =>
+    '{' list{} '}'
+    '{' compound_list '}'
+
+# The grammar in the URL required declarations to come before
+# statements. But it's not uncommon to see them mixed at will.
+compound_list =>
+    first  { declaration }
+    first  { statement }
+    append { statement_list declaration }
+    append { statement_list statement }
+
+statement =>
+    labeled_statement
+    compound_statement
+    expression_statement
+    selection_statement
+    iteration_statement
+    jump_statement
+
+labeled_statement =>
+    label { @identifier ":" statement }
+    case_label { "case" constant_expression ":" statement }
+    default_label { "default" ":" statement }
+
+expression_statement =>
+    nop{} ";"
+    expression ';'
+
+selection_statement =>
+    cond { "if" "(" expression ")" statement }
+    cond { "if" "(" expression ")" statement "else" statement }
+    switch { "switch" "(" expression ")" statement }
+
+iteration_statement =>
+    while { "while" "(" expression ")" statement }
+    do_while { "do" statement "while" "(" expression ")" ";" }
+    for { "for" "(" expression_statement expression_statement nop{} ")" statement }
+    for { "for" "(" expression_statement expression_statement expression ")" statement }
+
+jump_statement =>
+    goto { "goto" @identifier ";" }
+    continue { "continue" ";" }
+    break { "break" ";" }
+    return { "return" nop{} ";" }
+    return { "return" expression ";" }
 
 
 expression =>

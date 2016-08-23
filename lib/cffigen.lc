@@ -40,7 +40,8 @@ import c, chartparser, json
 #   preprocessor.
 
 main = ():
-    stdio_h = "/usr/include/stdio.h"
+    #stdio_h = "/usr/include/stdio.h"
+    stdio_h = dir ++ "test.c"
     macro_env = c.std_macro_env()
     # This is actually something exposed to user. The user can select a config
     # The config comes from pytci's gcc_probe
@@ -57,6 +58,28 @@ main = ():
     terminals = c.language.table.terminals
 
     actions = :exnihilo()
+        function = (specifier, declarator, functypes, body):
+            return (scope):
+                spec = specifier(scope)
+                declarator = declarator(scope)
+                declarator.specifier = spec
+                # Old style function definitions described argument types
+                # below declaration. This style seems cleaner in some places,
+                # although its use has been discouraged.
+                ft = []
+                for decl in functypes
+                    ft.append(decl(scope))
+                declarator.oldtypes = ft
+                # Maybe they think that it's easy enough to extend the
+                # declarator to multiple lines.
+                stmts = []
+                for stmt in body
+                    stmts.append(stmt(scope))
+
+                func = Function(declarator, stmts)
+                scope.defs.append(func)
+                return func
+
         declaration = (specifier, declarator):
             return (scope):
                 spec_or_decl = specifier(scope)
@@ -94,7 +117,6 @@ main = ():
                 declarator = base(scope)
                 # The arglists contain spiders.
                 args = []
-                print(arglist)
                 for arg in arglist
                     args.append(arg(scope)) # and spiders want out.
                 declarator.stack = :exnihilo()
@@ -194,6 +216,9 @@ main = ():
         const = (value):
             return (scope):
                 return Constant(value)
+        nop = ():
+            return (scope):
+                return null
 
         nil = ():
             return null
@@ -297,7 +322,7 @@ class Scope
         self.variables = {}
         self.tags = [] # structures, enums, unions within this scope.
         self.decls = [] # all declarations.
-        self.defs = [] # all definitions. #TODO: provide them.
+        self.defs = [] # all definitions.
 
     is_type = (self, name):
         try
@@ -314,6 +339,11 @@ class Scope
                 type = "variable"
             declarator = declarator
         self.decls.append(decl)
+
+class Function
+    +init = (self, declarator, body):
+        self.declarator = declarator
+        self.body = body
 
 class Declarator
     +init = (self, token):
