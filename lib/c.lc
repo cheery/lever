@@ -58,6 +58,14 @@ language.new_parser = chartparser.preprocess(
     language.grammar,
     language.table.nonterminal("external_declaration"))
 
+parse_all = (preprocessor, scope):
+    results = []
+    res = parse(preprocessor, scope)
+    while res
+        results.append(res)
+        res = parse(preprocessor, scope)
+    return results
+
 parse = (preprocessor, scope):
     parser = language.new_parser()
     parser.default_ambiguity_resolution = ambiguity
@@ -82,6 +90,8 @@ parse = (preprocessor, scope):
         if parser.accepted
             result = parser.traverse(post)
             result = result(scope)
+            assert result or preprocessor.empty
+                "bug in parser, parse() shouldn't return null until end."
             return result
     assert parser.chart.length == 1, "parser not finished?"
 

@@ -40,8 +40,8 @@ import c, chartparser, json
 #   preprocessor.
 
 main = ():
-    #stdio_h = "/usr/include/stdio.h"
-    stdio_h = dir ++ "ansi-c-grammar-test.c"
+    stdio_h = "/usr/include/stdio.h"
+    #stdio_h = dir ++ "ansi-c-grammar-test.c"
     macro_env = c.std_macro_env()
     # This is actually something exposed to user. The user can select a config
     # The config comes from pytci's gcc_probe
@@ -59,3 +59,4 @@ main = ():
         result = c.parse(preprocessor, scope)
         print(result)
 
+    print("done!")
