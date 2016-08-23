@@ -14,8 +14,8 @@ translation_unit =>
 # Though this is likely used more often, because it's fun to
 # 'stream' C code, declaration by declaration.
 external_declaration =>
-    declaration
     function_definition
+    declaration
 
 declaration =>
     declaration_declarator_init ";"
@@ -87,6 +87,8 @@ parameter_list =>
 parameter_declaration =>
     parameter_declaration_hack # Without this, the hairy
                                # ends up bulldozed by an append.
+                               # could be fixed by some extra handling.
+                               # maybe later..
 
 parameter_declaration_hack =>
     parameter { declaration_specifiers declarator }
@@ -120,12 +122,12 @@ direct_abstract_declarator =>
 # it, you make an initializer.
 initializer =>
     assignment_expression
-    '{' initializer_list '}'
-    '{' initializer_list ',' '}'
+    array_initializer { '{' initializer_list '}' }
+    array_initializer { '{' initializer_list ',' '}' }
 
 initializer_list =>
-    initializer
-    initializer_list "," initializer
+    first { initializer }
+    append { initializer_list "," initializer }
 
 # as_type is used to resolve ambiguity here. Roughly, on
 # ambiguity point we visit both branches and discard the
@@ -206,16 +208,16 @@ declaration_list =>
     append { declaration_list declaration }
 
 compound_statement =>
-    '{' list{} '}'
-    '{' compound_list '}'
+    compound { '{' list{} '}' }
+    compound { '{' compound_list '}' }
 
 # The grammar in the URL required declarations to come before
 # statements. But it's not uncommon to see them mixed at will.
 compound_list =>
     first  { declaration }
     first  { statement }
-    append { statement_list declaration }
-    append { statement_list statement }
+    append { compound_list declaration }
+    append { compound_list statement }
 
 statement =>
     labeled_statement
@@ -228,7 +230,7 @@ statement =>
 labeled_statement =>
     label { @identifier ":" statement }
     case_label { "case" constant_expression ":" statement }
-    default_label { "default" ":" statement }
+    case_label { nil{"default"} ":" statement }
 
 expression_statement =>
     nop{} ";"
@@ -255,7 +257,7 @@ jump_statement =>
 
 expression =>
     assignment_expression
-    comma { expression ',' assignment_expression }
+    binary { expression ^',' assignment_expression }
 
 assignment_expression =>
     conditional_expression
@@ -353,6 +355,10 @@ argument_expression_list =>
 primary_expression =>
     as_name { @identifier }
     const { @number }
-    const { @string }
     const { @char }
+    string_const { string }
     "(" expression ")"
+
+string =>
+    first  { @string }
+    append { string @string }
