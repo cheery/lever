@@ -164,6 +164,15 @@ term =>
     lookup   {"%" @string}
     scopegrabber {":" expr block}
 
+# This may end up ambiguous within a function call.
+# Introduced this rule to allow nesting of functions.
+#block_or_statement =>
+#    block
+#    first { return { block_statement } }
+#
+# There was a problem with this. If there is no
+# statement it will pick the subsequent line.
+
 bindings =>
     blank_bindings {}
     optionals
