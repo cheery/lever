@@ -7,6 +7,7 @@ from rpython.rlib.objectmodel import specialize, always_inline
 from string import String
 from listobject import List
 from setobject import Set
+from slices import Slice
 import setobject
 import space
 
@@ -254,3 +255,8 @@ def _(a, b):
 @xor.multimethod_s(Set, Set)
 def _(a, b):
     return setobject.Set_symmetric_difference(a, b)
+
+@clamp.multimethod_s(Slice, Integer, Integer)
+def _(c, start, stop):
+    start, stop, step = c.clamped(start.value, stop.value)
+    return Slice(Integer(start), Integer(stop), Integer(step))

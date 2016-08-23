@@ -30,6 +30,12 @@ class String(Object):
         return Object.getattr(self, name)
 
     def getitem(self, index):
+        if isinstance(index, space.Slice):
+            result = []
+            start, stop, step = index.clamped(0, len(self.string))
+            for i in range(start, stop, step):
+                result.append(self.string[i])
+            return String(u"".join(result))
         if not isinstance(index, numbers.Integer):
             raise space.unwind(space.LKeyError(self, index))
         if not 0 <= index.value < len(self.string):
@@ -95,6 +101,16 @@ def is_space(string):
         if not unicodedb.isspace(ord(ch)):
             return space.false
     return space.true
+
+@String.method(u"startswith", signature(String, String))
+def String_startswith(self, prefix):
+    return space.boolean(
+        self.string.startswith(prefix.string))
+
+@String.method(u"endswith", signature(String, String))
+def String_endswith(self, postfix):
+    return space.boolean(
+        self.string.endswith(postfix.string))
 
 class StringIterator(Object):
     _immutable_fields_ = ['iterator']

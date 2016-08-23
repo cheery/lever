@@ -51,6 +51,12 @@ class List(Object):
         return False
     
     def getitem(self, index):
+        if isinstance(index, space.Slice):
+            start, stop, step = index.clamped(0, len(self.contents))
+            result = []
+            for i in range(start, stop, step):
+                result.append(self.contents[i])
+            return List(result)
         if not isinstance(index, Integer):
             raise space.unwind(space.LTypeError(u"index not an integer"))
         if not 0 <= index.value < len(self.contents):

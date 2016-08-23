@@ -932,6 +932,38 @@ Sets implement <= >= < > | & - ^ -methods.
 
 
 
+                                                                 space/slices.py
+
+Slices provide iteration and indexing help. You can use them to get
+substrings/sublists or iterate through ranges.
+
+Semantics of slice(start, stop, step=1) is to provide integer intervals that can
+be 'unbounded' to negative or positive infinity by giving null on either start
+or stop.
+
+Slices have +iter implemented on them. It allows them to be used in place of
+range(). If stop=null in slice that is iterated, it becomes a step -iterator
+that doesn't end.
+    
+clamp(slice, low, high) method is implemented for slices in
+space/operators.py, it can be used to normalize a slice into a desired range.
+Note that this function takes the 'step' into the account and binds the
+unbounded sides.
+
+Strings and Lists can getitem with slices.
+
+Semantics of list.setitem should be thought out for slices. It is likely that we
+want to support at least list.setitem slices with step 1 and -1.
+
+step=0 for strings and lists will hang. :) TODO: Worth fixing later.
+
+I plan to deprecate the range() to encourage use of slices instead.
+
+There is ".:" and ":." -syntax for slices, but the compiler implementation still
+isn't there. I plan to use call(getglobal(), ) on implementing it.
+
+
+
                                                               space/setobject.py
 
 Sets follow the good convention of "lets take it from python" we have already
@@ -977,7 +1009,8 @@ Supported:
     .is_alpha()
     .is_digit(base=10)
     .is_space()
-
+    .startswith(str)
+    .endswith(str)
 
 
                                                              space/uint8array.py

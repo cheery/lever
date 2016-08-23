@@ -31,6 +31,7 @@ module = Module(u'base', {
     u'property': Property.interface,
     u'Uint8Array': Uint8Array.interface,
     u'set': Set.interface,
+    u'slice': Slice.interface,
 }, frozen=True)
 
 @Module.instantiator

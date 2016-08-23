@@ -32,7 +32,7 @@ block_statement =>
     op_assign      {slot op           "="  block_statement}
     setitem        {expr "[" expr "]" "="  block_statement}
     setattr        {expr "." @symbol  "="  block_statement}
-    for      {"for" @symbol "in" statement block}
+    for      {"for" @symbol "in" subexpr block}
     import   {"import" symbols_list}
     try      {"try" block excepts}
     raise    {"raise" statement}
@@ -70,6 +70,17 @@ except =>
     except {"except" expr "as" @symbol block}
 
 statement =>
+    expr
+
+subexpr =>
+    expr
+    slice_incr { opt_expr  ".:" opt_expr }
+    slice_incr { opt_expr  ".:" opt_expr "::" expr }
+    slice_decr { opt_expr  ":." opt_expr }
+    slice_decr { opt_expr  ":." opt_expr "::" expr }
+
+opt_expr =>
+    nil{}
     expr
 
 expr =>
@@ -137,7 +148,7 @@ postfix =>
     term
     call  {postfix "(" arguments ")"}
     callv {postfix "(" arguments "..." ")"}
-    getitem {postfix "[" expr "]"}
+    getitem {postfix "[" subexpr "]"}
     getattr {postfix "." @symbol}
 
 arguments =>
@@ -146,8 +157,8 @@ arguments =>
     {arguments1 ","}
 
 arguments1 =>
-    first  {expr}
-    append {arguments1 "," expr}
+    first  {subexpr}
+    append {arguments1 "," subexpr}
 
 term =>
     lookup {@symbol}
@@ -155,7 +166,7 @@ term =>
     hex {@hex}
     float  {@float}
     string {@string}
-    {"(" expr ")"}
+    {"(" subexpr ")"}
     list     {"[" arguments "]"}
     function {"(" bindings ")" ":" block}
     dict     {"{" pairs "}"}

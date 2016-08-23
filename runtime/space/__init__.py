@@ -13,6 +13,7 @@ from customobject import CustomObject, Property
 from rpython.rlib import jit
 from setobject import Set
 from errors import *
+from slices import Slice
 import operators
 
 def as_cstring(value):
