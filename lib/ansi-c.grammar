@@ -164,7 +164,18 @@ struct_declaration_list =>
     append { struct_declaration_list struct_declaration }
 
 struct_declaration =>
-    specifier_qualifier_list struct_declarator_list ';'
+    struct_declaration_declarator ";"
+    #struct_declaration_hack
+
+# The declarations lay out like onions above the specifier.
+# Described this way, the LR-parser can manhandle 'typedef'
+struct_declaration_declarator =>
+    struct_declaration { specifier_qualifier_list declarator{} }
+    struct_declaration { specifier_qualifier_list struct_declarator }
+    struct_declaration { struct_declaration_declarator "," struct_declarator }
+
+#struct_declaration_hack =>
+#    specifier_qualifier_list struct_declarator_list ';'
 
 specifier_qualifier_list =>
     add_type_specifier { specifier{}            type_specifier }
@@ -172,9 +183,10 @@ specifier_qualifier_list =>
     add_type_qualifier { specifier{}            type_qualifier }
     add_type_qualifier { declaration_specifiers type_qualifier }
 
-struct_declarator_list =>
-    first  { struct_declarator }
-    append { struct_declarator_list ',' struct_declarator }
+#struct_declarator_list =>
+#    first  { declarator{} }
+#    first  { struct_declarator }
+#    append { struct_declarator_list ',' struct_declarator }
 
 struct_declarator =>
     declarator
@@ -274,19 +286,19 @@ conditional_expression =>
 
 logical_or_expression =>
     logical_and_expression
-    binary { logical_or_expression "||" logical_and_expression }
+    binary { logical_or_expression ^"||" logical_and_expression }
 
 logical_and_expression =>
     inclusive_or_expression
-    binary { logical_and_expression "&&" inclusive_or_expression }
+    binary { logical_and_expression ^"&&" inclusive_or_expression }
 
 inclusive_or_expression =>
     exclusive_or_expression
-    binary { inclusive_or_expression '|' exclusive_or_expression }
+    binary { inclusive_or_expression ^'|' exclusive_or_expression }
 
 exclusive_or_expression =>
     and_expression
-    binary { exclusive_or_expression '^' and_expression }
+    binary { exclusive_or_expression ^'^' and_expression }
 
 and_expression =>
     equality_expression
@@ -322,7 +334,7 @@ multiplicative_expression =>
 
 cast_expression =>
     unary_expression
-    cast { '(' type_name_clause ')' cast_expression }
+    cast { '(' type_name ')' cast_expression }
 
 unary_expression =>
     postfix_expression
@@ -330,9 +342,9 @@ unary_expression =>
     prefix { ^"--" unary_expression }
     prefix { unary_operator cast_expression }
     sizeof { "sizeof" unary_expression  }
-    sizeof { "sizeof" '(' in_sizeof ')' }
+    sizeof { "sizeof" '(' type_name ')' }
 
-in_sizeof =>
+type_name =>
     specifier_qualifier_list
     parameter { specifier_qualifier_list abstract_declarator }
 

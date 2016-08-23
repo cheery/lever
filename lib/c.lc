@@ -84,7 +84,7 @@ parse = (preprocessor, scope):
             term = terminals.get(keywords.get(token.name, token.name))
         assert parser.expecting(term)
             print("EXPECTED", parser.expect...)
-            print(c.format_source(token), "GOT", term, token)
+            print(format_source(token), "GOT", term, token)
             "C parsing failed" #TODO: improve these error messages.
         parser.step(term, token, token, token)
         if parser.accepted
@@ -108,7 +108,7 @@ parse = (preprocessor, scope):
 # well.. with the grammar we use..
 ambiguity = (sppf, traverse):
 # was used for diagnosis
-#    print("ambiguity detected on", sppf.cell, c.format_source(sppf.start))
+#    print("ambiguity detected on", sppf.cell, format_source(sppf.start))
 #    print(sppf.start, sppf.stop)
 #    for branch in sppf
 #        print("BRANCH")
@@ -136,7 +136,7 @@ class Conflict extends Exception
         self.which = which
 
     +repr = (self):
-        return c.format_source(self.token) ++ "Conflict on " ++ repr(self.token) ++
+        return format_source(self.token) ++ "Conflict on " ++ repr(self.token) ++
             ", it was expected to be " ++ self.which
 
 class Scope
@@ -174,8 +174,14 @@ class Scope
 
 post = (rule, args, start, stop):
     res = rule.annotation(actions, args, [])
-    # todo: add reference to start -token here?
-    #print(rule, args, "->", res)
+    # Relatively simple hack that lets us locate where
+    # each cell comes from.
+    if isinstance(res, interface(post))
+        return (scope, args...):
+            res = res(scope, args...)
+            if isinstance(res, Node)
+                res.origin = start
+            return res
     return res
 
 actions = :exnihilo()
@@ -314,15 +320,20 @@ actions = :exnihilo()
     data_specifier = (which, name, fields):
         return (scope):
             flds = []
+            ds = DataSpecifier(which, name, [])
             for field in fields
-                specifier = field[0](scope)
-                for decl in field[1]
-                    d = decl(scope)
-                    d.specifier = specifier
-                    flds.append(d)
-            ds = DataSpecifier(which, name, flds)
+                field(scope, ds)
             scope.tags.append(ds)
             return ds
+    struct_declaration = (specifier, declarator):
+        return (scope, ds):
+            spec_or_decl = specifier(scope, ds)
+            declarator = declarator(scope)
+            declarator.specifier = spec_or_decl.specifier
+            if spec_or_decl != spec_or_decl.specifier
+                declarator.last = spec_or_decl
+            ds.fields.append(declarator)
+            return declarator
 
     enum_specifier = (name, enums):
         return (scope):
@@ -455,14 +466,19 @@ actions = :exnihilo()
         a.append(b)
         return a
 
+class Node
+    null
+
 # Parser transforms its input into wide variety of objects.
-class Function
+class Function extends Node
     +init = (self, declarator, body):
+        self.origin = null
         self.declarator = declarator
         self.body = body
 
-class Declarator
+class Declarator extends Node
     +init = (self, token):
+        self.origin = null
         self.token = token
         if token
             self.name = token.value
@@ -476,8 +492,9 @@ class Declarator
     +repr = (self):
         return "Declarator{" ++ repr(self.specifier) ++ ", " ++ self.name ++ "}"
 
-class Specifier
+class Specifier extends Node
     +init = (self):
+        self.origin = null
         self.storage = null
         self.typespec = []
         self.qualifiers = set()
@@ -492,141 +509,168 @@ class Specifier
         out.extend(self.qualifiers)
         return "Specifier{" ++ " ".join(out) ++ "}"
 
-class DataSpecifier
+class DataSpecifier extends Node
     +init = (self, token, name, fields):
+        self.origin = null
         self.token = token
         self.name = name
         self.fields = fields
 
-class EnumSpecifier
+class EnumSpecifier extends Node
     +init = (self, name):
+        self.origin = null
         self.name = name
         self.enums = []
 
-class Assign
+class Assign extends Node
     +init = (self, lhs, op, rhs):
+        self.origin = null
         self.lhs = lhs
         self.op = op
         self.rhs = rhs
 
-class Binary
+class Binary extends Node
     +init = (self, lhs, op, rhs):
+        self.origin = null
         self.lhs = lhs
         self.op = op
         self.rhs = rhs
 
-class Prefix
+class Prefix extends Node
     +init = (self, op, rhs):
+        self.origin = null
         self.op = op
         self.rhs = rhs
 
-class Postfix
+class Postfix extends Node
     +init = (self, lhs, op):
+        self.origin = null
         self.lhs = lhs
         self.op = op
 
-class Sizeof
+class Sizeof extends Node
     +init = (self, sz):
+        self.origin = null
         self.sz = sz
 
-class Constant
+class Constant extends Node
     +init = (self, token):
+        self.origin = null
         self.token = token
 
-class StringConstant
+class StringConstant extends Node
     +init = (self, tokens):
+        self.origin = null
         self.tokens = tokens
 
-class Reference
+class Reference extends Node
     +init = (self, name, value):
+        self.origin = null
         self.name = name
         self.value = value
 
     +repr = (self):
         return "Ref{" ++ self.name ++ "}"
 
-class Compound
+class Compound extends Node
     +init = (self, scope, body):
+        self.origin = null
         self.scope = scope
         self.body = body
 
-class Label
+class Label extends Node
     +init = (self, name, stmt):
+        self.origin = null
         self.name = name
         self.stmt = stmt
 
-class Case
+class Case extends Node
     +init = (self, name, stmt):
+        self.origin = null
         self.name = name
         self.stmt = stmt
 
-class Cond
+class Cond extends Node
     +init = (self, cond, body, otherwise=null):
+        self.origin = null
         self.cond = cond
         self.body = body
         self.otherwise = otherwise
 
-class InlineCond
+class InlineCond extends Node
     +init = (self, cond, body, otherwise):
+        self.origin = null
         self.cond = cond
         self.body = body
         self.otherwise = otherwise
 
-class Switch
+class Switch extends Node
     +init = (self, cond, body):
+        self.origin = null
         self.cond = cond
         self.body = body
 
-class While
+class While extends Node
     +init = (self, cond, body):
+        self.origin = null
         self.cond = cond
         self.body = body
 
-class DoWhile
+class DoWhile extends Node
     +init = (self, body, cond):
+        self.origin = null
         self.body = body
         self.cond = cond
 
-class For
+class For extends Node
     +init = (self, start, stop, step, body):
+        self.origin = null
         self.start = start
         self.stop = stop
         self.step = step
         self.body = body
 
-class Goto
+class Goto extends Node
     +init = (self, where):
+        self.origin = null
         self.where = where
 
-class Break
+class Break extends Node
     +init = (self):
+        self.origin = null
         null
 
-class Continue
+class Continue extends Node
     +init = (self):
+        self.origin = null
         null
 
-class Return
+class Return extends Node
     +init = (self, value):
+        self.origin = null
         self.value = value
 
-class Cast
+class Cast extends Node
     +init = (self, type, expr):
+        self.origin = null
         self.type = type
         self.expr = expr
 
-class GetItem
+class GetItem extends Node
     +init = (self, base, index):
+        self.origin = null
         self.base = base
         self.index = index
 
-class Call
+class Call extends Node
     +init = (self, callee, args):
+        self.origin = null
         self.callee = callee
         self.args = args
 
-class GetAttr
+class GetAttr extends Node
     +init = (self, expr, name, pointer=false):
+        self.origin = null
         self.expr = expr
         self.name = name
         self.pointer = pointer
@@ -670,6 +714,7 @@ std_macro_env = ():
 
 macrodef_string = (string):
     return :exnihilo()
+        origin = null
         parameters = null
         replacement = [ Token(path(""), 0, "string", string) ]
 
@@ -677,6 +722,7 @@ macrodef_number = (number):
     if isinstance(number, int)
         number = number.to_string()
     return :exnihilo()
+        origin = null
         parameters = null
         replacement = [ Token(path(""), 0, "number", number) ]
 
@@ -999,6 +1045,7 @@ class Preprocessor
                     format_source(macro) ++ "redefined macro not identical with already defined macro"
             else
                 self.macro_replacements[identifier.value] = :exnihilo()
+                    origin = identifier
                     parameters = parameters
                     replacement = replacement
             return null
