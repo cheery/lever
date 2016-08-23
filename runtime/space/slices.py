@@ -48,7 +48,7 @@ class Slice(Object):
                 b = stop
         else:
             b = space.to_int(self.stop)
-            b = max(start-1, min(stop, a))
+            b = max(start-1, min(stop, b))
         return (a, b, step)
 
 @Slice.instantiator2(signature(Object, Object, Object, optional=1))
