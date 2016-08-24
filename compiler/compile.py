@@ -531,6 +531,26 @@ def post_not_in(env, loc, lhs, rhs):
 def post_binary(env, loc, lhs, op, rhs):
     return CodeM(loc, 'call', [Getvar(loc, op.value), lhs, rhs], [1,2,0])
 
+def post_slice_incr(env, loc, start, stop, step=None):
+    if start is None:
+        start = Code(loc, "getglob", u"null")
+    if stop is None:
+        stop = Code(loc, "getglob", u"null")
+    if step is None:
+        step = Code(loc, "constant", 1)
+    return Code(loc, "call", Code(loc, "getglob", u"slice"), start, stop, step)
+
+def post_slice_decr(env, loc, start, stop, step=None):
+    if start is None:
+        start = Code(loc, "getglob", u"null")
+    if stop is None:
+        stop = Code(loc, "getglob", u"null")
+    if step is None:
+        step = Code(loc, "constant", -1)
+    else:
+        step = Code(loc, "call", Getvar(u"-expr"), step)
+    return Code(loc, "call", Code(loc, "getglob", u"slice"), start, stop, step)
+
 def post_prefix(env, loc, op, rhs):
     return CodeM(loc, 'call', [Getvar(loc, op.value + u"expr"), rhs], [1,0])
 
@@ -570,6 +590,9 @@ def post_empty_list(env, loc):
 
 def post_pass(env, loc, val):
     return val
+
+def post_nil(env, loc):
+    return None
 
 def post_first(env, loc, item):
     return [item]

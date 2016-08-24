@@ -130,6 +130,27 @@ actions = :exnihilo()
         return CodeM("call",
             [Getvar(op.string), lhs, rhs],
             [1, 2, 0])
+
+    slice_incr = (start, stop, step=null):
+        if not start
+            start = Code("getglob", "null")
+        if not stop
+            stop = Code("getglob", "null")
+        if not step
+            step = Code("constant", 1)
+        return Code("call", Code("getglob", "slice"), start, stop, step)
+
+    slice_decr = (start, stop, step=null):
+        if not start
+            start = Code("getglob", "null")
+        if not stop
+            stop = Code("getglob", "null")
+        if not step
+            step = Code("constant", -1)
+        else
+            step = Code("call", Getvar("-expr"), step)
+        return Code("call", Code("getglob", "slice"), start, stop, step)
+
     %"in" = (lhs, rhs):
         return CodeM("contains", [rhs, lhs], [1, 0])
     %"not_in" = (lhs, rhs):
