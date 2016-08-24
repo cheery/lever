@@ -1163,7 +1163,12 @@ Format and a function of a header json file:
 {
     "constants": { name: value }
     "types": { name: decl }
-    "variables": { name: decl }
+    "variables": {
+        name: {
+            name: cname
+            type: decl
+        }
+    }
     "depends": [ name ] # optional, for now ignored and used as extra
                         # documentation.
 }
