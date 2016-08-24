@@ -959,8 +959,8 @@ step=0 for strings and lists will hang. :) TODO: Worth fixing later.
 
 I plan to deprecate the range() to encourage use of slices instead.
 
-There is ".:" and ":." -syntax for slices, but the compiler implementation still
-isn't there. I plan to use call(getglobal(), ) on implementing it.
+There is ".:" and ":." -syntax for slices, this causes bit of a precedence
+corner-case with floating point numbers.
 
 
 
