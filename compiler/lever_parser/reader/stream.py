@@ -21,6 +21,11 @@ class CStream(object):
     def current(self):
         return self.source[self.index]
 
+    def pair_ahead(self, table):
+        if self.index + 1 < len(self.source):
+            return self.source[self.index:self.index+2] in table
+        return False
+
     @property
     def filled(self):
         return self.index < len(self.source)

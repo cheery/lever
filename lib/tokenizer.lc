@@ -38,7 +38,13 @@ next_token = (stream, table):
             return Literal(start, stream.position, "hex", string)
         while stream.is_digit()
             string ++= stream.advance()
-        if stream.filled and stream.current == "."
+        # The stream.pair_ahead is quite of a special case. I'm not sure it's
+        # the right thing to do. But we have .: punctuation in our grammar.
+        # Add a number immediately ahead 0.: and you wouldn't get what you
+        # expect to get.
+        # Optical grouping between those characters feel clean enough, so
+        # I implemented some precedence into the tokenizer with 'pair_ahead'
+        if stream.filled and stream.current == "." and not stream.pair_ahead(table)
             string ++= stream.advance()
             while stream.is_digit()
                 string ++= stream.advance()
@@ -107,6 +113,15 @@ class TextStream
     current = property()
     current.get = (self):
         return self.source[self.index]
+
+    # Checks whether there is a two-character sequence
+    # and whether it is in the table.
+    pair_ahead = (self, table):
+        if self.index + 1 < self.source.length
+            a = self.source[self.index]
+            b = self.source[self.index+1]
+            return a++b in table
+        return false
 
     filled = property()
     filled.get = (self):

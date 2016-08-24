@@ -62,7 +62,7 @@ def next_token(stream, table):
             return Literal(start, stream.position, u'hex', string)
         while stream.is_digit():
             string += stream.advance()
-        if stream.filled and stream.current == u'.':
+        if stream.filled and stream.current == u'.' and not stream.pair_ahead(table):
             string += stream.advance()
             while stream.is_digit():
                 string += stream.advance()
