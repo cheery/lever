@@ -2,6 +2,8 @@
 #from rpython.rlib.unicodedata import unicodedb_6_2_0 as unicodedb
 from rpython.rlib.listsort import make_timsort_class
 from rpython.rlib import rfile
+from rpython.rlib.rstring import UnicodeBuilder
+from rpython.rlib.objectmodel import specialize, always_inline
 from space import *
 from space import numbers
 from stdlib import fs
@@ -119,7 +121,8 @@ class JSONKeySort(TimSort):
 
 # This is the easiest point of failure in your stringifier program.
 def escape_string(string):
-    out = [u'"']
+    out = UnicodeBuilder()
+    out.append(u'"')
     for ch in string:
         n = ord(ch)
         if 0x20 <= n and n <= 0x7E or 0xFF < n: # remove the last part in cond if you don't want
@@ -136,7 +139,7 @@ def escape_string(string):
             ch = u'\\' + character_escapes.get(n, ch)
         out.append(ch)
     out.append(u'"')
-    return u"".join(out)
+    return out.build()
 
 character_escapes = {8: u'b', 9: u't', 10: u'n', 12: u'f', 13: u'r'}
 
@@ -282,9 +285,10 @@ def read_string(string):
 class ParserContext:
     def __init__(self):
         self.ds = [] # data stack
-        self.ss = [] # string stack
-        self.es = [] # escape stack
+        self.ss = UnicodeBuilder() # string stack
+        self.es = UnicodeBuilder() # escape stack
 
+@always_inline
 def parse_char(cat, ch, stack, state, ctx):
     while True:
         code = states[state][cat]
@@ -303,6 +307,7 @@ def parse_char(cat, ch, stack, state, ctx):
             state = code
             return state
 
+@always_inline
 def decode_json(action, ch, ctx):
     if action == 0x1:              # push list
         ctx.ds.append(space.List([]))
@@ -327,18 +332,18 @@ def decode_json(action, ch, ctx):
     elif action == 0x7:           # push false
         ctx.ds.append(space.false)
     elif action == 0x8:           # push string
-        val = u"".join(ctx.ss)
+        val = ctx.ss.build()
         ctx.ds.append(space.String(val))
-        ctx.ss = []
-        ctx.es = []
+        ctx.ss = UnicodeBuilder()
+        ctx.es = UnicodeBuilder()
     elif action == 0x9:
-        val = int(u"".join(ctx.ss).encode('utf-8'))    # push int
+        val = int(ctx.ss.build().encode('utf-8'))    # push int
         ctx.ds.append(space.Integer(val))
-        ctx.ss = []
+        ctx.ss = UnicodeBuilder()
     elif action == 0xA:
-        val = float(u"".join(ctx.ss).encode('utf-8'))  # push float
+        val = float(ctx.ss.build().encode('utf-8'))  # push float
         ctx.ds.append(space.Float(val))
-        ctx.ss = []
+        ctx.ss = UnicodeBuilder()
     elif action == 0xB:            # push ch to ss
         ctx.ss.append(ch)
     elif action == 0xC:            # push ch to es
@@ -346,8 +351,8 @@ def decode_json(action, ch, ctx):
     elif action == 0xD:            # push escape
         ctx.ss.append(unichr(escape_characters[ch]))
     elif action == 0xE:            # push unicode point
-        ctx.ss.append(unichr(int(u"".join(ctx.es).encode('utf-8'), 16)))
-        ctx.es = []
+        ctx.ss.append(unichr(int(ctx.es.build().encode('utf-8'), 16)))
+        ctx.es = UnicodeBuilder()
     else: # This is very unlikely to happen.
         assert False, "JSON decoder bug"
 
