@@ -84,6 +84,8 @@ def integer_to_string(integer, base):
         out.append(digits[integer % base])
         integer /= base
     out.reverse()
+    if len(out) == 0:
+        return u"0"
     return sign + u"".join(out)
 
 digits = "0123456789abcdefghijklmnopqrstuvwxyz"

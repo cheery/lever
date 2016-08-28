@@ -27,12 +27,9 @@ def write_file(pathname, obj, config):
     try:
         fd = rfile.create_file(name, "wb")
         try:
-            scan = Scanner()
-            scan.sort_keys = space.is_true(get_config(config, u"sort_keys", space.false))
-            stringify(scan, obj)
-            scan.finish()
-            for text in scan.printer.result:   # TODO: sort of defeats the purpose of
-                fd.write(text.encode('utf-8')) # incremental encoder.
+            # TODO: sort of defeats the purpose of
+            # incremental encoder.
+            fd.write(configured_stringify(obj, config).encode('utf-8'))
             fd.write('\n')
         finally:
             fd.close()
@@ -43,20 +40,66 @@ def write_file(pathname, obj, config):
 
 @builtin(signature(Object, Dict, optional=1))
 def write_string(obj, config):
+    return space.String(configured_stringify(obj, config))
+
+def configured_stringify(obj, config):
+    if config is None:
+        ub = UnicodeBuilder()
+        quick_stringify(ub, obj)
+        return ub.build()
     scan = Scanner()
+    scan.indent = space.to_int(get_config(config, u"indent", space.Integer(2)))
     scan.sort_keys = space.is_true(get_config(config, u"sort_keys", space.false))
     stringify(scan, obj)
     scan.finish()
-    return space.String(u"".join(scan.printer.result))
+    return scan.printer.result.build()
 
 def get_config(config, text, default):
-    if config is None:
-        return default
     return config.data.get(space.String(text), default)
+
+def quick_stringify(ub, obj):
+    if isinstance(obj, space.Dict):
+        ub.append(u"{")
+        more = False
+        for key, value in obj.data.iteritems():
+            if not isinstance(key, String):
+                raise unwind(LError(
+                    u"json supports only strings as keys: "
+                    + key.repr()))
+            if more:
+                ub.append(u",")
+            ub.append(escape_string(key.string))
+            ub.append(u':')
+            quick_stringify(ub, value)
+            more = True
+        ub.append(u"}")
+    elif isinstance(obj, space.List):
+        ub.append(u"[")
+        more = False
+        for item in obj.contents:
+            if more:
+                ub.append(u",")
+            quick_stringify(ub, item)
+            more = True
+        ub.append(u"]")
+    elif isinstance(obj, space.String):
+        ub.append(escape_string(obj.string))
+    elif isinstance(obj, space.Integer):
+        ub.append(numbers.integer_to_string(obj.value, 10))
+    elif isinstance(obj, space.Float):
+        ub.append(numbers.float_to_string(obj.number))
+    elif obj is space.null:
+        ub.append(u"null")
+    elif obj is space.true:
+        ub.append(u"true")
+    elif obj is space.false:
+        ub.append(u"false")
+    else:
+        raise unwind(LError(u"no handler for: " + obj.repr()))
 
 def stringify(scan, obj):
     if isinstance(obj, space.Dict):
-        scan.left().text(u"{").blank(u"", 4)
+        scan.left().text(u"{").blank(u"", scan.indent)
         more = False
         if scan.sort_keys:
             pairs = []
@@ -70,7 +113,7 @@ def stringify(scan, obj):
             sorter.sort()
             for key, value in sorter.list:
                 if more:
-                    scan.text(u",").blank(u" ", 4)
+                    scan.text(u",").blank(u" ", scan.indent)
                 scan.left()
                 scan.text(escape_string(key.string)+u': ')
                 stringify(scan, value)
@@ -83,7 +126,7 @@ def stringify(scan, obj):
                         u"json supports only strings as keys: "
                         + key.repr()))
                 if more:
-                    scan.text(u",").blank(u" ", 4)
+                    scan.text(u",").blank(u" ", scan.indent)
                 scan.left()
                 scan.text(escape_string(key.string)+u': ')
                 stringify(scan, value)
@@ -91,11 +134,11 @@ def stringify(scan, obj):
                 more = True
         scan.blank(u"", 0).text(u"}").right()
     elif isinstance(obj, space.List):
-        scan.left().text(u"[").blank(u"", 4)
+        scan.left().text(u"[").blank(u"", scan.indent)
         more = False
         for item in obj.contents:
             if more:
-                scan.text(u",").blank(u" ", 4)
+                scan.text(u",").blank(u" ", scan.indent)
             stringify(scan, item)
             more = True
         scan.blank(u"", 0).text(u"]").right()
@@ -157,6 +200,7 @@ class Scanner(object):
                              # item differently than others.
 
         self.sort_keys = False
+        self.indent = 2
 
     def left(self):
         return self.scan(Left())
@@ -201,7 +245,7 @@ class Printer:
         self.layout = Layout(None, 80, False)
         self.spaceleft = 80
         self.spaces = 80
-        self.result = []
+        self.result = UnicodeBuilder()
 
     def scan(self, x):
         if isinstance(x, Left):
