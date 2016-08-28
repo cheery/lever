@@ -70,18 +70,21 @@ def Integer_to_string(integer, base):
         raise space.unwind(space.LError(u"not enough digits to represent this base %d" % base))
     if base < 0:
         raise space.unwind(space.LError(u"negative base not supported"))
-    if integer.value < 0:
-        integer = -integer.value
+    return space.String(integer_to_string(integer.value, base))
+
+def integer_to_string(integer, base):
+    if integer < 0:
+        integer = -integer
         sign = u"-"
     else:
-        integer = integer.value
+        integer = integer
         sign = u""
     out = []
     while integer > 0:
         out.append(digits[integer % base])
         integer /= base
     out.reverse()
-    return space.String(sign + u"".join(out))
+    return sign + u"".join(out)
 
 digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 

@@ -248,7 +248,7 @@ def read_file(path, dependencies, decorator):
                 String(basename.string + u".json"))
     path = pathobj.concat(conf.headers_dir, path)
     try:
-        apispec = json.read_file([path])
+        apispec = json.read_file(path)
     except OSError as error:
         raise OldError(u"[Errno %d]: %s\n" % (error.errno, pathobj.stringify(path)))
     return read_object(apispec, dependencies, decorator)

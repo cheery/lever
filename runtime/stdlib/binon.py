@@ -9,12 +9,13 @@ def write_file(pathname, data):
     try:
         fd = rfile.create_file(name, "wb")
         try:
-            return dump(fd, data)
+            dump(fd, data)
         finally:
             fd.close()
     except IOError as error:
         message = os.strerror(error.errno).decode('utf-8')
         raise OldError(u"%s: %s" % (pathobj.stringify(pathname), message))
+    return null
 
 def dump(fd, data):
     tp = get_interface(data)
