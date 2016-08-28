@@ -255,7 +255,7 @@ class Printer:
             if self.layout.parent:
                 self.layout = self.layout.parent
         elif isinstance(x, Blank):
-            if x.size > self.spaceleft or self.layout.force_break:
+            if x.size < 0 or self.spaceleft < x.size or self.layout.force_break:
                 self.spaces = self.layout.spaces - x.indent
                 self.spaceleft = self.spaces
                 self.result.append(u'\n' + u' '*(self.margin - self.spaces))
