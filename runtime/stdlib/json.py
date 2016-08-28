@@ -235,6 +235,8 @@ class Scanner(object):
         return self
 
     def finish(self):
+        if self.lastblank is not None:              # Well.. of course.
+            self.lastblank.size += self.right_total # I didn't figure this out earlier.
         while len(self.stream) > 0:
             self.printer.scan(self.stream.pop(0))
 
@@ -368,7 +370,7 @@ def decode_json(action, ch, ctx):
         key = ctx.ds.pop()
         top = ctx.ds[len(ctx.ds)-1]
         assert isinstance(top, Dict) # again..
-        top.setitem(key, val)
+        top.data[key] = val
     elif action == 0x5:           # push null
         ctx.ds.append(space.null)
     elif action == 0x6:           # push true
