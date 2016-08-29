@@ -1449,22 +1449,34 @@ did really brightened up my mood.
 
                                                                   stdlib/json.py
 
-I'm certain I wouldn't definitely copy this JSON reader. I'm not sure it handles
-every special case.
+This JSON parser has been derived from the cheery/json-algorithm at github
 
-This reader was introduced to read the generated C header files that I encoded
-as json for convenience. It's pretty cool how fast loading json files can be.
+Currently the json library is used for reading and writing generated C header
+files and for configs. They have lot of common uses.
 
-This is a rare case where hand-written parsers have their merits.
-
-Json files are also used for configs. It's pretty clear so far that they rock
-for lots of common uses.
+Loading and writing even large json files is fast, so there is no much need
+to diverge from using json on the C headers.
 
 Exposed function:
 
-    read_file(path:Object)
+    write_file(path, obj, options=null)
+    write_string(obj, options=null)
+    read_file(path)
+    read_string(string)
 
-It might be a neat weekend project to improve this module.
+If options dictionary is not provided then the writing functions use quick json
+encoder.
+
+If options dictionary is provided then the pretty printer is used for encoding
+json. The pretty printing takes following options by default:
+
+    {indent=2, sort_keys=false}
+
+How the pretty printing is activated may change in future. In any case, giving
+'indent' or 'sort_keys' options should always trigger the function.
+
+This library will likely receive improvements on the API. But the internal
+algorithm seem very good and solid.
 
 
 
