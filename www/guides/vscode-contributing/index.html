@@ -298,26 +298,11 @@ To verify your implementation works, you need to translate the Lever runtime.
 To do it, you will do that from the command line tool obtained two sections
 back. With the "Visual C++ 2008 32-bit Command Prompt". Navigate to your lever
 directory with a 'cd' -command.
+</p>
 <img src="contrib17.png">
-</p>
 <p>
-In the Lever 0.8.0 there is one complication due to RPython bug. This bug has
-been reported and fixed days ago, and it will not be present in the next PyPy
-and next Lever release.
-</p>
-<p>
-Run the "python setup.py" -command, if it says 'is not recognized', check a
-troubleshoot for this few images below.
-</p>
-<p>
-For now you need to rewrite the following two lines in
-pypy2-v5.3.1-src/rpython/rlib/rposix.py
-</p>
-<img src="contrib15.png">
-<img src="contrib16.png">
-<p>Remember to save these changes before a running the next command:</p>
-<p>
-Write: 'python setup.py compile'
+Run the "python setup.py compile" -command, if it says 'is not recognized', check a
+troubleshoot for this in the screenshot below.
 </p>
 <img src="contrib18.png">
 <p>
@@ -339,7 +324,7 @@ Now verify that your lever path refers to this runtime. You're about done with
 the implementation once your sample program runs properly.
 </p>
 <p>
-If you need the change immediately, there's the win32_dist.py -script that can
+If you made the recompile to get a distributable, there's the win32_dist.py -script that can
 create a new package with Lever.
 </p>
 <h3>4-5. New documentation</h3>
@@ -369,12 +354,6 @@ Guides are directly written into html files at guides/ -directory.
 Creation of a new guide requires a similar analysis as what code did.
 </p>
 <h3>4-5. Troubleshooting</h3>
-<p>
-There's possible that something goes wrong. For example the error below comes if
-you didn't patch the rpython. It's a well-known problem and the solution is
-documented on this page, so only request troubleshooting if you get a new
-twist to it.
-</p>
 <p>
 This part of a guide will shorten considerably the time for you to get help with
 Lever. When you stumble upon an issue. Capture the logs and copy them. In the

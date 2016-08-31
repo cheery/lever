@@ -32,8 +32,8 @@ import os
 # are stabilized, so I don't expect to have trouble with versions.
 # Maybe it happens some day... On someone's computer. That he doesn't have recent enough
 # versions of these libraries.
-pypy_src_url = 'https://bitbucket.org/pypy/pypy/downloads/pypy2-v5.3.1-src'
-pypy_src_dir = 'pypy2-v5.3.1-src'
+pypy_src_url = 'https://bitbucket.org/pypy/pypy/downloads/pypy2-v5.4.0-src'
+pypy_src_dir = 'pypy2-v5.4.0-src'
 
 # These are listed in "Building PyPy from Source":
 #                     http://doc.pypy.org/en/latest/build.html
@@ -67,6 +67,15 @@ def windows_main():
 def compiling_commands():
     os.environ['PYTHONPATH'] = pypy_src_dir
     rpython_bin = os.path.join(pypy_src_dir, 'rpython', 'bin', 'rpython')
+    if len(sys.argv) > 1 and sys.argv[1] == 'pypy-compile-debug':
+        check_call(['pypy', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 --lldebug runtime/goal_standalone.py".split(' '))
+        compile_libraries(preserve_cache=False)
+    if len(sys.argv) > 1 and sys.argv[1] == 'pypy-compile':
+        check_call(['pypy', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 runtime/goal_standalone.py".split(' '))
+        compile_libraries(preserve_cache=False)
+    if len(sys.argv) > 1 and sys.argv[1] == 'compile-debug':
+        check_call(['python', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 --lldebug runtime/goal_standalone.py".split(' '))
+        compile_libraries(preserve_cache=False)
     if len(sys.argv) > 1 and sys.argv[1] == 'compile':
         check_call(['python', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 runtime/goal_standalone.py".split(' '))
         compile_libraries(preserve_cache=False)
