@@ -73,6 +73,8 @@ This language has started to be useful with just one person. I can barely
 imagine what it would be with 10, or 100 active users. How much more useful
 could it get?
 
+TODO: Add api documentation.
 
 https, lencrypt script renew,
 googlereg, install meta-tags.
+

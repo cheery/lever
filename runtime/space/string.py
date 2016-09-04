@@ -36,10 +36,9 @@ class String(Object):
             for i in range(start, stop, step):
                 result.append(self.string[i])
             return String(u"".join(result))
-        if not isinstance(index, numbers.Integer):
-            raise space.unwind(space.LKeyError(self, index))
+        index = space.cast(index, numbers.Integer, u"index not an integer")
         if not 0 <= index.value < len(self.string):
-            raise space.OldError(u"index out of range")
+            raise space.unwind(space.LKeyError(self, index))
         return String(self.string[index.value])
 
     def iter(self):

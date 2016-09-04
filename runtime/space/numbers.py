@@ -4,7 +4,6 @@ from rpython.rlib.rfloat import (
 from interface import Object, null, cast_for
 from rpython.rlib.objectmodel import compute_hash
 from builtin import signature
-from errors import OldError
 import space
 
 class Float(Object):
@@ -124,7 +123,7 @@ def to_float(obj):
         else:
             return 0.0
     else:
-        raise OldError(u"expected float value")
+        raise space.unwind(space.LTypeError(u"expected float value"))
 
 def to_int(obj):
     if isinstance(obj, Float):
@@ -137,7 +136,7 @@ def to_int(obj):
         else:
             return 0
     else:
-        raise OldError(u"expected int value")
+        raise space.unwind(space.LTypeError(u"expected int value"))
 
 true = Boolean(True)
 false = Boolean(False)

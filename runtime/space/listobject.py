@@ -57,15 +57,14 @@ class List(Object):
             for i in range(start, stop, step):
                 result.append(self.contents[i])
             return List(result)
-        if not isinstance(index, Integer):
-            raise space.unwind(space.LTypeError(u"index not an integer"))
+        index = space.cast(index, Integer, u"index not an integer")
         if not 0 <= index.value < len(self.contents):
             raise space.unwind(space.LKeyError(self, index))
         return self.contents[index.value]
 
     def setitem(self, index, value):
-        if not isinstance(index, Integer):
-            raise space.unwind(space.LTypeError(u"index not an integer"))
+        # TODO: Add slice support to this side.
+        index = space.cast(index, Integer, u"index not an integer")
         if not 0 <= index.value < len(self.contents):
             raise space.unwind(space.LKeyError(self, index))
         self.contents[index.value] = value

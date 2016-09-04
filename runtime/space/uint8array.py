@@ -30,19 +30,16 @@ class Uint8Array(Object):
         return Object.getattr(self, name)
         
     def getitem(self, index):
-        if not isinstance(index, numbers.Integer):
-            raise space.OldError(u"index not an integer")
+        index = space.cast(index, numbers.Integer, u"index not an integer")
         if not 0 <= index.value < self.length:
-            raise space.OldError(u"index out of range")
+            raise space.unwind(space.LKeyError(self, index))
         return numbers.Integer(rffi.r_long(self.uint8data[index.value]))
 
     def setitem(self, index, value):
-        if not isinstance(index, numbers.Integer):
-            raise space.OldError(u"index not an integer")
+        index = space.cast(index, numbers.Integer, u"index not an integer")
         if not 0 <= index.value < self.length:
-            raise space.OldError(u"index out of range")
-        if not isinstance(value, numbers.Integer):
-            raise space.OldError(u"value of incorrect type")
+            raise space.unwind(space.LKeyError(self, index))
+        value = space.cast(value, numbers.Integer, u"value not an integer")
         self.uint8data[index.value] = rffi.r_uchar(value.value)
         return value
 
