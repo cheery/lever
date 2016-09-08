@@ -221,6 +221,10 @@ Compiling lever from sources can take up to 3GB of memory until it finishes.
 
 If you find out you're memory constrained, you may want to try compile with `./setup.py compile-nojit`. Compiling Lever without JIT will require considerably less memory (500M).
 
+If you need more assistance, there's larger guide for compiling lever titled ["Contributing to Lever"](http://leverlanguage.com/guides/vscode-contributing/)
+
+PROTIP: Check into `setup.py` to find more compiling commands. There are few more undocumented ones such as `pypy-compile` for compiling on pypy and `pypy-compile-debug` for providing a debug-build.
+
 ## How to setup your development environment
 
 First of all you need a good text editor for writing lever code. Avoid wordpad and notepad, they aren't good for this. Here are some you could try:
