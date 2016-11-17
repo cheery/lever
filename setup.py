@@ -32,8 +32,8 @@ import os
 # are stabilized, so I don't expect to have trouble with versions.
 # Maybe it happens some day... On someone's computer. That he doesn't have recent enough
 # versions of these libraries.
-pypy_src_url = 'https://bitbucket.org/pypy/pypy/downloads/pypy2-v5.4.0-src'
-pypy_src_dir = 'pypy2-v5.4.0-src'
+pypy_src_url = 'https://bitbucket.org/pypy/pypy/downloads/pypy2-v5.6.0-src'
+pypy_src_dir = 'pypy2-v5.6.0-src'
 
 # These are listed in "Building PyPy from Source":
 #                     http://doc.pypy.org/en/latest/build.html
