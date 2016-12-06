@@ -1,0 +1,135 @@
+import tokenizer
+import chartparser
+import compiler
+import grammar_language
+import optable
+import base
+import binon
+
+actions = compiler.actions
+Context = compiler.Context
+ConstantTable = compiler.ConstantTable
+Cell = compiler.Cell
+Origin = compiler.Origin
+Scope = compiler.Scope
+Prog = compiler.Prog
+dump = compiler.dump
+
+# It is expected these classes are here.
+SyntaxError = chartparser.SyntaxError
+SyntaxErrorExpected = chartparser.SyntaxErrorExpected
+
+language = grammar_language.read_file(dir ++ "new_lever.grammar")
+language.new_parser = chartparser.preprocess(
+    language.grammar,
+    language.table.nonterminal("file"))
+
+main = ():
+    console = :module("console", base)
+        dir = getcwd()
+        name = "console"
+        %"import" = Import(dir,
+            ModuleScope(dir, %"import".scope.parent,
+                {"compile_file": compile_file}))
+    print("LEVER x.x.x")
+    buffer = []
+    while true
+        prompt = ">> "
+        if buffer.length > 0
+            prompt = "   "
+        string = input(prompt)
+        buffer.append(string)
+        try
+            code = read_string("\n".join(buffer), "console")
+            print(repr(load(code)(console)))
+        except compiler.SyntaxError as syn
+            if syn.at_eof
+                continue
+            print(repr(syn))
+        except SystemExit as exit
+            raise exit
+        except Exception as exc
+            print_traceback(exc)
+        buffer = []
+
+# Alternatives.
+main_2 = ():
+    code = read_file("sample.lc", "sample.lc")
+    this = module("sample", base)
+    setattr(this, "import", Import(dir,
+        ModuleScope(dir, %"import".scope.parent,
+            {"compile_file": compile_file})))
+    load(code)(this)
+
+main_3 = ():
+    compile_file("sample.lc.cb", "sample.lc")
+    this = module("sample", base)
+    setattr(this, "import", Import(dir,
+        ModuleScope(dir, %"import".scope.parent,
+            {"compile_file": compile_file})))
+    load(binon.read_file("sample.lc.cb"))(this)
+
+compile_file = (cb_path, lc_path):
+    code = read_file(lc_path, path(lc_path).relpath(cb_path).to_string())
+    binon.write_file(cb_path, code)
+
+read_file = (path, source=null):
+    tokens = tokenizer.read_file(path, language.table.keywords)
+    return read_tokens(tokens, source)
+
+read_string = (string, source=null):
+    tokens = tokenizer.read_string(string, language.table.keywords)
+    return read_tokens(tokens, source)
+
+read_tokens = (tokens, source=null):
+    parser = language.new_parser()
+    indent = :chartparser.IndentParser(tokens[0].start)
+        indent = language.table.terminal("indent")
+        dedent = language.table.terminal("dedent")
+        newline = language.table.terminal("newline")
+    for token in tokens
+        indent.step(parser, token.start, source)
+        terminal = language.table.terminal(token.name)
+        if not parser.expecting(terminal)
+            raise chartparser.SyntaxErrorExpected(parser.expect, token.start, source)
+        parser.step(terminal, token, token.start, token.stop)
+    indent.finish(parser, token.stop)
+    if not parser.accepted
+        raise chartparser.SyntaxErrorExpected(parser.expect, token.stop, source, true)
+    argl = []
+    post = (rule, args, start, stop):
+        cell = rule.annotation(actions, args, argl)
+        if isinstance(cell, Cell)
+            return Origin(cell, 0, start, stop)
+        return cell
+    
+    consttab = ConstantTable()
+    functions = []
+
+    grammar_language.invoker(actions)
+    blank_lhs = (x): # Not used often in this grammar.
+        return null
+    rootdef = :exnihilo()
+        body = parser.traverse(post, blank_lhs)
+        scope = Scope(null, 0, 0, 0, [])
+        origin = null
+    context = Context([rootdef])
+    for funcdef in context.closures
+        context.scope = scope = funcdef.scope
+        context.block = entry = context.new_block()
+        if scope.parent
+            Prog(funcdef.body).visit(context, true)
+            context.op('return', context.op("getglob", "null"))
+        else
+            val = Prog(funcdef.body).visit(context)
+            context.op('return', val)
+        functions.append(dump(
+            scope.flags, scope.argc, scope.topc, scope.localv,
+            entry, consttab, funcdef.origin))
+    code = {
+        "functions": functions,
+        "constants": consttab.constants,
+        "sources": [source],
+        "version": 0
+    }
+    return code

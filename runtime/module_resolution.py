@@ -40,6 +40,8 @@ class ModuleScope(Object):
             if self.base_module is None:
                 return null
             return self.base_module
+        if name == u"compile_file":
+            return self.compile_file
         return Object.getattr(self, name)
 
     def setattr(self, name, value):
@@ -59,9 +61,15 @@ class ModuleScope(Object):
     def iter(self):
         return ScopeIterator(self.cache.iterkeys())
 
-@ModuleScope.instantiator2(signature(pathobj.Path, ModuleScope, optional=1))
-def _(local, parent):
-    return ModuleScope(local, parent)
+# 
+@ModuleScope.instantiator2(signature(pathobj.Path, ModuleScope, Object, optional=2))
+def _(local, parent, options):
+    scope = ModuleScope(local, parent)
+    if options:
+        key = String(u"compile_file")
+        if options.contains(key):
+            scope.compile_file = options.getitem(key)
+    return scope
 
 class ScopeIterator(Object):
     _immutable_fields_ = ['iterator']
