@@ -348,42 +348,67 @@ class Scope
     # This ended up being not very clean. But afterwards not sure why.
     # It may be because the localv will obtain ObjectScope -object here.
     object_scope = (self, context, val, parent=self):
-        context.op("setloc", self.localv.length, val)
-        scope = ObjectScope(parent, self, [])
+        index = self.localv.length
+        context.op("setloc", index, val)
+        scope = ObjectScope(parent, Slot(self, index), [])
         self.localv.append(scope)
         return scope
 
-    getvar = (self, context, depth, name):
-        index = self.localv.index(name)
-        if depth < 0
-            return context.op("getloc", index)
-        else
-            return context.op("getupv", depth, index)
+    getslot = (self, name):
+        return Slot(self, self.localv.index(name))
 
-    setvar = (self, context, depth, name, value):
-        index = self.localv.index(name)
+class Slot
+    +init = (self, scope, index):
+        self.scope = scope
+        self.index = index
+
+    get = (self, context):
+        depth = -1
+        scope = context.scope
+        while scope != self.scope
+            depth += scope.depthc
+            scope = scope.parent
         if depth < 0
-            return context.op("setloc", index, value)
+            return context.op("getloc", self.index)
         else
-            return context.op("setupv", depth, index, value)
+            return context.op("getupv", depth, self.index)
+
+    set = (self, context, value):
+        depth = -1
+        scope = context.scope
+        while scope != self.scope
+            depth += scope.depthc
+            scope = scope.parent
+        if depth < 0
+            return context.op("setloc", self.index, value)
+        else
+            return context.op("setupv", depth, self.index, value)
 
 class ObjectScope
-    +init = (self, parent, scope, localv):
+    +init = (self, parent, slot, localv):
         self.parent = parent
-        self.scope = scope
+        self.slot = slot
         self.localv = localv
         self.depthc = 0
 
     object_scope = (self, context, val, parent=self):
         return self.parent.object_scope(context, val, parent)
 
-    getvar = (self, context, depth, name):
-        obj = self.scope.getvar(context, depth, self)
-        return context.op("getattr", obj, name)
+    getslot = (self, name):
+        return AttrSlot(self.slot, name)
 
-    setvar = (self, context, depth, name, value):
-        obj = self.scope.getvar(context, depth, self)
-        return context.op("setattr", obj, name, value)
+class AttrSlot
+    +init = (self, slot, name):
+        self.slot = slot
+        self.name = name
+
+    get = (self, context):
+        obj = self.slot.get(context)
+        return context.op("getattr", obj, self.name)
+
+    set = (self, context, value):
+        obj = self.slot.get(context)
+        return context.op("setattr", obj, self.name, value)
 
 class Cell
     +init = (self, visit):
@@ -704,16 +729,9 @@ class Getvar extends Cell
         self.name = name
 
     visit = (self, context, noret=false):
-        scope = context.scope
-        if scope
-            if self.name in scope.localv
-                return scope.getvar(context, -1, self.name)
-            depth = scope.depthc - 1
-            while scope.parent
-                if self.name in scope.parent.localv
-                    return scope.parent.getvar(context, depth, self.name)
-                depth += scope.parent.depthc
-                scope = scope.parent
+        slot = scope_lookup(context.scope, "auto", self.name)
+        if slot
+            return slot.get(context)
         return context.op("getglob", self.name)
 
 class Setvar extends Cell
@@ -727,21 +745,24 @@ class Setvar extends Cell
         return setvar(context, self.flavor, self.name, value)
 
 setvar = (context, flavor, name, value):
-    scope = context.scope
-    # The setvar doesn't write into the rootscope.
-    if scope.parent
+    slot = scope_lookup(context.scope, flavor, name)
+    if slot
+        return slot.set(context, value)
+    return context.op("setglob", name, value)
+
+scope_lookup = (scope, flavor, name):
+    # The lookup doesn't write into the rootscope.
+    if scope and scope.parent
         if name in scope.localv and flavor != "upvalue"
-            return scope.setvar(context, -1, name, value)
+            return scope.getslot(name)
         if flavor == "local"
             scope.localv.append(name)
-            return scope.setvar(context, -1, name, value)
-        depth = scope.depthc - 1
+            return scope.getslot(name)
         while scope.parent.parent
             if name in scope.parent.localv
-                return scope.parent.setvar(context, depth, name, value)
-            depth += scope.depthc
+                return scope.parent.getslot(name)
             scope = scope.parent
-    return context.op("setglob", name, value)
+    return null
 
 dump = (flags, argc, topc, localv, entry_block, consttab, origin):
     blocks = reverse_postorder(entry_block)
