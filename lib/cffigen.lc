@@ -60,3 +60,102 @@ main = ():
         print(result)
 
     print("done!")
+
+
+
+
+traverse_declarator = (ctx, decl):
+    spec = traverse_specifier(ctx, decl.specifier)
+    stack = decl.stack
+    while stack
+        if stack.type == 'function'
+            args = []
+            for arg in stack.args
+                args.append(traverse_arg(ctx, arg))
+            spec = {
+                type = 'cfunc'
+                restype = spec
+                argtypes = args
+            }
+        elif stack.type == 'pointer'
+            for _ in stack.ptr
+                spec = {
+                    type = 'pointer'
+                    to = spec
+                }
+        elif stack.type == 'array'
+            assert isinstance(stack.size, c.Constant), repr(stack.size)
+            if stack.size.token == null
+                length = null
+            else
+                length = c.parse_number(stack.size.token.value)
+            spec = {
+                type = 'array'
+                length = length
+                ctype = spec
+            }
+        else
+            assert false, repr(stack) ++ " " ++ stack.type
+        stack = stack.next
+    return spec
+
+traverse_specifier = (ctx, specifier):
+    if specifier.typespec.length > 1
+        spec = " ".join(specifier.typespec)
+        return primitive_types[spec]
+    else
+        spec = specifier.typespec[0]
+        if isinstance(spec, str)
+            return primitive_types[spec]
+        if isinstance(spec, c.Reference)
+            assert spec.value.type == "type", "?"
+            return ctx.traverse_type(spec.name, spec.value.declarator)
+        if isinstance(spec, c.DataSpecifier)
+            return {
+                type = spec.token.value
+                fields = traverse_fields(ctx, spec.fields)
+            }
+        assert false, "requires special treatment " ++ repr(spec)
+
+traverse_fields = (ctx, fields):
+    result = []
+    for field in fields
+        assert not field.last, repr(field.last)
+        result.append([
+            field.name,
+            traverse_declarator(ctx, field)
+        ])
+    return result
+
+traverse_arg = (ctx, arg):
+    if isinstance(arg, c.Specifier)
+        return traverse_specifier(ctx, arg)
+    elif isinstance(arg, c.Declarator)
+        assert not arg.last, "bad syntax?"
+        assert not arg.initializer, "initializer disallowed"
+        return traverse_declarator(ctx, arg)
+    else
+        assert false, repr(arg)
+
+primitive_types = {
+    'void':               "void",
+    'char':               "ubyte",
+    'unsigned char':      "ubyte",
+    'signed char':        "sbyte",
+    'short':              "short",
+    'signed short':       "short",
+    'unsigned short':     "ushort",
+    'int':                "int",
+    'signed':             "int",
+    'unsigned':           "uint",
+    'unsigned int':       "uint",
+    'signed int':         "int",
+    'long':               "long",
+    'unsigned long':      "ulong",
+    'long long':          "llong",
+    'signed long long':   "llong",
+    'unsigned long long': "ullong",
+    'float':              "float",
+    'double':             "double",
+    'long double':        "ldouble",
+}

@@ -490,7 +490,9 @@ class Declarator extends Node
         self.initializer = null
 
     +repr = (self):
-        return "Declarator{" ++ repr(self.specifier) ++ ", " ++ self.name ++ "}"
+        if self.name
+            return "Declarator{" ++ repr(self.specifier) ++ ", " ++ self.name ++ "}"
+        return "Declarator{" ++ repr(self.specifier) ++ "}"
 
 class Specifier extends Node
     +init = (self):
@@ -1188,7 +1190,7 @@ class Preprocessor
             identifier = (token):
                 return 0
             number = (token):
-                return parse_int(token.value)
+                return parse_number(token.value)
             char = (token):
                 return ord(token.value)
             unary_not = (expr):
@@ -1271,7 +1273,9 @@ escape_string = (string, terminal='"', esc=escape_sequences):
     for ch in string
         n = ord(ch)
         if 0x20 <= n and n <= 0x7E or 0xFF < n  # who does remember this range? :)
-            if ch == terminal
+            if ch == '\\'
+                ch = '\\\\'
+            elif ch == terminal
                 ch = '\\' ++ ch
         else
             # Note this only works on unprintable ascii character range.
@@ -1398,8 +1402,8 @@ escape_sequence = (stream):
     #\nnn The character whose numerical value is given by nnn interpreted as an octal number
     if is_octal_char(string)
         string ++= get_octal(stream) ++ get_octal(stream)
-        if string.length == 3
-            return chr(parse_int(string, 8))
+        #if string.length == 3 # removed because all octal sequences are accepted.
+        return chr(parse_int(string, 8))
     return "\\" ++ string
 
 get_hex = (stream):
@@ -1571,3 +1575,10 @@ string_getch = (string):
         except UncatchedStopIteration as stop
             return "" # Some things are simpler when everything
                       # is a string. Therefore this is not a null.
+
+parse_number = (number):
+    if number.startswith("0x") or number.startswith("0X")
+        return parse_int(number[2 .:], 16)
+    if number.startswith("0")
+        return parse_int(number, 8)
+    return parse_int(number)
