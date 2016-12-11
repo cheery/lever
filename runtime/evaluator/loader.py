@@ -93,7 +93,10 @@ class Closure(space.Object):
         if varargs:
             frame.local[topc] = space.List(argv[min(topc, L):])
         regv = new_register_array(self.function.regc)
-        return interpret(0, self.function.block, regv, frame)
+        if self.function.flags & 2 != 0:
+            return Generator(0, self.function.block, regv, frame)
+        else:
+            return interpret(0, self.function.block, regv, frame)
 
     def getattr(self, name):
         if name == u"doc":
@@ -112,6 +115,36 @@ class Closure(space.Object):
         listing = space.Object.listattr(self)
         listing.append(space.String(u"doc"))
         return listing
+
+class Generator(space.Object):
+    def __init__(self, pc, block, regv, frame):
+        self.pc = pc
+        self.block = block
+        self.regv = regv
+        self.frame = frame
+
+    def iter(self):
+        return self
+
+@Generator.method(u"next", space.signature(Generator))
+def Generator_next(self):
+    if self.frame is None or self.regv is None:
+        raise StopIteration()
+    try:
+        interpret(self.pc, self.block, self.regv, self.frame)
+        self.frame = None
+        self.regv = None
+        self.block = lltype.nullptr(u16_array)
+        raise StopIteration()
+    except Yield as yi:
+        self.pc = yi.pc
+        return yi.value
+    
+class Yield(Exception):
+    def __init__(self, pc, value):
+        self.pc = pc
+        self.value = value
+
 
 class Program(space.Object):
     _immutable_fields_ = ['unit']
@@ -231,6 +264,8 @@ def interpret(pc, block, regv, frame):
                     op_callv(regv, block, ix, pc)
                 elif opcode == opcode_of('return'):
                     return regv.load(block[ix+0])
+                elif opcode == opcode_of('yield'):
+                    raise Yield(pc, regv.load(block[ix+0]))
                 elif opcode == opcode_of('jump'):
                     pc = rffi.r_ulong(block[ix+0])
                 elif opcode == opcode_of('cond'):
@@ -248,9 +283,6 @@ def interpret(pc, block, regv, frame):
                         regv.store(block[ix+0], regv.load(block[ix+1]).callattr(u'next', []))
                     except StopIteration as _:
                         pc = rffi.r_ulong(block[ix+2])
-                # this is missing.
-                #elif isinstance(op, Yield):
-                #    raise YieldIteration(op.block, loop_break, op.i, regv.load(op.value.i))
                 elif opcode == opcode_of('getattr'):
                     name = get_string(unit, block, ix+2)
                     obj = regv.load(block[ix+1])

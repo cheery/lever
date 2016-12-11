@@ -25,6 +25,8 @@ statements =>
 block_statement =>
     statement
     return {"return" statement}
+    return {"return"}
+    yield {"yield" statement}
     if     {"if"     statement block otherwise}
     while  {"while"  statement block}
     local_assign   {local_symbol      "="  block_statement}
@@ -42,6 +44,7 @@ block_statement =>
     class    {"class" class_header block}
     assert   {"assert" statement "," statement}
     assert   {"assert" statement block}
+    assert   {"assert" statement}
 
 class_header =>
     class_header {@symbol}
