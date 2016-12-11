@@ -253,6 +253,20 @@ actions = :exnihilo()
             proc.append(Setvar("local", name.string, module))
         return Prog(proc)
 
+    from_import = (module_name, names):
+        proc = []
+        for name in names
+            it = Code("call", Getvar("import"), Code("constant", module_name.string))
+            proc.append(
+                Setvar("local", name.string,
+                    Code("getattr", it, name.string)))
+        return Prog(proc)
+
+    from_import_all = (module_name):
+        return Code("loglob", Code("call",
+            Getvar("import"),
+            Code("constant", module_name.string)))
+
     %"class" = (header, block=[]):
         grabber = Code("call", Getvar("exnihilo"))
         return Setvar("local", header.name,

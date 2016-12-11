@@ -30,6 +30,7 @@ source = [
     ('setupv',   0xE3, True,  'index index vreg'),
     ('getglob',  0xF0, True,  'string'),
     ('setglob',  0xF1, True,  'string vreg'),
+    ('loglob',   0xFF, False, 'vreg'),
 ]
 
 enc = {}

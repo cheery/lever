@@ -322,6 +322,11 @@ def interpret(pc, block, regv, frame):
                         module.setattr(
                             get_string(unit, block, ix+1),
                             regv.load(block[ix+2])))
+                elif opcode == opcode_of('loglob'):
+                    src_module = regv.load(block[ix+0])
+                    assert isinstance(src_module, space.Module)
+                    for name in src_module.list_locals():
+                        module.setattr(name, src_module.getattr(name))
                 elif opcode == opcode_of('not'):
                     if space.is_false(regv.load(block[ix+1])):
                         regv.store(block[ix+0], space.true)

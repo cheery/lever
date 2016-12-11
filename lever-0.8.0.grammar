@@ -36,6 +36,8 @@ block_statement =>
     setattr        {expr "." @symbol  "="  block_statement}
     for      {"for" @symbol "in" subexpr block}
     import   {"import" symbols_list}
+    from_import     {"from" @symbol "import" symbols_list}
+    from_import_all {"from" @symbol "import" "*"}
     try      {"try" block excepts}
     raise    {"raise" statement}
     break    {"break"}

@@ -16,6 +16,12 @@ class FrozenCell(Cell):
     def __init__(self, slot):
         self.slot = slot
 
+class ShadowCell(Cell):
+    _attrs_ = ['slot', 'link']
+    def __init__(self, slot, link):
+        self.slot = slot
+        self.link = link
+
 class Module(Object):
     _immutable_fields_ = ['extends', 'cells']
     def __init__(self, name, namespace, extends=None, frozen=False):
@@ -26,26 +32,40 @@ class Module(Object):
         for name in namespace:
             self.setattr_force(name, namespace[name])
 
-    # This is likely not correct. It's likely the extends -slot values should be slowly copied over.
-    # Alternatively the whole extends -concept could be dumb, and I should dump it.
     @jit.elidable
-    def lookup(self, name, assign=False):
-        if assign or self.extends is None:
+    def lookup(self, name):
+        if self.extends is None:
             return self.cells[name]
         try:
             return self.cells[name]
         except KeyError:
-            return self.extends.lookup(name)
+            link = self.extends.lookup(name)
+            self.cells[name] = cell = ShadowCell(null, link)
+            return cell
+
+    def list_locals(self):
+        out = []
+        for name, cell in self.cells.items():
+            if isinstance(cell, ShadowCell) and cell.link is not None:
+                continue
+            out.append(name)
+        return out
 
     def listattr(self):
         listing = Object.listattr(self)
-        for name in self.cells:
+        for name, cell in self.cells.items():
+            if isinstance(cell, ShadowCell) and cell.link is not None:
+                continue
             listing.append(space.String(name))
         return listing
 
     def getattr(self, name):
         try:
             cell = jit.promote(self.lookup(name))
+            while isinstance(cell, ShadowCell):
+                if cell.link is None:
+                    return cell.slot
+                cell = cell.link
             if isinstance(cell, FrozenCell):
                 return cell.slot
             elif isinstance(cell, MutableCell):
@@ -62,11 +82,14 @@ class Module(Object):
 
     def setattr_force(self, name, value):
         try:
-            cell = jit.promote(self.lookup(name, assign=True))
+            cell = jit.promote(self.lookup(name))
             if isinstance(cell, FrozenCell):
                 raise space.unwind(space.LFrozenError(self))
             elif isinstance(cell, MutableCell):
                 cell.slot = value
+            elif isinstance(cell, ShadowCell):
+                cell.slot = value
+                cell.link = None
             else:
                 assert False
         except KeyError:
