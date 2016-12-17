@@ -1,27 +1,35 @@
 {
   "constants": {
     "BUILD_NUMBER": 0, 
+    "Boundary_Outer": 1, 
+    "Boundary_PlayArea": 256, 
     "Button_A": 1, 
     "Button_B": 2, 
     "Button_Back": 2097152, 
     "Button_Down": 131072, 
     "Button_Enter": 1048576, 
     "Button_EnumSize": 2147483647, 
+    "Button_Home": 16777216, 
+    "Button_LMask": 1052416, 
     "Button_LShoulder": 2048, 
     "Button_LThumb": 1024, 
     "Button_Left": 262144, 
     "Button_Private": 29360128, 
+    "Button_RMask": 15, 
     "Button_RShoulder": 8, 
     "Button_RThumb": 4, 
     "Button_Right": 524288, 
     "Button_Up": 65536, 
+    "Button_VolDown": 8388608, 
+    "Button_VolUp": 4194304, 
     "Button_X": 256, 
     "Button_Y": 512, 
-    "ControllerType_All": 255, 
+    "ControllerType_Active": 255, 
     "ControllerType_EnumSize": 2147483647, 
     "ControllerType_LTouch": 1, 
     "ControllerType_None": 0, 
     "ControllerType_RTouch": 2, 
+    "ControllerType_Remote": 4, 
     "ControllerType_Touch": 3, 
     "ControllerType_XBox": 16, 
     "DEBUG_HUD_STEREO_GUIDE_COLOR": "DebugHudStereoGuideColor4f", 
@@ -30,103 +38,129 @@
     "DEBUG_HUD_STEREO_GUIDE_SIZE": "DebugHudStereoGuideSize2f", 
     "DEBUG_HUD_STEREO_GUIDE_YAWPITCHROLL": "DebugHudStereoGuideYawPitchRoll3f", 
     "DEBUG_HUD_STEREO_MODE": "DebugHudStereoMode", 
-    "DEFAULT_EYE_RELIEF_DIAL": 3, 
     "DEFAULT_GENDER": "Unknown", 
-    "DISPLAY_DRIVER_PRODUCT_VERSION": "1.2.8.0", 
-    "DLL_COMPATIBLE_MAJOR_VERSION": 8, 
+    "DLL_COMPATIBLE_VERSION": 101, 
     "DebugHudStereo_Count": 4, 
     "DebugHudStereo_CrosshairAtInfinity": 3, 
     "DebugHudStereo_EnumSize": 2147483647, 
     "DebugHudStereo_Off": 0, 
     "DebugHudStereo_Quad": 1, 
     "DebugHudStereo_QuadWithCrosshair": 2, 
-    "Error_Abandoned": -5001, 
+    "Error_ApplicationInvisible": -6006, 
     "Error_AudioComError": -2002, 
     "Error_AudioDeviceNotFound": -2001, 
-    "Error_AudioReservedBegin": -2000, 
-    "Error_AudioReservedEnd": -2999, 
-    "Error_BootloaderDeviceDetected": -4102, 
+    "Error_ClientSkippedDestroy": -1012, 
+    "Error_ClientSkippedShutdown": -1013, 
     "Error_ClientVersion": -3011, 
-    "Error_ControllerFirmwareMismatch": -4104, 
+    "Error_ContentProtectionNotAvailable": -6005, 
+    "Error_DeviceUnavailable": -1010, 
+    "Error_DisabledOrDefaultAdapter": -3017, 
+    "Error_Disallowed": -6007, 
     "Error_DisplayInit": -3006, 
     "Error_DisplayLost": -6000, 
-    "Error_ExcessiveFrameSkipping": -4006, 
-    "Error_ExcessiveFrameTruncation": -4005, 
-    "Error_GeneralTrackerFailure": -4004, 
-    "Error_HMDFirmwareMismatch": -4100, 
-    "Error_ImageSensorCommError": -4003, 
+    "Error_DisplayManagerInit": -3019, 
+    "Error_DisplayPluggedIncorrectly": -6008, 
+    "Error_DisplayRemoved": -6004, 
+    "Error_GraphicsDeviceReset": -6003, 
+    "Error_HybridGraphicsNotSupported": -3018, 
     "Error_IncompatibleGPU": -3014, 
     "Error_IncompatibleOS": -3005, 
-    "Error_Incomplete": -5000, 
     "Error_Initialize": -3000, 
-    "Error_InvalidBundleAdjustment": -4000, 
+    "Error_InvalidHeadsetOrientation": -1011, 
+    "Error_InvalidOperation": -1015, 
     "Error_InvalidParameter": -1005, 
     "Error_InvalidSession": -1002, 
     "Error_LeakingResources": -3010, 
     "Error_LibLoad": -3001, 
+    "Error_LibPath": -3022, 
+    "Error_LibSignCheck": -3021, 
+    "Error_LibSymbols": -3023, 
     "Error_LibVersion": -3002, 
     "Error_MemoryAllocationFailure": -1000, 
+    "Error_MisformattedBlock": -9002, 
     "Error_MismatchedAdapters": -3009, 
+    "Error_NoCalibration": -9000, 
     "Error_NoHmd": -1007, 
     "Error_NoValidVRDisplaySystem": -3015, 
     "Error_NotInitialized": -1004, 
+    "Error_Obsolete": -3016, 
+    "Error_OldVersion": -9001, 
     "Error_OutOfDateGfxDriver": -3013, 
     "Error_OutOfDateOS": -3012, 
     "Error_Reinitialization": -3008, 
+    "Error_RemoteSession": -3024, 
     "Error_RuntimeException": -7000, 
     "Error_ServerStart": -3007, 
     "Error_ServiceConnection": -3003, 
+    "Error_ServiceDeadlockDetected": -1014, 
     "Error_ServiceError": -1006, 
     "Error_ServiceVersion": -3004, 
-    "Error_SocketCreationFailure": -1001, 
-    "Error_SyncDisconnected": -4007, 
+    "Error_TextureSwapChainFull": -6001, 
+    "Error_TextureSwapChainInvalid": -6002, 
     "Error_Timeout": -1003, 
-    "Error_TrackerCalibrationError": -4103, 
-    "Error_TrackerFirmwareMismatch": -4101, 
-    "Error_TrackerFrameTimeout": -4010, 
-    "Error_TrackerMemoryReadFailure": -4008, 
-    "Error_TrackerMemoryWriteFailure": -4009, 
-    "Error_TrackerTruncatedFrame": -4011, 
-    "Error_USBBandwidth": -4001, 
-    "Error_USBEnumeratedSpeed": -4002, 
+    "Error_TrackerDriverInit": -3020, 
+    "Error_Unsupported": -1009, 
     "Eye_Count": 2, 
     "Eye_EnumSize": 2147483647, 
     "Eye_Left": 0, 
     "Eye_Right": 1, 
     "FEATURE_VERSION": 0, 
     "FILE_DESCRIPTION_STRING": "dev build", 
+    "FORMAT_B4G4R4A4_UNORM": 3, 
+    "FORMAT_B5G5R5A1_UNORM": 2, 
+    "FORMAT_B5G6R5_UNORM": 1, 
+    "FORMAT_B8G8R8A8_UNORM": 6, 
+    "FORMAT_B8G8R8A8_UNORM_SRGB": 7, 
+    "FORMAT_B8G8R8X8_UNORM": 8, 
+    "FORMAT_B8G8R8X8_UNORM_SRGB": 9, 
+    "FORMAT_BC1_UNORM": 15, 
+    "FORMAT_BC1_UNORM_SRGB": 16, 
+    "FORMAT_BC2_UNORM": 17, 
+    "FORMAT_BC2_UNORM_SRGB": 18, 
+    "FORMAT_BC3_UNORM": 19, 
+    "FORMAT_BC3_UNORM_SRGB": 20, 
+    "FORMAT_BC6H_SF16": 22, 
+    "FORMAT_BC6H_UF16": 21, 
+    "FORMAT_BC7_UNORM": 23, 
+    "FORMAT_BC7_UNORM_SRGB": 24, 
+    "FORMAT_D16_UNORM": 11, 
+    "FORMAT_D24_UNORM_S8_UINT": 12, 
+    "FORMAT_D32_FLOAT": 13, 
+    "FORMAT_D32_FLOAT_S8X24_UINT": 14, 
+    "FORMAT_ENUMSIZE": 2147483647, 
+    "FORMAT_R11G11B10_FLOAT": 25, 
+    "FORMAT_R16G16B16A16_FLOAT": 10, 
+    "FORMAT_R8G8B8A8_UNORM": 4, 
+    "FORMAT_R8G8B8A8_UNORM_SRGB": 5, 
+    "FORMAT_UNKNOWN": 0, 
     "False": 0, 
+    "Hand_Count": 2, 
     "Hand_EnumSize": 2147483647, 
     "Hand_Left": 0, 
     "Hand_Right": 1, 
+    "HapticsBufferSubmit_Enqueue": 0, 
+    "HapticsGenMode_Count": 1, 
+    "HapticsGenMode_PointSample": 0, 
     "HmdCap_DebugDevice": 16, 
     "HmdCap_EnumSize": 2147483647, 
-    "HmdCap_Service_Mask": 0, 
-    "HmdCap_Writable_Mask": 0, 
     "Hmd_CB": 8, 
+    "Hmd_CV1": 14, 
     "Hmd_DK1": 3, 
     "Hmd_DK2": 6, 
     "Hmd_DKHD": 4, 
     "Hmd_E3_2015": 10, 
     "Hmd_ES06": 11, 
     "Hmd_ES09": 12, 
+    "Hmd_ES11": 13, 
     "Hmd_EnumSize": 2147483647, 
     "Hmd_None": 0, 
     "Hmd_Other": 9, 
     "Init_Debug": 1, 
     "Init_EnumSize": 2147483647, 
     "Init_RequestVersion": 4, 
-    "KEY_CAMERA_POSITION": "CenteredFromWorld2", 
-    "KEY_CAMERA_POSITION_1": "CenteredFromWorld", 
-    "KEY_CAMERA_POSITION_2": "CenteredFromWorld2", 
-    "KEY_CUSTOM_EYE_RENDER": "CustomEyeRender", 
-    "KEY_EYE_CUP": "EyeCup", 
     "KEY_EYE_HEIGHT": "EyeHeight", 
-    "KEY_EYE_RELIEF_DIAL": "EyeReliefDial", 
     "KEY_EYE_TO_NOSE_DISTANCE": "EyeToNoseDist", 
     "KEY_GENDER": "Gender", 
-    "KEY_IPD": "IPD", 
-    "KEY_MAX_EYE_TO_PLATE_DISTANCE": "MaxEyeToPlateDist", 
     "KEY_NAME": "Name", 
     "KEY_NECK_TO_EYE_DISTANCE": "NeckEyeDistance", 
     "KEY_PLAYER_HEIGHT": "PlayerHeight", 
@@ -140,75 +174,164 @@
     "LayerHud_EnumSize": 2147483647, 
     "LayerHud_Info": 1, 
     "LayerHud_Off": 0, 
-    "LayerType_Direct": 6, 
     "LayerType_Disabled": 0, 
     "LayerType_EnumSize": 2147483647, 
     "LayerType_EyeFov": 1, 
-    "LayerType_EyeFovDepth": 2, 
     "LayerType_EyeMatrix": 5, 
     "LayerType_Quad": 3, 
     "LogLevel_Debug": 0, 
     "LogLevel_EnumSize": 2147483647, 
     "LogLevel_Error": 2, 
     "LogLevel_Info": 1, 
-    "MAJOR_VERSION": 8, 
-    "MINOR_VERSION": 0, 
-    "MaxLayerCount": 32, 
-    "PATCH_VERSION": 0, 
+    "MAJOR_VERSION": 1, 
+    "MINOR_VERSION": 10, 
+    "MaxLayerCount": 16, 
+    "MaxProvidedFrameStats": 5, 
+    "PATCH_VERSION": 1, 
     "PERF_HUD_MODE": "PerfHudMode", 
-    "POSITIONAL_TRACKER_DRIVER_PRODUCT_VERSION": "1.0.14.0", 
-    "PRODUCT_VERSION": 0, 
+    "PRODUCT_VERSION": 1, 
     "PTR_SIZE": 4, 
-    "PerfHud_Count": 5, 
+    "PerfHud_AppRenderTiming": 3, 
+    "PerfHud_CompRenderTiming": 4, 
+    "PerfHud_Count": 6, 
     "PerfHud_EnumSize": 2147483647, 
-    "PerfHud_LatencyTiming": 1, 
+    "PerfHud_LatencyTiming": 2, 
     "PerfHud_Off": 0, 
-    "PerfHud_PerfHeadroom": 3, 
-    "PerfHud_RenderTiming": 2, 
-    "PerfHud_VersionInfo": 4, 
+    "PerfHud_PerfSummary": 1, 
+    "PerfHud_VersionInfo": 5, 
     "Projection_ClipRangeOpenGL": 8, 
     "Projection_FarClipAtInfinity": 4, 
     "Projection_FarLessThanNear": 2, 
+    "Projection_LeftHanded": 1, 
     "Projection_None": 0, 
-    "Projection_RightHanded": 1, 
-    "RenderAPI_Android_GLES": 2, 
-    "RenderAPI_Count": 4, 
-    "RenderAPI_D3D11": 5, 
-    "RenderAPI_EnumSize": 2147483647, 
-    "RenderAPI_None": 0, 
-    "RenderAPI_OpenGL": 1, 
-    "Status_CameraPoseTracked": 4, 
     "Status_EnumSize": 2147483647, 
-    "Status_HmdConnected": 128, 
     "Status_OrientationTracked": 1, 
-    "Status_PositionConnected": 32, 
     "Status_PositionTracked": 2, 
     "Success": 0, 
-    "Success_ControllerFirmwareMismatch": 4104, 
-    "Success_HMDFirmwareMismatch": 4100, 
+    "Success_BoundaryInvalid": 1001, 
+    "Success_DeviceUnavailable": 1002, 
     "Success_NotVisible": 1000, 
-    "Success_TrackerFirmwareMismatch": 4101, 
+    "TextureBind_DX_DepthStencil": 4, 
+    "TextureBind_DX_RenderTarget": 1, 
+    "TextureBind_DX_UnorderedAccess": 2, 
+    "TextureBind_EnumSize": 2147483647, 
+    "TextureBind_None": 0, 
+    "TextureMisc_AllowGenerateMips": 2, 
+    "TextureMisc_DX_Typeless": 1, 
+    "TextureMisc_EnumSize": 2147483647, 
+    "TextureMisc_None": 0, 
+    "TextureMisc_ProtectedContent": 4, 
+    "Texture_2D": 0, 
+    "Texture_2D_External": 1, 
+    "Texture_Count": 3, 
+    "Texture_Cube": 2, 
+    "Texture_EnumSize": 2147483647, 
     "Touch_A": 1, 
     "Touch_B": 2, 
     "Touch_EnumSize": 2147483647, 
+    "Touch_LButtonMask": 7936, 
     "Touch_LIndexPointing": 8192, 
     "Touch_LIndexTrigger": 4096, 
+    "Touch_LPoseMask": 24576, 
     "Touch_LThumb": 1024, 
+    "Touch_LThumbRest": 2048, 
     "Touch_LThumbUp": 16384, 
+    "Touch_RButtonMask": 31, 
     "Touch_RIndexPointing": 32, 
     "Touch_RIndexTrigger": 16, 
+    "Touch_RPoseMask": 96, 
     "Touch_RThumb": 4, 
+    "Touch_RThumbRest": 8, 
     "Touch_RThumbUp": 64, 
     "Touch_X": 256, 
     "Touch_Y": 512, 
+    "TrackedDevice_All": 65535, 
+    "TrackedDevice_HMD": 1, 
+    "TrackedDevice_LTouch": 2, 
+    "TrackedDevice_RTouch": 4, 
+    "TrackedDevice_Touch": 6, 
+    "Tracker_Connected": 32, 
+    "Tracker_PoseTracked": 4, 
     "TrackingCap_EnumSize": 2147483647, 
     "TrackingCap_MagYawCorrection": 32, 
     "TrackingCap_Orientation": 16, 
     "TrackingCap_Position": 64, 
+    "TrackingOrigin_Count": 2, 
+    "TrackingOrigin_EnumSize": 2147483647, 
+    "TrackingOrigin_EyeLevel": 0, 
+    "TrackingOrigin_FloorLevel": 1, 
     "True": 1, 
     "init_WritableBits": 16777215
   }, 
   "types": {
+    "AudioChannelData": {
+      "fields": [
+        [
+          "Samples", 
+          "float*"
+        ], 
+        [
+          "SamplesCount", 
+          "int"
+        ], 
+        [
+          "Frequency", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "BoundaryLookAndFeel": {
+      "fields": [
+        [
+          "Color", 
+          "Colorf"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "BoundaryTestResult": {
+      "fields": [
+        [
+          "IsTriggering", 
+          "ubyte"
+        ], 
+        [
+          "ClosestDistance", 
+          "float"
+        ], 
+        [
+          "ClosestPoint", 
+          "Vector3f"
+        ], 
+        [
+          "ClosestPointNormal", 
+          "Vector3f"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "Colorf": {
+      "fields": [
+        [
+          "r", 
+          "float"
+        ], 
+        [
+          "g", 
+          "float"
+        ], 
+        [
+          "b", 
+          "float"
+        ], 
+        [
+          "a", 
+          "float"
+        ]
+      ], 
+      "type": "struct"
+    }, 
     "DetectResult": {
       "fields": [
         [
@@ -266,7 +389,7 @@
           "Vector2f"
         ], 
         [
-          "HmdToEyeViewOffset", 
+          "HmdToEyeOffset", 
           "Vector3f"
         ]
       ], 
@@ -293,32 +416,6 @@
       ], 
       "type": "struct"
     }, 
-    "GLTexture": {
-      "fields": [
-        [
-          "Texture", 
-          "Texture"
-        ], 
-        [
-          "OGL", 
-          "GLTextureData"
-        ]
-      ], 
-      "type": "union"
-    }, 
-    "GLTextureData": {
-      "fields": [
-        [
-          "Header", 
-          "TextureHeader"
-        ], 
-        [
-          "TexId", 
-          "uint"
-        ]
-      ], 
-      "type": "struct"
-    }, 
     "GraphicsLuid": {
       "fields": [
         [
@@ -328,6 +425,49 @@
             "length": 8, 
             "type": "array"
           }
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "HapticsBuffer": {
+      "fields": [
+        [
+          "Samples", 
+          "void*"
+        ], 
+        [
+          "SamplesCount", 
+          "int"
+        ], 
+        [
+          "SubmitMode", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "HapticsClip": {
+      "fields": [
+        [
+          "Samples", 
+          "void*"
+        ], 
+        [
+          "SamplesCount", 
+          "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "HapticsPlaybackState": {
+      "fields": [
+        [
+          "RemainingQueueSpace", 
+          "int"
+        ], 
+        [
+          "SamplesQueued", 
+          "int"
         ]
       ], 
       "type": "struct"
@@ -377,22 +517,6 @@
         [
           "FirmwareMinor", 
           "short"
-        ], 
-        [
-          "CameraFrustumHFovInRadians", 
-          "float"
-        ], 
-        [
-          "CameraFrustumVFovInRadians", 
-          "float"
-        ], 
-        [
-          "CameraFrustumNearZInMeters", 
-          "float"
-        ], 
-        [
-          "CameraFrustumFarZInMeters", 
-          "float"
         ], 
         [
           "AvailableHmdCaps", 
@@ -469,10 +593,6 @@
           "double"
         ], 
         [
-          "ConnectedControllerTypes", 
-          "uint"
-        ], 
-        [
           "Buttons", 
           "uint"
         ], 
@@ -503,28 +623,31 @@
             "length": 2, 
             "type": "array"
           }
-        ]
-      ], 
-      "type": "struct"
-    }, 
-    "LayerDirect": {
-      "fields": [
-        [
-          "Header", 
-          "LayerHeader"
         ], 
         [
-          "ColorTexture", 
+          "ControllerType", 
+          "int"
+        ], 
+        [
+          "IndexTriggerNoDeadzone", 
           {
-            "ctype": "SwapTextureSet*", 
+            "ctype": "float", 
             "length": 2, 
             "type": "array"
           }
         ], 
         [
-          "Viewport", 
+          "HandTriggerNoDeadzone", 
           {
-            "ctype": "Recti", 
+            "ctype": "float", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "ThumbstickNoDeadzone", 
+          {
+            "ctype": "Vector2f", 
             "length": 2, 
             "type": "array"
           }
@@ -541,7 +664,7 @@
         [
           "ColorTexture", 
           {
-            "ctype": "SwapTextureSet*", 
+            "ctype": "TextureSwapChain", 
             "length": 2, 
             "type": "array"
           }
@@ -573,63 +696,6 @@
         [
           "SensorSampleTime", 
           "double"
-        ]
-      ], 
-      "type": "struct"
-    }, 
-    "LayerEyeFovDepth": {
-      "fields": [
-        [
-          "Header", 
-          "LayerHeader"
-        ], 
-        [
-          "ColorTexture", 
-          {
-            "ctype": "SwapTextureSet*", 
-            "length": 2, 
-            "type": "array"
-          }
-        ], 
-        [
-          "Viewport", 
-          {
-            "ctype": "Recti", 
-            "length": 2, 
-            "type": "array"
-          }
-        ], 
-        [
-          "Fov", 
-          {
-            "ctype": "FovPort", 
-            "length": 2, 
-            "type": "array"
-          }
-        ], 
-        [
-          "RenderPose", 
-          {
-            "ctype": "Posef", 
-            "length": 2, 
-            "type": "array"
-          }
-        ], 
-        [
-          "SensorSampleTime", 
-          "double"
-        ], 
-        [
-          "DepthTexture", 
-          {
-            "ctype": "SwapTextureSet*", 
-            "length": 2, 
-            "type": "array"
-          }
-        ], 
-        [
-          "ProjectionDesc", 
-          "TimewarpProjectionDesc"
         ]
       ], 
       "type": "struct"
@@ -655,7 +721,7 @@
         ], 
         [
           "ColorTexture", 
-          "SwapTextureSet*"
+          "TextureSwapChain"
         ], 
         [
           "Viewport", 
@@ -683,16 +749,8 @@
           "LayerEyeFov"
         ], 
         [
-          "EyeFovDepth", 
-          "LayerEyeFovDepth"
-        ], 
-        [
           "Quad", 
           "LayerQuad"
-        ], 
-        [
-          "Direct", 
-          "LayerDirect"
         ]
       ], 
       "type": "union"
@@ -709,6 +767,119 @@
         "vararg": false
       }, 
       "type": "pointer"
+    }, 
+    "MirrorTexture": {
+      "to": {
+        "type": "opaque"
+      }, 
+      "type": "pointer"
+    }, 
+    "MirrorTextureDesc": {
+      "fields": [
+        [
+          "Format", 
+          "int"
+        ], 
+        [
+          "Width", 
+          "int"
+        ], 
+        [
+          "Height", 
+          "int"
+        ], 
+        [
+          "MiscFlags", 
+          "uint"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "PerfStats": {
+      "fields": [
+        [
+          "FrameStats", 
+          {
+            "ctype": "PerfStatsPerCompositorFrame", 
+            "length": 5, 
+            "type": "array"
+          }
+        ], 
+        [
+          "FrameStatsCount", 
+          "int"
+        ], 
+        [
+          "AnyFrameStatsDropped", 
+          "ubyte"
+        ], 
+        [
+          "AdaptiveGpuPerformanceScale", 
+          "float"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "PerfStatsPerCompositorFrame": {
+      "fields": [
+        [
+          "HmdVsyncIndex", 
+          "int"
+        ], 
+        [
+          "AppFrameIndex", 
+          "int"
+        ], 
+        [
+          "AppDroppedFrameCount", 
+          "int"
+        ], 
+        [
+          "AppMotionToPhotonLatency", 
+          "float"
+        ], 
+        [
+          "AppQueueAheadTime", 
+          "float"
+        ], 
+        [
+          "AppCpuElapsedTime", 
+          "float"
+        ], 
+        [
+          "AppGpuElapsedTime", 
+          "float"
+        ], 
+        [
+          "CompositorFrameIndex", 
+          "int"
+        ], 
+        [
+          "CompositorDroppedFrameCount", 
+          "int"
+        ], 
+        [
+          "CompositorLatency", 
+          "float"
+        ], 
+        [
+          "CompositorCpuElapsedTime", 
+          "float"
+        ], 
+        [
+          "CompositorGpuElapsedTime", 
+          "float"
+        ], 
+        [
+          "CompositorCpuStartToGpuEndElapsedTime", 
+          "float"
+        ], 
+        [
+          "CompositorGpuEndToVsyncElapsedTime", 
+          "float"
+        ]
+      ], 
+      "type": "struct"
     }, 
     "PoseStatef": {
       "fields": [
@@ -794,31 +965,6 @@
       ], 
       "type": "struct"
     }, 
-    "SensorData": {
-      "fields": [
-        [
-          "Accelerometer", 
-          "Vector3f"
-        ], 
-        [
-          "Gyro", 
-          "Vector3f"
-        ], 
-        [
-          "Magnetometer", 
-          "Vector3f"
-        ], 
-        [
-          "Temperature", 
-          "float"
-        ], 
-        [
-          "TimeInSeconds", 
-          "float"
-        ]
-      ], 
-      "type": "struct"
-    }, 
     "Session": {
       "to": {
         "type": "opaque"
@@ -828,11 +974,27 @@
     "SessionStatus": {
       "fields": [
         [
-          "HasVrFocus", 
+          "IsVisible", 
           "ubyte"
         ], 
         [
           "HmdPresent", 
+          "ubyte"
+        ], 
+        [
+          "HmdMounted", 
+          "ubyte"
+        ], 
+        [
+          "DisplayLost", 
+          "ubyte"
+        ], 
+        [
+          "ShouldQuit", 
+          "ubyte"
+        ], 
+        [
+          "ShouldRecenter", 
           "ubyte"
         ]
       ], 
@@ -851,66 +1013,128 @@
       ], 
       "type": "struct"
     }, 
-    "SwapTextureSet": {
+    "TextureSwapChain": {
+      "to": {
+        "type": "opaque"
+      }, 
+      "type": "pointer"
+    }, 
+    "TextureSwapChainDesc": {
       "fields": [
         [
-          "Textures", 
-          "Texture*"
-        ], 
-        [
-          "TextureCount", 
+          "Type", 
           "int"
         ], 
         [
-          "CurrentIndex", 
+          "Format", 
+          "int"
+        ], 
+        [
+          "ArraySize", 
+          "int"
+        ], 
+        [
+          "Width", 
+          "int"
+        ], 
+        [
+          "Height", 
+          "int"
+        ], 
+        [
+          "MipLevels", 
+          "int"
+        ], 
+        [
+          "SampleCount", 
+          "int"
+        ], 
+        [
+          "StaticImage", 
+          "ubyte"
+        ], 
+        [
+          "MiscFlags", 
+          "uint"
+        ], 
+        [
+          "BindFlags", 
+          "uint"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "TouchHapticsDesc": {
+      "fields": [
+        [
+          "SampleRateHz", 
+          "int"
+        ], 
+        [
+          "SampleSizeInBytes", 
+          "int"
+        ], 
+        [
+          "QueueMinSizeToAvoidStarvation", 
+          "int"
+        ], 
+        [
+          "SubmitMinSamples", 
+          "int"
+        ], 
+        [
+          "SubmitMaxSamples", 
+          "int"
+        ], 
+        [
+          "SubmitOptimalSamples", 
           "int"
         ]
       ], 
       "type": "struct"
     }, 
-    "Texture": {
+    "TrackerDesc": {
       "fields": [
         [
-          "Header", 
-          "TextureHeader"
+          "FrustumHFovInRadians", 
+          "float"
         ], 
         [
-          "PlatformData", 
+          "FrustumVFovInRadians", 
+          "float"
+        ], 
+        [
+          "FrustumNearZInMeters", 
+          "float"
+        ], 
+        [
+          "FrustumFarZInMeters", 
+          "float"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "TrackerPose": {
+      "fields": [
+        [
+          "TrackerFlags", 
+          "uint"
+        ], 
+        [
+          "Pose", 
+          "Posef"
+        ], 
+        [
+          "LeveledPose", 
+          "Posef"
+        ], 
+        [
+          "pad0", 
           {
-            "ctype": "uint", 
-            "length": 8, 
+            "ctype": "ubyte", 
+            "length": 4, 
             "type": "array"
           }
-        ]
-      ], 
-      "type": "struct"
-    }, 
-    "TextureHeader": {
-      "fields": [
-        [
-          "API", 
-          "int"
-        ], 
-        [
-          "TextureSize", 
-          "Sizei"
-        ]
-      ], 
-      "type": "struct"
-    }, 
-    "TimewarpProjectionDesc": {
-      "fields": [
-        [
-          "Projection22", 
-          "float"
-        ], 
-        [
-          "Projection23", 
-          "float"
-        ], 
-        [
-          "Projection32", 
-          "float"
         ]
       ], 
       "type": "struct"
@@ -922,12 +1146,8 @@
           "PoseStatef"
         ], 
         [
-          "CameraPose", 
-          "Posef"
-        ], 
-        [
-          "LeveledCameraPose", 
-          "Posef"
+          "StatusFlags", 
+          "uint"
         ], 
         [
           "HandPoses", 
@@ -938,14 +1158,6 @@
           }
         ], 
         [
-          "RawSensorData", 
-          "SensorData"
-        ], 
-        [
-          "StatusFlags", 
-          "uint"
-        ], 
-        [
           "HandStatusFlags", 
           {
             "ctype": "uint", 
@@ -954,16 +1166,8 @@
           }
         ], 
         [
-          "LastCameraFrameCounter", 
-          "uint"
-        ], 
-        [
-          "pad0", 
-          {
-            "ctype": "ubyte", 
-            "length": 4, 
-            "type": "array"
-          }
+          "CalibratedOrigin", 
+          "Posef"
         ]
       ], 
       "type": "struct"
@@ -1014,7 +1218,7 @@
     "ViewScaleDesc": {
       "fields": [
         [
-          "HmdToEyeViewOffset", 
+          "HmdToEyeOffset", 
           {
             "ctype": "Vector3f", 
             "length": 2, 
@@ -1051,13 +1255,23 @@
         "vararg": false
       }
     }, 
-    "ConfigureTracking": {
-      "name": "ovr_ConfigureTracking", 
+    "ClearShouldRecenterFlag": {
+      "name": "ovr_ClearShouldRecenterFlag", 
+      "type": {
+        "argtypes": [
+          "Session"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CommitTextureSwapChain": {
+      "name": "ovr_CommitTextureSwapChain", 
       "type": {
         "argtypes": [
           "Session", 
-          "uint", 
-          "uint"
+          "TextureSwapChain"
         ], 
         "restype": "int", 
         "type": "cfunc", 
@@ -1081,25 +1295,21 @@
       "type": {
         "argtypes": [
           "Session", 
-          "uint", 
-          "int", 
-          "int", 
-          "Texture**"
+          "MirrorTextureDesc*", 
+          "MirrorTexture*"
         ], 
         "restype": "int", 
         "type": "cfunc", 
         "vararg": false
       }
     }, 
-    "CreateSwapTextureSetGL": {
-      "name": "ovr_CreateSwapTextureSetGL", 
+    "CreateTextureSwapChainGL": {
+      "name": "ovr_CreateTextureSwapChainGL", 
       "type": {
         "argtypes": [
           "Session", 
-          "uint", 
-          "int", 
-          "int", 
-          "SwapTextureSet**"
+          "TextureSwapChainDesc*", 
+          "TextureSwapChain*"
         ], 
         "restype": "int", 
         "type": "cfunc", 
@@ -1122,19 +1332,19 @@
       "type": {
         "argtypes": [
           "Session", 
-          "Texture*"
+          "MirrorTexture"
         ], 
         "restype": "void", 
         "type": "cfunc", 
         "vararg": false
       }
     }, 
-    "DestroySwapTextureSet": {
-      "name": "ovr_DestroySwapTextureSet", 
+    "DestroyTextureSwapChain": {
+      "name": "ovr_DestroyTextureSwapChain", 
       "type": {
         "argtypes": [
           "Session", 
-          "SwapTextureSet*"
+          "TextureSwapChain"
         ], 
         "restype": "void", 
         "type": "cfunc", 
@@ -1152,6 +1362,19 @@
         "vararg": false
       }
     }, 
+    "GenHapticsFromAudioData": {
+      "name": "ovr_GenHapticsFromAudioData", 
+      "type": {
+        "argtypes": [
+          "HapticsClip*", 
+          "AudioChannelData*", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "GetBool": {
       "name": "ovr_GetBool", 
       "type": {
@@ -1165,13 +1388,65 @@
         "vararg": false
       }
     }, 
-    "GetEnabledCaps": {
-      "name": "ovr_GetEnabledCaps", 
+    "GetBoundaryDimensions": {
+      "name": "ovr_GetBoundaryDimensions", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "int", 
+          "Vector3f*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetBoundaryGeometry": {
+      "name": "ovr_GetBoundaryGeometry", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "int", 
+          "Vector3f*", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetBoundaryVisible": {
+      "name": "ovr_GetBoundaryVisible", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetConnectedControllerTypes": {
+      "name": "ovr_GetConnectedControllerTypes", 
       "type": {
         "argtypes": [
           "Session"
         ], 
         "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetControllerVibrationState": {
+      "name": "ovr_GetControllerVibrationState", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "int", 
+          "HapticsPlaybackState*"
+        ], 
+        "restype": "int", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -1193,7 +1468,7 @@
             "length": 2, 
             "type": "array"
           }, 
-          "TrackingState*"
+          "double*"
         ], 
         "restype": "void", 
         "type": "cfunc", 
@@ -1261,7 +1536,7 @@
       "type": {
         "argtypes": [
           "Session", 
-          "uint", 
+          "int", 
           "InputState*"
         ], 
         "restype": "int", 
@@ -1289,6 +1564,31 @@
           "ErrorInfo*"
         ], 
         "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetMirrorTextureBufferGL": {
+      "name": "ovr_GetMirrorTextureBufferGL", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "MirrorTexture", 
+          "uint*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetPerfStats": {
+      "name": "ovr_GetPerfStats", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "PerfStats*"
+        ], 
+        "restype": "int", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -1343,6 +1643,59 @@
         "vararg": false
       }
     }, 
+    "GetTextureSwapChainBufferGL": {
+      "name": "ovr_GetTextureSwapChainBufferGL", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "TextureSwapChain", 
+          "int", 
+          "uint*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTextureSwapChainCurrentIndex": {
+      "name": "ovr_GetTextureSwapChainCurrentIndex", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "TextureSwapChain", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTextureSwapChainDesc": {
+      "name": "ovr_GetTextureSwapChainDesc", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "TextureSwapChain", 
+          "TextureSwapChainDesc*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTextureSwapChainLength": {
+      "name": "ovr_GetTextureSwapChainLength", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "TextureSwapChain", 
+          "int*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "GetTimeInSeconds": {
       "name": "ovr_GetTimeInSeconds", 
       "type": {
@@ -1352,13 +1705,60 @@
         "vararg": false
       }
     }, 
-    "GetTrackingCaps": {
-      "name": "ovr_GetTrackingCaps", 
+    "GetTouchHapticsDesc": {
+      "name": "ovr_GetTouchHapticsDesc", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "int"
+        ], 
+        "restype": "TouchHapticsDesc", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTrackerCount": {
+      "name": "ovr_GetTrackerCount", 
       "type": {
         "argtypes": [
           "Session"
         ], 
         "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTrackerDesc": {
+      "name": "ovr_GetTrackerDesc", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "uint"
+        ], 
+        "restype": "TrackerDesc", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTrackerPose": {
+      "name": "ovr_GetTrackerPose", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "uint"
+        ], 
+        "restype": "TrackerPose", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTrackingOriginType": {
+      "name": "ovr_GetTrackingOriginType", 
+      "type": {
+        "argtypes": [
+          "Session"
+        ], 
+        "restype": "int", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -1385,6 +1785,17 @@
         "vararg": false
       }
     }, 
+    "IdentifyClient": {
+      "name": "ovr_IdentifyClient", 
+      "type": {
+        "argtypes": [
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "Initialize": {
       "name": "ovr_Initialize", 
       "type": {
@@ -1396,35 +1807,83 @@
         "vararg": false
       }
     }, 
-    "RecenterPose": {
-      "name": "ovr_RecenterPose", 
+    "ReadWavFromBuffer": {
+      "name": "ovr_ReadWavFromBuffer", 
+      "type": {
+        "argtypes": [
+          "AudioChannelData*", 
+          "void*", 
+          "int", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "RecenterTrackingOrigin": {
+      "name": "ovr_RecenterTrackingOrigin", 
       "type": {
         "argtypes": [
           "Session"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ReleaseAudioChannelData": {
+      "name": "ovr_ReleaseAudioChannelData", 
+      "type": {
+        "argtypes": [
+          "AudioChannelData*"
         ], 
         "restype": "void", 
         "type": "cfunc", 
         "vararg": false
       }
     }, 
-    "ResetBackOfHeadTracking": {
-      "name": "ovr_ResetBackOfHeadTracking", 
+    "ReleaseHapticsClip": {
+      "name": "ovr_ReleaseHapticsClip", 
       "type": {
         "argtypes": [
-          "Session"
+          "HapticsClip*"
         ], 
         "restype": "void", 
         "type": "cfunc", 
         "vararg": false
       }
     }, 
-    "ResetMulticameraTracking": {
-      "name": "ovr_ResetMulticameraTracking", 
+    "RequestBoundaryVisible": {
+      "name": "ovr_RequestBoundaryVisible", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "ubyte"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ResetBoundaryLookAndFeel": {
+      "name": "ovr_ResetBoundaryLookAndFeel", 
       "type": {
         "argtypes": [
           "Session"
         ], 
-        "restype": "void", 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ResetPerfStats": {
+      "name": "ovr_ResetPerfStats", 
+      "type": {
+        "argtypes": [
+          "Session"
+        ], 
+        "restype": "int", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -1442,28 +1901,28 @@
         "vararg": false
       }
     }, 
-    "SetControllerVibration": {
-      "name": "ovr_SetControllerVibration", 
+    "SetBoundaryLookAndFeel": {
+      "name": "ovr_SetBoundaryLookAndFeel", 
       "type": {
         "argtypes": [
           "Session", 
-          "uint", 
-          "float", 
-          "float"
+          "BoundaryLookAndFeel*"
         ], 
         "restype": "int", 
         "type": "cfunc", 
         "vararg": false
       }
     }, 
-    "SetEnabledCaps": {
-      "name": "ovr_SetEnabledCaps", 
+    "SetControllerVibration": {
+      "name": "ovr_SetControllerVibration", 
       "type": {
         "argtypes": [
           "Session", 
-          "uint"
+          "int", 
+          "float", 
+          "float"
         ], 
-        "restype": "void", 
+        "restype": "int", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -1525,11 +1984,36 @@
         "vararg": false
       }
     }, 
+    "SetTrackingOriginType": {
+      "name": "ovr_SetTrackingOriginType", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "Shutdown": {
       "name": "ovr_Shutdown", 
       "type": {
         "argtypes": [], 
         "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SubmitControllerVibration": {
+      "name": "ovr_SubmitControllerVibration", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "int", 
+          "HapticsBuffer*"
+        ], 
+        "restype": "int", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -1543,6 +2027,34 @@
           "ViewScaleDesc*", 
           "LayerHeader**", 
           "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "TestBoundary": {
+      "name": "ovr_TestBoundary", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "int", 
+          "int", 
+          "BoundaryTestResult*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "TestBoundaryPoint": {
+      "name": "ovr_TestBoundaryPoint", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "Vector3f*", 
+          "int", 
+          "BoundaryTestResult*"
         ], 
         "restype": "int", 
         "type": "cfunc", 
