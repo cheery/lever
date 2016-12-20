@@ -33,6 +33,8 @@ types = {
 }
 #u'longdouble': rffi.sizeof(rffi.LONGDOUBLE),
 
+USE_C_LIBFFI_MSVC = getattr(clibffi, 'USE_C_LIBFFI_MSVC', False)
+
 # Memory location in our own heap. Compare to 'handle'
 # that is a record in a shared library.
 class Mem(Object):
@@ -244,10 +246,20 @@ class CFunc(Type):
         for i in range(argc):
             cif.atypes[i] = self.argtypes[i].cast_to_ffitype()
         cif.nargs = argc
-        if self.restype is null:
+        restype = self.restype
+        if restype is null:
             cif.rtype = clibffi.ffi_type_void
+        # MSVC returns small structures in registers.  Pretend int32 or
+        # int64 return type.  This is needed as a workaround for what
+        # is really a bug of libffi_msvc seen as an independent library
+        # (ctypes and pypy has a similar workaround).
+        # Implementation of this workaround doesn't reach to elsewhere from here.
+        elif USE_C_LIBFFI_MSVC and isinstance(restype, Struct) and restype.size <= 4:
+            cif.rtype = clibffi.ffi_type_sint32
+        elif USE_C_LIBFFI_MSVC and isinstance(restype, Struct) and restype.size <= 8:
+            cif.rtype = clibffi.ffi_type_sint64
         else:
-            cif.rtype = self.restype.cast_to_ffitype()
+            cif.rtype = restype.cast_to_ffitype()
  
         exchange_size = argc * rffi.sizeof(rffi.VOIDPP)
         exchange_size = align(exchange_size, 8)
@@ -258,7 +270,6 @@ class CFunc(Type):
             cif.exchange_args[i] = int(exchange_size)
             exchange_size += sizeof(argtype)
         #cif.exchange_result_libffi = exchange_size
-        restype = self.restype
         if restype is null:
             exchange_size = align(exchange_size, 8)
             cif.exchange_result = int(exchange_size)
@@ -292,7 +303,8 @@ class CFunc(Type):
                 offset = rffi.ptradd(exc, cif.exchange_args[i])
                 arg = argv[i]
                 arg_t = self.argtypes[i]
-                # TODO: fixme
+                # TODO: fixme?
+                # array handling is wrong.
                 arg_t.store(pool, offset, arg)
             jit_libffi.jit_ffi_call(cif, pointer, exc)
             val = null
