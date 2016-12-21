@@ -3,11 +3,17 @@ from rpython.rtyper.lltypesystem import rffi, lltype
 import pathobj
 from space import *
 import os
+import errno
 
 # TODO: https://msdn.microsoft.com/en-gb/library/windows/desktop/aa365198
 #       http://man7.org/linux/man-pages/man7/aio.7.html
 
 module = Module(u'fs', {}, frozen=True)
+
+errorcode = Dict()
+for num, name in errno.errorcode.items():
+    errorcode.setitem(Integer(num), from_cstring(name))
+    module.setattr_force(name.decode('utf-8'), Integer(num))
 
 def builtin(fn):
     name = fn.__name__.rstrip('_').decode('utf-8')
@@ -29,7 +35,7 @@ def stat(path):
     try:
         s = os.stat(path)
     except IOError as error:
-        raise ioerror(pathname, error)
+        raise unwind(LIOError(pathname, error.errno))
     return Exnihilo({
         u"st_mode": Integer(s.st_mode),
         u"st_ino": Integer(s.st_ino),
@@ -51,7 +57,7 @@ def getatime(path):
     try:
         return Float(os.path.getatime(path))
     except IOError as error:
-        raise ioerror(pathname, error)
+        raise unwind(LIOError(pathname, error.errno))
 
 @builtin
 @signature(Object)
@@ -61,7 +67,7 @@ def getmtime(path):
     try:
         return Float(os.path.getmtime(path))
     except IOError as error:
-        raise ioerror(pathname, error)
+        raise unwind(LIOError(pathname, error.errno))
 
 @builtin
 @signature(Object)
@@ -71,7 +77,7 @@ def getctime(path):
     try:
         return Float(os.path.getctime(path))
     except IOError as error:
-        raise ioerror(pathname, error)
+        raise unwind(LIOError(pathname, error.errno))
 
 @builtin
 def read_file(argv):
@@ -93,7 +99,7 @@ def read_file(argv):
         finally:
             fd.close()
     except IOError as error:
-        raise ioerror(pathname, error)
+        raise unwind(LIOError(pathname, error.errno))
 
 @builtin
 def open_(argv):
@@ -109,7 +115,7 @@ def open_(argv):
     try:
         return File(rfile.create_file(path, 'rb'))
     except IOError as error:
-        raise ioerror(pathname, error)
+        raise unwind(LIOError(pathname, error.errno))
 
 class File(Object):
     def __init__(self, fd):
@@ -179,9 +185,5 @@ def isatty(self):
 def flush(self):
     self.fd.flush()
     return null
-
-def ioerror(pathname, error):
-    message = os.strerror(error.errno).decode('utf-8')
-    return OldError(u"%s: %s" % (pathname.repr(), message))
 
 module.setattr_force(u"file", File.interface)

@@ -2,6 +2,7 @@ from builtin import signature
 from interface import Object, null
 from string import String
 import space
+import os
 # To have custom exceptions, we resort to having an unwinder.
 class Unwinder(Exception):
     _immutable_fields_ = ['exception', 'traceback']
@@ -159,6 +160,15 @@ class LInstructionError(LException):
     def repr(self):
         return u"unexpected instruction: " + self.name
 
+class LIOError(LException):
+    def __init__(self, filename, errno):
+        self.filename = filename
+        self.errno = errno
+
+    def repr(self):
+        message = os.strerror(self.errno).decode('utf-8')
+        return u"%s: %s" % (self.filename.repr(), message)
+
 # Legacy handling for errors.
 def OldError(message):
     return unwind(LError(message))
@@ -183,4 +193,5 @@ all_errors = [
     LFrozenError,
     LCallError,
     LInstructionError,
+    LIOError,
 ]

@@ -1,66 +1,12 @@
+from rpython.rlib.objectmodel import compute_hash
+from rpython.rlib.rarithmetic import intmask
 from rpython.rlib import rstring
 from space import *
 import os
 import sys
 
-class Prefix(Object):
-    pass
-
-class PosixPrefix(Prefix):
-    def __init__(self, label, is_absolute):
-        self.label = label
-        self.is_absolute = is_absolute
-
-    def getattr(self, name):
-        if name == u"is_absolute":
-            return boolean(self.is_absolute)
-        if name == u"label":
-            return String(self.label)
-        return Object.getattr(self, name)
-
-    def setattr(self, name, value):
-        if name == u"is_absolute":
-            self.is_absolute = is_true(value)
-            return null
-        if name == u"label":
-            if not isinstance(value, String):
-                raise OldError(u"label must be a string")
-            if value.string.count(u"/") + value.string.count(u":") > 0:
-                raise OldError(u"label must not contain '/' or ':'")
-            self.label = value.string
-            return null
-        return Object.setattr(self, name, value)
-
-class URLPrefix(Prefix):
-    def __init__(self, protocol, domain):
-        self.protocol = protocol
-        self.domain = domain
-
-    def getattr(self, name):
-        if name == u"protocol":
-            return String(self.protocol)
-        if name == u"domain":
-            return String(self.domain)
-        return Object.getattr(self, name)
-
-    def setattr(self, name, value):
-        if name == u"protocol":
-            if not isinstance(value, String):
-                raise OldError(u"protocol must be a string")
-            if value.string.count(u"/") + value.string.count(u":") > 0:
-                raise OldError(u"protocol must not contain '/' or ':'")
-            self.label = value.string
-            return null
-        if name == u"domain":
-            if not isinstance(value, String):
-                raise OldError(u"domain must be a string")
-            if value.string.count(u"/") > 0:
-                raise OldError(u"domain must not contain '/'")
-            self.label = value.string
-            return null
-        return Object.setattr(self, name, value)
-
 class Path(Object):
+    _immutable_fields_ = ['prefix', 'pathseq[*]']
     def __init__(self, prefix, pathseq):
         self.prefix = prefix
         self.pathseq = pathseq
@@ -72,33 +18,30 @@ class Path(Object):
             return String(self.pathseq[-1])
         if name == u"prefix":
             return self.prefix
+        if name == u"dirname":
+            pathseq = self.pathseq
+            L = len(pathseq) - 1
+            if L >= 0:
+                return Path(self.prefix, pathseq[0:L])
+            else:
+                return self
         return Object.getattr(self, name)
 
-    def setattr(self, name, value):
-        if name == u"basename":
-            if not isinstance(value, String):
-                raise OldError(u"basename must be a string")
-            if value.string.count(u"/") > 0:
-                raise OldError(u"basename must not contain slash character")
-            if len(self.pathseq) == 0:
-                self.pathseq.append(value.string)
-            else:
-                self.pathseq[-1] = value.string
-            return null
-        if name == u"prefix":
-            if isinstance(value, Prefix):
-                self.prefix = value
-            else:
-                raise OldError(u"prefix must be a valid prefix object, for now.")
-        return Object.setattr(self, name, value)
+    def eq(self, other):
+        if isinstance(other, Path):
+            return pathcmp(self, other) == 0
+        return False
+
+    def hash(self):
+        value = 0x345678
+        value = (1000003 * value) ^ self.prefix.hash()
+        for item in self.pathseq:
+            value = (1000003 * value) ^ compute_hash(item)
+        value = value ^ len(self.pathseq)
+        return intmask(value)
 
     def repr(self):
         return u"path(" + String(stringify(self)).repr() + u")"
-
-    def drop_slash(self):
-        L = len(self.pathseq)
-        if L > 0 and self.pathseq[L-1] == u"":
-            self.pathseq.pop()
 
 @Path.method(u"relpath", signature(Path, Object, optional=1))
 def Path_relpath(dst, rel):
@@ -120,31 +63,30 @@ def Path_relpath(dst, rel):
             result.append(u"..")
         for m in range(C, len(dst.pathseq)):
             result.append(dst.pathseq[m])
-        return Path(PosixPrefix(u"", False), result)
-    if isinstance(rel.prefix, PosixPrefix) and isinstance(dst.prefix, URLPrefix):
+        return Path(PosixPrefix(u"", False), result[:])
+    elif isinstance(rel.prefix, PosixPrefix) and isinstance(dst.prefix, URLPrefix):
         return dst
     else:
-        raise OldError(u"Path_relpath: missing feature, file an issue or implementn")
+        raise unwind(LError(u"Path_relpath: missing feature, file an issue or implement"))
 
-@Path.builtin_method
-@signature(Path, String)
-def push(path, seq):
-    newpath = parse(seq.string)
-    if is_absolute(newpath):
-        path.prefix = duplicate_prefix(newpath.prefix)
-        path.pathseq = newpath.pathseq
+@Path.method(u"drop", signature(Path, Integer))
+def Path_drop(self, count):
+    pathseq = self.pathseq
+    L = len(pathseq) - max(0, count.value)
+    if L > 0:
+        return Path(self.prefix, pathseq[0:L])
+    elif len(pathseq) > 0:
+        return Path(self.prefix, [])
     else:
-        pathseq_ncat(path.pathseq, newpath.pathseq)
-    return null
+        return self
 
-@Path.builtin_method
-@signature(Path)
-def get_os_path(path):
-    return String(os_stringify(path))
+@Path.method(u"get_os_path", signature(Path))
+def Path_get_os_path(self):
+    return String(os_stringify(self))
 
 @Path.method(u"to_string", signature(Path))
-def Path_to_string(path):
-    return String(stringify(path))
+def Path_to_string(self):
+    return String(stringify(self))
 
 @Path.instantiator
 @signature(Object)
@@ -152,8 +94,110 @@ def _(obj):
     if isinstance(obj, String):
         return parse(obj.string)
     elif isinstance(obj, Path):
-        return duplicate(obj)
+        return obj
     raise OldError(u"path() expected string or path object.")
+
+@operators.ne.multimethod_s(Path, Path)
+def pathcmp_eq(a, b):
+    k = pathcmp(a, b)
+    return boolean(k != 0)
+
+@operators.eq.multimethod_s(Path, Path)
+def pathcmp_eq(a, b):
+    k = pathcmp(a, b)
+    return boolean(k == 0)
+
+@operators.lt.multimethod_s(Path, Path)
+def pathcmp_lt(a, b):
+    k = pathcmp(a, b)
+    return boolean(k == 1)
+
+@operators.gt.multimethod_s(Path, Path)
+def pathcmp_gt(a, b):
+    k = pathcmp(a, b)
+    return boolean(k == 2)
+
+@operators.le.multimethod_s(Path, Path)
+def pathcmp_le(a, b):
+    k = pathcmp(a, b)
+    return boolean(k == 1 or k == 0)
+
+@operators.ge.multimethod_s(Path, Path)
+def pathcmp_ge(a, b):
+    k = pathcmp(a, b)
+    return boolean(k == 2 or k == 0)
+
+def pathcmp(a, b):
+    if not prefix_eq(a.prefix, b.prefix):
+        return -1 # not eq.
+    m = len(a.pathseq)
+    n = len(b.pathseq)
+    l = min(m, n)
+    for i in range(0, l):
+        if a.pathseq[i] != b.pathseq[i]:
+            break
+    else:
+        if m == n:
+            return 0 # eq.
+        elif m < n:
+            return 1 # lt.
+        elif m > n:
+            return 2 # gt.
+    return -1 # not eq.
+
+def prefix_eq(a, b):
+    if isinstance(a, PosixPrefix) and isinstance(b, PosixPrefix):
+        return a.label == b.label and a.is_absolute == b.is_absolute
+    if isinstance(a, URLPrefix) and isinstance(b, URLPrefix):
+        return a.protocol == b.protocol and a.domain == b.domain
+    return False
+
+class Prefix(Object):
+    _immutable_fields_ = ['label', 'is_absolute', 'protocol', 'domain']
+
+class PosixPrefix(Prefix):
+    _immutable_fields_ = ['label', 'is_absolute']
+    def __init__(self, label, is_absolute):
+        self.label = label
+        self.is_absolute = is_absolute
+
+    def getattr(self, name):
+        if name == u"is_absolute":
+            return boolean(self.is_absolute)
+        if name == u"label":
+            return String(self.label)
+        return Object.getattr(self, name)
+
+    def hash(self):
+        value = 0x345678
+        value = (1000003 * value) ^ compute_hash(self.label)
+        value = (1000003 * value) ^ compute_hash(self.is_absolute)
+        return intmask(value)
+
+    def eq(self, other):
+        return prefix_eq(self, other)
+
+class URLPrefix(Prefix):
+    _immutable_fields_ = ['protocol', 'domain']
+    def __init__(self, protocol, domain):
+        self.protocol = protocol
+        self.domain = domain
+
+    def getattr(self, name):
+        if name == u"protocol":
+            return String(self.protocol)
+        if name == u"domain":
+            return String(self.domain)
+        return Object.getattr(self, name)
+
+    def hash(self):
+        value = 0x345678
+        value = (1000003 * value) ^ compute_hash(self.protocol)
+        value = (1000003 * value) ^ compute_hash(self.domain)
+        return intmask(value)
+
+    def eq(self, other):
+        return prefix_eq(self, other)
 
 @PosixPrefix.instantiator
 def _(argv):
@@ -277,9 +321,11 @@ def _(a, b):
 @operators.concat.multimethod_s(Path, Path)
 def concat(a, b):
     if is_absolute(b):
-        return Path(duplicate_prefix(b.prefix), list(b.pathseq))
-    pathseq = pathseq_ncat(list(a.pathseq), b.pathseq)
-    return Path(duplicate_prefix(a.prefix), pathseq)
+        return b
+    assert isinstance(a, Path), "concat lhs not a path"
+    assert isinstance(b, Path), "concat rhs not a path"
+    pathseq = pathseq_ncat(list(a.pathseq), list(b.pathseq))
+    return Path(a.prefix, pathseq)
 
 def pathseq_ncat(pathseq, tail):
     if len(pathseq) > 0 and pathseq[-1] == u"":
@@ -296,23 +342,13 @@ def pathseq_ncat(pathseq, tail):
             pathseq.append(name)
     if slash:
         pathseq.append(u"")
-    return pathseq
+    return pathseq[:]
 
 def is_absolute(pathobj):
     prefix = pathobj.prefix
     if isinstance(prefix, PosixPrefix):
         return prefix.is_absolute
     return True
-
-def duplicate(path):
-    return Path(duplicate_prefix(path.prefix), list(path.pathseq))
-
-def duplicate_prefix(prefix):
-    if isinstance(prefix, PosixPrefix):
-        return PosixPrefix(prefix.label, prefix.is_absolute)
-    if isinstance(prefix, URLPrefix):
-        return URLPrefix(prefix.protocol, prefix.domain)
-    assert False, "corruption"
 
 def stringify(path, nt=False):
     if isinstance(path, String):
@@ -371,12 +407,7 @@ def to_path(obj):
         raise OldError(u"expected path")
 
 def directory(path):
-    path = duplicate(path)
-    path.drop_slash()
-    if len(path.pathseq) == 0:
-        raise OldError(u"cannot take directory(), too short path")
-    path.pathseq.pop()
-    return path
+    return path.getattr(u'dirname')
 
 def abspath(path):
     if is_absolute(path):

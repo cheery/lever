@@ -535,18 +535,23 @@ Introduces following names into 'base' -module:
 
                                                                       pathobj.py
 
-It was always total and utter pain in the ass to take care of the correct
-obeyance of path conventions present on the system. On Lever I decided to say
-"fuck you" and denote that every path is posix-formatted inside lever.
+It is always utter pain in the ass to work with Windows paths once you've been
+on the other systems that do it right. Therefore every path is posix-formatted
+within Lever.
 
-To the OS, lever would still present whichever wrecked path convention the OS
-follows. But instead of \\cupcake\boilingeggs on one system and something else
-on another, the user would see //cupcake/boilingeggs.
-
-The file pathobj.py takes care of this translation.
+To the OS lever still presents whichever wrecked path convention the OS is
+following. But user of the language isn't forced to handle \\cupcake\boilingeggs
+on one system and something else on another. The user consistently sees
+//cupcake/boilingeggs. This file pathobj.py takes care of the translation.
 
 Lever comes with a path() -object. This path can take posix and URL prefixes. In
 a way I consider URLs to be posix formatted paths to a limit.
+
+Path objects and prefixes are generally immutable. They can be compared and
+hashed, though the comparison is strict and not canonicalizing the paths.
+
+In a proxy path (not implemented), the user object used as prefix is allowed to
+be mutable.
 
 When you wrap a string into a path object, it is converted into prefix and
 path sequence.
@@ -562,21 +567,27 @@ this file provides following entries:
     URLPrefix.domain    -- eg. "example.org"
     path.prefix -- either PosixPrefix or URLPrefix now.
     path.basename -- basename of the path.. eg. thing after last "/"
+    path.dirname -- dirname of the path.. eg. thing before last "/"
     path.relpath(base=getcwd()) -- turn the path into relative path in respect
                                    base. It may still stay absolute if base has
                                    completely different prefix.
-    path.push(name) -- push a name into the path sequence.
+    path.drop(count) -- drop slash 'count' times and return the resulting path.
     path.get_os_path(path) -- transmoglify the path into OS conventions.
     path.to_string() - return posix formatted path.
+    hash(path)
 
     str ++ path
     path ++ str
     path ++ path
 
-Also implements getcwd, chdir, to_path, so on..
+    path == path
+    path != path
+    path <= path
+    path >= path
+    path < path
+    path > path
 
-TODO: Reconsider whether path objects should be immutable. Or at least become
-      immutable when stringified the first time.
+Also implements getcwd, chdir, to_path, so on..
 
 
 
