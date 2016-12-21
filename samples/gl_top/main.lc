@@ -5,8 +5,8 @@ width  = 1000
 height = 1000
 
 win32 = (platform.name == "win32")
-with_hmd = false # or = true if you have oculus rift.
-                 # rift not tested yet.
+with_hmd = true # or = true if you have oculus rift.
+
 # https://wiki.libsdl.org/CategoryAPI
 if win32
     sdl = ffi.library("SDL2.dll", api.read_file("libSDL2", {}))
@@ -81,7 +81,7 @@ main = ():
         cube_vao.bind()
         gl.drawArrays(cube.mode, 0, cube.vertex_count)
 
-    #hmd = init_hmd()
+    hmd = init_hmd()
     event = ffi.automem(sdl.Event)
     running = true
     while running
@@ -90,14 +90,16 @@ main = ():
                 return null
         now = sdl.GetTicks() / 1000.0
         update(now)
-        #hmd.begin()
-        #if hmd.on
-        #    for eye in hmd.eyes
-        #        eye.bind()
-        #        render(eye)
-        #        gl.bindFramebuffer(gl.FRAMEBUFFER, 0)
-        #hmd.submit()
-        #gl.bindFramebuffer(gl.FRAMEBUFFER, 0)
+        hmd.begin()
+        if hmd.on
+            for eye in hmd.eyes
+                eye.bind()
+                eye.pos += vec3(0,2,3)
+                render(eye)
+                gl.bindFramebuffer(gl.FRAMEBUFFER, 0)
+                eye.commit()
+        hmd.submit()
+        gl.bindFramebuffer(gl.FRAMEBUFFER, 0)
         gl.viewport(0, 0, width, height)
         render(cam)
         sdl.GL_SwapWindow(win)
