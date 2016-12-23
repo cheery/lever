@@ -1290,13 +1290,10 @@ Supported objects:
     memset(dst, byte, count)
     memcpy(dst, src,  count)
     ref(membuffer)
+    callback(cfunctype, callback)
 
-TODO: make an object that is filled with automem-record of correct type if fed
-into the call.
-
-TODO: implement callbacks finally? I still have managed to avoid needing them
-      though...
-
+The result of callback -function must be stored as long as the C pointer to it
+remains in use.
 
 
                                                             stdlib/ffi/simple.py
@@ -1403,7 +1400,6 @@ and keeps it alive as long as the pool itself is alive.
 Calls to C functions create themselves a pool to construct a function call. You
 should be able to call a function with a list as a parameter and expect it to be
 converted into memory object of appropriate size.
-
 
 
                                                                     stdlib/fs.py
