@@ -14,6 +14,7 @@ errorcode = Dict()
 for num, name in errno.errorcode.items():
     errorcode.setitem(Integer(num), from_cstring(name))
     module.setattr_force(name.decode('utf-8'), Integer(num))
+module.setattr_force(u"errorcode", errorcode)
 
 def builtin(fn):
     name = fn.__name__.rstrip('_').decode('utf-8')

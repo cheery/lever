@@ -1,11 +1,12 @@
-from rpython.rlib import rdynload, objectmodel
-from rpython.rtyper.lltypesystem import rffi, lltype
+from rpython.rlib import rdynload, objectmodel, clibffi, rgc
+from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from simple import Type, to_type
 from space import *
 from systemv import Mem, Pointer, CFunc, Struct, Union, Array
 from bitmask import Bitmask
 import simple
 import systemv
+import sys, os
 
 class Wrap(Object):
     def __init__(self, cname, ctype):
@@ -204,3 +205,99 @@ def ref(mem):
     result = systemv.AutoMem(systemv.Pointer(ctype), pointer, 1)
     result.setattr(u"to", mem)
     return result
+
+# Function callbacks
+class Callback(Mem):
+    def __init__(self, cfunc, callback):
+        self.cfunc = cfunc
+        self.callback = callback
+        pointer = rffi.cast(rffi.VOIDP, clibffi.closureHeap.alloc())
+        if cfunc.notready:
+            cfunc.prepare_cif()
+            cfunc.notready = False
+        Mem.__init__(self, cfunc, pointer)
+
+        closure_ptr = rffi.cast(clibffi.FFI_CLOSUREP, self.pointer)
+        # hide the object
+        gcref = rgc.cast_instance_to_gcref(self)
+        raw = rgc.hide_nonmovable_gcref(gcref)
+        unique_id = rffi.cast(rffi.VOIDP, raw)
+
+        res = clibffi.c_ffi_prep_closure(closure_ptr, cfunc.cif.cif,
+            invoke_callback, unique_id)
+
+        if rffi.cast(lltype.Signed, res) != clibffi.FFI_OK:
+            raise unwind(LError(u"libffi failed to build this callback"))
+        if closure_ptr.c_user_data != unique_id:
+            raise unwind(LError(u"ffi_prep_closure(): bad user_data"))
+
+    def __del__(self): # Move into  separate class if this not sufficient.
+        clibffi.closureHeap.free(rffi.cast(clibffi.FFI_CLOSUREP, self.pointer))
+
+@Callback.instantiator
+@signature(CFunc, Object)
+def _(cfunc, callback):
+    return Callback(cfunc, callback)
+
+module.setattr_force(u"callback", Callback.interface)
+
+def invoke_callback(ffi_cif, ll_res, ll_args, ll_userdata):
+    """ Callback specification.
+    ffi_cif - something ffi specific, don't care
+    ll_args - rffi.VOIDPP - pointer to array of pointers to args
+    ll_res - rffi.VOIDP - pointer to result
+    ll_userdata - a special structure which holds necessary information
+                  (what the real callback is for example), casted to VOIDP
+    """
+    # Reveal the callback.
+    addr = rffi.cast(llmemory.Address, ll_userdata)
+    gcref = rgc.reveal_gcref(addr)
+    callback = rgc.try_cast_gcref_to_instance(Callback, gcref)
+    if callback is None:
+        try:
+            os.write(STDERR,
+                "Critical error: invoking a callback that was already freed\n")
+        except:
+            pass
+        # We cannot do anything here.
+    else:
+        #must_leave = False
+        try:
+            # must_leave = space.threadlocals.try_enter_thread(space)
+            # Should check for separate threads here and crash
+            # if the callback comes from a thread that has no execution context.
+            cfunc = callback.cfunc
+            argv = []
+            for i in range(0, len(cfunc.argtypes)):
+                argv.append( cfunc.argtypes[i].load(ll_args[i], False) )
+            value = callback.callback.call(argv)
+            cfunc.restype.store(None, ll_res, value)
+        except Exception as e:
+            try:
+                os.write(STDERR, "SystemError: callback raised ")
+                os.write(STDERR, str(e))
+                os.write(STDERR, "\n")
+            except:
+                pass
+#        if must_leave:
+#            space.threadlocals.leave_thread(space)
+
+STDERR = 2
+# 
+# def invoke_callback(ffi_cif, ll_res, ll_args, ll_userdata):
+#     cerrno._errno_after(rffi.RFFI_ERR_ALL | rffi.RFFI_ALT_ERRNO)
+#     ll_res = rffi.cast(rffi.CCHARP, ll_res)
+#     callback = reveal_callback(ll_userdata)
+#     if callback is None:
+#         # oups!
+#         try:
+#             os.write(STDERR, "SystemError: invoking a callback "
+#                              "that was already freed\n")
+#         except:
+#             pass
+#         # In this case, we don't even know how big ll_res is.  Let's assume
+#         # it is just a 'ffi_arg', and store 0 there.
+#         misc._raw_memclear(ll_res, SIZE_OF_FFI_ARG)
+#     else:
+#         callback.invoke(ll_res, rffi.cast(rffi.CCHARP, ll_args))
+#     cerrno._errno_before(rffi.RFFI_ERR_ALL | rffi.RFFI_ALT_ERRNO)
