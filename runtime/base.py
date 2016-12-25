@@ -281,13 +281,17 @@ def Range_next(self):
         return Integer(i)
     raise StopIteration()
 
-# TODO: Grab this one from stdlib.fs
+# TODO?: Grab this one from stdlib.fs
 # input() is meant to be overridden when it makes sense.
-from rpython.rlib.rfile import create_stdio
 @builtin
+def input_(argv):
+    return main.g.io.new_task(sync_input, argv)
+
 @signature(String, optional=1)
-def input_(obj):
-    stdin, stdout, stderr = create_stdio()
+def sync_input(obj):
+    stdout = main.g.io.stdout
+    stdin = main.g.io.stdin
+    # Old input()
     if obj is not None:
         stdout.write(obj.string.encode('utf-8'))
     line = stdin.readline().rstrip("\r\n")

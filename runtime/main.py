@@ -8,6 +8,7 @@ import vectormath
 from util import STDIN, STDOUT, STDERR, read_file, write
 from continuations import Continuation
 from evaluator.loader import TraceEntry
+import async_io
 import base
 import space
 import time
@@ -16,7 +17,7 @@ import os
 import pathobj
 
 class ExecutionContext(object):
-    def __init__(self, config, lever_path):
+    def __init__(self, config, lever_path, io):
         self.config = config
         self.lever_path = lever_path
         self.sthread = None                 # Stacklets
@@ -24,9 +25,11 @@ class ExecutionContext(object):
         self.sleepers = []                  # Holds the sleeping greenlets.
         self.current = Greenlet(None, [])
         self.eventloop = self.current
+        self.handle = async_io.create_eventloop_handle(io, self)
 
 class GlobalState(object):
     ec = None
+    io = None
 
 def get_ec():
     return g.ec
@@ -45,7 +48,10 @@ def new_entry_point(config, default_lever_path=u''):
             lever_path = pathobj.os_parse(lever_path.decode('utf-8'))
         lever_path = pathobj.concat(pathobj.getcwd(), lever_path)
         
-        g.ec = ec = ExecutionContext(config, lever_path)
+        # This should happen only once.
+        g.io = io = async_io.AsyncIO()
+
+        g.ec = ec = ExecutionContext(config, lever_path, io)
         api.init(lever_path)
         vectormath.init_random()
 
@@ -59,7 +65,7 @@ def new_entry_point(config, default_lever_path=u''):
             # the messages put into queue are handled by greenlets rather than
             # callbacks. The greenlets allow synchronous notation for
             # asynchronous programs.
-            while len(ec.queue) + len(ec.sleepers) > 0:
+            while len(ec.queue) + len(ec.sleepers) + io.task_count > 0:
                 queue, ec.queue = ec.queue, []
                 for item in queue:
                     switch([item])
@@ -73,8 +79,7 @@ def new_entry_point(config, default_lever_path=u''):
                     else:
                         timeout = min(timeout, sleeper.wakeup)
                         ec.sleepers.append(sleeper)
-                if len(ec.queue) == 0 and len(ec.sleepers) > 0 and now < timeout:
-                    time.sleep(timeout - now)
+                async_io.process_events(io, ec, now, timeout)
         except space.Unwinder as unwinder:
             exception = unwinder.exception
             if isinstance(exception, space.LSystemExit):
