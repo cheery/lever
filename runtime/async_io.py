@@ -12,23 +12,26 @@ from space import *
 import time
 import main
 import os, sys
+import eventual
+
+# TODO: error handling?
+def create_eventloop_handle(io, ec):
+    sz = eventual.et_sizeof(eventual.MAIN_LOOP)
+    loop_handle = lltype.malloc(rffi.CCHARP.TO, sz, flavor='raw')
+    eventual.et_init(loop_handle)
+    return loop_handle
 
 def process_events(io, ec, now, until):
     if len(ec.queue) > 0:
         timeout = 0
     elif len(ec.sleepers) > 0:
         timeout = int((until - now)*1000)
-    else:
-        timeout = INFINITE
-
-    if io.task_count == 0:
-        if timeout > 0:
-            time.sleep(timeout)
-    else:
-        system_event_loop(io, ec, timeout)
-
-
-#defaultevents = rpoll.POLLIN | rpoll.POLLOUT | rpoll.POLLPRI
+    elif io.task_count > 0:
+        timeout = eventual.INFINITE
+    else:           # If there are no tasks that
+        timeout = 0 # need waiting, we should just
+                    # reset stuff and then proceed.
+    eventual.et_wait(ec.handle, timeout)
 
 class AsyncIO(object):
     def __init__(self):
@@ -65,95 +68,6 @@ class AsyncIO(object):
 #class FDState(object):
 #    def __init__(self, greenlet):
 #        self.greenlet = greenlet
-
-_WIN32 = sys.platform == "win32"
-_LINUX = sys.platform.startswith('linux')
-
-if _WIN32:
-    from rpython.rlib.rwin32 import *
-    OVERLAPPED = Struct('OVERLAPPED', [
-        ('Internal', ULONG_PTR),
-        ('InternalHigh', ULONG_PTR),
-        ('Offset', DWORD),
-        ('OffsetHigh', DWORD),
-        ('hEvent', HANDLE),
-    ])
-    LPOVERLAPPED = lltype.Ptr(OVERLAPPED)
-
-    CreateIoCompletionPort = winexternal('CreateIoCompletionPort',
-        [HANDLE, HANDLE, ULONG_PTR, DWORD], HANDLE)
-    GetQueuedCompletionStatus = winexternal('GetQueuedCompletionStatus',
-        [HANDLE, LPDWORD, lltype.Ptr(ULONG_PTR), LPOVERLAPPED, DWORD], BOOL)
-    PostQueuedCompletionStatus = winexternal('PostQueuedCompletionStatus',
-        [HANDLE, DWORD, ULONG_PTR, LPOVERLAPPED], BOOL)
-
-    def system_event_loop(io, ec, timeout):
-        transferred = lltype.malloc(LPDWORD, flavor='raw')
-        completionKey = lltype.malloc(ULONG_PTR, flavor='raw')
-        ovl = lltype.malloc(LPOVERLAPPED, flavor='raw')
-
-        try:
-            res = GetQueuedCompletionStatus(ec.iocp,
-                transferred, completionkey, ovl, timeout)
-            handle = ovl[0]
-            if res > 0 and handle != rffi.NULL:
-                if ec.handle == handle:
-                    pass # eventloop was notified and can continue.
-        finally:
-            lltype.free(transferred, flavor='raw')
-            lltype.free(completionKey, flavor='raw')
-            lltype.free(ovl, flavor='raw')
-
-    def create_eventloop_handle(io, ec):
-        ec.iocp = CreateIoCompletionPort(
-            INVALID_HANDLE_VALUE, rffi.NULL, 0, 0)
-        handle = lltype.malloc(OVERLAPPED, flavor='raw')
-        rffi.c_memset(handle, 0, rffi.sizeof(OVERLAPPED))
-        return handle
-
-    def notify_eventloop(ec):
-        PostQueuedCompletionStatus(ec.iocp, 0, rffi.NULL, ec.handle)
-elif _LINUX:
-    INFINITE = -1
-
-    eci = ExternalCompilationInfo(
-        includes = ['sys/eventfd.h']
-    )
-    eventfd = rffi.llexternal("eventfd", [rffi.INT, rffi.INT], rffi.INT,
-        compilation_info=eci)
-
-    def system_event_loop(io, ec, timeout):
-        try:
-            result = rpoll.poll(io.fddict, timeout)
-        except rpoll.PollError as error:
-            print "Poll error: " + error.get_msg()
-            # TODO: consider what to do for these errors...
-        else:
-            # TODO: allow read/write on same fd.
-            for fd, revents in result:
-                if fd == ec.handle:
-                    # The async processor did all the work, we just need to
-                    # reset the handle for further notifications.
-                    os.read(ec.handle, 8)
-                else:
-                    pass
-                    #greenlet = io.fdstate[fd]
-                    #del io.fdstate[fd]
-                    #ec.queue.append(greenlet)
-                    #io.task_count -= 1 # A task was completed.
-                                       # One must also increment the task counter
-                                       # when introducing a new task.
-
-    def create_eventloop_handle(io, ec):
-        fd = eventfd(0, 0)
-        io.fddict[fd] = rpoll.POLLIN
-        return fd
-
-    def notify_eventloop(ec):
-        os.write(ec.handle, '\x01\x00\x00\x00\x00\x00\x00\x00')
-else:
-    assert False, "Only linux&win32 support for now."
-
 
 ## new starting thread starts and ends without arguments.
 def async_io_thread():
@@ -193,7 +107,7 @@ def async_io_loop(io):
             # I hope these are atomic operations.
             ec.queue.append(greenlet)
             io.task_count -= 1
-            notify_eventloop(ec)
+            eventual.et_notify(ec.handle)
 
 # Taken from pypy
 def acquire_timed(lock, microseconds):
