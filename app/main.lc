@@ -1,11 +1,27 @@
 import compiler
 import base
+import api, ffi
 
 console = :module("console", base)
     dir = getcwd()
     name = "console"
     %"import" = Import(dir,
         ModuleScope(dir, %"import".scope.parent))
+
+try
+    el = api.library("libedit")
+    input = (prompt):
+        line = el.readline(prompt)
+        result = line.str
+        if line
+            ffi.free(line)
+        return result
+    add_history = (source):
+        el.add_history(source)
+except Exception as error
+    null # 
+    add_history = (source):
+        null
 
 print("LEVER 0.8.0")
 buffer = []
@@ -16,7 +32,9 @@ while true
     string = input(prompt)
     buffer.append(string)
     try
-        code = compiler.read_string("\n".join(buffer), "console")
+        source = "\n".join(buffer)
+        add_history(source)
+        code = compiler.read_string(source, "console")
         print(repr(load(code)(console)))
     except compiler.SyntaxError as syn
         if syn.at_eof
