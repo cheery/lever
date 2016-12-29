@@ -2,6 +2,7 @@ from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rlib.rstring import StringBuilder, UnicodeBuilder
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from space import *
+import base
 import main
 import rlibuv as uv
 
@@ -237,24 +238,6 @@ def TTY_get_winsize(self):
 
 #from interface import Object, null, signature
 #
-#class Event(Object):
-#    def __init__(self):
-#        self.callbacks = []
-#        self.waiters = []
-#
-#    #TODO: on delete/discard, drop
-#    #      waiters to queue with
-#    #      error handlers.
-#
-#@Event.instantiator2(signature())
-#def _():
-#    return Event()
-
-# .close()
-# .dispatch(args...) # should do the greenlet arg packing?
-# .register(cb)
-# .unregister(cb)
-# .wait()       # with timeout perhaps?
 
 
 # wait([x, y, z])
@@ -395,3 +378,56 @@ def to_error(result):
         rffi.charp2str(uv.err_name(result)).decode('utf-8'),
         rffi.charp2str(uv.strerror(result)).decode('utf-8')
     ))
+
+
+
+class Event(Object):
+    def __init__(self):
+        self.callbacks = []
+        self.waiters = []
+
+    #TODO: on delete/discard, drop
+    #      waiters to queue with
+    #      error handlers.
+
+@Event.instantiator2(signature())
+def _():
+    return Event()
+
+@Event.method(u"close", signature(Event))
+def Event_close(self):
+    self.callbacks = []
+    self.waiters = []
+    # TODO: don't just drop the waiters.
+    return null
+
+@Event.method(u"dispatch", signature(Event, variadic=True))
+def Event_dispatch(self, argv):
+    ec = main.get_ec()
+
+    for cb in self.callbacks:
+        ec.enqueue(main.to_greenlet([cb] + argv))
+    waiters, self.waiters = self.waiters, []
+    for waiter in waiters:
+        waiter.argv.extend(argv)
+        ec.enqueue(waiter)
+    return null
+
+@Event.method(u"register", signature(Event, Object))
+def Event_register(self, cb):
+    self.callbacks.append(cb)
+    return null
+
+@Event.method(u"unregister", signature(Event, Object))
+def Event_unregister(self, cb):
+    self.callbacks.remove(cb) # Just crashing on problem for now.
+    return null
+    
+@Event.method(u"wait", signature(Event)) # TODO: with timeout perhaps?
+def Event_wait(self):
+    ec = main.get_ec()
+    self.waiters.append(ec.current)
+    return main.switch([ec.eventloop])
+
+base.module.setattr_force(u"Event", Event.interface)
+
