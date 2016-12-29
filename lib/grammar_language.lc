@@ -163,6 +163,8 @@ actions = :exnihilo()
             name = "command"
             command = symbol.string
             arg = arg
+    empty = (table):
+        return []
     first = (table, item):
         return [item]
     append = (table, items, item):

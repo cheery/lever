@@ -19,7 +19,6 @@ try
     add_history = (source):
         el.add_history(source)
 except Exception as error
-    null # 
     add_history = (source):
         null
 

@@ -194,9 +194,13 @@ struct_declarator =>
     bitfield { declarator ':' constant_expression }
 
 enum_specifier =>
-    enum_specifier { "enum" nil{}       "{" enumerator_list "}" }
-    enum_specifier { "enum" @identifier "{" enumerator_list "}" }
+    enum_specifier { "enum" nil{}       "{" enumerator_list %optional_comma "}" }
+    enum_specifier { "enum" @identifier "{" enumerator_list %optional_comma "}" }
     enum_specifier { "enum" @identifier     list{} }
+
+optional_comma =>
+    {}
+    ","
 
 enumerator_list =>
     first  { enumerator }

@@ -4,6 +4,7 @@ from rpython.rtyper.lltypesystem import rffi, lltype
 from sourcemaps import TraceEntry
 import optable
 import space
+import main
 
 u16_array = lltype.GcArray(rffi.USHORT)
 
@@ -145,7 +146,6 @@ class Yield(Exception):
         self.pc = pc
         self.value = value
 
-
 class Program(space.Object):
     _immutable_fields_ = ['unit']
     def __init__(self, unit):
@@ -214,16 +214,17 @@ def new_register_array(regc):
         regs.append(space.null)
     return RegisterArray(regs)
 
-def get_printable_location(pc, block, module, unit, excs):
+def get_printable_location(pc, block, module, unit, excs): # ,ec
     return "pc=%d module=%s" % (pc, module.repr().encode('utf-8'))
 
 jitdriver = jit.JitDriver(
-    greens=['pc', 'block', 'module', 'unit', 'excs'],
+    greens=['pc', 'block', 'module', 'unit', 'excs'], #, 'ec'],
     reds=['regv', 'frame'],
     #virtualizables = ['regv'],
     get_printable_location=get_printable_location)
 
 def interpret(pc, block, regv, frame):
+    #ec = jit.promote(main.get_ec())
     module = jit.promote(frame.module)
     unit   = jit.promote(frame.unit)
     excs   = jit.promote(frame.excs)
@@ -232,10 +233,16 @@ def interpret(pc, block, regv, frame):
             try:
                 jitdriver.jit_merge_point(
                     pc=pc, block=block, module=module, unit=unit, excs=excs,
-                    regv=regv, frame=frame)
+                    regv=regv, frame=frame) #ec=ec, 
                 opcode = rffi.r_ulong(block[pc])>>8
                 ix = pc+1
                 pc = ix+(rffi.r_ulong(block[pc])&255)
+                # Not sure..
+                #if ec.debug_hook is not None:
+                #    hook, ec.debug_hook = ec.debug_hook, None
+                #    res = ec.debug_hook.call([DebugContext(rffi.r_long(ix), unit, frame)])
+                #    if res != space.null:
+                #        ec.debug_hook = res
                 #print optable.dec[opcode][0]
                 if opcode == opcode_of('assert'):
                     obj = regv.load(block[ix+0])
@@ -415,3 +422,19 @@ def get_string(unit, block, i):
     obj = unit.constants[block[i]]
     assert isinstance(obj, space.String)
     return obj.string
+
+
+#class DebugContext(space.Object):
+#    def __init__(self, pc, unit, frame):
+#        self.pc = pc
+#        self.unit = unit
+#        self.frame = frame
+#
+#@DebugContext.method(u"get_pc_location", space.signature(DebugContext))
+#def DebugContext_get_pc_location(self):
+#    entry = TraceEntry(self.pc, self.unit.sources, self.frame.sourcemap, self.unit.path)
+#    loc, col0, lno0, col1, lno1 = entry.pc_location()
+#    return space.List([loc,
+#        space.Integer(col0), space.Integer(lno0),
+#        space.Integer(col1), space.Integer(lno1)
+#    ])

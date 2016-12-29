@@ -125,7 +125,10 @@ ambiguity = (sppf, traverse):
         # Should perhaps coalesce the conflicts if we get to raise.
         if res.length == 0 # A merit in storing traceback on your exception.
             raise conflict # This retains the traceback.
-        assert res.length == 1, "unable to resolve ambiguity" # should never happen in C.
+        assert res.length == 1
+            print(format_source(sppf.start), sppf.start)
+            print(format_source(sppf.stop), sppf.stop)
+            "unable to resolve ambiguity" # should never happen in C.
         return res[0]
     return chartparser.Resolve(fn)
 
@@ -233,6 +236,13 @@ actions = :exnihilo()
     declarator = (identifier=null):
         return (scope):
             return Declarator(identifier)
+    bitfield = (declarator, constant):
+        return (scope):
+            return :exnihilo()
+                type = "bitfield"
+                declarator = declarator(scope)
+                count = constant(scope)
+
     pointer_declarator = (ptr, base):
         return (scope):
             declarator = base(scope)
@@ -736,6 +746,7 @@ class Preprocessor
         self.macro_replacements = macro_replacements
         self.file_stack = [] # stack for #include.
 
+        self.search_paths = self.include_search_paths(true)
         self.filename = stream.filename # we catch recursive includes with this.
         self.stream = stream
         self.depth = 0 # how deep conditional groups, tells whether #endif/#else accepted
@@ -832,13 +843,25 @@ class Preprocessor
             replacement = []
             for rtoken in subs.replacement
                 t = rtoken.clone(token) # TODO: implement '#' and '##' here.
+                assert t.value != '#', "implement #" ++ format_source(token)
                 if t.value in env                    # here the arguments are
-                    replacement.extend(env[t.value]) # substituted in.
+                    r = env[t.value]                 # substituted in.
+                    if r.length > 0
+                        replacement.extend(r) 
+                    else
+                        replacement.append(null)     # drop placeholder
                 else
                     replacement.append(t)
-            
+            for i in range(replacement.length - 1, 0, -1)
+                if replacement[i].value == '##'
+                    xx = replacement.pop(i)
+                    rhs = replacement.pop(i)
+                    lhs = replacement[i-1].clone(xx) # the macro might duplicate a token.
+                    lhs.value ++= rhs.value # TODO: should check that they are compatible tokens.
+                    replacement[i-1] = lhs
             for t in reversed(replacement)
-                self.putback.append(t)
+                if t # drop placeholder.
+                    self.putback.append(t)
 
     # Once there's the macro expansion, it must
     # match parentheses until it hits a matching ')'
@@ -956,6 +979,7 @@ class Preprocessor
         while not token and self.file_stack.length > 0
             assert self.depth == 0, "missing #endif at " ++ self.filename.to_string()
             entry = self.file_stack.pop()
+            self.search_paths = entry.search_paths
             self.filename = entry.filename
             self.stream = entry.stream
             self.depth = entry.depth
@@ -1063,7 +1087,7 @@ class Preprocessor
         #                in the directories given with '-I'
         # check from these how it's done in GCC and imitate. The detail is important
         # although spec doesn't define it.
-        elif macro.value == "include"
+        elif macro.value == "include" or macro.value == "include_next"
             self.stream.skip_spaces()
             if self.stream.current == '<'
                 self.stream.advance()
@@ -1084,10 +1108,16 @@ class Preprocessor
 
             entry = :exnihilo()
                 stream = self.stream
+                search_paths = self.search_paths
                 filename = self.filename
                 depth = self.depth
             self.file_stack.append(entry)
-            self.stream = self.include(string, local)
+            if macro.value == "include_next"
+                entry.search_paths = list(entry.search_paths) # Allows the sequential include_next commands to succeed.
+                self.search_paths = iter(entry.search_paths) # Makes sure the next search will trim out the paths it used.
+            else
+                self.search_paths = self.include_search_paths(local)
+            self.stream = self.include(macro, string, self.search_paths)
             self.filename = self.stream.filename # to make sure the preprocessor keeps
             self.depth = 0                       # track of physical instead of logical filename.
             return null
@@ -1115,7 +1145,7 @@ class Preprocessor
                 message.append(stringify_token(token.name, token.value))
             assert false
                 format_source(macro) ++ " not implemented #" ++
-                macro.value ++ " " ++ " ".join(macroseq)
+                macro.value ++ " " ++ " ".join(macroseq or [])
 
     macro_identifier = (self, macro):
         token = self.next_token(true)
@@ -1144,19 +1174,35 @@ class Preprocessor
         assert not self.next_token(true)
             format_source(macro) ++ "macro contains excess garbage"
 
-    include = (self, string, local):
+    include = (self, macro, string, search_paths):
         # 'local' ignored here for now.
         header = null
-        for search_path in self.config["includes"]
+        for search_path in search_paths
             header = path(search_path) ++ string
             if fs.exists(header)
                 break
             header = null
         assert header, format_source(macro) ++ "#include did not find this file"
         # Might make sense to allow this to be disabled.
+        collision = 0
         for entry in self.file_stack
-            assert entry.filename != header, "recursive #include"
+            collision += entry.filename == header
+            assert collision < 2
+                files = [header]
+                for entry in self.file_stack
+                    files.append(entry.filename)
+                "recursive #include: " ++ repr(files)
         return open_token_stream(header)
+
+    # We wouldn't have to lug search paths around without include_next
+    # To allow include_next, it's convenient to create a generator.
+    include_search_paths = (self, local):
+        if local
+            for search_path in self.config["local_includes"]
+                yield search_path
+        for search_path in self.config["includes"]
+            yield search_path
+
 
     # nonprocessed tokens here translate into '0'
     macroeval = (self, macroseq):
@@ -1309,6 +1355,11 @@ token_chop = (stream, macroline=false):
         return null
     lno = stream.lno
 
+    flavor = null
+    # String literal prefix hack.
+    if (stream.current in ["L", "U"] and stream.next_current == '"') or
+       (stream.current == "L"        and stream.next_current == "'")
+        flavor = stream.advance()
     # Identifier: any sequence of letters, digits, or underscores,
     #             which begins with a letter or underscore
     #             you may have to accept $ as a letter
@@ -1334,9 +1385,9 @@ token_chop = (stream, macroline=false):
         stream.comments = true
         terminal = stream.advance()
         if terminal == "'"
-            return Token(stream.filename, lno, "char", string)
+            return Token(stream.filename, lno, "char", string, flavor)
         elif terminal == '"'
-            return Token(stream.filename, lno, "string", string)
+            return Token(stream.filename, lno, "string", string, flavor)
         else
             assert false, "error in tokenizing"
     # Preprocessing number: Formally, preprocessing numbers begin
@@ -1387,7 +1438,7 @@ token_chop = (stream, macroline=false):
         if punc == '#' and line_begin
             return Token(stream.filename, stream.lno, "macro", punc)
         return Token(stream.filename, lno, punc, punc) # punctuation is named for parsing.
-    return Token(stream.filename, lno, "other", current)
+    return Token(stream.filename, lno, "other", character)
 
 escape_sequence = (stream):
     if stream.current in escape_sequences
@@ -1420,7 +1471,7 @@ is_octal_char = (character):
     return character in octal_alphabet
 
 class Token
-    +init = (self, filename, lno, name, value=""):
+    +init = (self, filename, lno, name, value="", flavor=""):
         self.filename = filename
         self.lno = lno
         self.name = name
@@ -1428,6 +1479,7 @@ class Token
         self.macro = null # If this token came by macro substitution, this is set.
                           # Reveals self-referential tokens, as well as
                           # provides debugging information.
+        self.flavor = flavor
 
     # Even if stringify_token is defined above, this piece
     # is not significant enough dependency that this class
@@ -1526,8 +1578,8 @@ class LogicalCharacterStream
         while self.current in spaces_and_newlines # And twice use of the above function
             self.advance()              # is also bit low to reason a break into function.
 
-spaces = set('\x00 \t')
-spaces_and_newlines = set('\x00 \t\n')
+spaces = set('\x00 \t\f')
+spaces_and_newlines = set('\x00 \t\f\n')
 
 # The one of the most beloved features of C/C++.
 # https://en.wikipedia.org/wiki/Digraphs_and_trigraphs#C

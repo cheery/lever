@@ -209,6 +209,7 @@ Line to line distance is quite simple thing to calculate, but it should give a g
 ## How to try it out
 
  * Clone / download this repository.
+ * Download or clone libuv -repository inside. Build the libuv.
  * Run the `./setup.py` while online and have it verify you got all the packages. (only works on ubuntu and debian)
  * `./setup.py compile` will compile the runtime into `lever` -executable.
  * `./lever` or `./lever sample.lc` lets you try it out.

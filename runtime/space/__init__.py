@@ -6,7 +6,7 @@ from listobject import List
 from module import Module
 from multimethod import Multimethod
 from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean
-from string import String
+from string import String, string_upper, string_lower
 from uint8array import Uint8Array, to_uint8array
 from exnihilo import Exnihilo
 from customobject import CustomObject, Property

@@ -1,5 +1,5 @@
 from rpython.rlib.objectmodel import we_are_translated, keepalive_until_here
-from rpython.rtyper.lltypesystem import rffi
+from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 #from rpython.rlib.rthread import ThreadLocalReference
 #from rpython.rlib import rgc
 from stdlib import api # XXX: perhaps give every module an init?
@@ -15,17 +15,30 @@ import time
 import module_resolution
 import os
 import pathobj
+import rlibuv as uv
 
 class ExecutionContext(object):
-    def __init__(self, config, lever_path, io):
+    #_immutable_fields_ = ['debug_hook?']
+    def __init__(self, config, lever_path, uv_loop, uv_idler):
         self.config = config
         self.lever_path = lever_path
         self.sthread = None                 # Stacklets
+        self.uv_loop = uv_loop
+        self.uv_idler = uv_idler
+        self.uv_closing = {}                # Handles about to close.
+        self.uv_sleepers = {}               # Holds the sleeping greenlets.
+        self.uv_readers = {}                # Reading streams.
+        self.uv_writers = {}
         self.queue = []                     # Event queue.
-        self.sleepers = []                  # Holds the sleeping greenlets.
-        self.current = Greenlet(None, [])
+        self.current = Greenlet(None, [])#, None)
         self.eventloop = self.current
-        self.handle = async_io.create_eventloop_handle(io, self)
+        self.exit_status = 0
+        #self.debug_hook = None
+
+    def enqueue(self, task):
+        if len(self.queue) == 0 and not uv.is_active(rffi.cast(uv.handle_ptr, self.uv_idler)):
+            uv.idle_start(self.uv_idler, run_queued_tasks)
+        self.queue.append(task)
 
 class GlobalState(object):
     ec = None
@@ -33,6 +46,24 @@ class GlobalState(object):
 
 def get_ec():
     return g.ec
+
+def run_queued_tasks(handle):
+    ec = get_ec()
+    queue, ec.queue = ec.queue, []
+    for item in queue:
+        root_switch(ec, [item])
+    if len(ec.queue) == 0: # trick.
+        uv.idle_stop(ec.uv_idler)
+
+# TODO: try understand why is it crashing, and not working right.
+def wakeup_sleeper(handle):
+    ec = get_ec()
+
+    task = ec.uv_sleepers.pop( rffi.cast_ptr_to_adr(handle) )
+    ec.enqueue(task)
+
+    uv.timer_stop(handle)
+    uv.free(handle)
 
 #global_state = ThreadLocalReference(GlobalState)
 g = GlobalState()
@@ -49,9 +80,21 @@ def new_entry_point(config, default_lever_path=u''):
         lever_path = pathobj.concat(pathobj.getcwd(), lever_path)
         
         # This should happen only once.
-        g.io = io = async_io.AsyncIO()
+        #g.io = MiniIO()
 
-        g.ec = ec = ExecutionContext(config, lever_path, io)
+        uv_loop = uv.default_loop()
+        uv_idler = uv.malloc_bytes(uv.idle_ptr, uv.handle_size(uv.IDLE))
+        uv.idle_init(uv_loop, uv_idler)
+
+        uv_stdin  = async_io.initialize_tty(uv_loop, 0, 1)
+        uv_stdout = async_io.initialize_tty(uv_loop, 1, 0)
+        uv_stderr = async_io.initialize_tty(uv_loop, 2, 0)
+        #TODO: consider whether these should plug to base.
+        base.module.setattr_force(u"stdin",  uv_stdin)
+        base.module.setattr_force(u"stdout", uv_stdout)
+        base.module.setattr_force(u"stderr", uv_stderr)
+
+        g.ec = ec = ExecutionContext(config, lever_path, uv_loop, uv_idler)
         api.init(lever_path)
         vectormath.init_random()
 
@@ -60,33 +103,12 @@ def new_entry_point(config, default_lever_path=u''):
             argv.append(space.String(arg.decode('utf-8')))
         schedule(argv)
 
-        try:
-            # This behavior is similar to javascript's event loop, except that
-            # the messages put into queue are handled by greenlets rather than
-            # callbacks. The greenlets allow synchronous notation for
-            # asynchronous programs.
-            while len(ec.queue) + len(ec.sleepers) + io.task_count > 0:
-                queue, ec.queue = ec.queue, []
-                for item in queue:
-                    switch([item])
-                now = time.time()
-                timeout = inf
-                sleepers, ec.sleepers = ec.sleepers, []
-                for sleeper in sleepers:
-                    if sleeper.wakeup <= now:
-                        sleeper.greenlet.argv.append(space.Float(now))
-                        ec.queue.append(sleeper.greenlet)
-                    else:
-                        timeout = min(timeout, sleeper.wakeup)
-                        ec.sleepers.append(sleeper)
-                async_io.process_events(io, ec, now, timeout)
-        except space.Unwinder as unwinder:
-            exception = unwinder.exception
-            if isinstance(exception, space.LSystemExit):
-                return int(exception.status)
-            base.print_traceback(unwinder.exception)
-            return 1
-        return 0
+        uv.run(ec.uv_loop, uv.RUN_DEFAULT)
+
+        #uv.loop_close(ec.uv_loop)
+
+        uv.tty_reset_mode()
+        return ec.exit_status
     return entry_point
 
 @space.Builtin
@@ -109,7 +131,7 @@ def normal_startup(argv):
 def schedule(argv):
     ec = get_ec()
     c = to_greenlet(argv)
-    ec.queue.append(c)
+    ec.enqueue(c)
     return c
 
 class Suspended(object):
@@ -134,15 +156,22 @@ def sleep_greenlet(duration):
     if ec.current == ec.eventloop:
         raise space.OldError(u"bad context for greenlet sleep")
     assert ec.current.is_exhausted() == False
-    wakeup = time.time() + duration.number
-    ec.sleepers.append(Suspended(wakeup, ec.current))
+
+    uv_sleeper = uv.malloc_bytes(uv.timer_ptr, uv.handle_size(uv.TIMER))
+    ec.uv_sleepers[rffi.cast_ptr_to_adr(uv_sleeper)] = ec.current
+    uv.timer_init(ec.uv_loop, uv_sleeper)
+    uv.timer_start(uv_sleeper, wakeup_sleeper, int(duration.number*1000), 0)
+
     return switch([ec.eventloop])
 
 @space.signature(space.Float, space.Object)
 def sleep_callback(duration, func):
     ec = get_ec()
-    wakeup = time.time() + duration.number
-    ec.sleepers.append(Suspended(wakeup, to_greenlet([func])))
+
+    uv_sleeper = uv.malloc_bytes(uv.timer_ptr, uv.handle_size(uv.TIMER))
+    ec.uv_sleepers[rffi.cast_ptr_to_adr(uv_sleeper)] = to_greenlet([func])
+    uv.timer_init(ec.uv_loop, uv_sleeper)
+    uv.timer_start(uv_sleeper, wakeup_sleeper, int(duration.number*1000), 0)
     return space.null
 
 def to_greenlet(argv):
@@ -152,17 +181,18 @@ def to_greenlet(argv):
         assert isinstance(c, Greenlet)
         c.argv += argv
     else:
-        c = Greenlet(ec.eventloop, argv)
+        c = Greenlet(ec.eventloop, argv)#, ec.debug_hook)
     if c.is_exhausted():
         raise space.OldError(u"attempting to put exhausted greenlet into queue")
     return c
 
 class Greenlet(space.Object):
-    def __init__(self, parent, argv):
+    def __init__(self, parent, argv):#, debug_hook):
         self.parent = parent
         self.handle = None
         self.argv = argv
         self.unwinder = None
+        #self.debug_hook = debug_hook
 
     def getattr(self, name):
         if name == u'parent':
@@ -181,7 +211,8 @@ def getcurrent(argv):
 
 @base.builtin # XXX: replace with instantiator
 def greenlet(argv):
-    return Greenlet(get_ec().current, argv)
+    ec = get_ec()
+    return Greenlet(ec.current, argv)#, ec.debug_hook)
 
 @Continuation.wrapped_callback
 def new_greenlet(cont):
@@ -209,10 +240,20 @@ def new_greenlet(cont):
     self.handle, parent.handle = parent.handle, self.handle
     return self.handle # XXX: note that the handle must not be null for this to work.
 
+def root_switch(ec, argv):
+    try:
+        switch(argv)
+    except space.Unwinder as unwinder:
+        exception = unwinder.exception
+        #if isinstance(exception, space.LSystemExit):
+        #    return int(exception.status)
+        base.print_traceback(unwinder.exception)
+
 def switch(argv):
     ec = get_ec()
     target = argv.pop(0)
     self = ec.current
+    #self.debug_hook = ec.debug_hook
     if not isinstance(target, Greenlet):
         raise space.OldError(u"first argument to 'switch' not a greenlet")
     if ec.current == target:
@@ -229,6 +270,7 @@ def switch(argv):
     else:
         self.handle = Continuation()
         self.handle.init(new_greenlet)
+    #ec.debug_hook = self.debug_hook
     argv, self.argv = self.argv, []
     if self.unwinder:
         unwinder, self.unwinder = self.unwinder, None
@@ -250,3 +292,12 @@ def argv_expand(obj):
     if not isinstance(obj, space.List):
         return [obj]
     return obj.contents
+
+@base.builtin
+@space.signature(space.Integer, optional=1)
+def exit(obj):
+    ec = get_ec()
+    ec.exit_status = 0 if obj is None else int(obj.value)
+    uv.stop(ec.uv_loop)
+    ec.enqueue(ec.current)        # Trick to ensure we get Discard -exception here
+    return switch([ec.eventloop]) # Once they are created.

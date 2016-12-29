@@ -146,7 +146,8 @@ def setattr(obj, index, value):
 @builtin
 @signature(String)
 def ord_(string):
-    assert len(string.string) == 1
+    if len(string.string) != 1:
+        raise unwind(LError(u"ord expects a char"))
     return Integer(ord(string.string[0]))
 
 @builtin
@@ -241,12 +242,6 @@ def chdir(obj):
     return null
 
 @builtin
-@signature(Integer, optional=1)
-def exit(obj):
-    status = 0 if obj is None else obj.value
-    raise unwind(LSystemExit(status))
-
-@builtin
 @signature(Integer, Integer, Integer, optional=2)
 def range_(start, stop, step):
     if stop is None:
@@ -283,19 +278,18 @@ def Range_next(self):
 
 # TODO?: Grab this one from stdlib.fs
 # input() is meant to be overridden when it makes sense.
-@builtin
-def input_(argv):
-    return main.g.io.new_task(sync_input, argv)
-
-@signature(String, optional=1)
-def sync_input(obj):
-    stdout = main.g.io.stdout
-    stdin = main.g.io.stdin
-    # Old input()
-    if obj is not None:
-        stdout.write(obj.string.encode('utf-8'))
-    line = stdin.readline().rstrip("\r\n")
-    return String(line.decode('utf-8'))
+#def input_(argv):
+#    return main.g.io.new_task(sync_input, argv)
+#@builtin
+#@signature(String, optional=1)
+#def input_(obj):
+#    stdout = main.g.io.stdout
+#    stdin = main.g.io.stdin
+#    # Old input()
+#    if obj is not None:
+#        stdout.write(obj.string.encode('utf-8'))
+#    line = stdin.readline().rstrip("\r\n")
+#    return String(line.decode('utf-8'))
 
 def print_traceback(exception):
     traceback = exception.getattr(u"traceback")
@@ -351,3 +345,10 @@ def parse_float(string):
         else:
             raise unwind(LError(u"invalid digit char: " + ch))
     return Float(value / inv_scale)
+
+#@builtin
+#@signature(Object)
+#def attach_debugger(debugger):
+#    ec = main.get_ec()
+#    ec.debug_hook = debugger
+#    return null

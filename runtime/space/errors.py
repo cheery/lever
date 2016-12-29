@@ -169,6 +169,14 @@ class LIOError(LException):
         message = os.strerror(self.errno).decode('utf-8')
         return u"%s: %s" % (self.filename.repr(), message)
 
+class LUVError(LException):
+    def __init__(self, error_name, strerror):
+        self.error_name = error_name
+        self.strerror = strerror
+
+    def repr(self):
+        return u"LibUV " + self.error_name + u":" + self.strerror
+
 # Legacy handling for errors.
 def OldError(message):
     return unwind(LError(message))
@@ -194,4 +202,5 @@ all_errors = [
     LCallError,
     LInstructionError,
     LIOError,
+    LUVError,
 ]

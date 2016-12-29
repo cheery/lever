@@ -2,6 +2,7 @@ from builtin import signature
 from interface import Object
 from rpython.rlib.objectmodel import compute_hash
 from rpython.rlib.unicodedata import unicodedb_6_2_0 as unicodedb
+from rpython.rlib.rstring import UnicodeBuilder
 import numbers
 import space
 
@@ -14,7 +15,7 @@ class String(Object):
 
     # Not fixing the string here, fix later
     def repr(self):
-        return u'"' + self.string + u'"'
+        return escape_string(self.string)
 
     def hash(self):
         return compute_hash(self.string)
@@ -122,3 +123,52 @@ class StringIterator(Object):
 @StringIterator.method(u"next", signature(StringIterator))
 def StringIterator_next(self):
     return String(self.iterator.next())
+
+@String.method(u"upper", signature(String))
+def String_upper(obj):
+    return String(string_upper(obj.string))
+
+def string_upper(string):
+    b = UnicodeBuilder()
+    for ch in string:
+        b.append(unichr(unicodedb.toupper(ord(ch))))
+    return b.build()
+
+@String.method(u"lower", signature(String))
+def String_lower(obj):
+    return String(string_lower(obj.string))
+
+def string_lower(string):
+    b = UnicodeBuilder()
+    for ch in string:
+        b.append(unichr(unicodedb.tolower(ord(ch))))
+    return b.build()
+
+
+def escape_string(string):
+    out = UnicodeBuilder()
+    out.append(u'"')
+    for ch in string:
+        n = ord(ch)
+        if 0x20 <= n and n <= 0x7E or 0xFF < n: # remove the last part in cond if you don't want
+            if ch == u'\\':                     # unicode printed out for some reason.
+                ch = u'\\\\'
+            elif ch == u'"':
+                ch = u'\\"'
+        else:
+            #if n <= 0xFF:
+            c = u"0123456789abcdef"[n >> 4  & 15]
+            d = u"0123456789abcdef"[n       & 15]
+            ch = u'x' + c + d
+            #else: # for unicode escapes.
+            #    a = u"0123456789abcdef"[n >> 12]
+            #    b = u"0123456789abcdef"[n >> 8  & 15]
+            #    c = u"0123456789abcdef"[n >> 4  & 15]
+            #    d = u"0123456789abcdef"[n       & 15]
+            #    ch = u'u' + a + b + c + d
+            ch = u'\\' + character_escapes.get(n, ch)
+        out.append(ch)
+    out.append(u'"')
+    return out.build()
+
+character_escapes = {8: u'b', 9: u't', 10: u'n', 12: u'f', 13: u'r'}
