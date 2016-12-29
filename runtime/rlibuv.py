@@ -22,6 +22,14 @@ if sys.platform == "win32":
     path_to_libuv_library = cd("libuv.lib")
 else:
     path_to_libuv_library = cd("out/Release/libuv.a")
+    if not os.path.exists(path_to_libuv_library):
+        path_to_libuv_library = cd("out/Release/libuv.a")
+assert os.path.exists(path_to_libuv_library), "cannot find libuv, check it is in libuv/ path."
+
+# This thing seemed to not appear in official includes..
+assert os.path.exists(
+    cd("include/stdint-msvc2008.h")
+), "Download https://github.com/libuv/libuv/blob/v1.x/include/stdint-msvc2008.h into libuv/include/, please."
 
 eci = ExternalCompilationInfo(
     include_dirs = [
@@ -30,16 +38,26 @@ eci = ExternalCompilationInfo(
     includes = [
         cd("include/uv.h")
     ],
-#    library_dirs = [
-#       "libuv/out/Release"
-#    ],
+    # library_dirs = [
+    #    "libuv/out/Release"
+    # ],
     link_files = [
         path_to_libuv_library
     ]
 )
 
-uint64_t = rffi.UINT_FAST64_T
-int64_t  = rffi.INT_FAST64_T
+for t in [rffi.LONG, rffi.LONGLONG]:
+    if rffi.sizeof(t) == 8:
+        int64_t = t
+        break
+else:
+    assert False, "int64_t not found"
+for t in [rffi.ULONG, rffi.ULONGLONG]:
+    if rffi.sizeof(t) == 8:
+        uint64_t = t
+        break
+else:
+    assert False, "int64_t not found"
 
 handle_type = rffi.INT
 (
@@ -172,11 +190,10 @@ if sys.platform != "win32":
         ("size", rffi.SIZE_T))
     os_sock_t = rffi.INT
 else:
-    from rpython.rlib import rwin32
     buf_t = lltype.Struct("uv_buf_t",
         ("size", rffi.SIZE_T), # or ULONG
         ("base", rffi.CCHARP))
-    os_sock_t = rwin32.SOCKET
+    os_sock_t = rffi.VOIDP
 
 uv_file = rffi.INT
 

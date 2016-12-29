@@ -19,6 +19,9 @@ try
     add_history = (source):
         el.add_history(source)
 except Exception as error
+    input = (prompt):
+        stdout.write(prompt)
+        return stdin.read()
     add_history = (source):
         null
 

@@ -136,18 +136,24 @@ def Stream_read(self, block):
             return String(builder.build().decode('utf-8'))
     ec = main.get_ec()
     if block is not None:
-        check( uv.read_start(self.stream, stream_alloc_buffer,
-            stream_read_callback) )
         self.read_obj = block
         self.read_task = ec.current
         ec.uv_readers[rffi.cast_ptr_to_adr(self.stream)] = self
-        return main.switch([ec.eventloop])
+        try:
+            check( uv.read_start(self.stream, stream_alloc_buffer,
+                stream_read_callback) )
+            return main.switch([ec.eventloop])
+        finally:
+            ec.uv_readers.pop(rffi.cast_ptr_to_adr(self.stream), None)
     else:
-        check( uv.read_start(self.stream, stream_alloc_buffer,
-            stream_readline_callback) )
         self.read_task = ec.current
         ec.uv_readers[rffi.cast_ptr_to_adr(self.stream)] = self
-        return main.switch([ec.eventloop])
+        try:
+            check( uv.read_start(self.stream, stream_alloc_buffer,
+                stream_readline_callback) )
+            return main.switch([ec.eventloop])
+        finally:
+            ec.uv_readers.pop(rffi.cast_ptr_to_adr(self.stream), None)
 
 def stream_alloc_buffer(stream, suggested_size, buf):
     ec = main.get_ec()
