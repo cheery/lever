@@ -18,7 +18,6 @@ main = ():
     # This kind of details are the reason why this thing
     # isn't a library for now.
     stdin.set_mode('raw')
-    stdout.set_mode('raw')
     # There are unrealised, but potential ways to mark that
     # some greenlets are auxiliary.
     # For now we exit with exit(0), and that doesn't come with
