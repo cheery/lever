@@ -1,3 +1,4 @@
+from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rlib.rstring import StringBuilder, UnicodeBuilder
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from space import *
@@ -7,7 +8,6 @@ import rlibuv as uv
 class Handle(Object):
     def __init__(self, handle):
         self.handle = handle
-        self.close_task = None
         self.closed = False
         self.buffers = []
 
@@ -24,27 +24,40 @@ class Handle(Object):
 
 @Handle.method(u"close", signature(Handle))
 def Handle_close(self):
-    assert self.close_task is None
     ec = main.get_ec()
+    slot = async_begin(self.handle, ec.uv_closing, self)
     uv.close(self.handle, Handle_close_cb)
-    self.close_task = ec.current
-    ec.uv_closing[rffi.cast_ptr_to_adr(self.handle)] = self
-    return main.switch([ec.eventloop])
+    return async_end(ec, slot, self.handle, ec.uv_closing, 0)
 
 def Handle_close_cb(handle):
     ec = main.get_ec()
-    self = ec.uv_closing.pop(rffi.cast_ptr_to_adr(handle))
+    slot, self = ec.uv_closing.pop(rffi.cast_ptr_to_adr(handle))
     self.closed = True
     # Should be safe to release them here.
     buffers, self.buffers = self.buffers, []
     for pointer in buffers:
         lltype.free(pointer, flavor='raw')
+    slot.response(ec, space.null)
 
-    task, self.close_task = self.close_task, None
-    main.root_switch(ec, [task])
+@Handle.method(u"get_send_buffer_size", signature(Handle))
+def Handle_get_send_buffer_size(self):
+    value = lltype.malloc(rffi.INTP.TO, 1, flavor='raw')
+    try:
+        check( uv.send_buffer_size(self.handle, value) )
+        return Integer(rffi.r_long(value[0]))
+    finally:
+        lltype.free(value, flavor='raw')
+
+@Handle.method(u"get_recv_buffer_size", signature(Handle))
+def Handle_get_recv_buffer_size(self):
+    value = lltype.malloc(rffi.INTP.TO, 1, flavor='raw')
+    try:
+        check( uv.recv_buffer_size(self.handle, value) )
+        return Integer(rffi.r_long(value[0]))
+    finally:
+        lltype.free(value, flavor='raw')
 
 # TODO: uv.ref, uv.unref ?
-# TODO: uv.send_buffer_size(handle, value_ptr=0), recv ?
 # TODO: uv.fileno(handle, fd) ?
     
 class Stream(Handle):
@@ -87,33 +100,33 @@ class Stream(Handle):
 
 @Stream.method(u"write", signature(Stream, Object))
 def Stream_write(self, obj):
-    assert self.write_task is None
     if isinstance(obj, String): # TODO: do this with a cast instead?
         obj = to_uint8array(obj.string.encode('utf-8'))
     elif not isinstance(obj, Uint8Array):
         raise unwind(LError(u"expected a buffer"))
+
     ec = main.get_ec()
     buf = lltype.malloc(rffi.CArray(uv.buf_t), 1, flavor='raw')
     buf[0].base = rffi.cast(rffi.CCHARP, obj.uint8data)
     buf[0].size = rffi.r_size_t(obj.length)
-    self.write_task = ec.current
-    self.write_obj  = obj
-    ec.uv_writers[rffi.cast_ptr_to_adr(self.write_req)] = self
-    uv.write(self.write_req, self.stream, buf, 1, Stream_write_cb)
-    return main.switch([ec.eventloop])
+    try:
+        slot = async_begin(self.write_req, ec.uv_writers, (self, obj))
+        status = uv.write(self.write_req, self.stream, buf, 1, Stream_write_cb)
+        return async_end(ec, slot, self.write_req, ec.uv_writers, status)
+    finally:
+        lltype.free(buf, flavor='raw')
+
+def Stream_write_cb(write_req, status):
+    ec = main.get_ec()
+    status = rffi.r_long(status)
+    slot, (self, obj) = ec.uv_writers.pop(rffi.cast_ptr_to_adr(write_req))
+    if status < 0:
+        slot.failure(ec, to_error(status))
+    else:
+        slot.response(ec, space.null)
 
 # TODO: write2, try_write ?
 
-def Stream_write_cb(write_req, status):
-    status = rffi.r_long(status)
-    ec = main.get_ec()
-    self = ec.uv_writers.pop(rffi.cast_ptr_to_adr(write_req))
-
-    self.write_obj = None
-    task, self.write_task = self.write_task, None
-    if status < 0:
-        task.unwinder = to_error(status)
-    main.root_switch(ec, [task])
 
 @Stream.method(u"read", signature(Stream, Uint8Array, optional=1))
 def Stream_read(self, block):
@@ -135,74 +148,36 @@ def Stream_read(self, block):
             self.read_offset += avail
             return String(builder.build().decode('utf-8'))
     ec = main.get_ec()
-    if block is not None:
-        self.read_obj = block
-        self.read_task = ec.current
-        ec.uv_readers[rffi.cast_ptr_to_adr(self.stream)] = self
-        try:
-            check( uv.read_start(self.stream, stream_alloc_buffer,
-                stream_read_callback) )
-            return main.switch([ec.eventloop])
-        finally:
-            ec.uv_readers.pop(rffi.cast_ptr_to_adr(self.stream), None)
-    else:
-        self.read_task = ec.current
-        ec.uv_readers[rffi.cast_ptr_to_adr(self.stream)] = self
-        try:
-            check( uv.read_start(self.stream, stream_alloc_buffer,
-                stream_readline_callback) )
-            return main.switch([ec.eventloop])
-        finally:
-            ec.uv_readers.pop(rffi.cast_ptr_to_adr(self.stream), None)
 
-def stream_alloc_buffer(stream, suggested_size, buf):
+    slot = async_begin(self.stream, ec.uv_readers, (self, block))
+    status = uv.read_start(self.stream, Stream_alloc_cb, Stream_read_cb)
+    return async_end(ec, slot, self.stream, ec.uv_readers, status)
+
+def Stream_alloc_cb(stream, suggested_size, buf):
     ec = main.get_ec()
-    self = ec.uv_readers[rffi.cast_ptr_to_adr(stream)]
+    slot, (self, block) = ec.uv_readers[rffi.cast_ptr_to_adr(stream)]
     buf.base = ptr = lltype.malloc(rffi.CCHARP.TO, suggested_size, flavor='raw')
     buf.size = suggested_size
     self.read_buf = buf
     self.buffers.append(ptr)
 
-def stream_read_callback(stream, nread, buf):
+def Stream_read_cb(stream, nread, buf):
     ec = main.get_ec()
-    self = ec.uv_readers.pop(rffi.cast_ptr_to_adr(stream))
-    if nread >= 0:
-        count = min(nread, self.read_obj.length)
-        rffi.c_memcpy(self.read_obj.uint8data, buf.base, count)
+    slot, (self, block) = ec.uv_readers.pop(rffi.cast_ptr_to_adr(stream))
+    uv.read_stop(stream)
+    if nread < 0:
+        slot.failure(ec, to_error(nread))
+    elif block is not None:
+        count = min(nread, block.length)
+        rffi.c_memcpy(block.uint8data, buf.base, count)
         self.read_offset = count
         self.read_avail  = nread
-
-        uv.read_stop(stream)
-
-        self.read_obj = None
-        task, self.read_task = self.read_task, None
-        main.root_switch(ec, [task, Integer(count)])
+        slot.response(ec, Integer(count))
     else:
-        # TODO: At this event issuing read again is undefined.
-        uv.read_stop(stream)
-        self.read_obj = None
-        task, self.read_task = self.read_task, None
-        main.root_switch(ec, [task, Integer(0)])
-
-def stream_readline_callback(stream, nread, buf):
-    ec = main.get_ec()
-    self = ec.uv_readers.pop(rffi.cast_ptr_to_adr(stream))
-
-    if nread >= 0:
         builder = StringBuilder()
         builder.append_charpsize(buf.base, nread)
-        uv.read_stop(stream)
         #TODO: str_decode_utf_8 to handle partial symbols.
-
-        task, self.read_task = self.read_task, None
-        main.root_switch(ec, [task, String(builder.build().decode('utf-8'))])
-    else:
-        # TODO: At this event issuing read again is undefined.
-        uv.read_stop(stream)
-        task, self.read_task = self.read_task, None
-        task.unwinder = to_error(nread)
-        main.root_switch(ec, [task])
-        main.root_switch(ec, [task, String(u"")])
+        slot.response(ec, String(builder.build().decode('utf-8')))
 
 def initialize_tty(uv_loop, fd, readable):
     tty = uv.malloc_bytes(uv.tty_ptr, uv.handle_size(uv.TTY))
@@ -365,6 +340,50 @@ def TTY_get_winsize(self):
 def check(result):
     if result < 0:
         raise to_error(result)
+
+
+
+@specialize.call_location()
+def async_begin(handle, table, self):
+    adr = rffi.cast_ptr_to_adr(handle)
+    if adr in table:
+        raise unwind(LError(u"async request collision"))
+    slot = Slot(None, None, None)
+    table[adr] = (slot, self)
+    return slot
+
+@specialize.call_location()
+def async_end(ec, slot, handle, table, status):
+    adr = rffi.cast_ptr_to_adr(handle)
+    if status < 0:
+        table.pop(adr)
+        raise to_error(status)
+    elif slot.result is not None:
+        return slot.result
+    elif slot.unwind is not None:
+        raise slot.unwind
+    else:
+        slot.greenlet = ec.current
+        return main.switch([ec.eventloop])
+
+class Slot:
+    def __init__(self, result, unwind, greenlet):
+        self.result = result
+        self.unwind = unwind
+        self.greenlet = greenlet
+
+    def failure(self, ec, unwind):
+        if self.greenlet is None:
+            self.unwind = unwind
+        else:
+            self.greenlet.unwind = unwind
+            main.root_switch(ec, [self.greenlet])
+
+    def response(self, ec, result):
+        if self.greenlet is None:
+            self.result = result
+        else:
+            main.root_switch(ec, [self.greenlet, result])
 
 def to_error(result):
     raise unwind(LUVError(

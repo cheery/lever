@@ -45,6 +45,17 @@ class String(Object):
     def iter(self):
         return StringIterator(iter(self.string))
 
+@String.method(u"count", signature(String, String))
+def String_count(self, ch):
+    if len(ch.string) != 1:
+        raise space.unwind(space.LError(u"str.count expected char"))
+    count = 0
+    x = ch.string[0]
+    for ch in self.string:
+        if ch == x:
+            count += 1
+    return space.Integer(count)
+
 @String.builtin_method
 @signature(String, Object)
 def join(string, seq):
