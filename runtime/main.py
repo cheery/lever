@@ -55,7 +55,6 @@ def run_queued_tasks(handle):
     if len(ec.queue) == 0: # trick.
         uv.idle_stop(ec.uv_idler)
 
-# TODO: try understand why is it crashing, and not working right.
 def wakeup_sleeper(handle):
     ec = get_ec()
 
@@ -63,7 +62,7 @@ def wakeup_sleeper(handle):
     ec.enqueue(task)
 
     uv.timer_stop(handle)
-    uv.free(handle)
+    uv.close(rffi.cast(uv.handle_ptr, handle), uv.free)
 
 #global_state = ThreadLocalReference(GlobalState)
 g = GlobalState()

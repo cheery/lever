@@ -7,7 +7,7 @@ import os, sys
 @specialize.call_location()
 def malloc_bytes(ptr_type, size):
     return rffi.cast(ptr_type,
-        lltype.malloc(rffi.CCHARP.TO, size, flavor='raw'))
+        lltype.malloc(rffi.CCHARP.TO, size, flavor='raw', zero=True))
 
 @specialize.call_location()
 def free(ptr):

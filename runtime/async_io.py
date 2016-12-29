@@ -22,6 +22,9 @@ class Handle(Object):
 #            return boolean(uv.has_ref(self.handle))
         return Object.getattr(self, name)
 
+    # All handles are resources, so I don't think doing
+    # automatic close on losing them would do any good.
+
 @Handle.method(u"close", signature(Handle))
 def Handle_close(self):
     ec = main.get_ec()
@@ -37,11 +40,13 @@ def Handle_close_cb(handle):
     buffers, self.buffers = self.buffers, []
     for pointer in buffers:
         lltype.free(pointer, flavor='raw')
+    lltype.free(handle, flavor='raw')
+    self.handle = lltype.nullptr(uv.handle_ptr.TO)
     slot.response(ec, space.null)
 
 @Handle.method(u"get_send_buffer_size", signature(Handle))
 def Handle_get_send_buffer_size(self):
-    value = lltype.malloc(rffi.INTP.TO, 1, flavor='raw')
+    value = lltype.malloc(rffi.INTP.TO, 1, flavor='raw', zero=True)
     try:
         check( uv.send_buffer_size(self.handle, value) )
         return Integer(rffi.r_long(value[0]))
@@ -50,7 +55,7 @@ def Handle_get_send_buffer_size(self):
 
 @Handle.method(u"get_recv_buffer_size", signature(Handle))
 def Handle_get_recv_buffer_size(self):
-    value = lltype.malloc(rffi.INTP.TO, 1, flavor='raw')
+    value = lltype.malloc(rffi.INTP.TO, 1, flavor='raw', zero=True)
     try:
         check( uv.recv_buffer_size(self.handle, value) )
         return Integer(rffi.r_long(value[0]))
@@ -106,7 +111,7 @@ def Stream_write(self, obj):
         raise unwind(LError(u"expected a buffer"))
 
     ec = main.get_ec()
-    buf = lltype.malloc(rffi.CArray(uv.buf_t), 1, flavor='raw')
+    buf = lltype.malloc(rffi.CArray(uv.buf_t), 1, flavor='raw', zero=True)
     buf[0].base = rffi.cast(rffi.CCHARP, obj.uint8data)
     buf[0].size = rffi.r_size_t(obj.length)
     try:
@@ -211,8 +216,8 @@ def TTY_set_mode(self, modename_obj):
 
 @TTY.method(u"get_winsize", signature(TTY))
 def TTY_get_winsize(self):
-    width  = lltype.malloc(rffi.INTP.TO, 1, flavor='raw')
-    height = lltype.malloc(rffi.INTP.TO, 1, flavor='raw')
+    width  = lltype.malloc(rffi.INTP.TO, 1, flavor='raw', zero=True)
+    height = lltype.malloc(rffi.INTP.TO, 1, flavor='raw', zero=True)
     try:
         check( uv.tty_get_winsize(self.tty, width, height) )
         w = rffi.r_long(width[0])

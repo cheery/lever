@@ -79,6 +79,9 @@ def compiling_commands():
     if len(sys.argv) > 1 and sys.argv[1] == 'compile':
         check_call(['python', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 runtime/goal_standalone.py".split(' '))
         compile_libraries(preserve_cache=False)
+    if len(sys.argv) > 1 and sys.argv[1] == 'compile-debug-nojit':
+        check_call(['python', rpython_bin] + "--gc=incminimark --opt=2 --lldebug runtime/goal_standalone.py".split(' '))
+        compile_libraries(preserve_cache=False)
     if len(sys.argv) > 1 and sys.argv[1] == 'compile-nojit':
         check_call(['python', rpython_bin] + "--gc=incminimark runtime/goal_standalone.py".split(' '))
         compile_libraries(preserve_cache=False)
