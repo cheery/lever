@@ -25,9 +25,12 @@ class Exnihilo(Object):
                 cellnames += u", "
             cellnames += cellname
 
-        return u"<exnihilo %s>" % cellnames
+        return u"<object %s>" % cellnames
 
-@Exnihilo.instantiator
+Exnihilo.interface = Object.interface
+
+@Object.instantiator
 def instantiate(argv):
     assert len(argv) == 0
     return Exnihilo({})
+

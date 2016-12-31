@@ -39,6 +39,12 @@ import c, chartparser, json
 #   To do that we need a C parser. Wholly functioning C parser! With macro
 #   preprocessor.
 
+# outcome so far:
+
+#   Readline seems bit hard to use with libuv TTY. But it doesn't seem like I
+#   could get portable terminal REPL with readline anyway.
+#   Module lib/cffigen.lc is no longer relevant for the last strategy.
+
 main = ():
     stdio_h = "/usr/include/stdio.h"
     #stdio_h = dir ++ "ansi-c-grammar-test.c"
