@@ -57,14 +57,14 @@ def Compress_compress(self, array):
         # unlock
     except rzlib.RZlibError as e:
         raise zlib_error(e.msg)
-    return to_uint8array(data)
+    return to_uint8array(result)
     
-# TODO: this would require flushmode
-@Compress.method(u"finish", signature(Compress))
-def Compress_finish(self):
+@Compress.method(u"finish", signature(Compress, Integer, optional=1))
+def Compress_finish(self, mode):
+    mode = rzlib.Z_FINISH if mode is None else mode.value
     try:
         # lock
-        result = rzlib.compress(self.stream, '', rlib.Z_FINISH)
+        result = rzlib.compress(self.stream, '', rzlib.Z_FINISH)
         if mode == rzlib.Z_FINISH:
             rzlib.deflateEnd(self.stream)
             self.stream = rzlib.null_stream
@@ -102,7 +102,7 @@ def Decompress_decompress(self, array):
         raise zlib_error(e.msg)
     string, finished, unused_len = result
     assert unused_len == 0
-    return to_uint8array(data)
+    return to_uint8array(string)
 
 @Decompress.method(u"finish", signature(Decompress))
 def Decompress_finish(self):
@@ -114,10 +114,13 @@ def Decompress_finish(self):
         raise zlib_error(e.msg)
     string, finished, unused_len = result
     assert unused_len == 0
-    return to_uint8array(data)
+    return to_uint8array(string)
 
 def zlib_error(msg):
     return unwind(LError(msg.decode('utf-8')))
+
+module.setattr_force(u"Decompress", Decompress.interface)
+module.setattr_force(u"Compress", Compress.interface)
 
 for _name in u"""
     MAX_WBITS  DEFLATED  DEF_MEM_LEVEL
