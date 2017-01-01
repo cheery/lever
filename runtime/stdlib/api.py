@@ -243,9 +243,9 @@ def read_file(path, dependencies, decorator):
     basename = path.getattr(u"basename")
     if isinstance(basename, String):
         if not basename.string.endswith(u".json"):
-            path.setattr(
-                u"basename",
-                String(basename.string + u".json"))
+            dirname = path.getattr(u"dirname")
+            path = pathobj.concat(dirname,
+                pathobj.parse(basename.string + u".json"))
     path = pathobj.concat(conf.headers_dir, path)
     try:
         apispec = json.read_file(path)

@@ -24,6 +24,17 @@ next_token = (stream, table):
     start = stream.position
     if stream.is_sym()
         string = stream.advance()
+        if string == "r" and stream.current == "'" or stream.current == '"'
+            terminal = stream.advance()
+            string = ""
+            while stream.filled and stream.current != terminal
+                if stream.current == '\\'
+                    string ++= stream.advance()
+                string ++= stream.advance()
+            if not stream.filled
+                raise SyntaxError(start, stream.position, "Broken string literal")
+            stream.advance()
+            return Literal(start, stream.position, "string", string)
         while stream.is_sym() or stream.is_digit()
             string ++= stream.advance()
         name = table.get(string, 'symbol')

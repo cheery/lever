@@ -47,6 +47,11 @@ class Uint8Array(Object):
     def __del__(self):
         lltype.free(self.uint8data, flavor='raw')
 
+    def to_str(self):
+        return rffi.charpsize2str(
+            rffi.cast(rffi.CCHARP, self.uint8data),
+            int(self.length))
+
 def to_uint8array(cstring):
     return Uint8Array(rffi.cast(rffi.UCHARP, rffi.str2charp(cstring)), len(cstring))
 
