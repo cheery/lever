@@ -60,7 +60,7 @@ plugins_importer = Import(plugins.local, plugins)</pre>
     <h2>Built-in eventloop with augmented concurrency</h2>
 
     <p>Async code looks so ugly, were you using callbacks, async/await or promises to do it. Except in Lever. In lever it looks prettier than your sync code.</p>
-    <p>Lever's got integrated eventloop that implements its 'sleep' command, which is very much like 'setInterval' in javascript. Except that if you call it without a function, it waits:</p>
+    <p>Lever's got integrated <a href="//libuv.org">libuv</a> eventloop that implements its 'sleep' command, which is very much like 'setInterval' in javascript. Except that if you call it without a function, it waits:</p>
     <pre>sleep(2)</pre>
 
     <p>If you call it with a function, it calls the function after a while.</p>

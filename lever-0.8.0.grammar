@@ -39,6 +39,7 @@ block_statement =>
     from_import     {"from" @symbol "import" symbols_list}
     from_import_all {"from" @symbol "import" "*"}
     try      {"try" block excepts}
+    try      {"try" block excepts_opt finally}
     raise    {"raise" statement}
     break    {"break"}
     continue {"continue"}
@@ -67,12 +68,19 @@ otherwise =>
     elif {%@newline "elif" statement block otherwise}
     else {%@newline "else" block}
 
+excepts_opt =>
+    empty_list {}
+    excepts
+
 excepts =>
     first  {except}
     append {excepts %@newline except}
 
 except =>
     except {"except" expr "as" @symbol block}
+
+finally =>
+    finally {"finally" block}
 
 statement =>
     expr

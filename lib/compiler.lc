@@ -201,18 +201,29 @@ actions = :exnihilo()
         return Code("raise", expr)
     %"break" = ():
         return Jumper((context):
-            return context.loop.brk
+            loop = context.loop
+            while loop.type == "finally"
+                loop.body.visit(context, true)
+                loop = loop.parent
+            return loop.brk
         )
     %"continue" = ():
         return Jumper((context):
-            return context.loop.cont
+            loop = context.loop
+            while loop.type == "finally"
+                loop.body.visit(context, true)
+                loop = loop.parent
+            return loop.cont
         )
 
-    %"try" = (body, excepts):
-        return Try(body, excepts)
+    %"try" = (body, excepts=[], finally_body=null):
+        if finally_body
+            finally_body = Prog(finally_body)
+        return Try(body, excepts, finally_body)
     %"except" = (expr, symbol, body):
-        return [expr, symbol.string, body]
-
+        return ["except", expr, symbol.string, body]
+    %"finally" = (body):
+        return body
     %"while" = (cond, body):
         return While(cond, body)
     %"for" = (bind, iterator, body):
@@ -337,15 +348,27 @@ class Context
         self.loop = null
         self.exc = null
         self.is_generator = false
+        self.finally_exc = null
+
+    push_finally = (self, body):
+        self.loop = :exnihilo()
+            type = "finally"
+            parent = self.loop
+            body = body
 
     push_loop = (self, cont, brk):
         self.loop_stack.append(self.loop)
         self.loop = :exnihilo()
+            type = "loop"
+            parent = self.loop
             cont = cont
             brk = brk
 
     pop_loop = (self):
         self.loop = self.loop_stack.pop()
+
+    pop_finally = (self):
+        self.loop = self.loop.parent
 
     new_block = (self):
         succ = set()
@@ -357,6 +380,14 @@ class Context
     op = (self, name, args...):
         if name == 'yield'
             self.is_generator = true
+        if self.finally_exc and name == 'raise' # Ensure finally through raise.
+            self.finally_exc.visit(self, true)
+        if name == 'return'
+            loop = self.loop    # Ensures that escape through return won't skip
+            while loop          # any finally blocks.
+                if loop.type == "finally"
+                    loop.body.visit(self, true)
+                loop = loop.parent
         return self.block.op(self.origin, name, args...)
 
 class Scope
@@ -706,9 +737,10 @@ label_this_point = (context, block):
     return label
 
 class Try extends Cell
-    +init = (self, body, excepts):
+    +init = (self, body, excepts, finally_body):
         self.body = body
         self.excepts = excepts
+        self.finally_body = finally_body
 
     visit = (self, context, noret=false):
         result = context.op("getglob", "null")
@@ -716,6 +748,8 @@ class Try extends Cell
         context.exc = exc = Exc(context.new_block(), context.exc)
         # populating try block
         try_block = context.new_block()
+        if self.finally_body
+            context.push_finally(self.finally_body)
         context.op("jump", try_block)
         context.block = try_block
         val = Prog(self.body).visit(context)
@@ -726,6 +760,8 @@ class Try extends Cell
         context.exc = exc.parent
         context.block = exc.block
         ins = context.op('getglob', "isinstance")
+        finally_exc_parent  = context.finally_exc
+        context.finally_exc = self.finally_body
         for exl in self.excepts
             expr = exl[0]
             name = exl[1]
@@ -743,8 +779,12 @@ class Try extends Cell
             context.op('jump', exit)
             context.block = next
         context.op('raise', exc)
+        context.finally_exc = finally_exc_parent
         # done
         context.block = exit
+        if self.finally_body
+            self.finally_body.visit(context, true)
+            context.pop_finally()
         return result
 
 class Getvar extends Cell
