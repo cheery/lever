@@ -33,6 +33,7 @@ def Handle_close(self):
     uv.close(self.handle, Handle_close_cb)
     return async_end(ec, slot, self.handle, ec.uv_closing, 0)
 
+@jit.dont_look_inside # cast_ptr_to_adr
 def Handle_close_cb(handle):
     ec = main.get_ec()
     slot, self = ec.uv_closing.pop(rffi.cast_ptr_to_adr(handle))
@@ -122,6 +123,7 @@ def Stream_write(self, obj):
     finally:
         lltype.free(buf, flavor='raw')
 
+@jit.dont_look_inside # cast_ptr_to_adr
 def Stream_write_cb(write_req, status):
     ec = main.get_ec()
     status = rffi.r_long(status)
@@ -141,8 +143,11 @@ def Stream_read(self, block):
         avail = self.read_nread - self.read_offset
         if block is not None:
             count = min(block.length, avail)
-            rffi.c_memcpy(block.uint8data,
-                rffi.ptradd(self.read_buf.base, self.read_offset),
+            rffi.c_memcpy(
+                rffi.cast(rffi.VOIDP, block.uint8data),
+                rffi.ptradd(
+                    rffi.cast(rffi.VOIDP, self.read_buf.base),
+                    self.read_offset),
                 count)
             self.read_offset += count
             return Integer(count)
@@ -159,6 +164,7 @@ def Stream_read(self, block):
     status = uv.read_start(self.stream, Stream_alloc_cb, Stream_read_cb)
     return async_end(ec, slot, self.stream, ec.uv_readers, status)
 
+@jit.dont_look_inside # cast_ptr_to_adr
 def Stream_alloc_cb(stream, suggested_size, buf):
     ec = main.get_ec()
     slot, (self, block) = ec.uv_readers[rffi.cast_ptr_to_adr(stream)]
@@ -167,6 +173,7 @@ def Stream_alloc_cb(stream, suggested_size, buf):
     self.read_buf = buf
     self.buffers.append(ptr)
 
+@jit.dont_look_inside # cast_ptr_to_adr
 def Stream_read_cb(stream, nread, buf):
     ec = main.get_ec()
     slot, (self, block) = ec.uv_readers.pop(rffi.cast_ptr_to_adr(stream))
@@ -175,7 +182,10 @@ def Stream_read_cb(stream, nread, buf):
         slot.failure(ec, to_error(nread))
     elif block is not None:
         count = min(nread, block.length)
-        rffi.c_memcpy(block.uint8data, buf.base, count)
+        rffi.c_memcpy(
+            rffi.cast(rffi.VOIDP, block.uint8data),
+            rffi.cast(rffi.VOIDP, buf.base),
+            count)
         self.read_offset = count
         self.read_avail  = nread
         slot.response(ec, Integer(count))
@@ -332,6 +342,7 @@ def check(result):
 
 
 @specialize.call_location()
+@jit.dont_look_inside # cast_ptr_to_adr
 def async_begin(handle, table, self):
     adr = rffi.cast_ptr_to_adr(handle)
     if adr in table:
@@ -341,6 +352,7 @@ def async_begin(handle, table, self):
     return slot
 
 @specialize.call_location()
+@jit.dont_look_inside # cast_ptr_to_adr
 def async_end(ec, slot, handle, table, status):
     adr = rffi.cast_ptr_to_adr(handle)
     if status < 0:

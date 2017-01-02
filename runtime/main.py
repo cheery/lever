@@ -1,4 +1,5 @@
 from rpython.rlib.objectmodel import we_are_translated, keepalive_until_here
+from rpython.rlib import jit
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 #from rpython.rlib.rthread import ThreadLocalReference
 #from rpython.rlib import rgc
@@ -55,6 +56,7 @@ def run_queued_tasks(handle):
     if len(ec.queue) == 0: # trick.
         uv.idle_stop(ec.uv_idler)
 
+@jit.dont_look_inside # cast_ptr_to_adr
 def wakeup_sleeper(handle):
     ec = get_ec()
 
@@ -150,6 +152,7 @@ def sleep(argv):
         raise space.OldError(u"expected 1 or 2 arguments to sleep(), got %d" % len(argv))
 
 @space.signature(space.Float)
+@jit.dont_look_inside # cast_ptr_to_adr
 def sleep_greenlet(duration):
     ec = get_ec()
     if ec.current == ec.eventloop:
@@ -164,6 +167,7 @@ def sleep_greenlet(duration):
     return switch([ec.eventloop])
 
 @space.signature(space.Float, space.Object)
+@jit.dont_look_inside # cast_ptr_to_adr
 def sleep_callback(duration, func):
     ec = get_ec()
 
