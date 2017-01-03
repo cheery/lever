@@ -59,6 +59,14 @@ next_token = (stream, table):
             string ++= stream.advance()
             while stream.is_digit()
                 string ++= stream.advance()
+            if stream.filled and (stream.current == 'e' or stream.current == 'E')
+                string ++= stream.advance()
+                if stream.current == '+' or stream.current == '-'
+                    string ++= stream.advance()
+                if not stream.is_digit()
+                    raise SyntaxError(start, stream.position, "expected a digit")
+                while stream.is_digit()
+                    string ++= stream.advance()
             return Literal(start, stream.position, "float", string)
         # todo: support whole floating point notation.
         return Literal(start, stream.position, "int", string)

@@ -1,4 +1,4 @@
-from math import sqrt, sin, cos, tan, pi, acos, asin, atan, atan2
+from math import sqrt, sin, cos, tan, pi, acos, asin, atan, atan2, pow
 from rpython.rlib.rrandom import Random
 from rpython.rlib.rarithmetic import r_uint, r_ulonglong
 from space import *
@@ -523,6 +523,16 @@ def sqrt_(f):
     return Float(sqrt(f.number))
 
 @Builtin
+@signature(Float, Float)
+def pow_(a, b):
+    try:
+        return Float(pow(a.number, b.number))
+    except OverflowError as ovf:
+        raise unwind(LError(u"math range error"))
+    except ValueError as val:
+        raise unwind(LError(u"math domain error"))
+
+@Builtin
 @signature(Float)
 def abs_(f):
     if f.number < 0.0:
@@ -585,4 +595,5 @@ by_symbol = {
     u"projection_matrix": projection_matrix,
     u"abs":       abs_,
     u"sign":      sign,
+    u"pow":       pow_,
 }

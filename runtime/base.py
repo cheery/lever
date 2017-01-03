@@ -328,6 +328,7 @@ def parse_int(string, base):
         value = value * base + digit
     return Integer(value)
 
+import math
 # This needs to be extended. I would prefer partial or whole C-compatibility.
 @builtin
 @signature(String)
@@ -335,16 +336,37 @@ def parse_float(string):
     value = 0.0
     inv_scale = 1
     divider = 1
+    exponent = 0.0
+    exponent_sign = +1.0
+    mode = 0
     for ch in string.string:
-        if u'0' <= ch and ch <= u'9':
-            digit = ord(ch) - ord(u'0')
-            value = value * 10.0 + digit
-            inv_scale *= divider
-        elif u'.' == ch:
-            divider = 10
-        else:
-            raise unwind(LError(u"invalid digit char: " + ch))
-    return Float(value / inv_scale)
+        if mode == 0:
+            if u'0' <= ch and ch <= u'9':
+                digit = ord(ch) - ord(u'0')
+                value = value * 10.0 + digit
+                inv_scale *= divider
+            elif u'.' == ch:
+                divider = 10
+            elif u'e' == ch or u'E' == ch:
+                mode = 1
+            else:
+                raise unwind(LError(u"invalid digit char: " + ch))
+        elif mode == 1:
+            mode = 2
+            if u'+' == ch:
+                exponent_sign = +1.0
+                continue
+            if u'-' == ch:
+                exponent_sign = -1.0
+                continue
+        else: # mode == 2
+            if u'0' <= ch and ch <= u'9':
+                digit = ord(ch) - ord(u'0')
+                exponent = exponent * 10.0 + digit
+            else:
+                raise unwind(LError(u"invalid digit char: " + ch))
+    exponent = exponent_sign * exponent
+    return Float((value / inv_scale) * math.pow(10.0, exponent))
 
 #@builtin
 #@signature(Object)
