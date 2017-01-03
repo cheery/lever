@@ -37,7 +37,8 @@ def stat(path):
         s = os.stat(path)
     except IOError as error:
         raise unwind(LIOError(pathname, error.errno))
-    return Exnihilo({
+    res = Exnihilo()
+    for name, val in {
         u"st_mode": Integer(s.st_mode),
         u"st_ino": Integer(s.st_ino),
         u"st_dev": Integer(s.st_dev),
@@ -47,8 +48,9 @@ def stat(path):
         u"st_size": Integer(s.st_size),
         u"st_atime": Float(s.st_atime),
         u"st_mtime": Float(s.st_mtime),
-        u"st_ctime": Float(s.st_ctime),
-    })
+        u"st_ctime": Float(s.st_ctime)}.items():
+        res.setattr(name, val)
+    return res
 
 @builtin
 @signature(Object)

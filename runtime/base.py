@@ -77,7 +77,9 @@ def class_(argv):
     assert isinstance(parent, Interface)
     assert isinstance(name, String)
     interface = Interface(parent, name.string)
-    interface.methods = exnihilo.cells
+    interface.methods = {}
+    for name, index in exnihilo.map.attribute_indexes.items():
+        interface.methods[name] = exnihilo.storage[index]
     interface.instantiate = CustomObject.interface.instantiate
     return interface
 

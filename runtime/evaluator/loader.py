@@ -6,7 +6,7 @@ import optable
 import space
 import main
 
-u16_array = lltype.GcArray(rffi.USHORT)
+#u16_array = lltype.GcArray(rffi.USHORT)
 
 def from_object(obj, path):
     if as_i(obj.getitem(space.String(u"version"))) != 0:
@@ -25,21 +25,29 @@ def from_object(obj, path):
         block_list = as_u8a(function_list.getitem(space.String(u"code")))
         sourcemap = function_list.getitem(space.String(u"sourcemap"))
         exc_table = as_list(function_list.getitem(space.String(u"exceptions")))
-        block = lltype.malloc(u16_array, block_list.length/2)
-        for i in range(block_list.length/2):
-            a = rffi.r_long(block_list.uint8data[i*2+0])
-            b = rffi.r_long(block_list.uint8data[i*2+1])
-            block[i] = rffi.r_ushort((a << 8) | b)
-        excs = []
-        for n in exc_table:
-            excs.append(Exc(
-                rffi.r_ulong(as_i(n.getitem(space.Integer(0)))),
-                rffi.r_ulong(as_i(n.getitem(space.Integer(1)))),
-                rffi.r_ulong(as_i(n.getitem(space.Integer(2)))),
-                rffi.r_ulong(as_i(n.getitem(space.Integer(3)))),
-            ))
+        block = [getindex_u16(block_list, i)
+            for i in range(block_list.length / 2)]
+        #block = lltype.malloc(u16_array, block_list.length/2)
+        #for i in range(block_list.length/2):
+        #    a = rffi.r_long(block_list.uint8data[i*2+0])
+        #    b = rffi.r_long(block_list.uint8data[i*2+1])
+        #    block[i] = rffi.r_ushort((a << 8) | b)
+        excs = [Exc(
+            rffi.r_ulong(as_i(n.getitem(space.Integer(0)))),
+            rffi.r_ulong(as_i(n.getitem(space.Integer(1)))),
+            rffi.r_ulong(as_i(n.getitem(space.Integer(2)))),
+            rffi.r_ulong(as_i(n.getitem(space.Integer(3)))))
+            for n in exc_table]
+        #excs = []
+        #for n in exc_table:
+        #    excs.append()
         functions.append(Function(flags, regc, argc, topc, localc, block, sourcemap, excs[:]))
     return Program(Unit(constants[:], functions[:], sources[:], path))
+
+def getindex_u16(block_list, i):
+    a = rffi.r_long(block_list.uint8data[i*2+0])
+    b = rffi.r_long(block_list.uint8data[i*2+1])
+    return rffi.r_ushort((a << 8) | b)
 
 class Exc:
     _immutable_fields_ = ['start', 'stop', 'label', 'reg']
@@ -90,9 +98,9 @@ class Closure(space.Object):
         #    raise space.Error(u"too many arguments [%d], from %d to %d arguments allowed" % (L, argc, topc))
         frame = Frame(self.function, self.frame.module, self.frame)
         for i in range(min(topc, L)):
-            frame.local[i] = argv[i]
+            frame.store_local(i, argv[i])
         if varargs:
-            frame.local[topc] = space.List(argv[min(topc, L):])
+            frame.store_local(topc, space.List(argv[min(topc, L):]))
         regv = new_register_array(self.function.regc)
         if self.function.flags & 2 != 0:
             return Generator(0, self.function.block, regv, frame)
@@ -135,7 +143,7 @@ def Generator_next(self):
         interpret(self.pc, self.block, self.regv, self.frame)
         self.frame = None
         self.regv = None
-        self.block = lltype.nullptr(u16_array)
+        self.block = None #self.block = lltype.nullptr(u16_array)
         raise StopIteration()
     except Yield as yi:
         self.pc = yi.pc
@@ -186,7 +194,9 @@ class Function:
 
 class Frame:
     _immutable_fields_ = ['local', 'module', 'parent', 'unit', 'sourcemap', 'excs[*]']
+    _virtualizable_ = ['local[*]']
     def __init__(self, function, module, parent):
+        self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self.unit = function.unit
         self.local = [space.null for i in range(function.localc)]
         self.module = module
@@ -194,10 +204,18 @@ class Frame:
         self.sourcemap = function.sourcemap
         self.excs = function.excs
 
+    @always_inline
+    def store_local(self, index, value):
+        self.local[index] = value
+    
+    @always_inline
+    def load_local(self, index):
+        return self.local[index]
+
 class RegisterArray:
-    #_virtualizable_ = ['regs[*]']
+#    _virtualizable_ = ['regs[*]']
+    _immutable_fields_ = ['regs']
     def __init__(self, regs):
-        #self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self.regs = regs
 
     @always_inline
@@ -215,12 +233,14 @@ def new_register_array(regc):
     return RegisterArray(regs)
 
 def get_printable_location(pc, block, module, unit, excs): # ,ec
-    return "pc=%d module=%s" % (pc, module.repr().encode('utf-8'))
+    opcode = rffi.r_ulong(block[pc])>>8
+    name = optable.names[opcode]
+    return "pc=%d %s module=%s" % (pc, name, module.repr().encode('utf-8'))
 
 jitdriver = jit.JitDriver(
     greens=['pc', 'block', 'module', 'unit', 'excs'], #, 'ec'],
     reds=['regv', 'frame'],
-    #virtualizables = ['regv'],
+    virtualizables = ['frame'],
     get_printable_location=get_printable_location)
 
 def interpret(pc, block, regv, frame):
@@ -272,7 +292,9 @@ def interpret(pc, block, regv, frame):
                 elif opcode == opcode_of('return'):
                     return regv.load(block[ix+0])
                 elif opcode == opcode_of('yield'):
-                    raise Yield(pc, regv.load(block[ix+0]))
+                    result = regv.load(block[ix+0])
+                    jit.hint(frame, force_virtualizable=True)
+                    raise Yield(pc, result)
                 elif opcode == opcode_of('jump'):
                     pc = rffi.r_ulong(block[ix+0])
                 elif opcode == opcode_of('cond'):
@@ -309,17 +331,17 @@ def interpret(pc, block, regv, frame):
                     obj = regv.load(block[ix+1])
                     regv.store(block[ix+0], obj.setitem(index, item))
                 elif opcode == opcode_of('getloc'):
-                    regv.store(block[ix+0], frame.local[block[ix+1]])
+                    regv.store(block[ix+0], frame.load_local(block[ix+1]))
                 elif opcode == opcode_of('setloc'):
                     value = regv.load(block[ix+2])
-                    frame.local[block[ix+1]] = value
+                    frame.store_local(block[ix+1], value)
                     regv.store(block[ix+0], value)
                 elif opcode == opcode_of('getupv'):
-                    value = get_upframe(frame, block[ix+1]).local[block[ix+2]]
+                    value = get_upframe(frame, block[ix+1]).load_local(block[ix+2])
                     regv.store(block[ix+0], value)
                 elif opcode == opcode_of('setupv'):
                     value = regv.load(block[ix+3])
-                    get_upframe(frame, block[ix+1]).local[block[ix+2]] = value
+                    get_upframe(frame, block[ix+1]).store_local(block[ix+2], value)
                     regv.store(block[ix+0], value)
                 elif opcode == opcode_of('getglob'):
                     regv.store(block[ix+0],
