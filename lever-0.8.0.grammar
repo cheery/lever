@@ -182,6 +182,7 @@ term =>
     {"(" subexpr ")"}
     list     {"[" arguments "]"}
     function {"(" bindings ")" ":" block}
+    function {blank_bindings{} ":" block}
     dict     {"{" pairs "}"}
     dict     {"{" nl_pairs "}"}
     lookup   {"{" escaped_keyword "}"}

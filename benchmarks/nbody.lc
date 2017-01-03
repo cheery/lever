@@ -2,7 +2,7 @@
 # https://github.com/cython/cython/blob/master/Demos/benchmarks/nbody.py
 
 
-main = ():
+main = :
     offset_momentum()
     was = time()
 
@@ -87,7 +87,7 @@ advance = (dt, n):
         for body in bodies
             body.position += dt * body.velocity
 
-report_energy = ():
+report_energy = :
     e = 0.0
     for j in range(0, bodies.length-1)
         a = bodies[j]
@@ -99,7 +99,7 @@ report_energy = ():
         e += body.mass * dot(body.velocity, body.velocity) / 2
     return e
 
-offset_momentum = ():
+offset_momentum = :
     sun = bodies[0]
     offset = vec3(0, 0, 0)
     for body in bodies
