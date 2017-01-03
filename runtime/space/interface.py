@@ -1,5 +1,6 @@
 import re
 from rpython.rlib.objectmodel import compute_hash, specialize, always_inline
+from rpython.rlib import jit
 import space
 
 class Object:
@@ -36,9 +37,10 @@ class Object:
         return listing
 
     def getattr(self, index):
-        try:
-            return BoundMethod(self, index, self.__class__.interface.methods[index])
-        except KeyError as e:
+        method = self.__class__.interface.lookup_method(index)
+        if method is not None:
+            return BoundMethod(self, index, method)
+        else:
             raise space.unwind(space.LAttributeError(self, index))
 
     def setattr(self, index, value):
@@ -92,7 +94,7 @@ class Object:
         return _decarotar_
 
 class Interface(Object):
-    _immutable_fields_ = ['instantiate?', 'methods', 'doc']
+    _immutable_fields_ = ['instantiate?', 'methods']
     # Should add possibility to freeze the interface?
     def __init__(self, parent, name):
         assert isinstance(name, unicode)
@@ -117,10 +119,17 @@ class Interface(Object):
     def getattr(self, name):
         if name == u"doc":
             return null if self.doc is None else self.doc
-        try:
-            return self.__class__.interface.methods[name]
-        except KeyError as e:
-            return Object.getattr(self, name)
+        method = self.lookup_method(name)
+        if method is not None:
+            return method
+        method = self.__class__.interface.lookup_method(name)
+        if method is not None:
+            return BoundMethod(self, name, method)
+        return Object.getattr(self, name)
+
+    @jit.elidable
+    def lookup_method(self, name):
+        return self.methods.get(name, None)
 
     def setattr(self, name, value):
         if name == u"doc":
@@ -146,6 +155,7 @@ null.parent = null
 Object.interface = Interface(null, u"object")
 
 class BoundMethod(Object):
+    _immutable_fields_ = ['obj', 'name', 'methodfn']
     def __init__(self, obj, name, methodfn):
         self.obj = obj
         self.name = name

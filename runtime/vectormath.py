@@ -14,6 +14,7 @@ normalize = Multimethod(1)
 
 class Vec3(Object):
     __slots__ = ['x', 'y', 'z']
+    _immutable_fields_ = ['x', 'y', 'z']
     def __init__(self, x, y, z):
         self.x = x
         self.y = y
@@ -107,6 +108,7 @@ def _(v):
 
 class Quat(Object):
     __slots__ = ['x', 'y', 'z', 'w']
+    _immutable_fields_ = ['x', 'y', 'z', 'w']
     def __init__(self, x, y, z, w):
         self.x = x
         self.y = y
@@ -237,6 +239,7 @@ def axisangle(v, angle):
 
 class Mat4(Object):
     __slots__ = ['values']
+    _immutable_fields_ = ['values[*]']
     def __init__(self, values):
         self.values = list(values)
 
