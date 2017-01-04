@@ -1,9 +1,9 @@
 body {
     padding: 10px;
     margin: auto;
-    min-width: 130mm;
     max-width: 200mm;
     font-family: arial;
+    line-height: 128%;
 }
 
 img {
@@ -126,4 +126,14 @@ h2 {
 h3 {
     color: #996103; font-weight: bold;
     font-size: 100%;
+}
+
+/* Separates the links apart a bit, to be mobile friendly */
+ul {
+    line-height: 150%;
+}
+
+/* The code samples are bit nicer to handle if you can scroll in them. */
+pre {
+    overflow-x: overlay;
 }
