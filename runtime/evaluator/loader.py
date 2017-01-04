@@ -63,7 +63,7 @@ def as_list(obj):
     return obj.contents
 
 def as_u8a(obj):
-    if not isinstance(obj, space.Uint8Array):
+    if not isinstance(obj, space.Uint8Data):
         raise space.unwind(space.LTypeError(u"expected uint8array"))
     return obj
 

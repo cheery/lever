@@ -115,7 +115,7 @@ def cast(obj, ctype):
         return Handle(obj.library, obj.name, obj.pointer, ctype)
     if isinstance(obj, Mem):
         return Mem(ctype, obj.pointer)
-    if isinstance(obj, Uint8Array):
+    if isinstance(obj, Uint8Data):
         return Mem(ctype, rffi.cast(rffi.VOIDP, obj.uint8data))
     if isinstance(obj, Integer) and isinstance(ctype, Pointer):
         return Mem(ctype, rffi.cast(rffi.VOIDP, obj.value))
@@ -180,7 +180,7 @@ def memset(mem, num, count):
 def memcpy(dst, src, count):
     if isinstance(src, Mem):
         src_pointer = src.pointer
-    elif isinstance(src, Uint8Array):
+    elif isinstance(src, Uint8Data):
         src_pointer = rffi.cast(rffi.VOIDP, src.uint8data)
     else:
         raise unwind(LTypeError(u"expected mem or array"))
@@ -196,7 +196,7 @@ def ref(mem):
     if isinstance(mem, Mem):
         size = simple.sizeof(mem.ctype)
         ctype = mem.ctype
-    elif isinstance(mem, Uint8Array):
+    elif isinstance(mem, Uint8Data):
         size = rffi.sizeof(rffi.VOIDP)
         ctype = c_ubytep
     else:

@@ -4,10 +4,12 @@ from interface import Object, Interface, null
 from multimethod import Multimethod
 from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean
 from rpython.rlib.objectmodel import specialize, always_inline
+from rpython.rtyper.lltypesystem import rffi
 from string import String
 from listobject import List
 from setobject import Set
 from slices import Slice
+from uint8array import Uint8Array, Uint8Slice, Uint8Data, alloc_uint8array
 import setobject
 import space
 
@@ -217,6 +219,20 @@ def _(a, b):
 @concat.multimethod_s(List, List)
 def _(a, b):
     return List(a.contents + b.contents)
+
+@concat.multimethod_s(Uint8Array, Uint8Array)
+@concat.multimethod_s(Uint8Slice, Uint8Array)
+@concat.multimethod_s(Uint8Array, Uint8Slice)
+@concat.multimethod_s(Uint8Slice, Uint8Slice)
+def _(a, b):
+    c = alloc_uint8array(a.length + b.length)
+    rffi.c_memcpy(
+        rffi.cast(rffi.VOIDP, c.uint8data),
+        rffi.cast(rffi.VOIDP, a.uint8data), a.length)
+    rffi.c_memcpy(
+        rffi.cast(rffi.VOIDP, rffi.ptradd(c.uint8data, a.length)),
+        rffi.cast(rffi.VOIDP, b.uint8data), b.length)
+    return c
 
 @lt.multimethod_s(Set, Set)
 def cmp_lt(a, b):

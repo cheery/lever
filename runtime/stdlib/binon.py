@@ -102,7 +102,7 @@ def wdict(fd, obj):
         dump(fd, value)
 
 def wbytes(fd, obj):
-    assert isinstance(obj, Uint8Array)
+    assert isinstance(obj, Uint8Data)
     w32(fd, obj.length)
     result = []
     for i in range(obj.length):

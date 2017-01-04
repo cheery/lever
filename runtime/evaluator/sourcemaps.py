@@ -14,7 +14,7 @@ class TraceEntry(space.Object):
         pc = self.pc
         sources = self.sources
         sourcemap = self.sourcemap
-        if not isinstance(sourcemap, space.Uint8Array):
+        if not isinstance(sourcemap, space.Uint8Data):
             return space.String(u"<no sourcemap>"), 0, 0, -1, -1
         i = 0
         while i < sourcemap.length:

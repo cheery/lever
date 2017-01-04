@@ -109,7 +109,7 @@ class Stream(Handle):
 def Stream_write(self, obj):
     if isinstance(obj, String): # TODO: do this with a cast instead?
         obj = to_uint8array(obj.string.encode('utf-8'))
-    elif not isinstance(obj, Uint8Array):
+    elif not isinstance(obj, Uint8Data):
         raise unwind(LError(u"expected a buffer"))
 
     ec = main.get_ec()
@@ -136,7 +136,7 @@ def Stream_write_cb(write_req, status):
 # TODO: write2, try_write ?
 
 
-@Stream.method(u"read", signature(Stream, Uint8Array, optional=1))
+@Stream.method(u"read", signature(Stream, Uint8Data, optional=1))
 def Stream_read(self, block):
     assert self.read_task is None
     if self.read_offset < self.read_nread:

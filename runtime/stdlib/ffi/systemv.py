@@ -168,7 +168,7 @@ class Pointer(Type):
                 raise unwind(LTypeError(u"incompatible pointer store: %s = %s" % (self.repr(), value.ctype.repr())))
             ptr = rffi.cast(rffi.VOIDPP, offset)
             ptr[0] = value.pointer
-        elif isinstance(value, Uint8Array):
+        elif isinstance(value, Uint8Data):
             pool_mark_object(pool, value)
             ptr = rffi.cast(rffi.VOIDPP, offset)
             ptr[0] = rffi.cast(rffi.VOIDP, value.uint8data)
