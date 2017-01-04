@@ -30,6 +30,10 @@ module = Module(u'base', {
     u'path': pathobj.Path.interface,
     u'property': Property.interface,
     u'Uint8Array': Uint8Array.interface,
+    u'Uint8Slice': Uint8Slice.interface,
+    u'Uint8Builder': Uint8Builder.interface,
+    u'Utf8Decoder': Utf8Decoder.interface,
+    u'StringBuilder': StringBuilder_.interface,
     u'set': Set.interface,
     u'slice': Slice.interface,
 }, frozen=True)

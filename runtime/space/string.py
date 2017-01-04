@@ -183,3 +183,21 @@ def escape_string(string):
     return out.build()
 
 character_escapes = {8: u'b', 9: u't', 10: u'n', 12: u'f', 13: u'r'}
+
+
+class StringBuilder_(Object):
+    def __init__(self):
+        self.builder = UnicodeBuilder()
+
+@StringBuilder_.instantiator2(signature())
+def StringBuilder_init():
+    return StringBuilder_()
+
+@StringBuilder_.method(u"append", signature(StringBuilder_, String))
+def StringBuilder_append(self, obj):
+    self.builder.append(obj.string)
+    return space.null
+    
+@StringBuilder_.method(u"build", signature(StringBuilder_))
+def StringBuilder_build(self):
+    return String(self.builder.build())

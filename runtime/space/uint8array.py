@@ -3,6 +3,7 @@ from interface import Object
 from rpython.rlib.objectmodel import compute_hash
 from rpython.rtyper.lltypesystem import rffi, lltype
 from rpython.rlib import rgc
+from rpython.rlib.runicode import str_decode_utf_8
 import numbers
 import space
 
@@ -127,3 +128,106 @@ def _(obj):
     for i in range(0, length):
         uint8data[i] = out[i]
     return Uint8Array(uint8data, length)
+
+class Utf8Decoder(Object):
+    __slots__ = ['buffer']
+    def __init__(self):
+        self.buffer = ''
+
+    def call(self, argv):
+        return utf8_decoder_call([self] + argv)
+
+@Utf8Decoder.instantiator2(signature())
+def Utf8Decoder_init():
+    return Utf8Decoder()
+
+@signature(Utf8Decoder, Uint8Data)
+def utf8_decoder_call(self, data):
+    return space.String(utf8_decoder_operate(self, data.to_str(), False))
+
+@Utf8Decoder.method(u"finish", signature(Utf8Decoder))
+def Utf8Decoder_finish(self):
+    return space.String(utf8_decoder_operate(self, '', True))
+
+def utf8_decoder_operate(decoder, newdata, final):
+    data = decoder.buffer + newdata
+    try:
+        string, pos = str_decode_utf_8(
+            data, len(data), '', final=final)
+    except UnicodeDecodeError as error:
+        raise space.unwind(space.LError(u"unicode decode failed"))
+    decoder.buffer = data[pos:]
+    return string
+
+
+class Uint8Builder(Object):
+    __slots__ = ['buffers', 'array', 'total_capacity', 'avail', 'current']
+    def __init__(self):
+        self.buffers = []
+        self.total_capacity = 0
+        self.array = None
+        self.avail = 0
+        self.current = lltype.nullptr(rffi.VOIDP.TO)
+
+    def __del__(self):
+        for buf, sz in self.buffers:
+            lltype.free(buf, flavor='raw')
+        self.buffers = []
+
+@Uint8Builder.instantiator2(signature())
+def Uint8Builder_init():
+    return Uint8Builder()
+
+@Uint8Builder.method(u"append", signature(Uint8Builder, Uint8Data))
+def Uint8Builder_append(self, obj):
+    data = rffi.cast(rffi.VOIDP, obj.uint8data)
+    remaining = obj.length
+    if remaining > 0 and self.avail > 0:
+        count = min(remaining, self.avail)
+        rffi.c_memcpy(self.current, data, count)
+        remaining -= count
+        data = rffi.ptradd(data, count)
+        self.avail -= count
+        self.current = rffi.ptradd(self.current, count)
+    if remaining > 0: # self.avail == 0
+        capacity = (remaining + 1023) & ~1023
+        base = lltype.malloc(rffi.VOIDP.TO, self.avail, flavor='raw')
+        self.avail = capacity
+        self.current = rffi.cast(rffi.VOIDP, base)
+        self.buffers.append((base, capacity))
+        self.total_capacity += capacity
+    # remaining > avail
+    rffi.c_memcpy(self.current, data, remaining)
+    self.avail -= remaining
+    self.current = rffi.ptradd(self.current, remaining)
+    return space.null
+    
+@Uint8Builder.method(u"build", signature(Uint8Builder))
+def Uint8Builder_build(self):
+    if self.array and self.array.length == self.total_capacity:
+        return self.array
+    # Folding buffers together is only necessary if more
+    # stuff was appanded in the behind.
+    length = self.total_capacity - self.avail
+    base = lltype.malloc(rffi.VOIDP.TO, length, flavor='raw')
+    remaining = length
+    current = base
+    if self.array is not None:
+        rffi.c_memcpy(current,
+            rffi.cast(rffi.VOIDP, self.array.uint8data),
+            self.array.length)
+        current = rffi.ptradd(current, self.array.length)
+        remaining -= self.array.length
+    for buf, sz in self.buffers:
+        sz = min(sz, remaining)
+        rffi.c_memcpy(current, buf, sz)
+        current = rffi.ptradd(current, sz)
+        remaining -= sz
+        lltype.free(buf, flavor='raw')
+    self.buffers = []
+
+    base = rffi.cast(rffi.UCHARP, base)
+    self.array = Uint8Array(base, length)
+    self.total_capacity = length
+    self.avail = 0
+    return self.array

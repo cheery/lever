@@ -6,8 +6,8 @@ from listobject import List
 from module import Module
 from multimethod import Multimethod
 from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean
-from string import String, string_upper, string_lower
-from uint8array import Uint8Array, Uint8Data, Uint8Slice, to_uint8array
+from string import String, string_upper, string_lower, StringBuilder_
+from uint8array import Uint8Array, Uint8Data, Uint8Slice, to_uint8array, Utf8Decoder, Uint8Builder
 from exnihilo import Exnihilo
 from customobject import CustomObject, Property
 from rpython.rlib import jit
