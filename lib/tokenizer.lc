@@ -131,7 +131,9 @@ class TextStream
 
     current = property()
     current.get = (self):
-        return self.source[self.index]
+        if self.index < self.source.length
+            return self.source[self.index]
+        return ''
 
     # Checks whether there is a two-character sequence
     # and whether it is in the table.
