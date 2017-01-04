@@ -261,6 +261,8 @@ def range_(start, stop, step):
     return Range(start, stop, step)
 
 class Range(Object):
+    __slots__ = ['start', 'stop', 'step', 'sign', 'current']
+    _immutable_fields_ = ['start', 'stop', 'step', 'sign']
     def __init__(self, start, stop, step):
         self.current = start
         self.stop = stop

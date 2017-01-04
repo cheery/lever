@@ -6,7 +6,7 @@ main = :
     offset_momentum()
     was = time()
 
-    for _ in range(10)
+    for _ in range(100)
         report_energy()
         advance(0.01, 20000)
         report_energy()

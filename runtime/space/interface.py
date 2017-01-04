@@ -162,8 +162,7 @@ class BoundMethod(Object):
         self.methodfn = methodfn
 
     def call(self, argv):
-        argv.insert(0, self.obj)
-        return self.methodfn.call(argv)
+        return self.methodfn.call([self.obj] + argv)
 
     def getattr(self, name):
         return self.methodfn.getattr(name)
