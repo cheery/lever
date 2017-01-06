@@ -1,49 +1,247 @@
 import compiler
 import base
-import api, ffi
+#import api, ffi
 
-console = :module("console", base)
-    dir = getcwd()
-    name = "console"
-    %"import" = Import(dir,
-        ModuleScope(dir, %"import".scope.parent))
+main = :
+    term_startup()
 
-try
-    el = api.library("libedit")
-    input = (prompt):
-        line = el.readline(prompt)
-        result = line.str
-        if line
-            ffi.free(line)
-        return result
-    add_history = (source):
-        el.add_history(source)
-except Exception as error
-    input = (prompt):
-        stdout.write(prompt)
-        return stdin.read()
-    add_history = (source):
-        null
+    console = :module("console", base)
+        dir = getcwd()
+        name = "console"
+        %"import" = Import(dir,
+            ModuleScope(dir, %"import".scope.parent))
+        print = print
+        input = input
+# try
+#     el = api.library("libedit")
+#     input = (prompt):
+#         line = el.readline(prompt)
+#         result = line.str
+#         if line
+#             ffi.free(line)
+#         return result
+#     add_history = (source):
+#         el.add_history(source)
+# 
+# except Exception as error
+#     input = (prompt):
+#         stdout.write(prompt)
+#         return stdin.read()
+#     add_history = (source):
+#         null
 
-print("LEVER 0.8.0")
-buffer = []
-while true
-    prompt = ">> "
-    if buffer.length > 0
-        prompt = "   "
-    string = input(prompt)
-    buffer.append(string)
-    try
-        source = "\n".join(buffer)
-        add_history(source)
-        code = compiler.read_string(source, "console")
-        print(repr(load(code)(console)))
-    except compiler.SyntaxError as syn
-        if syn.at_eof
-            continue
-        print(repr(syn))
-    except SystemExit as exit
-        raise exit
-    except Exception as exc
-        print_traceback(exc)
+    print("LEVER 0.8.0")
     buffer = []
+    while true
+        prompt = ">> "
+        if buffer.length > 0
+            prompt = "   "
+        string = input(prompt)
+        buffer.append(string)
+        try
+            source = "\n".join(buffer)
+            add_history(source)
+            print("\033[32;2m"++source++"\033[0m")
+
+            code = compiler.read_string(source, "console")
+            print("\033[33;1m"++repr(load(code)(console))++"\033[0m")
+        except compiler.SyntaxError as syn
+            if syn.at_eof
+                continue
+            print("\033[35;1m"++repr(syn)++"\033[0m")
+        except SystemExit as exit
+            raise exit
+        except Exception as exc
+            print_traceback(exc)
+        buffer = []
+
+term_startup = :
+    stdin.set_mode('raw')
+    schedule(term_refresh_loop)
+    schedule(term_editor_loop)
+
+max_history_length = 1000
+term_history = []
+add_history = (text):
+    term_history.append(text)
+    if term_history.length > max_history_length
+        term_history.pop(0)
+
+term_seg0 = []
+term_seg1 = []
+term_readline = Event()
+term_prompt = ""
+term_history_index = -1
+input = (next_prompt):
+    term_prompt := next_prompt
+    return term_readline.wait()
+
+term_editor_loop = :
+    while true
+        for s in ansi_read_sequence()
+            if s == "\x03"
+                stdout.write("\n") # should be done by the refresh_loop()
+                exit(0)            # no proper shutdown schema present yet.
+                continue
+            if s == "\r" or s == "\n"
+                line = "".join(term_seg0 ++ term_seg1)
+                term_seg0 := []
+                term_seg1 := []
+                term_history_index := -1
+                term_readline.dispatch(line)
+                continue
+            if s.length == 1
+                n = ord(s)
+                if (0x20 <= n and n < 127) or n > 255
+                    term_seg0.append(s)
+                    continue
+            if s == "\x7f"
+                if term_seg0.length > 0
+                    term_seg0.pop()
+                continue
+            if s == "\x1b[3~"
+                if term_seg1.length > 0
+                    term_seg1.pop(0)
+                continue
+            if s == "\x1b[A"
+                if term_history.length == 0
+                    continue
+                if term_history_index == -1
+                    term_history_index := term_history.length - 1
+                else
+                    term_history_index -= 1
+                term_history_index := clamp(term_history_index, 0, term_history.length-1)
+                term_seg0 := list(term_history[term_history_index])
+                term_seg1 := []
+                continue
+            if s == "\x1b[B"
+                if term_history.length == 0
+                    continue
+                elif term_history_index == -1
+                    continue
+                elif term_history_index == term_history.length - 1
+                    term_seg0 := []
+                    term_seg1 := []
+                    continue
+                else
+                    term_history_index += 1
+                term_history_index := clamp(term_history_index, 0, term_history.length-1)
+                term_seg0 := list(term_history[term_history_index])
+                term_seg1 := []
+                continue
+            if s == "\x1b[C"
+                if term_seg1.length > 0
+                    term_seg0.append(term_seg1.pop(0))
+                continue
+            if s == "\x1b[D"
+                if term_seg0.length > 0
+                    term_seg1.insert(0, term_seg0.pop())
+                continue
+            if s == "\x1b[H"
+                term_seg0.extend(term_seg1)
+                term_seg1 := term_seg0
+                term_seg0 := []
+                continue
+            if s == "\x1b[F"
+                term_seg0.extend(term_seg1)
+                term_seg1 := []
+                continue
+            print("unknown character", repr(s))
+            print("you can extend the",
+                term_editor_loop.source_location.source, "starting at line",
+                term_editor_loop.source_location.start_lno, "to support the command")
+        term_refresh.dispatch()
+
+ansi_read_sequence = :
+    seq = ""
+    for ch in stdin.read()
+        if ch == "\x1b"
+            seq ++= ch
+            continue
+        if seq == "\x1b" and ch == "[" 
+            seq ++= ch
+            continue
+        if seq.startswith("\x1b[") and ch.is_digit()
+            seq ++= ch
+            continue
+        yield seq ++ ch
+        seq = ""
+
+
+
+term_output = StringBuilder()
+term_tracebacks = []
+term_refresh = Event()
+term_refresh_loop = :
+    while true
+        out = term_output.build()
+        term_output := StringBuilder()
+        stdout.write(out)
+        while term_tracebacks.length > 0 # hax
+            real_print_traceback( term_tracebacks.pop(0) )
+
+        seg0 = term_prompt ++ "".join(term_seg0)
+        seg1 = seg0 ++ "".join(term_seg1)
+
+        width = stdout.get_winsize()[0]
+        a = calculate_offset(seg0, width)
+        b = calculate_offset(seg1, width)
+        stdout.write(seg1)
+        stdout.write("".join(cursor_motion(a.x-b.x, a.y-b.y)))
+
+        term_refresh.wait()
+
+        backclear_motion(a.y)
+
+# Imitates the system print command in behavior.
+print = (args...):
+    space = ""
+    for arg in args
+        term_output.append(space)
+        #stream_block.append(space)
+        if isinstance(arg, str)
+            term_output.append(arg)
+        else
+            term_output.append(repr(arg))
+        space = " "
+    term_output.append("\n")
+    term_refresh.dispatch()
+
+real_print_traceback = print_traceback
+print_traceback = (exc):
+    term_tracebacks.append(exc)
+    
+
+# State of the art method for implementing a line editor in
+# an ANSI-compliant terminal. We measure where the text
+# lands to stay on the track.
+cursor_motion = (x, y):
+    if y < 0
+        yield "\033["++(-x).to_string()++"A"
+    if y > 0
+        yield "\033["++(-x).to_string()++"B"
+    if x > 0
+        yield "\033["++(-x).to_string()++"C"
+    if x < 0
+        yield "\033["++(-x).to_string()++"D"
+
+backclear_motion = (y):
+    # push above the terminal and clear the screen.
+    if y == 0
+        stdout.write("\033["++y.to_string()++"G") # Absolute horizontal position.
+    else
+        stdout.write("\033["++y.to_string()++"F") # To the beginning of last line.
+    stdout.write("\033[0J") # clear off the display from under the cursor.
+
+calculate_offset = (line, width):
+    y = 0
+    x = 0
+    for ch in line
+        if ch == "\n" or x >= width
+            y += 1
+            x = 0
+        else
+            x += 1
+    return :exnihilo()
+        x = x
+        y = y

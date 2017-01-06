@@ -239,9 +239,9 @@ internal_methods = {
     u"getitem":  (0, 0, False, ['index'], None),
     u"setitem":  (0, 0, False, ['index', 'value'], None),
     u"iter":     (0, 0, False, [], None),
-    #u"listattr": (0, 0, False, []), # TODO: figure out what to do with this.
-    u"getattr":  (0, 0, False, ['name'], None),
-    u"setattr":  (0, 0, False, ['name', 'value'], None),
+    #u"listattr": (0, 0, False, []),                      # TODO: figure out what to do with these.
+    #u"getattr":  (0, 0, False, ['name'], None),          # these all are usually
+    #u"setattr":  (0, 0, False, ['name', 'value'], None), # overloaded to handle attributes.
     u"contains": (0, 0, False, ['value'], None),
     u"repr":     (0, 0, False, [], None),
     u"hash":     (0, 0, False, [], None),

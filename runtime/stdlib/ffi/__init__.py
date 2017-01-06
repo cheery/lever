@@ -68,17 +68,19 @@ class LLoadError(LException):
     def repr(self):
         return u"Unable to load library: %s" % self.name.repr()
 
-class Handle(Object):
+class Handle(Mem):
     def __init__(self, library, name, pointer, ctype):
+        Mem.__init__(self, ctype, pointer)
         self.library = library
         self.name = name
-        self.pointer = pointer
-        self.ctype = ctype
+        #self.pointer = pointer
+        #self.ctype = ctype
 
-    def call(self, argv):
-        if isinstance(self.ctype, CFunc):
-            return self.ctype.ccall(self.pointer, argv)
-        return Object.call(self, argv)
+# Not needed with Mem handle.
+#    def call(self, argv):
+#        if isinstance(self.ctype, CFunc):
+#            return self.ctype.ccall(self.pointer, argv)
+#        return Object.call(self, argv)
 
     def repr(self):
         return u"<handle %s from %s>" % (self.name, self.library.name)
