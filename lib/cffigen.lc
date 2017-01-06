@@ -1,4 +1,6 @@
 import c, chartparser, json
+
+doc = runtime_path ++ "/doc/cffigen"
 # Completion of this strategy is due to 0.9.0 milestone
 # STRATEGY: Improve foreign function interface to extend it's capabilities.
 #           Provide complete REPL+Integrated Editor suite for lever.

@@ -5,6 +5,8 @@
 import chartparser, grammar_language
 import fs, json
 
+doc = runtime_path ++ "/doc/c"
+
 # Note this program doesn't test for the grammar. 
 main = ():
     stdio_h = "/usr/include/stdio.h"

@@ -1,5 +1,7 @@
 import tokenizer
 
+doc = runtime_path ++ "/doc/chartparser"
+
 main = ():
     s = Nonterminal('s')
     a = Nonterminal('a')

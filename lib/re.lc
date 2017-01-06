@@ -1,0 +1,82 @@
+doc = runtime_path ++ "/doc/re"
+
+#a{n}   == aaaaa
+#a{n,}  == aaaaa+
+#a{n,m} == aaaaaa?a?a?a?a?
+
+main = ():
+    acc = :exnihilo()
+        type = "accept"
+
+    s0 = group(
+        alt(
+            star(match("a")),
+            match("b")),
+        opt(match("c")))(acc)
+    print(recognize(s0, "aaaad", true))
+    print(recognize(s0, "aaaac", true))
+    print(recognize(s0, "bc", true))
+    print(recognize(s0, "bbc", true))
+    print(recognize(s0, "", true))
+
+recognize = (s0, string, eol=false):
+    state0 = [s0]
+    for ch in string
+        state1 = []
+        for node in state0
+            if next_state(state1, node, ch) and not eol
+                return true
+        state0 = state1
+        if state0.length == 0
+            return false
+    for node in state0
+        if next_state([], node, "")
+            return true
+    return false
+
+next_state = (states, node, char):
+    if node.type == "accept"
+        return true
+    elif node.type == "match" and node.char == char
+        states.append(node.next)
+    elif node.type == "split"
+        acc = 0
+        for next in node.nexts
+            acc |= next_state(states, next, char)
+        return acc != 0
+    return false
+
+match = (char):
+    return (next):
+        return :exnihilo()
+            type = "match"
+            char = char
+            next = next
+
+star = (group):
+    return (next):
+        s0 = exnihilo()
+        return :s0
+            type = "split"
+            nexts = [group(s0), next]
+
+alt = (groups...):
+    return (next):
+        nexts = []
+        for group in groups
+            nexts.append(group(next))
+        return :exnihilo()
+            type = "split"
+            nexts = nexts
+
+opt = (group):
+    return (next):
+        return :exnihilo()
+            type = "split"
+            nexts = [group(next), next]
+
+group = (seq...):
+    return (next):
+        for group in reversed(seq)
+            next = group(next)
+        return next

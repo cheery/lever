@@ -1,5 +1,7 @@
 import api, ffi
 
+doc = "doc:/doc/vr"
+
 init = (gl):
     gl.enable(gl.FRAMEBUFFER_SRGB)
     ovr = ffi.library("LibOVRRT32_1", api.read_file("LibOVRRT32_1_10", {}))
