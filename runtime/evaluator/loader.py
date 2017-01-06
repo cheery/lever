@@ -73,7 +73,7 @@ def as_i(obj):
     return obj.value
 
 class Closure(space.Object):
-    _immutable_fields_ = ['parent', 'function', 'doc']
+    _immutable_fields_ = ['parent', 'function']
     def __init__(self, frame, function):
         self.frame = frame
         self.function = function
@@ -110,6 +110,18 @@ class Closure(space.Object):
     def getattr(self, name):
         if name == u"doc":
             return self.doc
+        elif name == u"source_location":
+            unit = self.function.unit
+            trace = TraceEntry(0, unit.sources, self.function.sourcemap, unit.path)
+            name, col0, lno0, col1, lno1 = trace.pc_location()
+            return SourceLocation(name, col0, lno0, col1, lno1)
+        elif name == u"spec":
+            spec = space.Exnihilo()
+            spec.setattr(u'argc', space.Integer(rffi.r_long(self.function.argc)))
+            spec.setattr(u'optional', space.Integer(rffi.r_long(self.function.topc - self.function.argc)))
+            spec.setattr(u'is_variadic', space.boolean(self.function.flags & 1 == 1))
+            spec.setattr(u'varnames', space.null) #space.List(varnames))
+            return spec
         else:
             return space.Object.getattr(self, name)
 
@@ -123,6 +135,8 @@ class Closure(space.Object):
     def listattr(self):
         listing = space.Object.listattr(self)
         listing.append(space.String(u"doc"))
+        listing.append(space.String(u"source_location"))
+        listing.append(space.String(u"spec"))
         return listing
 
 class Generator(space.Object):
@@ -460,3 +474,34 @@ def get_string(unit, block, i):
 #        space.Integer(col0), space.Integer(lno0),
 #        space.Integer(col1), space.Integer(lno1)
 #    ])
+
+
+class SourceLocation(space.Object):
+    def __init__(self, source, start_col, start_lno, stop_col, stop_lno):
+        self.source = source
+        self.start_col = start_col
+        self.start_lno = start_lno
+        self.stop_col = stop_col
+        self.stop_lno = stop_lno
+
+    def listattr(self):
+        listing = space.Object.listattr(self)
+        listing.append(space.String(u"origin"))
+        listing.append(space.String(u"start_col"))
+        listing.append(space.String(u"start_lno"))
+        listing.append(space.String(u"stop_col"))
+        listing.append(space.String(u"stop_lno"))
+        return listing
+
+    def getattr(self, name):
+        if name == u"source":
+            return self.source
+        if name == u"start_col":
+            return space.Integer(self.start_col)
+        if name == u"start_lno":
+            return space.Integer(self.start_lno)
+        if name == u"stop_col":
+            return space.Integer(self.stop_col)
+        if name == u"stop_lno":
+            return space.Integer(self.stop_lno)
+        return space.Object.getattr(self, name)

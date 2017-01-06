@@ -221,7 +221,7 @@ actions = :exnihilo()
             finally_body = Prog(finally_body)
         return Try(body, excepts, finally_body)
     %"except" = (expr, symbol, body):
-        return ["except", expr, symbol.string, body]
+        return [expr, symbol.string, body]
     %"finally" = (body):
         return body
     %"while" = (cond, body):

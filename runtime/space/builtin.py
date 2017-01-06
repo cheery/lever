@@ -1,13 +1,24 @@
 from rpython.rlib import unroll
+from rpython.rtyper.lltypesystem import rffi
 from interface import Object, null
 import space
+import inspect
+import os
 
 class Builtin(Object):
     _immutable_fields_ = ['func']
-    def __init__(self, func, name=None, doc=null):
+    def __init__(self, func, name=None, doc=null, spec=None, source_location=None):
         self.func = func
         self.name = name if name is not None else func.__name__.decode('utf-8')
         self.doc = doc
+        if source_location is None:
+            self.source_location = get_source_location(func)
+        else:
+            self.source_location = source_location
+        if spec is None:
+            self.spec = get_spec(func)
+        else:
+            self.spec = spec
 
     def call(self, argv):
         return self.func(argv)
@@ -15,12 +26,36 @@ class Builtin(Object):
     def getattr(self, name):
         if name == u"doc":
             return self.doc
+        elif name == u"source_location":
+            return self.source_location
+        elif name == u"spec":
+            argc, optional, variadic, varnames, argtypes = self.spec
+            varnames = [space.String(name.decode('utf-8')) for name in varnames]
+            spec = space.Exnihilo()
+            spec.setattr(u'argc', space.Integer(rffi.r_long(argc)))
+            spec.setattr(u'optional', space.Integer(rffi.r_long(optional)))
+            spec.setattr(u'is_variadic', space.boolean(variadic))
+            spec.setattr(u'varnames', space.List(list(varnames)))
+            if argtypes is not None:
+                spec.setattr(u'argtypes', space.List(list(argtypes)))
+            else:
+                spec.setattr(u'argtypes', space.null)
+            return spec
         else:
             return Object.getattr(self, name)
+
+    def setattr(self, name, value):
+        if name == u"doc":
+            self.doc = value
+            return value
+        else:
+            return Object.setattr(self, name, value)
 
     def listattr(self):
         listing = Object.listattr(self)
         listing.append(space.String(u"doc"))
+        listing.append(space.String(u"source_location"))
+        listing.append(space.String(u"spec"))
         return listing
     
     def repr(self):
@@ -61,12 +96,46 @@ def signature(*argtypes, **keywords):
                 args += (argv[min(topc, L):],)
             return func(*args)
         fancy_frame.__name__ = func.__name__
+        spec_table[fancy_frame] = spec_table[func] = (argc, topc-argc, variadic,
+            list(inspect.getargspec(func)[0]), 
+            [t.interface for t in argtypes])
+        source_table[fancy_frame] = source_table[func] = get_source_location(func)
         return fancy_frame
     return signature_decorator
 
-# Sometimes we may expect different things, so there needs to be a way to escape
-# the signature when it is appropriate and drop back into expectations error
-# if expectations are violated.
-# TODO: remove after grep.
-def expectations_error(index, name):
-    raise space.unwind(space.LTypeError(u"expected arg:%d is %s" % (index, name)))
+def get_spec(func):
+    return spec_table.get(func,
+        (0, 0, True, ['argv'], None))
+
+def get_source_location(func):
+    if func in source_table:
+        return source_table[func]
+    filename = inspect.getsourcefile(func)
+    source = os.path.join("builtin:/", os.path.relpath(filename, "runtime")).decode('utf-8')
+    lines, firstline = inspect.getsourcelines(func)
+    return SourceLocationLines(source, firstline, firstline+len(lines))
+
+spec_table = {}
+source_table = {}
+
+class SourceLocationLines(Object):
+    def __init__(self, source, start, stop):
+        self.source = source
+        self.start = start
+        self.stop = stop
+
+    def listattr(self):
+        listing = Object.listattr(self)
+        listing.append(space.String(u"source"))
+        listing.append(space.String(u"start"))
+        listing.append(space.String(u"stop"))
+        return listing
+
+    def getattr(self, name):
+        if name == u"source":
+            return space.String(self.source)
+        if name == u"start":
+            return space.Integer(self.start)
+        if name == u"stop":
+            return space.Integer(self.stop)
+        return Object.getattr(self, name)

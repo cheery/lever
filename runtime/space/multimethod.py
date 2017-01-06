@@ -11,7 +11,7 @@ def eq_fn(this, other):
     if len(this) != len(other):
         return False
     for i in range(len(this)):
-        if not this[i].eq(other[i]):
+        if not this[i] is other[i]:
             return False
     return True
 
@@ -20,7 +20,7 @@ def hash_fn(this):
     x = 0x345678
     z = len(this)
     for item in this:
-        y = item.hash()
+        y = compute_hash(item)
         x = (x ^ y) * mult
         z -= 1
         mult += 82520 + z + z
@@ -28,10 +28,10 @@ def hash_fn(this):
     return intmask(x)
 
 class Multimethod(Object):
-    _immutable_fields_ = ['arity', 'methods']
+    _immutable_fields_ = ['arity', 'multimethod_table']
     def __init__(self, arity, default=null):
         self.arity = arity
-        self.methods = r_dict(eq_fn, hash_fn, force_non_null=True)
+        self.multimethod_table = r_dict(eq_fn, hash_fn, force_non_null=True)
         self.default = default
 
     def call(self, argv):
@@ -41,8 +41,8 @@ class Multimethod(Object):
         return self.invoke_method(argv, suppress_default=True)
 
     @jit.elidable
-    def get_method(self, *interfaces):
-        return self.methods.get(list(interfaces), None)
+    def get_method(self, *interface):
+        return self.multimethod_table.get(list(interface), None)
 
     @jit.unroll_safe
     def invoke_method(self, argv, suppress_default):
@@ -70,7 +70,7 @@ class Multimethod(Object):
             vec = []
             for i in range(self.arity):
                 vec.append(space.get_interface(argv[i]))
-            method = self.methods.get(vec, None)
+            method = self.multimethod_table.get(vec, None)
         if method is None:
             vec = []
             for i in range(self.arity):
@@ -86,7 +86,7 @@ class Multimethod(Object):
     def multimethod(self, *spec):
         vec = list(cls.interface for cls in spec)
         def _impl_(fn):
-            self.methods[vec] = Builtin(fn)
+            self.multimethod_table[vec] = Builtin(fn)
             return fn
         return _impl_
 
@@ -96,13 +96,21 @@ class Multimethod(Object):
             return fn
         return _impl_
 
+    def getitem(self, index):
+        index = space.cast(index, space.List, u"Multimethod.getitem")
+        try:
+            return self.multimethod_table[index.contents]
+        except KeyError as _:
+            raise space.unwind(space.LKeyError(self, index))
+
     def setitem(self, index, value):
-        vec = []
-        assert isinstance(index, space.List)
-        for item in index.contents:
-            assert isinstance(item, space.Interface)
-            vec.append(item)
-        self.methods[vec] = value
+        index = space.cast(index, space.List, u"Multimethod.setitem")
+        vec = [
+            space.cast(item,
+                space.Interface,
+                u"Multimethod expects interface list")
+            for item in index.contents]
+        self.multimethod_table[vec] = value
         return value
 
     def getattr(self, index):
@@ -124,3 +132,10 @@ def _(arity):
 @Multimethod.method(u"call_suppressed", signature(Multimethod, variadic=True))
 def Multimethod_call_suppressed(mm, args):
     return mm.call_suppressed(args)
+
+@Multimethod.method(u"keys", signature(Multimethod))
+def Multimethod_keys(self):
+    return space.List([
+        space.List(list(vec))
+        for vec in self.multimethod_table
+    ])

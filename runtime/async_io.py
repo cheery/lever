@@ -196,9 +196,19 @@ def Stream_read_cb(stream, nread, buf):
         slot.response(ec, String(builder.build().decode('utf-8')))
 
 def initialize_tty(uv_loop, fd, readable):
-    tty = uv.malloc_bytes(uv.tty_ptr, uv.handle_size(uv.TTY))
-    check( uv.tty_init(uv_loop, tty, fd, readable) )
-    return TTY(tty, fd)
+    handle_type = uv.guess_handle(fd)
+    if handle_type == uv.TTY:
+        tty = uv.malloc_bytes(uv.tty_ptr, uv.handle_size(uv.TTY))
+        check( uv.tty_init(uv_loop, tty, fd, readable) )
+        return TTY(tty, fd)
+    elif handle_type == uv.NAMED_PIPE:
+        pipe = uv.malloc_bytes(uv.pipe_ptr, uv.handle_size(uv.NAMED_PIPE))
+        check( uv.pipe_open(pipe, fd) )
+        return Pipe(pipe)
+    #elif handle_type == uv.FILE:
+    else:
+        print "unfortunately this std filehandle feature not supported (yet)", str(handle_type)
+        return null
 
 # TODO: delete tty/pipe handle when done with it.
 class TTY(Stream):
@@ -206,10 +216,6 @@ class TTY(Stream):
         self.tty = tty
         self.fd = fd
         Stream.__init__(self, rffi.cast(uv.stream_ptr, tty))
-
-@TTY.method(u"isatty", signature(TTY))
-def TTY_isatty(self):
-    return boolean(uv.guess_handle(self.fd) == uv.TTY)
 
 @TTY.method(u"set_mode", signature(TTY, String))
 def TTY_set_mode(self, modename_obj):
@@ -238,13 +244,9 @@ def TTY_get_winsize(self):
         lltype.free(width, flavor='raw')
         lltype.free(height, flavor='raw')
 
-# class Pipe(Object):
-#     def __init__(self, pipe_handle):
-#         self.pipe_handle = pipe_handle
-#         
-# @Pipe.method(u"isatty", signature(Pipe))
-# def Pipe_isatty(self):
-#     return false
+class Pipe(Stream):
+    def __init__(self, pipe):
+        self.pipe = pipe
 
 #from interface import Object, null, signature
 #
@@ -441,5 +443,10 @@ def Event_wait(self):
     self.waiters.append(ec.current)
     return main.switch([ec.eventloop])
 
-base.module.setattr_force(u"Event", Event.interface)
+for name, obj in {
+    u"Event": Event.interface,
+    u"TTY": TTY.interface,
+    u"Pipe": Pipe.interface,
+        }.items():
+    base.module.setattr_force(name, obj)
 

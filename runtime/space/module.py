@@ -1,4 +1,5 @@
 from interface import Object, null
+from builtin import signature
 from rpython.rlib import jit
 import space
 
@@ -29,6 +30,7 @@ class Module(Object):
         self.frozen = frozen
         self.name = name
         self.cells = {}
+        self.setattr_force(u"doc", null)
         for name in namespace:
             self.setattr_force(name, namespace[name])
 
@@ -84,7 +86,10 @@ class Module(Object):
         try:
             cell = jit.promote(self.lookup(name))
             if isinstance(cell, FrozenCell):
-                raise space.unwind(space.LFrozenError(self))
+                if name == u'doc' and cell.slot == null: # this is implicit set, so we allow it.
+                    self.cells[name] = FrozenCell(value)
+                else:
+                    raise space.unwind(space.LFrozenError(self))
             elif isinstance(cell, MutableCell):
                 cell.slot = value
             elif isinstance(cell, ShadowCell):
@@ -101,3 +106,51 @@ class Module(Object):
 
     def repr(self):
         return u"<module %s>" % self.name
+
+def importer_poststage(module):
+    try:
+        doc = module.getattr(u"doc")
+    except space.Unwinder as unwind:
+        pass # TODO: allow only LAttributeError
+    else:
+        doclink_traverse(module, doc, null)
+
+def doclink_traverse(obj, doc, parent):
+    listing = obj.listattr()
+    for name in listing:
+        name = space.cast(name, space.String, u"importer poststage")
+        field = obj.getattr(name.string)
+        try:
+            if field.getattr(u"doc") == null:
+                docref = DocRef(doc, name, parent)
+                field.setattr(u"doc", docref)
+                doclink_traverse(field, doc, docref)
+        except space.Unwinder as unwind:
+            pass # TODO: pass only LAttributeError
+
+class DocRef(Object):
+    def __init__(self, doc, name, parent):
+        self.doc = doc
+        self.name = name
+        self.parent = parent
+
+    def getattr(self, name):
+        if name == u"link":
+            return self.doc
+        if name == u"name":
+            return self.name
+        if name == u"parent":
+            return self.parent
+        return Object.getattr(self, name)
+
+    def listattr(self):
+        listing = Object.listattr(self)
+        listing.append(space.String(u"link"))
+        listing.append(space.String(u"name"))
+        listing.append(space.String(u"parent"))
+        return listing
+
+@DocRef.instantiator2(signature(Object, Object, Object, optional=1))
+def DocRef_init(doc, name, parent):
+    parent = null if parent is None else parent
+    return DocRef(doc, name, parent)

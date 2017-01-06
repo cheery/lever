@@ -72,6 +72,7 @@ g = GlobalState()
 inf = float("inf")
 
 def new_entry_point(config, default_lever_path=u''):
+    space.importer_poststage(base.module)
     def entry_point(raw_argv):
         lever_path = os.environ.get('LEVER_PATH')
         if lever_path is None:
@@ -87,13 +88,19 @@ def new_entry_point(config, default_lever_path=u''):
         uv_idler = uv.malloc_bytes(uv.idle_ptr, uv.handle_size(uv.IDLE))
         uv.idle_init(uv_loop, uv_idler)
 
-        uv_stdin  = async_io.initialize_tty(uv_loop, 0, 1)
-        uv_stdout = async_io.initialize_tty(uv_loop, 1, 0)
-        uv_stderr = async_io.initialize_tty(uv_loop, 2, 0)
+        try:
+            uv_stdin  = async_io.initialize_tty(uv_loop, 0, 1)
+            uv_stdout = async_io.initialize_tty(uv_loop, 1, 0)
+            uv_stderr = async_io.initialize_tty(uv_loop, 2, 0)
+        except space.Unwinder as unwinder:
+            base.print_traceback(unwinder.exception)
+            return 1
+            
         #TODO: consider whether these should plug to base.
         base.module.setattr_force(u"stdin",  uv_stdin)
         base.module.setattr_force(u"stdout", uv_stdout)
         base.module.setattr_force(u"stderr", uv_stderr)
+        base.module.setattr_force(u"runtime_path", lever_path)
 
         g.ec = ec = ExecutionContext(config, lever_path, uv_loop, uv_idler)
         api.init(lever_path)

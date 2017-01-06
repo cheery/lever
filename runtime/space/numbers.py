@@ -110,8 +110,6 @@ class Boolean(Object):
         else:
             return u"false"
 
-Boolean.interface.parent = Integer.interface
-
 def to_float(obj):
     if isinstance(obj, Float):
         return obj.number

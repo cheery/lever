@@ -52,6 +52,17 @@ class ModuleScope(Object):
             return null
         return Object.setattr(self, name, value)
 
+    def listattr(self):
+        listing = Object.listattr(self)
+        listing.extend([
+            String(u"parent"),
+            String(u"local"),
+            String(u"frozen"),
+            String(u"base_module"),
+            String(u"compile_file"),
+        ])
+        return listing
+
     def getitem(self, item):
         if isinstance(item, String):
             if item.string in self.cache:
@@ -99,6 +110,15 @@ class ModuleCache(Object):
             return Float(self.mtime)
         return Object.getattr(self, name)
 
+    def listattr(self):
+        listing = Object.listattr(self)
+        listing.extend([
+            String(u"path"),
+            String(u"module"),
+            String(u"mtime"),
+        ])
+        return listing
+
 @ModuleCache.builtin_method
 @signature(ModuleCache)
 def get_moduleinfo(self):
@@ -108,8 +128,15 @@ root_module = ModuleScope(pathobj.parse(u"builtin:/"), frozen=True)
 root_module.base_module = base.module
 for py_module in stdlib.import_all_modules():
     p = pathobj.concat(root_module.local, pathobj.parse(py_module.module.name))
+    py_module.module.setattr_force(u"doc", pathobj.parse(u"doc:/" + py_module.module.name))
+    importer_poststage(py_module.module)
     root_module.setcache(p, py_module.module, 0.0)
+
+base.module.setattr_force(u"doc", pathobj.parse(u"doc:/base"))
 root_module.setcache(pathobj.parse(u"builtin:/" + base.module.name), base.module, 0.0)
+# the importer poststage for base module will take place in
+# entry generation at runtime/main.py because there are so many
+# items added into the base module all around the system.
 
 def start(main_script):
     assert isinstance(main_script, String)
@@ -123,9 +150,9 @@ def start(main_script):
     this = Module(mi.name.string, {}, extends=base.module) # base.module
     if not (mi.lc_present or mi.cb_present):
         raise OldError(u"main module not present")
+    scope.setcache(main_path, this, max(mi.lc_mtime, mi.cb_mtime))
     mi.default_config(this, scope)
     mi.loadit(this, scope)
-    scope.setcache(main_path, this, max(mi.lc_mtime, mi.cb_mtime))
     return this
 
 def attach_compiler(lib_scope):
@@ -198,7 +225,9 @@ class ModuleInfo(Object):
             self.cb_mtime = os.path.getmtime(pathobj.os_stringify(self.cb_path).encode('utf-8'))
             self.cb_present = True
         program = evaluator.loader.from_object(bon.open_file(self.cb_path), self.cb_path)
-        return program.call([module])
+        res = program.call([module])
+        importer_poststage(module)
+        return res
 
     def getattr(self, name):
         if name == u"present":
@@ -231,9 +260,9 @@ class Import(Object):
             if mi.lc_present or mi.cb_present:
                 base_module = get_base_module(self.scope)
                 this = Module(name.string, {}, extends=base_module) # base.module
+                self.scope.setcache(path, this, max(mi.lc_mtime, mi.cb_mtime))
                 mi.default_config(this, self.scope)
                 mi.loadit(this, self.scope)
-                self.scope.setcache(path, this, max(mi.lc_mtime, mi.cb_mtime))
                 return this
         # scope/
         scope = self.scope
@@ -247,9 +276,9 @@ class Import(Object):
                 if mi.lc_present or mi.cb_present:
                     base_module = get_base_module(scope)
                     this = Module(name.string, {}, extends=base_module) # base.module
+                    scope.setcache(path, this, max(mi.lc_mtime, mi.cb_mtime))
                     mi.default_config(this, scope)
                     mi.loadit(this, scope)
-                    scope.setcache(path, this, max(mi.lc_mtime, mi.cb_mtime))
                     return this
             scope = scope.parent
         raise OldError(u"module '%s' not present" % name.string)

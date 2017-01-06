@@ -1,5 +1,5 @@
 # We may want to invert many of these dependencies.
-from builtin import Builtin, signature, expectations_error
+from builtin import Builtin, signature
 from interface import Object, Interface, null
 from multimethod import Multimethod
 from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean
@@ -276,3 +276,11 @@ def _(a, b):
 def _(c, start, stop):
     start, stop, step = c.clamped(start.value, stop.value)
     return Slice(Integer(start), Integer(stop), Integer(step))
+
+@mul.multimethod_s(Integer, String)
+def _(c, a):
+    return String(a.string * c.value)
+
+@mul.multimethod_s(String, Integer)
+def _(a, c):
+    return String(a.string * c.value)

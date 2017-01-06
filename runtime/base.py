@@ -1,7 +1,7 @@
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi
 from space import *
-from evaluator.loader import from_object
+from evaluator.loader import from_object, SourceLocation
 from evaluator.sourcemaps import TraceEntry
 from util import STDIN, STDOUT, STDERR, read_file, write
 import main
@@ -14,6 +14,8 @@ import vectormath
 
 # The base environment
 module = Module(u'base', {
+    u'builtin': Builtin.interface,
+    u'interface': Interface.interface,
     u'dict': Dict.interface,
     u'module': Module.interface,
     u'exnihilo': Exnihilo.interface,
@@ -36,6 +38,9 @@ module = Module(u'base', {
     u'StringBuilder': StringBuilder_.interface,
     u'set': Set.interface,
     u'slice': Slice.interface,
+    u'SourceLocationLines': SourceLocationLines.interface,
+    u'SourceLocation': SourceLocation.interface,
+    u'DocRef': DocRef.interface,
 }, frozen=True)
 
 @Module.instantiator
@@ -86,11 +91,6 @@ def class_(argv):
         interface.methods[name] = exnihilo.storage[index]
     interface.instantiate = CustomObject.interface.instantiate
     return interface
-
-@builtin
-@signature(Object)
-def interface(obj):
-    return get_interface(obj)
 
 @builtin
 @signature(Object)
@@ -195,8 +195,8 @@ def print_(argv):
             string = arg.repr()
         out += space + string
         space = u' '
-    os.write(1, (out + u'\n').encode('utf-8'))
-    return null
+    data = String(out + u'\n')
+    return module.getattr(u"stdout").callattr(u"write", [data])
   
 # And and or are macros in the compiler. These are
 # convenience functions, likely not often used.
@@ -375,6 +375,11 @@ def parse_float(string):
                 raise unwind(LError(u"invalid digit char: " + ch))
     exponent = exponent_sign * exponent
     return Float((value / inv_scale) * math.pow(10.0, exponent))
+
+@builtin
+@signature(Interface)
+def super_(interface):
+    return interface.parent
 
 #@builtin
 #@signature(Object)

@@ -11,12 +11,14 @@ class Object:
     # So programmer doesn't need to do that.
     class __metaclass__(type):
         def __init__(cls, name, bases, dict):
-            if name not in ('Object', 'Interface') and 'interface' not in dict:
+            if name not in ('Object', 'Interface', 'null') and 'interface' not in dict:
                 cls.interface = Interface(
                     parent = cls.__bases__[0].interface,
                     name = re.sub("(.)([A-Z]+)", r"\1_\2", name).lower().decode('utf-8'))
                 if re.match("^L[A-Z]", name):
                     cls.interface.name = name[1:].decode('utf-8')
+                if name not in ('BoundMethod', 'Builtin', 'SourceLocationLines'):
+                    expose_internal_methods(cls.interface, dict)
 
     def call(self, argv):
         raise space.unwind(space.LTypeError(u"cannot call " + self.repr()))
@@ -32,7 +34,7 @@ class Object:
 
     def listattr(self):
         listing = []
-        for name in self.__class__.interface.methods:
+        for name in self.__class__.interface.methods.keys():
             listing.append(space.String(name))
         return listing
 
@@ -66,6 +68,7 @@ class Object:
         def _instantiate_b_(interface, argv):
             return fn(argv)
         cls.interface.instantiate = _instantiate_b_
+        register_instantiator(cls.interface, fn)
         return fn
 
     @classmethod
@@ -75,6 +78,7 @@ class Object:
             def _instantiate_wrapper_(interface, argv):
                 return fn(argv)
             cls.interface.instantiate = _instantiate_wrapper_
+            register_instantiator(cls.interface, fn)
             return fn
         return _decorator_
 
@@ -139,9 +143,9 @@ class Interface(Object):
             return Object.setattr(self, name, value)
 
     def listattr(self):
-        listing = Object.listattr(self)
+        listing = []
         listing.append(space.String(u"doc"))
-        for methodname in self.methods:
+        for methodname in self.methods.keys():
             listing.append(space.String(methodname))
         return listing
 
@@ -218,3 +222,51 @@ def cast_n(x, cls, info=u"something"):
     if x is null:
         return None
     return cast(x, cls, info)
+
+
+# Yes, this is a hacky hack.
+import builtin
+def expose_internal_methods(interface, methods):
+    for name in methods:
+        if name in internal_methods:
+            interface.methods[u"+" + name.decode('utf-8')] = builtin.Builtin(
+                hate_them,
+                spec=internal_methods[name],
+                source_location=builtin.get_source_location(methods[name]))
+
+internal_methods = {
+    u"call":     (0, 0, True,  ['argv'], None),
+    u"getitem":  (0, 0, False, ['index'], None),
+    u"setitem":  (0, 0, False, ['index', 'value'], None),
+    u"iter":     (0, 0, False, [], None),
+    #u"listattr": (0, 0, False, []), # TODO: figure out what to do with this.
+    u"getattr":  (0, 0, False, ['name'], None),
+    u"setattr":  (0, 0, False, ['name', 'value'], None),
+    u"contains": (0, 0, False, ['value'], None),
+    u"repr":     (0, 0, False, [], None),
+    u"hash":     (0, 0, False, [], None),
+}
+
+def register_instantiator(interface, fn):
+    interface.methods[u"+init"] = builtin.Builtin(hate_them,
+        spec=builtin.get_spec(fn),
+        source_location=builtin.get_source_location(fn))
+
+# Internal methods help at documenting the system.
+def hate_them(argv):
+    raise space.unwind(space.LError(u"no"))
+
+#expose_internal_methods(Interface)
+#expose_internal_methods(Object) # if I do this,
+                                 # every method will have internal_methods
+                                 # Besides, Object methods are placeholders.
+
+# I doubt we miss these.
+#expose_internal_methods(BoundMethod)
+#expose_internal_methods(builtin.Builtin)
+#expose_internal_methods(builtin.SourceLocationLines)
+
+# When your good names are your best.
+@Interface.instantiator2(builtin.signature(Object))
+def Interface_init_is_cast(obj):
+    return space.get_interface(obj)
