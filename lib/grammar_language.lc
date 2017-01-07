@@ -1,7 +1,7 @@
 import chartparser
 import tokenizer
 
-doc = runtime_path ++ "/doc/grammar_language"
+doc = runtime_path ++ "doc/grammar_language"
 
 # Serves as an example of use. Once you do this, you may proceed to
 # use the grammar just like how this module uses its own parsing table.

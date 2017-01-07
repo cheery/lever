@@ -1,6 +1,6 @@
 import api, ffi
 
-doc = runtime_path ++ "/doc/vulkan"
+doc = runtime_path ++ "doc/vulkan"
 
 class vkstruct
     +init = (self, shadow, defaults, aliases, autoarrays):

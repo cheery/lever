@@ -13,24 +13,42 @@ main = :
         input = input
 
     attempt_completion := (results, prefix):
-        for name in listattr(console)
-            if name == prefix
-                term_completion_apropos := apropos(name, getattr(console, name))
-                continue
-            if name.length > 0 and not name[0].is_alpha()
-                continue
-            if name.startswith(prefix)
-                results.append(name)
-        for name in listattr(base)
-            if name == prefix
-                term_completion_apropos := apropos(name, getattr(console, name))
-                continue
-            if name.length > 0 and not name[0].is_alpha()
-                continue
-            if name.startswith(prefix)
-                results.append(name)
+        scope = null
+        start = 0
+        try
+            word = ""
+            i = 0
+            for ch in prefix
+                if ch == "."
+                    if scope
+                        scope = getattr(scope, word)
+                    else
+                        scope = getattr(console, word)
+                    word = ""
+                    start = i+1
+                else
+                    word ++= ch
+                i += 1
+            prefix = word
+        except AttributeError as e
+            return 0
+        if scope
+            completion_scan(results, prefix, scope)
+        else
+            completion_scan(results, prefix, console)
+            completion_scan(results, prefix, base)
         results.sort()
-        return 0
+        return start
+
+    completion_scan = (results, prefix, obj):
+        for name in listattr(obj)
+            if name == prefix
+                term_completion_apropos := apropos(name, getattr(obj, name))
+                continue
+            if name.length > 0 and not name[0].is_alpha()
+                continue
+            if name.startswith(prefix)
+                results.append(name)
 
     print("LEVER 0.8.0")
     buffer = []
