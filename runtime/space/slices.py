@@ -40,7 +40,7 @@ class Slice(Object):
                 a = start
         else:
             a = space.to_int(self.start)
-            a = max(start, min(stop-1, a))
+            a = max(start, min(stop, a))
         if self.stop is null:
             if step < 0:
                 b = start - 1 

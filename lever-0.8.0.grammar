@@ -32,7 +32,7 @@ block_statement =>
     local_assign   {local_symbol      "="  block_statement}
     upvalue_assign {@symbol           ":=" block_statement}
     op_assign      {slot op           "="  block_statement}
-    setitem        {expr "[" expr "]" "="  block_statement}
+    setitem        {expr "[" subexpr "]" "=" block_statement}
     setattr        {expr "." @symbol  "="  block_statement}
     for      {"for" @symbol "in" subexpr block}
     import   {"import" symbols_list}

@@ -1,6 +1,5 @@
 import compiler
 import base
-#import api, ffi
 
 main = :
     term_startup()
@@ -12,23 +11,26 @@ main = :
             ModuleScope(dir, %"import".scope.parent))
         print = print
         input = input
-# try
-#     el = api.library("libedit")
-#     input = (prompt):
-#         line = el.readline(prompt)
-#         result = line.str
-#         if line
-#             ffi.free(line)
-#         return result
-#     add_history = (source):
-#         el.add_history(source)
-# 
-# except Exception as error
-#     input = (prompt):
-#         stdout.write(prompt)
-#         return stdin.read()
-#     add_history = (source):
-#         null
+
+    attempt_completion := (results, prefix):
+        for name in listattr(console)
+            if name == prefix
+                term_completion_apropos := apropos(name, getattr(console, name))
+                continue
+            if name.length > 0 and not name[0].is_alpha()
+                continue
+            if name.startswith(prefix)
+                results.append(name)
+        for name in listattr(base)
+            if name == prefix
+                term_completion_apropos := apropos(name, getattr(console, name))
+                continue
+            if name.length > 0 and not name[0].is_alpha()
+                continue
+            if name.startswith(prefix)
+                results.append(name)
+        results.sort()
+        return 0
 
     print("LEVER 0.8.0")
     buffer = []
@@ -55,6 +57,78 @@ main = :
             print_traceback(exc)
         buffer = []
 
+apropos = (name, obj):
+    try
+        if isinstance(obj, interface)
+            result = "class " ++ name ++ format_spec(
+                getattr(obj, "+init").spec)
+        else
+            result = name ++ format_spec(obj.spec)
+    except AttributeError as attr
+
+        if isinstance(obj, multimethod)
+            result = name ++ " " ++ repr(obj) ++ format_multimethod(obj)
+        else
+            result = name ++ " = " ++ repr(obj)
+    return result
+
+format_multimethod = (mm):
+    res = StringBuilder()
+    for argtypes in mm.keys()
+        res.append("\n    " ++ repr(argtypes) ++ format_spec(mm[argtypes].spec, []))
+    return res.build()
+
+format_spec = (spec, argtypes=null):
+    res = StringBuilder()
+    res.append("(")
+
+    comma = ""
+    varnames = varnames_then_some_more(spec.varnames)
+    if not argtypes
+        argtypes = []
+        try
+            if spec.argtypes
+                argtypes = list(spec.argtypes)
+        except AttributeError as attr
+            null
+    for i in range(spec.argc)
+        res.append(comma)
+
+        res.append(varnames.next())
+        if argtypes.length > 0
+            res.append(":")
+            res.append(repr(argtypes.pop(0)))
+        comma = ", "
+
+    for i in range(spec.optional)
+        res.append(comma)
+
+        res.append("[")
+        res.append(varnames.next())
+        if argtypes.length > 0
+            res.append(":")
+            res.append(repr(argtypes.pop(0)))
+        res.append("]")
+        comma = ", "
+    
+    if spec.is_variadic
+        res.append(comma)
+        res.append(varnames.next())
+        res.append("...")
+
+    res.append(")")
+    return res.build()
+
+varnames_then_some_more = (varnames):
+    if varnames
+        for name in varnames
+            yield name
+    n = ord("a")
+    while true
+        yield chr(n)
+        n += 1
+
+
 term_startup = :
     stdin.set_mode('raw')
     schedule(term_refresh_loop)
@@ -67,6 +141,8 @@ add_history = (text):
     if term_history.length > max_history_length
         term_history.pop(0)
 
+term_completion_apropos = null
+term_completion_options = null
 term_seg0 = []
 term_seg1 = []
 term_readline = Event()
@@ -79,6 +155,8 @@ input = (next_prompt):
 term_editor_loop = :
     while true
         for s in ansi_read_sequence()
+            term_completion_apropos := null
+            term_completion_options := null
             if s == "\x03"
                 stdout.write("\n") # should be done by the refresh_loop()
                 exit(0)            # no proper shutdown schema present yet.
@@ -95,6 +173,15 @@ term_editor_loop = :
                 if (0x20 <= n and n < 127) or n > 255
                     term_seg0.append(s)
                     continue
+            if s == "\t"
+                results = []
+                start = attempt_completion(results, "".join(term_seg0))
+                if results.length == 1
+                    term_seg0 := term_seg0[0 .: start]
+                    term_seg0.extend(results[0])
+                elif results.length > 1
+                    term_completion_options := results
+                continue
             if s == "\x7f"
                 if term_seg0.length > 0
                     term_seg0.pop()
@@ -168,7 +255,6 @@ ansi_read_sequence = :
         seq = ""
 
 
-
 term_output = StringBuilder()
 term_tracebacks = []
 term_refresh = Event()
@@ -184,6 +270,30 @@ term_refresh_loop = :
         seg1 = seg0 ++ "".join(term_seg1)
 
         width = stdout.get_winsize()[0]
+
+        if term_completion_options
+            column = 1
+            for option in term_completion_options
+                column = max(column, option.length + 2)
+
+            rows = term_completion_options[0 .: 15]
+            j = 15
+            for x in range(column, width-column, column)
+                i = 0
+                for option in term_completion_options[j .: j+15]
+                    rows[i] ++= (x - rows[i].length)*" "
+                    rows[i] ++= option
+                    i += 1
+                    j += 1
+
+            seg1 ++= "\n" ++ "\n".join(rows)
+            if term_completion_options.length >= 10
+                seg1 ++= "..."
+
+        if term_completion_apropos
+            seg1 ++= "\n" ++ term_completion_apropos
+
+
         a = calculate_offset(seg0, width)
         b = calculate_offset(seg1, width)
         stdout.write(seg1)
@@ -217,9 +327,9 @@ print_traceback = (exc):
 # lands to stay on the track.
 cursor_motion = (x, y):
     if y < 0
-        yield "\033["++(-x).to_string()++"A"
+        yield "\033["++(-y).to_string()++"A"
     if y > 0
-        yield "\033["++(-x).to_string()++"B"
+        yield "\033["++(-y).to_string()++"B"
     if x > 0
         yield "\033["++(-x).to_string()++"C"
     if x < 0
@@ -245,3 +355,6 @@ calculate_offset = (line, width):
     return :exnihilo()
         x = x
         y = y
+
+attempt_completion = (results, prefix):
+    return 0
