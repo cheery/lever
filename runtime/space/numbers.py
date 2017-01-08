@@ -59,6 +59,7 @@ class Integer(Object):
         if isinstance(other, Integer):
             return self.value == other.value
         return False
+Integer.interface.name = u"int"
 
 # We are not doing implicit conversion of strings to numbers.
 # although this method is named similarly as the one in javascript.

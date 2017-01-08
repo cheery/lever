@@ -201,7 +201,7 @@ import uv_callback
 # int uv_fs_write(uv_loop_t* loop, uv_fs_t* req, uv_file file, const uv_buf_t bufs[], unsigned int nbufs, int64_t offset, uv_fs_cb cb)
 
 @builtin
-@signature(pathobj.Path)
+@signature(pathobj.Path) # TODO: add mode as an option.
 def mkdir(path):
     path = pathobj.os_stringify(path).encode('utf-8')
     req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)

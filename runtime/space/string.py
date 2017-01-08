@@ -44,6 +44,7 @@ class String(Object):
 
     def iter(self):
         return StringIterator(iter(self.string))
+String.interface.name = u"str"
 
 @String.method(u"count", signature(String, String))
 def String_count(self, ch):
