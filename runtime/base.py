@@ -4,7 +4,7 @@ from space import *
 from evaluator.loader import from_object, SourceLocation
 from evaluator.sourcemaps import TraceEntry
 from util import STDIN, STDOUT, STDERR, read_file, write
-import main
+import core
 import os
 import pathobj
 #import stdlib
@@ -15,6 +15,7 @@ import vectormath
 # The base environment
 module = Module(u'base', {
     u'builtin': Builtin.interface,
+    u'greenlet': core.Greenlet.interface,
     u'interface': Interface.interface,
     u'dict': Dict.interface,
     u'module': Module.interface,
@@ -387,3 +388,18 @@ def super_(interface):
 #    ec = main.get_ec()
 #    ec.debug_hook = debugger
 #    return null
+
+import rlibuv as uv
+@builtin
+@space.signature(space.Integer, optional=1)
+def exit(obj):
+    ec = core.get_ec()
+    ec.exit_status = 0 if obj is None else int(obj.value)
+    uv.stop(ec.uv_loop)
+    ec.enqueue(ec.current)        # Trick to ensure we get Discard -exception here
+    return core.switch([ec.eventloop]) # Once they are created.
+
+@builtin
+@space.signature()
+def getcurrent():
+    return core.get_ec().current

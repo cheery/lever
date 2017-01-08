@@ -5,9 +5,6 @@ from space import *
 import os
 import errno
 
-# TODO: https://msdn.microsoft.com/en-gb/library/windows/desktop/aa365198
-#       http://man7.org/linux/man-pages/man7/aio.7.html
-
 module = Module(u'fs', {}, frozen=True)
 
 errorcode = Dict()
@@ -190,3 +187,77 @@ def flush(self):
     return null
 
 module.setattr_force(u"file", File.interface)
+
+from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
+import rlibuv as uv
+import uv_callback
+
+
+# void uv_fs_req_cleanup(uv_fs_t* req)
+# int uv_fs_close(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_fs_cb cb)
+# int uv_fs_open(uv_loop_t* loop, uv_fs_t* req, const char* path, int flags, int mode, uv_fs_cb cb)
+# int uv_fs_read(uv_loop_t* loop, uv_fs_t* req, uv_file file, const uv_buf_t bufs[], unsigned int nbufs, int64_t offset, uv_fs_cb cb)
+# int uv_fs_unlink(uv_loop_t* loop, uv_fs_t* req, const char* path, uv_fs_cb cb)
+# int uv_fs_write(uv_loop_t* loop, uv_fs_t* req, uv_file file, const uv_buf_t bufs[], unsigned int nbufs, int64_t offset, uv_fs_cb cb)
+
+@builtin
+@signature(pathobj.Path)
+def mkdir(path):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_mkdir(response.ec.uv_loop, req,
+            path, 0777,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return null
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+# int uv_fs_mkdir(uv_loop_t* loop, uv_fs_t* req, const char* path, int mode, uv_fs_cb cb)
+
+# int uv_fs_mkdtemp(uv_loop_t* loop, uv_fs_t* req, const char* tpl, uv_fs_cb cb)
+# XXXXXX  the last six characters must be these.
+# result given in req.path
+# it can be expected to be removed after that.
+
+@builtin
+@signature(pathobj.Path)
+def rmdir(path):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_rmdir(response.ec.uv_loop, req,
+            path,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return null
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+# int uv_fs_rmdir(uv_loop_t* loop, uv_fs_t* req, const char* path, uv_fs_cb cb)
+
+# int uv_fs_scandir(uv_loop_t* loop, uv_fs_t* req, const char* path, int flags, uv_fs_cb cb)
+# int uv_fs_scandir_next(uv_fs_t* req, uv_dirent_t* ent)
+# int uv_fs_stat(uv_loop_t* loop, uv_fs_t* req, const char* path, uv_fs_cb cb)
+# int uv_fs_fstat(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_fs_cb cb)
+# int uv_fs_lstat(uv_loop_t* loop, uv_fs_t* req, const char* path, uv_fs_cb cb)
+# int uv_fs_rename(uv_loop_t* loop, uv_fs_t* req, const char* path, const char* new_path, uv_fs_cb cb)
+# int uv_fs_fsync(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_fs_cb cb)
+# int uv_fs_fdatasync(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_fs_cb cb)
+# int uv_fs_ftruncate(uv_loop_t* loop, uv_fs_t* req, uv_file file, int64_t offset, uv_fs_cb cb)
+# int uv_fs_sendfile(uv_loop_t* loop, uv_fs_t* req, uv_file out_fd, uv_file in_fd, int64_t in_offset, size_t length, uv_fs_cb cb)
+# int uv_fs_access(uv_loop_t* loop, uv_fs_t* req, const char* path, int mode, uv_fs_cb cb)
+# int uv_fs_chmod(uv_loop_t* loop, uv_fs_t* req, const char* path, int mode, uv_fs_cb cb)
+# int uv_fs_fchmod(uv_loop_t* loop, uv_fs_t* req, uv_file file, int mode, uv_fs_cb cb)
+# int uv_fs_utime(uv_loop_t* loop, uv_fs_t* req, const char* path, double atime, double mtime, uv_fs_cb cb)
+# int uv_fs_futime(uv_loop_t* loop, uv_fs_t* req, uv_file file, double atime, double mtime, uv_fs_cb cb)
+# int uv_fs_link(uv_loop_t* loop, uv_fs_t* req, const char* path, const char* new_path, uv_fs_cb cb)
+# int uv_fs_symlink(uv_loop_t* loop, uv_fs_t* req, const char* path, const char* new_path, int flags, uv_fs_cb cb)
+# int uv_fs_readlink(uv_loop_t* loop, uv_fs_t* req, const char* path, uv_fs_cb cb)
+# int uv_fs_chown(uv_loop_t* loop, uv_fs_t* req, const char* path, uv_uid_t uid, uv_gid_t gid, uv_fs_cb cb)
+# int uv_fs_fchown(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_uid_t uid, uv_gid_t gid, uv_fs_cb cb)

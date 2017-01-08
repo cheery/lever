@@ -1,6 +1,6 @@
 from rpython.rlib.rstacklet import StackletThread
 from rpython.rlib.objectmodel import specialize
-import main
+import core
 
 class SThread(StackletThread):
     def __init__(self, config):
@@ -8,7 +8,7 @@ class SThread(StackletThread):
         self.cont = None
 
 def get_sthread():
-    ec = main.get_ec()
+    ec = core.get_ec()
     if not ec.sthread:
         ec.sthread = SThread(ec.config)
     return ec.sthread

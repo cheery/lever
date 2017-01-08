@@ -2,7 +2,7 @@ from space import *
 import base
 import bon
 import evaluator
-import main
+import core
 import os
 import pathobj
 import stdlib
@@ -127,6 +127,7 @@ def get_moduleinfo(self):
 root_module = ModuleScope(pathobj.parse(u"builtin:/"), frozen=True)
 root_module.base_module = base.module
 for py_module in stdlib.import_all_modules():
+    assert isinstance(py_module.module, Module), "dependency cycle somewhere"
     p = pathobj.concat(root_module.local, pathobj.parse(py_module.module.name))
     py_module.module.setattr_force(u"doc", pathobj.parse(u"doc:/" + py_module.module.name))
     importer_poststage(py_module.module)
@@ -141,7 +142,7 @@ root_module.setcache(pathobj.parse(u"builtin:/" + base.module.name), base.module
 def start(main_script):
     assert isinstance(main_script, String)
     lib_scope = ModuleScope(
-        pathobj.concat(main.get_ec().lever_path, pathobj.parse(u"lib")),
+        pathobj.concat(core.get_ec().lever_path, pathobj.parse(u"lib")),
         root_module)
     attach_compiler(lib_scope)
     main_path = pathobj.os_parse(resuffix(main_script.string, u".lc", u""))

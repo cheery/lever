@@ -3,7 +3,7 @@ from rpython.rlib.rstring import StringBuilder, UnicodeBuilder
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from space import *
 import base
-import main
+import core
 import rlibuv as uv
 
 class Handle(Object):
@@ -28,14 +28,14 @@ class Handle(Object):
 
 @Handle.method(u"close", signature(Handle))
 def Handle_close(self):
-    ec = main.get_ec()
+    ec = core.get_ec()
     slot = async_begin(self.handle, ec.uv_closing, self)
     uv.close(self.handle, Handle_close_cb)
     return async_end(ec, slot, self.handle, ec.uv_closing, 0)
 
 @jit.dont_look_inside # cast_ptr_to_adr
 def Handle_close_cb(handle):
-    ec = main.get_ec()
+    ec = core.get_ec()
     slot, self = ec.uv_closing.pop(rffi.cast_ptr_to_adr(handle))
     self.closed = True
     # Should be safe to release them here.
@@ -112,7 +112,7 @@ def Stream_write(self, obj):
     elif not isinstance(obj, Uint8Data):
         raise unwind(LError(u"expected a buffer"))
 
-    ec = main.get_ec()
+    ec = core.get_ec()
     buf = lltype.malloc(rffi.CArray(uv.buf_t), 1, flavor='raw', zero=True)
     buf[0].base = rffi.cast(rffi.CCHARP, obj.uint8data)
     buf[0].size = rffi.r_size_t(obj.length)
@@ -125,7 +125,7 @@ def Stream_write(self, obj):
 
 @jit.dont_look_inside # cast_ptr_to_adr
 def Stream_write_cb(write_req, status):
-    ec = main.get_ec()
+    ec = core.get_ec()
     status = rffi.r_long(status)
     slot, (self, obj) = ec.uv_writers.pop(rffi.cast_ptr_to_adr(write_req))
     if status < 0:
@@ -158,7 +158,7 @@ def Stream_read(self, block):
                 avail)
             self.read_offset += avail
             return String(builder.build().decode('utf-8'))
-    ec = main.get_ec()
+    ec = core.get_ec()
 
     slot = async_begin(self.stream, ec.uv_readers, (self, block))
     status = uv.read_start(self.stream, Stream_alloc_cb, Stream_read_cb)
@@ -166,16 +166,17 @@ def Stream_read(self, block):
 
 @jit.dont_look_inside # cast_ptr_to_adr
 def Stream_alloc_cb(stream, suggested_size, buf):
-    ec = main.get_ec()
+    ec = core.get_ec()
     slot, (self, block) = ec.uv_readers[rffi.cast_ptr_to_adr(stream)]
     buf.base = ptr = lltype.malloc(rffi.CCHARP.TO, suggested_size, flavor='raw')
     buf.size = suggested_size
+    #assert not self.read_buf, "boom" TODO: this thing leaks memory.
     self.read_buf = buf
     self.buffers.append(ptr)
 
 @jit.dont_look_inside # cast_ptr_to_adr
 def Stream_read_cb(stream, nread, buf):
-    ec = main.get_ec()
+    ec = core.get_ec()
     slot, (self, block) = ec.uv_readers.pop(rffi.cast_ptr_to_adr(stream))
     uv.read_stop(stream)
     if nread < 0:
@@ -259,7 +260,7 @@ class Pipe(Stream):
 
 # Left this here for a moment. I'll perhaps need it later.
 #     def new_task(self, func, argv):
-#         ec = main.get_ec()
+#         ec = core.get_ec()
 #         greenlet = ec.current
 #         self.task_count += 1
 #         # This side is not aware about task timeouts.
@@ -270,12 +271,12 @@ class Pipe(Stream):
 #             elif self.worker_quota > 0:
 #                 self.worker_quota -= 1
 #                 start_new_thread(async_io_thread, ())
-#         return main.switch([ec.eventloop])
+#         return core.switch([ec.eventloop])
 # 
 # ## new starting thread starts and ends without arguments.
 # def async_io_thread():
 #     rthread.gc_thread_start()
-#     async_io_loop(main.g.io)
+#     async_io_loop(core.g.io)
 #     rthread.gc_thread_die()
 # 
 # def async_io_loop(io):
@@ -366,7 +367,7 @@ def async_end(ec, slot, handle, table, status):
         raise slot.unwind
     else:
         slot.greenlet = ec.current
-        return main.switch([ec.eventloop])
+        return core.switch([ec.eventloop])
 
 class Slot:
     def __init__(self, result, unwind, greenlet):
@@ -379,13 +380,13 @@ class Slot:
             self.unwind = unwind
         else:
             self.greenlet.unwind = unwind
-            main.root_switch(ec, [self.greenlet])
+            core.root_switch(ec, [self.greenlet])
 
     def response(self, ec, result):
         if self.greenlet is None:
             self.result = result
         else:
-            main.root_switch(ec, [self.greenlet, result])
+            core.root_switch(ec, [self.greenlet, result])
 
 def to_error(result):
     raise unwind(LUVError(
@@ -417,10 +418,10 @@ def Event_close(self):
 
 @Event.method(u"dispatch", signature(Event, variadic=True))
 def Event_dispatch(self, argv):
-    ec = main.get_ec()
+    ec = core.get_ec()
 
     for cb in self.callbacks:
-        ec.enqueue(main.to_greenlet([cb] + argv))
+        ec.enqueue(core.to_greenlet([cb] + argv))
     waiters, self.waiters = self.waiters, []
     for waiter in waiters:
         waiter.argv.extend(argv)
@@ -439,9 +440,9 @@ def Event_unregister(self, cb):
     
 @Event.method(u"wait", signature(Event)) # TODO: with timeout perhaps?
 def Event_wait(self):
-    ec = main.get_ec()
+    ec = core.get_ec()
     self.waiters.append(ec.current)
-    return main.switch([ec.eventloop])
+    return core.switch([ec.eventloop])
 
 for name, obj in {
     u"Event": Event.interface,

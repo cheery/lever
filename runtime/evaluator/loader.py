@@ -4,7 +4,6 @@ from rpython.rtyper.lltypesystem import rffi, lltype
 from sourcemaps import TraceEntry
 import optable
 import space
-import main
 
 #u16_array = lltype.GcArray(rffi.USHORT)
 
@@ -258,7 +257,6 @@ jitdriver = jit.JitDriver(
     get_printable_location=get_printable_location)
 
 def interpret(pc, block, regv, frame):
-    #ec = jit.promote(main.get_ec())
     module = jit.promote(frame.module)
     unit   = jit.promote(frame.unit)
     excs   = jit.promote(frame.excs)

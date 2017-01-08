@@ -1,6 +1,7 @@
-from rpython.translator.tool.cbuild import ExternalCompilationInfo
-from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from rpython.rlib.objectmodel import always_inline, specialize
+from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
+from rpython.rtyper.tool import rffi_platform
+from rpython.translator.tool.cbuild import ExternalCompilationInfo
 import os, sys
 
 # recurring pattern, as we do not know the sizes of structures.
@@ -98,6 +99,60 @@ REQ_TYPE_PRIVATE,
 REQ_TYPE_MAX
 ) = range(12)
 
+# 
+class CConfig:
+    _compilation_info_ = eci
+    #loop_t = rffi_platform.Struct("uv_loop_t", [("data", rffi.VOIDP)])
+    #handle_t = rffi_platform.Struct("uv_handle_t", [("data", rffi.VOIDP)])
+    #timer_t = rffi_platform.Struct("uv_timer_t", [("data", rffi.VOIDP)])
+    #prepare_t = rffi_platform.Struct("uv_prepare_t", [("data", rffi.VOIDP)])
+    #idle_t = rffi_platform.Struct("uv_idle_t", [("data", rffi.VOIDP)])
+    #process_options_t = rffi_platform.Struct(
+    #    "uv_process_options_t", [
+    #        ("file", rffi.CCHARP),
+    #        ("args", rffi.CCHARPP),
+    #        ("env", rffi.CCHARPP),
+    #        ("cwd", rffi.CCHARP),
+    #        ("flags", rffi.UINT),
+    #        ("stdio_count", rffi.INT),
+    #        ("stdio", lltype.Ptr(lltype.ForwardReference()))])
+    #stdio_container_t = rffi_platform.Struct("uv_stdio_container_t",
+    #                                         [("flags", rffi.INT)])
+    #process_t = rffi_platform.Struct("uv_process_t",
+    #                                 [("data", rffi.VOIDP),
+    #                                  ("pid", rffi.INT)])
+    #connect_t = rffi_platform.Struct("uv_connect_t",
+    #                                 [("handle",
+    #                                   lltype.Ptr(lltype.ForwardReference()))])
+    #stream_t = rffi_platform.Struct("uv_stream_t", [("data", rffi.VOIDP)])
+    #shutdown_t = rffi_platform.Struct("uv_shutdown_t", [])
+    #write_t = rffi_platform.Struct("uv_write_t", [])
+    #tcp_t = rffi_platform.Struct("uv_tcp_t", [("data", rffi.VOIDP)])
+    #pipe_t = rffi_platform.Struct("uv_pipe_t", [("data", rffi.VOIDP)])
+    #tty_t = rffi_platform.Struct("uv_tty_t", [("data", rffi.VOIDP)])
+    fs_t = rffi_platform.Struct("uv_fs_t", [
+        ("data", rffi.VOIDP),
+        ("path", rffi.CONST_CCHARP),
+        ("result", rffi.SSIZE_T),
+        ("ptr", rffi.VOIDP)])
+    #getaddrinfo_t = rffi_platform.Struct("uv_getaddrinfo_t",
+    #                                     [("data", rffi.VOIDP)])
+    #buf_t = rffi_platform.Struct("uv_buf_t",
+    #                             [("base", rffi.CCHARP),
+    #                              ("len", rffi.SIZE_T)])
+
+    uid_t = rffi_platform.SimpleType("uid_t", rffi.ULONG)
+    gid_t = rffi_platform.SimpleType("gid_t", rffi.ULONG)
+cConfig = rffi_platform.configure(CConfig)
+
+uid_t = cConfig['uid_t']
+gid_t = cConfig['gid_t']
+
+# # Forward references. Yeah. Taken from typhon
+# cConfig["connect_t"].c_handle.TO.become(cConfig["stream_t"])
+# cConfig["process_options_t"].c_stdio.TO.become(lltype.Array(
+#     cConfig["stdio_container_t"], hints={"nolength": True}))
+
 # Handle types
 loop_ptr = rffi.COpaquePtr("uv_loop_t")
 handle_ptr = rffi.COpaquePtr("uv_handle_t")
@@ -121,18 +176,18 @@ signal_ptr = rffi.COpaquePtr("uv_signal_t")
 req_ptr = rffi.COpaquePtr("uv_req_t")
 getaddrinfo_ptr = rffi.COpaquePtr("uv_getaddrinfo_t")
 getnameinfo_ptr = rffi.COpaquePtr("uv_getnameinfo_t")
-shutdown_ptr = rffi.COpaquePtr("uv_thutdown_s")
+shutdown_ptr = rffi.COpaquePtr("uv_shutdown_t")
 write_ptr = rffi.COpaquePtr("uv_write_t")
 connect_ptr = rffi.COpaquePtr("uv_connect_t")
-udp_send_ptr = rffi.COpaquePtr("uv_udp_send_s")
-fs_ptr = rffi.COpaquePtr("uv_fs_t")
+udp_send_ptr = rffi.COpaquePtr("uv_udp_send_t")
+fs_ptr = lltype.Ptr(cConfig["fs_t"])
 work_ptr = rffi.COpaquePtr("uv_work_t")
 
 # None of the above
-cpu_info_ptr = rffi.COpaquePtr("uv_cpu_info_s")
-interface_address_ptr = rffi.COpaquePtr("uv_interface_address_s")
-dirent_ptr = rffi.COpaquePtr("uv_dirent_s")
-passwd_ptr = rffi.COpaquePtr("uv_passwd_s")
+cpu_info_ptr = rffi.COpaquePtr("uv_cpu_info_t")
+interface_address_ptr = rffi.COpaquePtr("uv_interface_address_t")
+dirent_ptr = rffi.COpaquePtr("uv_dirent_t")
+passwd_ptr = rffi.COpaquePtr("uv_passwd_t")
 
 #LOOP_BLOCK_SIGNAL = 0
 
@@ -642,40 +697,40 @@ UV_FS_FCHOWN,
 UV_FS_REALPATH
 ) = range(30)
 
-#fs_req_cleanup = llexternal("uv_fs_req_cleanup", [fs_ptr], lltype.Void)
-#fs_close = llexternal("uv_fs_close", [loop_ptr, fs_ptr, uv_file, fs_cb], rffi.INT)
-#fs_open = llexternal("uv_fs_open", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.INT, rffi.INT, fs_cb], rffi.INT)
-#fs_read = llexternal("uv_fs_read", [loop_ptr, fs_ptr, uv_file, rffi.CArray(buf_t), rffi.UINT, int64_t, fs_cb], rffi.INT)
-#fs_unlink = llexternal("uv_fs_unlink", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
-#fs_write = llexternal("uv_fs_write", [loop_ptr, fs_ptr, uv_file, rffi.CArray(buf_t), rffi.UINT, int64_t, fs_cb], rffi.INT)
-#fs_mkdir = llexternal("uv_fs_mkdir", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.INT, fs_cb], rffi.INT)
-#fs_mkdtemp = llexternal("uv_fs_mkdtemp", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
-#fs_rmdir = llexternal("uv_fs_rmdir", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
-#fs_scandir = llexternal("uv_fs_scandir", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.INT, fs_cb], rffi.INT)
-#fs_scandir_next = llexternal("uv_fs_scandir_next", [fs_ptr, dirent_ptr], rffi.INT)
-#fs_stat = llexternal("uv_fs_stat", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
-#fs_fstat = llexternal("uv_fs_fstat", [loop_ptr, fs_ptr, uv_file, fs_cb], rffi.INT)
-#fs_rename = llexternal("uv_fs_rename", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.CCHARP, fs_cb], rffi.INT)
-#fs_fsync = llexternal("uv_fs_fsync", [loop_ptr, fs_ptr, uv_file, fs_cb], rffi.INT)
-#fs_fdatasync = llexternal("uv_fs_fdatasync", [loop_ptr, fs_ptr, uv_file, fs_cb], rffi.INT)
-#fs_ftruncate = llexternal("uv_fs_ftruncate", [loop_ptr, fs_ptr, uv_file, int64_t, fs_cb], rffi.INT)
-#fs_sendfile = llexternal("uv_fs_sendfile", [loop_ptr, fs_ptr, uv_file, uv_file, int64_t, rffi.SIZE_T, fs_cb], rffi.INT)
-#fs_access = llexternal("uv_fs_access", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.INT, fs_cb], rffi.INT)
-#fs_chmod = llexternal("uv_fs_chmod", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.INT, fs_cb], rffi.INT)
-#fs_utime = llexternal("uv_fs_utime", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.DOUBLE, rffi.DOUBLE, fs_cb], rffi.INT)
-#fs_futime = llexternal("uv_fs_futime", [loop_ptr, fs_ptr, uv_file, rffi.DOUBLE, rffi.DOUBLE, fs_cb], rffi.INT)
-#fs_lstat = llexternal("uv_fs_lstat", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
-#fs_link = llexternal("uv_fs_link", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.CCHARP, fs_cb], rffi.INT)
-# 
-#FS_SYMLINK_DIR = 0x0001
-#FS_SYMLINK_JUNCTION 0x0002
+fs_req_cleanup = llexternal("uv_fs_req_cleanup", [fs_ptr], lltype.Void)
+fs_close = llexternal("uv_fs_close", [loop_ptr, fs_ptr, uv_file, fs_cb], rffi.INT)
+fs_open = llexternal("uv_fs_open", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.INT, rffi.INT, fs_cb], rffi.INT)
+fs_read = llexternal("uv_fs_read", [loop_ptr, fs_ptr, uv_file, rffi.CArray(buf_t), rffi.UINT, int64_t, fs_cb], rffi.INT)
+fs_unlink = llexternal("uv_fs_unlink", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
+fs_write = llexternal("uv_fs_write", [loop_ptr, fs_ptr, uv_file, rffi.CArray(buf_t), rffi.UINT, int64_t, fs_cb], rffi.INT)
+fs_mkdir = llexternal("uv_fs_mkdir", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.INT, fs_cb], rffi.INT)
+fs_mkdtemp = llexternal("uv_fs_mkdtemp", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
+fs_rmdir = llexternal("uv_fs_rmdir", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
+fs_scandir = llexternal("uv_fs_scandir", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.INT, fs_cb], rffi.INT)
+fs_scandir_next = llexternal("uv_fs_scandir_next", [fs_ptr, dirent_ptr], rffi.INT)
+fs_stat = llexternal("uv_fs_stat", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
+fs_fstat = llexternal("uv_fs_fstat", [loop_ptr, fs_ptr, uv_file, fs_cb], rffi.INT)
+fs_rename = llexternal("uv_fs_rename", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.CCHARP, fs_cb], rffi.INT)
+fs_fsync = llexternal("uv_fs_fsync", [loop_ptr, fs_ptr, uv_file, fs_cb], rffi.INT)
+fs_fdatasync = llexternal("uv_fs_fdatasync", [loop_ptr, fs_ptr, uv_file, fs_cb], rffi.INT)
+fs_ftruncate = llexternal("uv_fs_ftruncate", [loop_ptr, fs_ptr, uv_file, int64_t, fs_cb], rffi.INT)
+fs_sendfile = llexternal("uv_fs_sendfile", [loop_ptr, fs_ptr, uv_file, uv_file, int64_t, rffi.SIZE_T, fs_cb], rffi.INT)
+fs_access = llexternal("uv_fs_access", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.INT, fs_cb], rffi.INT)
+fs_chmod = llexternal("uv_fs_chmod", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.INT, fs_cb], rffi.INT)
+fs_utime = llexternal("uv_fs_utime", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.DOUBLE, rffi.DOUBLE, fs_cb], rffi.INT)
+fs_futime = llexternal("uv_fs_futime", [loop_ptr, fs_ptr, uv_file, rffi.DOUBLE, rffi.DOUBLE, fs_cb], rffi.INT)
+fs_lstat = llexternal("uv_fs_lstat", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
+fs_link = llexternal("uv_fs_link", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.CCHARP, fs_cb], rffi.INT)
  
-#fs_symlink = llexternal("uv_fs_symlink", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.CCHARP, rffi.INT, fs_cb], rffi.INT)
-#fs_readlink = llexternal("uv_fs_readlink", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
+FS_SYMLINK_DIR = 0x0001
+FS_SYMLINK_JUNCTION = 0x0002
+ 
+fs_symlink = llexternal("uv_fs_symlink", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.CCHARP, rffi.INT, fs_cb], rffi.INT)
+fs_readlink = llexternal("uv_fs_readlink", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
 #fs_realpath = llexternal("uv_fs_realpath", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
-#fs_fchmod = llexternal("uv_fs_fchmod", [loop_ptr, fs_ptr, uv_file, rffi.INT, fs_cb], rffi.INT)
-#fs_chown = llexternal("uv_fs_chown", [loop_ptr, fs_ptr, rffi.CCHARP, uid_t, gid_t, fs_cb], rffi.INT)
-#fs_fchown = llexternal("uv_fs_fchown", [loop_ptr, fs_ptr, uv_file, uid_t, gid_t, fs_cb], rffi.INT)
+fs_fchmod = llexternal("uv_fs_fchmod", [loop_ptr, fs_ptr, uv_file, rffi.INT, fs_cb], rffi.INT)
+fs_chown = llexternal("uv_fs_chown", [loop_ptr, fs_ptr, rffi.CCHARP, uid_t, gid_t, fs_cb], rffi.INT)
+fs_fchown = llexternal("uv_fs_fchown", [loop_ptr, fs_ptr, uv_file, uid_t, gid_t, fs_cb], rffi.INT)
 
 fs_event = rffi.INT
 RENAME = 1
