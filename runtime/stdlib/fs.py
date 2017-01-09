@@ -1,8 +1,8 @@
-from rpython.rlib import rfile
+from rpython.rlib import rfile, rgc
 from rpython.rtyper.lltypesystem import rffi, lltype
 import pathobj
 from space import *
-import os
+import os, sys
 import errno
 
 module = Module(u'fs', {}, frozen=True)
@@ -25,30 +25,31 @@ def exists(path):
     path = pathobj.os_stringify(pathname).encode('utf-8')
     return boolean(os.path.exists(path))
 
-@builtin
-@signature(Object)
-def stat(path):
-    pathname = pathobj.to_path(path)
-    path = pathobj.os_stringify(pathname).encode('utf-8')
-    try:
-        s = os.stat(path)
-    except IOError as error:
-        raise unwind(LIOError(pathname, error.errno))
-    res = Exnihilo()
-    for name, val in {
-        u"st_mode": Integer(s.st_mode),
-        u"st_ino": Integer(s.st_ino),
-        u"st_dev": Integer(s.st_dev),
-        u"st_nlink": Integer(s.st_nlink),
-        u"st_uid": Integer(s.st_uid),
-        u"st_gid": Integer(s.st_gid),
-        u"st_size": Integer(s.st_size),
-        u"st_atime": Float(s.st_atime),
-        u"st_mtime": Float(s.st_mtime),
-        u"st_ctime": Float(s.st_ctime)}.items():
-        res.setattr(name, val)
-    return res
+#@builtin
+#@signature(Object)
+#def stat(path):
+#    pathname = pathobj.to_path(path)
+#    path = pathobj.os_stringify(pathname).encode('utf-8')
+#    try:
+#        s = os.stat(path)
+#    except IOError as error:
+#        raise unwind(LIOError(pathname, error.errno))
+#    res = Exnihilo()
+#    for name, val in {
+#        u"st_mode": Integer(s.st_mode),
+#        u"st_ino": Integer(s.st_ino),
+#        u"st_dev": Integer(s.st_dev),
+#        u"st_nlink": Integer(s.st_nlink),
+#        u"st_uid": Integer(s.st_uid),
+#        u"st_gid": Integer(s.st_gid),
+#        u"st_size": Integer(s.st_size),
+#        u"st_atime": Float(s.st_atime),
+#        u"st_mtime": Float(s.st_mtime),
+#        u"st_ctime": Float(s.st_ctime)}.items():
+#        res.setattr(name, val)
+#    return res
 
+# TODO: consider what to do for these.
 @builtin
 @signature(Object)
 def getatime(path):
@@ -192,23 +193,115 @@ from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 import rlibuv as uv
 import uv_callback
 
-
 # void uv_fs_req_cleanup(uv_fs_t* req)
-# int uv_fs_close(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_fs_cb cb)
-# int uv_fs_open(uv_loop_t* loop, uv_fs_t* req, const char* path, int flags, int mode, uv_fs_cb cb)
-# int uv_fs_read(uv_loop_t* loop, uv_fs_t* req, uv_file file, const uv_buf_t bufs[], unsigned int nbufs, int64_t offset, uv_fs_cb cb)
-# int uv_fs_unlink(uv_loop_t* loop, uv_fs_t* req, const char* path, uv_fs_cb cb)
-# int uv_fs_write(uv_loop_t* loop, uv_fs_t* req, uv_file file, const uv_buf_t bufs[], unsigned int nbufs, int64_t offset, uv_fs_cb cb)
 
 @builtin
-@signature(pathobj.Path) # TODO: add mode as an option.
-def mkdir(path):
+@signature(pathobj.Path, Integer, Integer)
+def raw_open(path, flags, mode):
     path = pathobj.os_stringify(path).encode('utf-8')
     req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
     try:
         response = uv_callback.fs(req)
-        response.wait(uv.fs_mkdir(response.ec.uv_loop, req,
-            path, 0777,
+        response.wait(uv.fs_open(response.ec.uv_loop, req,
+            path, flags.value, mode.value,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return Integer(rffi.r_long(req.c_result))
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+# int uv_fs_open(uv_loop_t* loop, uv_fs_t* req, const char* path, int flags, int mode, uv_fs_cb cb)
+
+@builtin
+@signature(Integer)
+def raw_close(fileno):
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_close(response.ec.uv_loop, req,
+            fileno.value,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return Integer(rffi.r_long(req.c_result))
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+# int uv_fs_close(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_fs_cb cb)
+
+@builtin
+@signature(Integer, List, Integer)
+def raw_read(fileno, arrays, offset):
+    L = len(arrays.contents)
+    bufs = lltype.malloc(rffi.CArray(uv.buf_t), L, flavor='raw', zero=True)
+    try:
+        i = 0
+        for obj in arrays.contents:
+            obj = cast(obj, Uint8Array, u"raw_read expects uint8arrays")
+            bufs[i].c_base = rffi.cast(rffi.CCHARP, obj.uint8data)
+            bufs[i].c_len = rffi.r_size_t(obj.length)
+            i += 1
+        return Integer(rffi.r_long(fs_read(
+            fileno.value, bufs, L, offset.value)))
+    finally:
+        lltype.free(bufs, flavor='raw')
+
+def fs_read(fileno, bufs, nbufs, offset):
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_read(response.ec.uv_loop, req,
+            fileno, bufs, nbufs, offset,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return req.c_result
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+
+
+@builtin
+@signature(Integer, List, Integer)
+def raw_write(fileno, arrays, offset):
+    L = len(arrays.contents)
+    bufs = lltype.malloc(rffi.CArray(uv.buf_t), L, flavor='raw', zero=True)
+    try:
+        i = 0
+        for obj in arrays.contents:
+            obj = cast(obj, Uint8Array, u"raw_write expects uint8arrays")
+            bufs[i].c_base = rffi.cast(rffi.CCHARP, obj.uint8data)
+            bufs[i].c_len = rffi.r_size_t(obj.length)
+            i += 1
+        return Integer(rffi.r_long(fs_write(
+            fileno.value, bufs, L, offset.value)))
+    finally:
+        lltype.free(bufs, flavor='raw')
+
+def fs_write(fileno, bufs, nbufs, offset):
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_write(response.ec.uv_loop, req,
+            fileno, bufs, nbufs, offset,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return req.c_result
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+
+@builtin
+@signature(pathobj.Path)
+def unlink(path):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_unlink(response.ec.uv_loop, req,
+            path,
             uv_callback.fs.cb))
         if req.c_result < 0:
             raise uv_callback.to_error(req.c_result)
@@ -216,12 +309,42 @@ def mkdir(path):
     finally:
         uv.fs_req_cleanup(req)
         lltype.free(req, flavor='raw')
-# int uv_fs_mkdir(uv_loop_t* loop, uv_fs_t* req, const char* path, int mode, uv_fs_cb cb)
 
-# int uv_fs_mkdtemp(uv_loop_t* loop, uv_fs_t* req, const char* tpl, uv_fs_cb cb)
-# XXXXXX  the last six characters must be these.
-# result given in req.path
-# it can be expected to be removed after that.
+@builtin
+@signature(pathobj.Path, Integer, optional=1) # TODO: add mode as an option.
+def mkdir(path, mode):
+    mode = 0777 if mode is None else mode.value
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_mkdir(response.ec.uv_loop, req,
+            path, mode,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return null
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+
+@builtin
+@signature(pathobj.Path)
+def mkdtemp(path):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    # TODO: XXXXXX  the last six characters must be these.
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_readlink(response.ec.uv_loop, req,
+            path,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return from_cstring(rffi.charp2str(rffi.cast(rffi.CCHARP, req.c_path)))
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
 
 @builtin
 @signature(pathobj.Path)
@@ -239,25 +362,267 @@ def rmdir(path):
     finally:
         uv.fs_req_cleanup(req)
         lltype.free(req, flavor='raw')
-# int uv_fs_rmdir(uv_loop_t* loop, uv_fs_t* req, const char* path, uv_fs_cb cb)
 
-# int uv_fs_scandir(uv_loop_t* loop, uv_fs_t* req, const char* path, int flags, uv_fs_cb cb)
-# int uv_fs_scandir_next(uv_fs_t* req, uv_dirent_t* ent)
-# int uv_fs_stat(uv_loop_t* loop, uv_fs_t* req, const char* path, uv_fs_cb cb)
+@builtin
+@signature(pathobj.Path)
+def scandir(path):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    dirent = lltype.malloc(uv.dirent_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_scandir(response.ec.uv_loop, req,
+            path, 0, # TODO: check if there are meaningful flags for this.
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        listing = []
+        while True:
+            res = uv.fs_scandir_next(req, dirent)
+            if res == uv.EOF:
+                break
+            elif res < 0:
+                raise uv_callback.to_error(res)
+            entry = Exnihilo()
+            entry.setattr(u"path",
+                from_cstring(rffi.charp2str(dirent.c_name)))
+            if dirent.c_type in uv.dirent2name:
+                entry.setattr(u"type",
+                    String(uv.dirent2name[dirent.c_type]))
+            else:
+                entry.setattr(u"type",
+                    Integer(rffi.r_long(dirent.c_type)))
+            listing.append(entry)
+        return List(listing)
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(dirent, flavor='raw')
+        lltype.free(req, flavor='raw')
+
+
+
+@builtin
+@signature(pathobj.Path)
+def stat(path):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_stat(response.ec.uv_loop, req,
+            path,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return stat2data(req.c_statbuf)
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+
+@builtin
+@signature(pathobj.Path)
+def lstat(path):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_lstat(response.ec.uv_loop, req,
+            path,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return stat2data(req.c_statbuf)
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+
 # int uv_fs_fstat(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_fs_cb cb)
-# int uv_fs_lstat(uv_loop_t* loop, uv_fs_t* req, const char* path, uv_fs_cb cb)
-# int uv_fs_rename(uv_loop_t* loop, uv_fs_t* req, const char* path, const char* new_path, uv_fs_cb cb)
+
+def stat2data(s):
+    res = Exnihilo()
+    res.setattr(u"dev",       Integer(rffi.r_long(s.c_st_dev)))
+    res.setattr(u"mode",      Integer(rffi.r_long(s.c_st_mode)))
+    res.setattr(u"nlink",     Integer(rffi.r_long(s.c_st_nlink)))
+    res.setattr(u"uid",       Integer(rffi.r_long(s.c_st_uid)))
+    res.setattr(u"gid",       Integer(rffi.r_long(s.c_st_gid)))
+    res.setattr(u"rdev",      Integer(rffi.r_long(s.c_st_rdev)))
+    res.setattr(u"ino",       Integer(rffi.r_long(s.c_st_ino)))
+    res.setattr(u"size",      Integer(rffi.r_long(s.c_st_size)))
+    res.setattr(u"blksize",   Integer(rffi.r_long(s.c_st_blksize)))
+    res.setattr(u"blocks",    Integer(rffi.r_long(s.c_st_blocks)))
+    res.setattr(u"flags",     Integer(rffi.r_long(s.c_st_flags)))
+    res.setattr(u"gen",       Integer(rffi.r_long(s.c_st_gen)))
+    res.setattr(u"atime",     timespec2number(s.c_st_atim))
+    res.setattr(u"mtime",     timespec2number(s.c_st_mtim))
+    res.setattr(u"ctime",     timespec2number(s.c_st_ctim))
+    res.setattr(u"birthtime", timespec2number(s.c_st_birthtim))
+    return res
+
+def timespec2number(ts):
+    return Float(ts.c_tv_sec + ts.c_tv_nsec * 10e-9)
+
+@builtin
+@signature(pathobj.Path, pathobj.Path)
+def rename(path, new_path):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    new_path = pathobj.os_stringify(new_path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_rename(response.ec.uv_loop, req,
+            path, new_path,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return null
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+
 # int uv_fs_fsync(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_fs_cb cb)
 # int uv_fs_fdatasync(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_fs_cb cb)
 # int uv_fs_ftruncate(uv_loop_t* loop, uv_fs_t* req, uv_file file, int64_t offset, uv_fs_cb cb)
 # int uv_fs_sendfile(uv_loop_t* loop, uv_fs_t* req, uv_file out_fd, uv_file in_fd, int64_t in_offset, size_t length, uv_fs_cb cb)
-# int uv_fs_access(uv_loop_t* loop, uv_fs_t* req, const char* path, int mode, uv_fs_cb cb)
-# int uv_fs_chmod(uv_loop_t* loop, uv_fs_t* req, const char* path, int mode, uv_fs_cb cb)
+
+@builtin
+@signature(pathobj.Path, Integer)
+def access(path, mode):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_access(response.ec.uv_loop, req,
+            path, mode.value,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return null
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+
+@builtin
+@signature(pathobj.Path, Integer)
+def chmod(path, mode):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_chmod(response.ec.uv_loop, req,
+            path, mode.value,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return null
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
 # int uv_fs_fchmod(uv_loop_t* loop, uv_fs_t* req, uv_file file, int mode, uv_fs_cb cb)
-# int uv_fs_utime(uv_loop_t* loop, uv_fs_t* req, const char* path, double atime, double mtime, uv_fs_cb cb)
+
+@builtin
+@signature(pathobj.Path, Float, Float)
+def utime(path, atime, mtime):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_utime(response.ec.uv_loop, req,
+            path, atime.number, mtime.number,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return null
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
 # int uv_fs_futime(uv_loop_t* loop, uv_fs_t* req, uv_file file, double atime, double mtime, uv_fs_cb cb)
-# int uv_fs_link(uv_loop_t* loop, uv_fs_t* req, const char* path, const char* new_path, uv_fs_cb cb)
-# int uv_fs_symlink(uv_loop_t* loop, uv_fs_t* req, const char* path, const char* new_path, int flags, uv_fs_cb cb)
-# int uv_fs_readlink(uv_loop_t* loop, uv_fs_t* req, const char* path, uv_fs_cb cb)
-# int uv_fs_chown(uv_loop_t* loop, uv_fs_t* req, const char* path, uv_uid_t uid, uv_gid_t gid, uv_fs_cb cb)
+
+@builtin
+@signature(pathobj.Path, pathobj.Path)
+def link(path, new_path):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    new_path = pathobj.os_stringify(new_path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_link(response.ec.uv_loop, req,
+            path, new_path,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return null
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+
+@builtin
+@signature(pathobj.Path, pathobj.Path)
+def symlink(path, new_path):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    new_path = pathobj.os_stringify(new_path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_symlink(response.ec.uv_loop, req,
+            path, new_path, 0, # TODO: FS_SYMLINK_DIR, FS_SYMLINK_JUNCTION -flags.
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return null
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+
+@builtin
+@signature(pathobj.Path)
+def readlink(path):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_readlink(response.ec.uv_loop, req,
+            path,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        # hmm?
+        return from_cstring(rffi.charp2str(rffi.cast(rffi.CCHARP, req.c_ptr)))
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+
+@builtin
+@signature(pathobj.Path)
+def realpath(path):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_realpath(response.ec.uv_loop, req,
+            path,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        # hmm?
+        return from_cstring(rffi.charp2str(rffi.cast(rffi.CCHARP, req.c_ptr)))
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+
+@builtin
+@signature(pathobj.Path, Integer, Integer)
+def chown(path, uid, gid):
+    path = pathobj.os_stringify(path).encode('utf-8')
+    req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.fs(req)
+        response.wait(uv.fs_chown(response.ec.uv_loop, req,
+            path, uid.value, gid.value,
+            uv_callback.fs.cb))
+        if req.c_result < 0:
+            raise uv_callback.to_error(req.c_result)
+        return null
+    finally:
+        uv.fs_req_cleanup(req)
+        lltype.free(req, flavor='raw')
+
 # int uv_fs_fchown(uv_loop_t* loop, uv_fs_t* req, uv_file file, uv_uid_t uid, uv_gid_t gid, uv_fs_cb cb)

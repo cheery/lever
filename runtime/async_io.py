@@ -114,8 +114,8 @@ def Stream_write(self, obj):
 
     ec = core.get_ec()
     buf = lltype.malloc(rffi.CArray(uv.buf_t), 1, flavor='raw', zero=True)
-    buf[0].base = rffi.cast(rffi.CCHARP, obj.uint8data)
-    buf[0].size = rffi.r_size_t(obj.length)
+    buf[0].c_base = rffi.cast(rffi.CCHARP, obj.uint8data)
+    buf[0].c_len = rffi.r_size_t(obj.length)
     try:
         slot = async_begin(self.write_req, ec.uv_writers, (self, obj))
         status = uv.write(self.write_req, self.stream, buf, 1, Stream_write_cb)
@@ -146,7 +146,7 @@ def Stream_read(self, block):
             rffi.c_memcpy(
                 rffi.cast(rffi.VOIDP, block.uint8data),
                 rffi.ptradd(
-                    rffi.cast(rffi.VOIDP, self.read_buf.base),
+                    rffi.cast(rffi.VOIDP, self.read_buf.c_base),
                     self.read_offset),
                 count)
             self.read_offset += count
@@ -154,7 +154,7 @@ def Stream_read(self, block):
         else:
             builder = StringBuilder()
             builder.append_charpsize(
-                rffi.ptradd(self.read_buf.base, self.read_offset),
+                rffi.ptradd(self.read_buf.c_base, self.read_offset),
                 avail)
             self.read_offset += avail
             return String(builder.build().decode('utf-8'))
@@ -168,8 +168,8 @@ def Stream_read(self, block):
 def Stream_alloc_cb(stream, suggested_size, buf):
     ec = core.get_ec()
     slot, (self, block) = ec.uv_readers[rffi.cast_ptr_to_adr(stream)]
-    buf.base = ptr = lltype.malloc(rffi.CCHARP.TO, suggested_size, flavor='raw')
-    buf.size = suggested_size
+    buf.c_base = ptr = lltype.malloc(rffi.CCHARP.TO, suggested_size, flavor='raw')
+    buf.c_len = suggested_size
     #assert not self.read_buf, "boom" TODO: this thing leaks memory.
     self.read_buf = buf
     self.buffers.append(ptr)
@@ -185,14 +185,14 @@ def Stream_read_cb(stream, nread, buf):
         count = min(nread, block.length)
         rffi.c_memcpy(
             rffi.cast(rffi.VOIDP, block.uint8data),
-            rffi.cast(rffi.VOIDP, buf.base),
+            rffi.cast(rffi.VOIDP, buf.c_base),
             count)
         self.read_offset = count
         self.read_avail  = nread
         slot.response(ec, Integer(count))
     else:
         builder = StringBuilder()
-        builder.append_charpsize(buf.base, nread)
+        builder.append_charpsize(buf.c_base, nread)
         #TODO: str_decode_utf_8 to handle partial symbols.
         slot.response(ec, String(builder.build().decode('utf-8')))
 

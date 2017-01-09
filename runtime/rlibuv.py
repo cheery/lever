@@ -99,9 +99,37 @@ REQ_TYPE_PRIVATE,
 REQ_TYPE_MAX
 ) = range(12)
 
-# 
 class CConfig:
     _compilation_info_ = eci
+
+    timespec_t = rffi_platform.Struct("uv_timespec_t", [
+        ("tv_sec",  rffi.LONG),
+        ("tv_nsec", rffi.LONG)])
+
+    stat_t = rffi_platform.Struct("uv_stat_t", [
+        ("st_dev",      uint64_t  ),
+        ("st_mode",     uint64_t  ),
+        ("st_nlink",    uint64_t  ),
+        ("st_uid",      uint64_t  ),
+        ("st_gid",      uint64_t  ),
+        ("st_rdev",     uint64_t  ),
+        ("st_ino",      uint64_t  ),
+        ("st_size",     uint64_t  ),
+        ("st_blksize",  uint64_t  ),
+        ("st_blocks",   uint64_t  ),
+        ("st_flags",    uint64_t  ),
+        ("st_gen",      uint64_t  ),
+        ("st_atim",     timespec_t),
+        ("st_mtim",     timespec_t),
+        ("st_ctim",     timespec_t),
+        ("st_birthtim", timespec_t)])
+
+    #dirent_type_t = rffi_platform.SimpleType("uv_dirent_type_t", rffi.INT)
+    dirent_t = rffi_platform.Struct("uv_dirent_t", [
+        ("name", rffi.CCHARP),
+        ("type", rffi.INT)])
+
+
     #loop_t = rffi_platform.Struct("uv_loop_t", [("data", rffi.VOIDP)])
     #handle_t = rffi_platform.Struct("uv_handle_t", [("data", rffi.VOIDP)])
     #timer_t = rffi_platform.Struct("uv_timer_t", [("data", rffi.VOIDP)])
@@ -134,19 +162,31 @@ class CConfig:
         ("data", rffi.VOIDP),
         ("path", rffi.CONST_CCHARP),
         ("result", rffi.SSIZE_T),
+        ("statbuf", stat_t),
         ("ptr", rffi.VOIDP)])
     #getaddrinfo_t = rffi_platform.Struct("uv_getaddrinfo_t",
     #                                     [("data", rffi.VOIDP)])
-    #buf_t = rffi_platform.Struct("uv_buf_t",
-    #                             [("base", rffi.CCHARP),
-    #                              ("len", rffi.SIZE_T)])
+    buf_t = rffi_platform.Struct("uv_buf_t", [
+        ("base", rffi.CCHARP),
+        ("len", rffi.SIZE_T)])
 
-    uid_t = rffi_platform.SimpleType("uid_t", rffi.ULONG)
-    gid_t = rffi_platform.SimpleType("gid_t", rffi.ULONG)
+    uid_t = rffi_platform.SimpleType("uv_uid_t", rffi.ULONG)
+    gid_t = rffi_platform.SimpleType("uv_gid_t", rffi.ULONG)
+
+    UV_EOF = rffi_platform.ConstantInteger("UV_EOF")
+
 cConfig = rffi_platform.configure(CConfig)
 
 uid_t = cConfig['uid_t']
 gid_t = cConfig['gid_t']
+
+stat_t = cConfig['stat_t']
+buf_t = cConfig['buf_t']
+
+EOF = cConfig['UV_EOF']
+
+
+dirent_ptr = lltype.Ptr(cConfig["dirent_t"])
 
 # # Forward references. Yeah. Taken from typhon
 # cConfig["connect_t"].c_handle.TO.become(cConfig["stream_t"])
@@ -186,7 +226,6 @@ work_ptr = rffi.COpaquePtr("uv_work_t")
 # None of the above
 cpu_info_ptr = rffi.COpaquePtr("uv_cpu_info_t")
 interface_address_ptr = rffi.COpaquePtr("uv_interface_address_t")
-dirent_ptr = rffi.COpaquePtr("uv_dirent_t")
 passwd_ptr = rffi.COpaquePtr("uv_passwd_t")
 
 #LOOP_BLOCK_SIGNAL = 0
@@ -240,14 +279,14 @@ now         = llexternal("uv_now",         [loop_ptr], uint64_t)
 
 # I got no idea why this detail had to be exposed like this....
 if sys.platform != "win32":
-    buf_t = lltype.Struct("uv_buf_t",
-        ("base", rffi.CCHARP),
-        ("size", rffi.SIZE_T))
+#    buf_t = lltype.Struct("uv_buf_t",
+#        ("base", rffi.CCHARP),
+#        ("size", rffi.SIZE_T))
     os_sock_t = rffi.INT
 else:
-    buf_t = lltype.Struct("uv_buf_t",
-        ("size", rffi.SIZE_T), # or ULONG
-        ("base", rffi.CCHARP))
+#    buf_t = lltype.Struct("uv_buf_t",
+#        ("size", rffi.SIZE_T), # or ULONG
+#        ("base", rffi.CCHARP))
     os_sock_t = rffi.VOIDP
 
 uv_file = rffi.INT
@@ -278,32 +317,6 @@ after_work_cb  = rffi.CCallback([work_ptr,       rffi.INT],               lltype
 addrinfo_ptr = rffi.VOIDP # struct addrinfo*
 getaddrinfo_cb = rffi.CCallback([getaddrinfo_ptr, rffi.INT, addrinfo_ptr], lltype.Void)
 getnameinfo_cb = rffi.CCallback([getnameinfo_ptr, rffi.INT, rffi.CCHARP, rffi.CCHARP], lltype.Void)
-
-timespec_t = rffi.CStruct("uv_timespec_t",
-    ("tv_sec",  rffi.LONG),
-    ("tv_nsec", rffi.LONG))
-# typedef struct {
-#   long tv_sec;
-#   long tv_nsec;
-# } uv_timespec_t;
-
-stat_t = rffi.CStruct("uv_stat_t",
-    ("st_dev",      uint64_t  ),
-    ("st_mode",     uint64_t  ),
-    ("st_nlink",    uint64_t  ),
-    ("st_uid",      uint64_t  ),
-    ("st_gid",      uint64_t  ),
-    ("st_rdev",     uint64_t  ),
-    ("st_ino",      uint64_t  ),
-    ("st_size",     uint64_t  ),
-    ("st_blksize",  uint64_t  ),
-    ("st_blocks",   uint64_t  ),
-    ("st_flags",    uint64_t  ),
-    ("st_gen",      uint64_t  ),
-    ("st_atim",     timespec_t),
-    ("st_mtim",     timespec_t),
-    ("st_ctim",     timespec_t),
-    ("st_birthtim", timespec_t))
 
 fs_event_cb = rffi.CCallback([fs_event_ptr, rffi.CCHARP, rffi.INT, rffi.INT], lltype.Void)
 fs_poll_cb  = rffi.CCallback([fs_poll_ptr, rffi.INT, lltype.Ptr(stat_t), lltype.Ptr(stat_t)], lltype.Void)
@@ -604,22 +617,26 @@ stdio_container = rffi.CStruct("uv_stdio_container_t",
 #   char* homedir;
 # };
 # 
-# typedef enum {
-#   UV_DIRENT_UNKNOWN,
-#   UV_DIRENT_FILE,
-#   UV_DIRENT_DIR,
-#   UV_DIRENT_LINK,
-#   UV_DIRENT_FIFO,
-#   UV_DIRENT_SOCKET,
-#   UV_DIRENT_CHAR,
-#   UV_DIRENT_BLOCK
-# } uv_dirent_type_t;
-# 
-# struct uv_dirent_s {
-#   const char* name;
-#   uv_dirent_type_t type;
-# };
-# 
+
+(DIRENT_UNKNOWN,
+DIRENT_FILE,
+DIRENT_DIR,
+DIRENT_LINK,
+DIRENT_FIFO,
+DIRENT_SOCKET,
+DIRENT_CHAR,
+DIRENT_BLOCK) = range(8)
+dirent2name = {
+    DIRENT_UNKNOWN:u"unknown",
+    DIRENT_FILE:u"file",
+    DIRENT_DIR:u"dir",
+    DIRENT_LINK:u"link",
+    DIRENT_FIFO:u"fifo",
+    DIRENT_SOCKET:u"socket",
+    DIRENT_CHAR:u"char",
+    DIRENT_BLOCK:u"block"
+}
+
 #setup_args = llexternal("uv_setup_args", [rffi.INT, rffi.CCHARPP], rffi.CCHARPP)
 #get_process_title = llexternal("uv_get_process_title", [rffi.CCHARP, rffi.SIZE_T], rffi.INT)
 #set_process_title = llexternal("uv_set_process_title", [rffi.CCHARP], rffi.INT)
@@ -700,9 +717,9 @@ UV_FS_REALPATH
 fs_req_cleanup = llexternal("uv_fs_req_cleanup", [fs_ptr], lltype.Void)
 fs_close = llexternal("uv_fs_close", [loop_ptr, fs_ptr, uv_file, fs_cb], rffi.INT)
 fs_open = llexternal("uv_fs_open", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.INT, rffi.INT, fs_cb], rffi.INT)
-fs_read = llexternal("uv_fs_read", [loop_ptr, fs_ptr, uv_file, rffi.CArray(buf_t), rffi.UINT, int64_t, fs_cb], rffi.INT)
+fs_read = llexternal("uv_fs_read", [loop_ptr, fs_ptr, uv_file, rffi.CArrayPtr(buf_t), rffi.UINT, int64_t, fs_cb], rffi.INT)
 fs_unlink = llexternal("uv_fs_unlink", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
-fs_write = llexternal("uv_fs_write", [loop_ptr, fs_ptr, uv_file, rffi.CArray(buf_t), rffi.UINT, int64_t, fs_cb], rffi.INT)
+fs_write = llexternal("uv_fs_write", [loop_ptr, fs_ptr, uv_file, rffi.CArrayPtr(buf_t), rffi.UINT, int64_t, fs_cb], rffi.INT)
 fs_mkdir = llexternal("uv_fs_mkdir", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.INT, fs_cb], rffi.INT)
 fs_mkdtemp = llexternal("uv_fs_mkdtemp", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
 fs_rmdir = llexternal("uv_fs_rmdir", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
@@ -727,7 +744,7 @@ FS_SYMLINK_JUNCTION = 0x0002
  
 fs_symlink = llexternal("uv_fs_symlink", [loop_ptr, fs_ptr, rffi.CCHARP, rffi.CCHARP, rffi.INT, fs_cb], rffi.INT)
 fs_readlink = llexternal("uv_fs_readlink", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
-#fs_realpath = llexternal("uv_fs_realpath", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
+fs_realpath = llexternal("uv_fs_realpath", [loop_ptr, fs_ptr, rffi.CCHARP, fs_cb], rffi.INT)
 fs_fchmod = llexternal("uv_fs_fchmod", [loop_ptr, fs_ptr, uv_file, rffi.INT, fs_cb], rffi.INT)
 fs_chown = llexternal("uv_fs_chown", [loop_ptr, fs_ptr, rffi.CCHARP, uid_t, gid_t, fs_cb], rffi.INT)
 fs_fchown = llexternal("uv_fs_fchown", [loop_ptr, fs_ptr, uv_file, uid_t, gid_t, fs_cb], rffi.INT)

@@ -198,7 +198,6 @@ def cast_for(cls):
 
 # TODO: frame entry association could be "cool" here. So you would know
 #       where a cast attempt failed.
-@always_inline
 @specialize.arg(1, 2)
 def cast(x, cls, info=u"something"):
     if isinstance(x, cls): # This here means that cast won't change object

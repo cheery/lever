@@ -112,20 +112,26 @@ format_spec = (spec, argtypes=null):
     for i in range(spec.argc)
         res.append(comma)
 
-        res.append(varnames.next())
+        vname = varnames.next()
+        res.append(vname)
         if argtypes.length > 0
-            res.append(":")
-            res.append(repr(argtypes.pop(0)))
+            tname = repr(argtypes.pop(0))
+            if tname != vname
+                res.append(":")
+                res.append(tname)
         comma = ", "
 
     for i in range(spec.optional)
         res.append(comma)
 
         res.append("[")
-        res.append(varnames.next())
+        vname = varnames.next()
+        res.append(vname)
         if argtypes.length > 0
-            res.append(":")
-            res.append(repr(argtypes.pop(0)))
+            tname = repr(argtypes.pop(0))
+            if tname != vname
+                res.append(":")
+                res.append(tname)
         res.append("]")
         comma = ", "
     
