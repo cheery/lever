@@ -46,6 +46,10 @@ class String(Object):
         return StringIterator(iter(self.string))
 String.interface.name = u"str"
 
+@String.instantiator2(signature(Object))
+def String_init_is_cast(obj):
+    return space.cast(obj, String, u"str()")
+
 @String.method(u"count", signature(String, String))
 def String_count(self, ch):
     if len(ch.string) != 1:
