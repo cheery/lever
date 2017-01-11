@@ -174,6 +174,19 @@ class LUVError(LException):
         self.error_name = error_name
         self.strerror = strerror
 
+    def getattr(self, name):
+        if name == u"name":
+            return String(self.error_name)
+        if name == u"strerror":
+            return String(self.strerror)
+        return LException.getattr(self, name)
+
+    def listattr(self):
+        listing = LException.listattr(self)
+        listing.append(String(u"name"))
+        listing.append(String(u"strerror"))
+        return listing
+
     def repr(self):
         return u"LibUV " + self.error_name + u":" + self.strerror
 
