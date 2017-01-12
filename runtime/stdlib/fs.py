@@ -13,6 +13,7 @@ for num, name in errno.errorcode.items():
     module.setattr_force(name.decode('utf-8'), Integer(num))
 module.setattr_force(u"errorcode", errorcode)
 
+
 def builtin(fn):
     name = fn.__name__.rstrip('_').decode('utf-8')
     module.setattr_force(name, Builtin(fn, name))
@@ -192,6 +193,9 @@ module.setattr_force(u"file", File.interface)
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 import rlibuv as uv
 import uv_callback
+
+for name, num in uv.file_flags.items():
+    module.setattr_force(name, Integer(num))
 
 # void uv_fs_req_cleanup(uv_fs_t* req)
 

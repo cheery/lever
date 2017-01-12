@@ -175,6 +175,16 @@ class CConfig:
 
     UV_EOF = rffi_platform.ConstantInteger("UV_EOF")
 
+    # Add _ in front if these aren't on the Win32
+    O_RDONLY = rffi_platform.ConstantInteger("O_RDONLY")
+    O_WRONLY = rffi_platform.ConstantInteger("O_WRONLY")
+    O_RDWR = rffi_platform.ConstantInteger("O_RDWR")
+    O_APPEND = rffi_platform.ConstantInteger("O_APPEND")
+    O_CREAT = rffi_platform.ConstantInteger("O_CREAT")
+    O_EXCL = rffi_platform.ConstantInteger("O_EXCL")
+    O_TRUNC = rffi_platform.ConstantInteger("O_TRUNC")
+
+
 cConfig = rffi_platform.configure(CConfig)
 
 uid_t = cConfig['uid_t']
@@ -184,6 +194,16 @@ stat_t = cConfig['stat_t']
 buf_t = cConfig['buf_t']
 
 EOF = cConfig['UV_EOF']
+
+file_flags = {
+    u"RDONLY": cConfig['O_RDONLY'],
+    u"WRONLY": cConfig['O_WRONLY'],
+    u"RDWR": cConfig['O_RDWR'],
+    u"APPEND": cConfig['O_APPEND'],
+    u"CREAT": cConfig['O_CREAT'],
+    u"EXCL": cConfig['O_EXCL'],
+    u"TRUNC": cConfig['O_TRUNC'],
+}
 
 
 dirent_ptr = lltype.Ptr(cConfig["dirent_t"])
