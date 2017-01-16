@@ -64,7 +64,7 @@ def new_entry_point(config, default_lever_path=u''):
         argv = [normal_startup]
         for arg in raw_argv[1:]:
             argv.append(space.String(arg.decode('utf-8')))
-        schedule(argv)
+        core.schedule(argv)
 
         uv.run(ec.uv_loop, uv.RUN_DEFAULT)
 
@@ -89,13 +89,6 @@ def normal_startup(argv):
     else:
         main_func.call([space.List(argv)])
     return space.null
-
-@base.builtin
-def schedule(argv):
-    ec = core.get_ec()
-    c = core.to_greenlet(argv)
-    ec.enqueue(c)
-    return c
 
 class Suspended(object):
     _immutable_fields_ = ['wakeup', 'greenlet']

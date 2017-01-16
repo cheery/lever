@@ -1,4 +1,5 @@
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
+from rpython.rlib.objectmodel import specialize
 from space import *
 import core
 import rlibuv as uv
@@ -133,14 +134,14 @@ def to_error(result):
 # 
 #     return Request
 
-read = response_handler("read")
-write = response_handler("write")
-connect = response_handler("connect")
-shutdown = response_handler("shutdown")
-connection = response_handler("connection")
+#read = response_handler("read")
+#write = response_handler("write")
+#connect = response_handler("connect")
+#shutdown = response_handler("shutdown")
+#connection = response_handler("connection")
 close = response_handler("close")
-poll = response_handler("poll")
-timer = response_handler("timer")
+#poll = response_handler("poll")
+#timer = response_handler("timer")
 #async = response_handler("async")
 #prepare = response_handler("prepare")
 #check = response_handler("check")
@@ -152,3 +153,28 @@ fs = response_handler("fs")
 #after_work = response_handler("after_work")
 getaddrinfo = response_handler("getaddrinfo")
 getnameinfo = response_handler("getnameinfo")
+
+
+@specialize.call_location()
+@jit.dont_look_inside
+def drop(table, handle):
+    try:
+        return table.pop(rffi.cast_ptr_to_adr(handle))
+    except KeyError as e:
+        raise unwind(LError(u"handle already dropped"))
+
+@specialize.call_location()
+@jit.dont_look_inside
+def peek(table, handle):
+    try:
+        return table[rffi.cast_ptr_to_adr(handle)]
+    except KeyError as e:
+        raise unwind(LError(u"peek unable to find a handle"))
+
+@specialize.call_location()
+@jit.dont_look_inside
+def push(table, self):
+    adr = rffi.cast_ptr_to_adr(self.handle)
+    if adr in table:
+        raise unwind(LError(u"libuv handle/request busy"))
+    table[adr] = self

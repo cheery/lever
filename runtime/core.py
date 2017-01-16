@@ -42,6 +42,7 @@ class ExecutionContext(object):
         #self.uv__exit = {}
         #self.uv__walk = {}
         self.uv__fs = {}
+        self.uv__fs_event = {}
         #self.uv__work = {}
         #self.uv__after_work = {}
         self.uv__getaddrinfo = {}
@@ -74,10 +75,20 @@ def root_switch(ec, argv):
     try:
         switch(argv)
     except space.Unwinder as unwinder:
-        exception = unwinder.exception
+        #exception = unwinder.exception
         #if isinstance(exception, space.LSystemExit):
         #    return int(exception.status)
         base.print_traceback(unwinder.exception)
+
+def root_unwind(ec, unwinder):
+    import base
+    base.print_traceback(unwinder.exception)
+
+def schedule(argv):
+    ec = get_ec()
+    c = to_greenlet(argv)
+    ec.enqueue(c)
+    return c
 
 def to_greenlet(argv):
     ec = get_ec()

@@ -2,71 +2,12 @@ from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rlib.rstring import StringBuilder, UnicodeBuilder
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from space import *
+from stdlib.fs import File
 import base
 import core
 import rlibuv as uv
+from uv_handle import Handle, check
 
-class Handle(Object):
-    def __init__(self, handle):
-        self.handle = handle
-        self.closed = False
-        self.buffers = []
-
-    def getattr(self, name):
-        if name == u"active":
-            return boolean(uv.is_active(self.handle))
-        if name == u"closing":
-            return boolean(uv.is_closing(self.handle))
-        if name == u"closed":
-            return boolean(self.closed)
-#        if name == u"ref":
-#            return boolean(uv.has_ref(self.handle))
-        return Object.getattr(self, name)
-
-    # All handles are resources, so I don't think doing
-    # automatic close on losing them would do any good.
-
-@Handle.method(u"close", signature(Handle))
-def Handle_close(self):
-    ec = core.get_ec()
-    slot = async_begin(self.handle, ec.uv_closing, self)
-    uv.close(self.handle, Handle_close_cb)
-    return async_end(ec, slot, self.handle, ec.uv_closing, 0)
-
-@jit.dont_look_inside # cast_ptr_to_adr
-def Handle_close_cb(handle):
-    ec = core.get_ec()
-    slot, self = ec.uv_closing.pop(rffi.cast_ptr_to_adr(handle))
-    self.closed = True
-    # Should be safe to release them here.
-    buffers, self.buffers = self.buffers, []
-    for pointer in buffers:
-        lltype.free(pointer, flavor='raw')
-    lltype.free(handle, flavor='raw')
-    self.handle = lltype.nullptr(uv.handle_ptr.TO)
-    slot.response(ec, space.null)
-
-@Handle.method(u"get_send_buffer_size", signature(Handle))
-def Handle_get_send_buffer_size(self):
-    value = lltype.malloc(rffi.INTP.TO, 1, flavor='raw', zero=True)
-    try:
-        check( uv.send_buffer_size(self.handle, value) )
-        return Integer(rffi.r_long(value[0]))
-    finally:
-        lltype.free(value, flavor='raw')
-
-@Handle.method(u"get_recv_buffer_size", signature(Handle))
-def Handle_get_recv_buffer_size(self):
-    value = lltype.malloc(rffi.INTP.TO, 1, flavor='raw', zero=True)
-    try:
-        check( uv.recv_buffer_size(self.handle, value) )
-        return Integer(rffi.r_long(value[0]))
-    finally:
-        lltype.free(value, flavor='raw')
-
-# TODO: uv.ref, uv.unref ?
-# TODO: uv.fileno(handle, fd) ?
-    
 class Stream(Handle):
     def __init__(self, stream):
         self.stream = stream
@@ -206,7 +147,8 @@ def initialize_tty(uv_loop, fd, readable):
         pipe = uv.malloc_bytes(uv.pipe_ptr, uv.handle_size(uv.NAMED_PIPE))
         check( uv.pipe_open(pipe, fd) )
         return Pipe(pipe)
-    #elif handle_type == uv.FILE:
+    elif handle_type == uv.FILE:
+        return File(fd)
     else:
         print "unfortunately this std filehandle feature not supported (yet)", str(handle_type)
         return null
@@ -337,12 +279,6 @@ class Pipe(Stream):
 # RPY_LOCK_FAILURE, RPY_LOCK_ACQUIRED, RPY_LOCK_INTR = range(3)
 
 # http://docs.libuv.org/en/v1.x/request.html
-
-def check(result):
-    if result < 0:
-        raise to_error(result)
-
-
 
 @specialize.call_location()
 @jit.dont_look_inside # cast_ptr_to_adr

@@ -37,6 +37,7 @@ module = Module(u'base', {
     u'Uint8Builder': Uint8Builder.interface,
     u'Utf8Decoder': Utf8Decoder.interface,
     u'StringBuilder': StringBuilder_.interface,
+    u'schedule': Builtin(core.schedule, u'schedule'),
     u'set': Set.interface,
     u'slice': Slice.interface,
     u'SourceLocationLines': SourceLocationLines.interface,

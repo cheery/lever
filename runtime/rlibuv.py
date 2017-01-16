@@ -158,6 +158,14 @@ class CConfig:
     #tcp_t = rffi_platform.Struct("uv_tcp_t", [("data", rffi.VOIDP)])
     #pipe_t = rffi_platform.Struct("uv_pipe_t", [("data", rffi.VOIDP)])
     #tty_t = rffi_platform.Struct("uv_tty_t", [("data", rffi.VOIDP)])
+    fs_event_t = rffi_platform.Struct("uv_fs_event_t", [
+        ("data", rffi.VOIDP),
+    ])
+    fs_poll_t = rffi_platform.Struct("uv_fs_poll_t", [
+        ("data", rffi.VOIDP),
+    ])
+
+
     fs_t = rffi_platform.Struct("uv_fs_t", [
         ("data", rffi.VOIDP),
         ("path", rffi.CONST_CCHARP),
@@ -174,6 +182,7 @@ class CConfig:
     gid_t = rffi_platform.SimpleType("uv_gid_t", rffi.ULONG)
 
     UV_EOF = rffi_platform.ConstantInteger("UV_EOF")
+    UV_ECANCELED = rffi_platform.ConstantInteger("UV_ECANCELED")
 
     # Add _ in front if these aren't on the Win32
     O_RDONLY = rffi_platform.ConstantInteger("O_RDONLY")
@@ -194,6 +203,7 @@ stat_t = cConfig['stat_t']
 buf_t = cConfig['buf_t']
 
 EOF = cConfig['UV_EOF']
+ECANCELED = cConfig['UV_ECANCELED']
 
 file_flags = {
     u"RDONLY": cConfig['O_RDONLY'],
@@ -228,8 +238,10 @@ check_ptr = rffi.COpaquePtr("uv_check_t")
 idle_ptr = rffi.COpaquePtr("uv_idle_t")
 async_ptr = rffi.COpaquePtr("uv_async_t")
 process_ptr = rffi.COpaquePtr("uv_process_t")
-fs_event_ptr = rffi.COpaquePtr("uv_fs_event_t")
-fs_poll_ptr = rffi.COpaquePtr("uv_fs_poll_t")
+
+fs_event_ptr = lltype.Ptr(cConfig["fs_event_t"])
+fs_poll_ptr = lltype.Ptr(cConfig["fs_poll_t"])
+
 signal_ptr = rffi.COpaquePtr("uv_signal_t")
 
 # Request types
@@ -789,9 +801,9 @@ FS_EVENT_WATCH_ENTRY = 1
 FS_EVENT_STAT = 2
 FS_EVENT_RECURSIVE = 4
  
-#fs_event_init = llexternal("uv_fs_event_init", [loop_ptr, fs_event_ptr], rffi.INT)
-#fs_event_start = llexternal("uv_fs_event_start", [fs_event_ptr, fs_event_cb, rffi.CCHARP, rffi.UINT], rffi.INT)
-#fs_event_stop = llexternal("uv_fs_event_stop", [fs_event_ptr], rffi.INT)
+fs_event_init = llexternal("uv_fs_event_init", [loop_ptr, fs_event_ptr], rffi.INT)
+fs_event_start = llexternal("uv_fs_event_start", [fs_event_ptr, fs_event_cb, rffi.CCHARP, rffi.UINT], rffi.INT)
+fs_event_stop = llexternal("uv_fs_event_stop", [fs_event_ptr], rffi.INT)
 #fs_event_getpath = llexternal("uv_fs_event_getpath", [fs_event_ptr, rffi.CCHARP, rffi.SIZE_TP], rffi.INT)
 #ip4_addr = llexternal("uv_ip4_addr", [rffi.CCHARP, rffi.INT, sockaddr_in_ptr], rffi.INT)
 #ip6_addr = llexternal("uv_ip6_addr", [rffi.CCHARP, rffi.INT, sockaddr_in6_ptr], rffi.INT)
