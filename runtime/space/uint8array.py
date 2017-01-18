@@ -54,6 +54,9 @@ class Uint8Data(Object):
             rffi.cast(rffi.CCHARP, self.uint8data),
             int(self.length))
 
+    def iter(self):
+        return Uint8Iterator(self.uint8data, self.length)
+
 @Uint8Data.method(u'memcpy', signature(Uint8Data, Uint8Data, numbers.Integer, optional=1))
 def Uint8Data_memcpy(self, src, size):
     size = src.length if size is None else size.value
@@ -96,6 +99,14 @@ def alloc_uint8array(length):
 
 def to_uint8array(cstring):
     return Uint8Array(rffi.cast(rffi.UCHARP, rffi.str2charp(cstring)), len(cstring))
+
+def copy_to_uint8array(base, length):
+    length = rffi.r_long(length)
+    array = alloc_uint8array(length)
+    rffi.c_memcpy(
+        rffi.cast(rffi.VOIDP, array.uint8data),
+        rffi.cast(rffi.VOIDP, base), length)
+    return array
 
 @Uint8Array.instantiator
 @signature(Object)
@@ -231,3 +242,19 @@ def Uint8Builder_build(self):
     self.total_capacity = length
     self.avail = 0
     return self.array
+
+class Uint8Iterator(Object):
+    _immutable_fields_ = ['uint8data', 'length']
+    def __init__(self, data, length):
+        self.uint8data = data
+        self.length = length
+        self.index = 0
+    
+@Uint8Iterator.method(u"next", signature(Uint8Iterator))
+def Uint8Iterator_next(self):
+    if self.index < self.length:
+        res = self.uint8data[self.index]
+        self.index += 1
+        return space.Integer(rffi.r_long(res))
+    else:
+        raise StopIteration()

@@ -33,11 +33,11 @@ def response_handler(name):
 
     class response:
         _immutable_fields_ = ["ec", "handle"]
+        __slots__ = ["ec", "handle", "greenlet", "pending", "data"]
         cb = _callback_
         def __init__(self, handle):
             self.ec = core.get_ec()
             self.handle = handle
-            self.data = None
             self.greenlet = None
             self.pending = True
             push_handle(getattr(self.ec, uv_name), handle, self)

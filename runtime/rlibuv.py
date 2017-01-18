@@ -129,6 +129,8 @@ class CConfig:
         ("name", rffi.CCHARP),
         ("type", rffi.INT)])
 
+    sockaddr = rffi_platform.Struct("struct sockaddr", [
+        ("sa_family", rffi.USHORT)])
 
     #loop_t = rffi_platform.Struct("uv_loop_t", [("data", rffi.VOIDP)])
     #handle_t = rffi_platform.Struct("uv_handle_t", [("data", rffi.VOIDP)])
@@ -172,17 +174,35 @@ class CConfig:
         ("result", rffi.SSIZE_T),
         ("statbuf", stat_t),
         ("ptr", rffi.VOIDP)])
-    #getaddrinfo_t = rffi_platform.Struct("uv_getaddrinfo_t",
-    #                                     [("data", rffi.VOIDP)])
+    uv_getaddrinfo_t = rffi_platform.Struct("uv_getaddrinfo_t", [
+        ("data", rffi.VOIDP)])
+    uv_getnameinfo_t = rffi_platform.Struct("uv_getnameinfo_t", [
+        ("data", rffi.VOIDP)])
     buf_t = rffi_platform.Struct("uv_buf_t", [
         ("base", rffi.CCHARP),
         ("len", rffi.SIZE_T)])
+
+    addrinfo = rffi_platform.Struct("struct addrinfo", [
+        ("ai_flags", rffi.INT),
+        ("ai_family", rffi.INT),
+        ("ai_socktype", rffi.INT),
+        ("ai_protocol", rffi.INT),
+        ("ai_addrlen", rffi.SIZE_T),
+        ("ai_addr", rffi.VOIDP), # struct sockaddr*
+        ("ai_canonname", rffi.CCHARP),
+        ("ai_next", rffi.VOIDP),
+    ])
 
     uid_t = rffi_platform.SimpleType("uv_uid_t", rffi.ULONG)
     gid_t = rffi_platform.SimpleType("uv_gid_t", rffi.ULONG)
 
     UV_EOF = rffi_platform.ConstantInteger("UV_EOF")
     UV_ECANCELED = rffi_platform.ConstantInteger("UV_ECANCELED")
+
+    AF_INET = rffi_platform.ConstantInteger("AF_INET")
+    AF_INET6 = rffi_platform.ConstantInteger("AF_INET6")
+
+    INET6_ADDRSTRLEN = rffi_platform.ConstantInteger("INET6_ADDRSTRLEN")
 
     # Add _ in front if these aren't on the Win32
     O_RDONLY = rffi_platform.ConstantInteger("O_RDONLY")
@@ -192,7 +212,6 @@ class CConfig:
     O_CREAT = rffi_platform.ConstantInteger("O_CREAT")
     O_EXCL = rffi_platform.ConstantInteger("O_EXCL")
     O_TRUNC = rffi_platform.ConstantInteger("O_TRUNC")
-
 
 cConfig = rffi_platform.configure(CConfig)
 
@@ -204,6 +223,11 @@ buf_t = cConfig['buf_t']
 
 EOF = cConfig['UV_EOF']
 ECANCELED = cConfig['UV_ECANCELED']
+
+AF_INET = cConfig['AF_INET']
+AF_INET6 = cConfig['AF_INET6']
+
+INET6_ADDRSTRLEN = cConfig['INET6_ADDRSTRLEN']
 
 file_flags = {
     u"RDONLY": cConfig['O_RDONLY'],
@@ -246,8 +270,10 @@ signal_ptr = rffi.COpaquePtr("uv_signal_t")
 
 # Request types
 req_ptr = rffi.COpaquePtr("uv_req_t")
-getaddrinfo_ptr = rffi.COpaquePtr("uv_getaddrinfo_t")
-getnameinfo_ptr = rffi.COpaquePtr("uv_getnameinfo_t")
+
+getaddrinfo_ptr = lltype.Ptr(cConfig["uv_getaddrinfo_t"])
+getnameinfo_ptr = lltype.Ptr(cConfig["uv_getnameinfo_t"])
+
 shutdown_ptr = rffi.COpaquePtr("uv_shutdown_t")
 write_ptr = rffi.COpaquePtr("uv_write_t")
 connect_ptr = rffi.COpaquePtr("uv_connect_t")
@@ -323,7 +349,8 @@ else:
 
 uv_file = rffi.INT
 
-sockaddr_ptr = rffi.VOIDP # hmm? TODO: find this thing up in rpython
+sockaddr = cConfig["sockaddr"]
+sockaddr_ptr = lltype.Ptr(sockaddr)
 
 buf_ptr = lltype.Ptr(buf_t)
 alloc_cb = rffi.CCallback([handle_ptr, rffi.SIZE_T, buf_ptr], lltype.Void)
@@ -346,7 +373,8 @@ fs_cb          = rffi.CCallback([fs_ptr],                                 lltype
 work_cb        = rffi.CCallback([work_ptr],                               lltype.Void)
 after_work_cb  = rffi.CCallback([work_ptr,       rffi.INT],               lltype.Void)
 
-addrinfo_ptr = rffi.VOIDP # struct addrinfo*
+addrinfo_ptr = lltype.Ptr(cConfig["addrinfo"])
+
 getaddrinfo_cb = rffi.CCallback([getaddrinfo_ptr, rffi.INT, addrinfo_ptr], lltype.Void)
 getnameinfo_cb = rffi.CCallback([getnameinfo_ptr, rffi.INT, rffi.CCHARP, rffi.CCHARP], lltype.Void)
 
@@ -498,11 +526,10 @@ timer_stop = llexternal("uv_timer_stop", [timer_ptr], rffi.INT)
 timer_again = llexternal("uv_timer_again", [timer_ptr], rffi.INT)
 timer_set_repeat = llexternal("uv_timer_set_repeat", [timer_ptr, uint64_t], lltype.Void)
 timer_get_repeat = llexternal("uv_timer_get_repeat", [timer_ptr], uint64_t)
-# 
-#getaddrinfo = llexternal("uv_getaddrinfo", [loop_ptr, uv_getaddrinfo_ptr, getaddrinfo_cb, rffi.CCHARP, rffi.CCHARP, addrinfo_ptr], rffi.INT)
-#freeaddrinfo = llexternal("uv_freeaddrinfo", [addrinfo_ptr], lltype.Void)
-# 
-#getnameinfo = llexternal("uv_getnameinfo", [loop_ptr, uv_getnameinfo_ptr, getnameinfo_cb, sockaddr_ptr, rffi.INT], rffi.INT)
+ 
+getaddrinfo = llexternal("uv_getaddrinfo", [loop_ptr, getaddrinfo_ptr, getaddrinfo_cb, rffi.CCHARP, rffi.CCHARP, addrinfo_ptr], rffi.INT)
+freeaddrinfo = llexternal("uv_freeaddrinfo", [addrinfo_ptr], lltype.Void)
+getnameinfo = llexternal("uv_getnameinfo", [loop_ptr, getnameinfo_ptr, getnameinfo_cb, sockaddr_ptr, rffi.INT], rffi.INT)
 
 stdio_flags = rffi.INT
 IGNORE = 0x00
@@ -805,14 +832,18 @@ fs_event_init = llexternal("uv_fs_event_init", [loop_ptr, fs_event_ptr], rffi.IN
 fs_event_start = llexternal("uv_fs_event_start", [fs_event_ptr, fs_event_cb, rffi.CCHARP, rffi.UINT], rffi.INT)
 fs_event_stop = llexternal("uv_fs_event_stop", [fs_event_ptr], rffi.INT)
 #fs_event_getpath = llexternal("uv_fs_event_getpath", [fs_event_ptr, rffi.CCHARP, rffi.SIZE_TP], rffi.INT)
-#ip4_addr = llexternal("uv_ip4_addr", [rffi.CCHARP, rffi.INT, sockaddr_in_ptr], rffi.INT)
-#ip6_addr = llexternal("uv_ip6_addr", [rffi.CCHARP, rffi.INT, sockaddr_in6_ptr], rffi.INT)
-# 
-#ip4_name = llexternal("uv_ip4_name", [sockaddr_in_ptr, rffi.CCHARP, rffi.SIZE_T], rffi.INT)
-#ip6_name = llexternal("uv_ip6_name", [sockaddr_in6_ptr, rffi.CCHARP, rffi.SIZE_T], rffi.INT)
-# 
-#inet_ntop = llexternal("uv_inet_ntop", [rffi.INT, rffi.VOIDP, rffi.CCHARP, rffi.SIZE_T], rffi.INT)
-#inet_pton = llexternal("uv_inet_pton", [rffi.INT, rffi.CCHARP, rffi.VOIDP], rffi.INT)
+
+sockaddr_in_ptr = rffi.VOIDP
+sockaddr_in6_ptr = rffi.VOIDP
+
+ip4_addr = llexternal("uv_ip4_addr", [rffi.CCHARP, rffi.INT, sockaddr_in_ptr], rffi.INT)
+ip6_addr = llexternal("uv_ip6_addr", [rffi.CCHARP, rffi.INT, sockaddr_in6_ptr], rffi.INT)
+ 
+ip4_name = llexternal("uv_ip4_name", [sockaddr_in_ptr, rffi.CCHARP, rffi.SIZE_T], rffi.INT)
+ip6_name = llexternal("uv_ip6_name", [sockaddr_in6_ptr, rffi.CCHARP, rffi.SIZE_T], rffi.INT)
+ 
+inet_ntop = llexternal("uv_inet_ntop", [rffi.INT, rffi.VOIDP, rffi.CCHARP, rffi.SIZE_T], rffi.INT)
+inet_pton = llexternal("uv_inet_pton", [rffi.INT, rffi.CCHARP, rffi.VOIDP], rffi.INT)
 # 
 #exepath = llexternal("uv_exepath", [rffi.CCHARP, rffi.SIZE_TP], rffi.INT)
 # 
