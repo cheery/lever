@@ -218,7 +218,7 @@ class Frame:
     def __init__(self, function, module, parent, regc):
         self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self.unit = function.unit
-        self.local = [None for i in range(function.localc)]
+        self.local = [None] * function.localc
         self.module = module
         self.parent = parent
         self.sourcemap = function.sourcemap
