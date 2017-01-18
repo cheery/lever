@@ -35,7 +35,8 @@ class Uint8Data(Object):
                 for i in range(start, stop, step):
                     result.append(numbers.Integer(rffi.r_long(self.uint8data[i])))
                 return space.List(result)
-            return Uint8Slice(rffi.ptradd(self.uint8data, start), stop - start, self)
+            parent = self.parent if isinstance(self, Uint8Slice) else self
+            return Uint8Slice(rffi.ptradd(self.uint8data, start), stop - start, parent)
         index = space.cast(index, numbers.Integer, u"index not an integer")
         if not 0 <= index.value < self.length:
             raise space.unwind(space.LKeyError(self, index))
@@ -56,6 +57,9 @@ class Uint8Data(Object):
 
     def iter(self):
         return Uint8Iterator(self.uint8data, self.length)
+
+    def subslice(self, length):
+        return Uint8Slice(self.uint8data, length, self)
 
 @Uint8Data.method(u'memcpy', signature(Uint8Data, Uint8Data, numbers.Integer, optional=1))
 def Uint8Data_memcpy(self, src, size):
@@ -92,6 +96,9 @@ class Uint8Slice(Uint8Data):
             return self.parent
         return Uint8Data.getattr(self, name)
 
+    def subslice(self, length):
+        return Uint8Slice(self.uint8data, length, self.parent)
+
 def alloc_uint8array(length):
     return Uint8Array(
         lltype.malloc(rffi.UCHARP.TO, length, flavor='raw'),
@@ -99,14 +106,6 @@ def alloc_uint8array(length):
 
 def to_uint8array(cstring):
     return Uint8Array(rffi.cast(rffi.UCHARP, rffi.str2charp(cstring)), len(cstring))
-
-def copy_to_uint8array(base, length):
-    length = rffi.r_long(length)
-    array = alloc_uint8array(length)
-    rffi.c_memcpy(
-        rffi.cast(rffi.VOIDP, array.uint8data),
-        rffi.cast(rffi.VOIDP, base), length)
-    return array
 
 @Uint8Array.instantiator
 @signature(Object)

@@ -1,5 +1,6 @@
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi
+from rpython.rlib.rstring import UnicodeBuilder
 from space import *
 from evaluator.loader import from_object, SourceLocation
 from evaluator.sourcemaps import TraceEntry
@@ -206,7 +207,7 @@ def print_(argv):
             string = arg.repr()
         out += space + string
         space = u' '
-    data = String(out + u'\n')
+    data = encode_utf8([String(out + u'\n')])
     return module.getattr(u"stdout").callattr(u"write", [data])
   
 # And and or are macros in the compiler. These are
@@ -295,22 +296,12 @@ def Range_next(self):
         return Integer(i)
     raise StopIteration()
 
-# TODO?: Grab this one from stdlib.fs
-# input() is meant to be overridden when it makes sense.
-#def input_(argv):
-#    return main.g.io.new_task(sync_input, argv)
-#@builtin
-#@signature(String, optional=1)
-#def input_(obj):
-#    stdout = main.g.io.stdout
-#    stdin = main.g.io.stdin
-#    # Old input()
-#    if obj is not None:
-#        stdout.write(obj.string.encode('utf-8'))
-#    line = stdin.readline().rstrip("\r\n")
-#    return String(line.decode('utf-8'))
+@builtin
+@signature(Object)
+def format_traceback(exception):
+    return String(format_traceback_raw(exception))
 
-def print_traceback(exception):
+def format_traceback_raw(exception):
     traceback = exception.getattr(u"traceback")
     if not isinstance(traceback, space.List):
         raise space.unwind(space.LError(u"Expected null or list as .traceback: %s" % traceback.repr()))
@@ -325,7 +316,11 @@ def print_traceback(exception):
     out += u"\033[31m"
     out += space.get_interface(exception).name
     out += u":\033[0m"
-    write(STDERR, out + u" " + exception.repr() + u"\n")
+    return out + u" " + exception.repr() + u"\n"
+
+# The fallback mechanism.
+def print_traceback(exception):
+    write(STDERR, format_traceback_raw(exception))
 builtin(signature(Object)(print_traceback))
 
 # These two functions are used by the lever compiler, so changing

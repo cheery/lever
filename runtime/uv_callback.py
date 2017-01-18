@@ -7,7 +7,7 @@ import rlibuv as uv
 # consider this instead of cast_ptr_to_adr
 #from rpython.rlib.objectmodel import current_object_addr_as_int
 
-def response_handler(name):
+def response_handler(name, *blank_data):
     uv_name = "uv__" + name
 
     def _callback_(handle, *data):
@@ -40,6 +40,7 @@ def response_handler(name):
             self.handle = handle
             self.greenlet = None
             self.pending = True
+            self.data = blank_data
             push_handle(getattr(self.ec, uv_name), handle, self)
 
         def wait(self, status=0):
@@ -134,11 +135,10 @@ def to_error(result):
 # 
 #     return Request
 
-#read = response_handler("read")
-#write = response_handler("write")
-#connect = response_handler("connect")
-#shutdown = response_handler("shutdown")
-#connection = response_handler("connection")
+write = response_handler("write", 0)
+connect = response_handler("connect", 0)
+udp_send = response_handler("udp_send", 0)
+shutdown = response_handler("shutdown", 0)
 close = response_handler("close")
 #poll = response_handler("poll")
 #timer = response_handler("timer")
@@ -151,9 +151,8 @@ close = response_handler("close")
 fs = response_handler("fs")
 #work = response_handler("work")
 #after_work = response_handler("after_work")
-getaddrinfo = response_handler("getaddrinfo")
-getnameinfo = response_handler("getnameinfo")
-
+getaddrinfo = response_handler("getaddrinfo", 0, lltype.nullptr(uv.addrinfo_ptr.TO))
+getnameinfo = response_handler("getnameinfo", 0, lltype.nullptr(rffi.CCHARP.TO), lltype.nullptr(rffi.CCHARP.TO))
 
 @specialize.call_location()
 @jit.dont_look_inside
@@ -178,3 +177,19 @@ def push(table, self):
     if adr in table:
         raise unwind(LError(u"libuv handle/request busy"))
     table[adr] = self
+
+def obj2bufs(data):
+    arrays = []
+    if isinstance(data, List):
+        for obj in data.contents:
+            arrays.append(cast(obj, Uint8Array, u"obj2bufs"))
+    else:
+        arrays.append(cast(data, Uint8Array, u"obj2bufs"))
+    nbufs = len(arrays)
+    bufs = lltype.malloc(rffi.CArray(uv.buf_t), nbufs, flavor='raw', zero=True)
+    i = 0
+    for array in arrays:
+        bufs[i].c_base = rffi.cast(rffi.CCHARP, array.uint8data)
+        bufs[i].c_len = rffi.r_size_t(array.length)
+        i += 1
+    return bufs, nbufs

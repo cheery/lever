@@ -8,7 +8,6 @@ class Handle(Object):
     def __init__(self, handle):
         self.handle = handle
         self.closed = False
-        self.buffers = [] # TODO: remove this.
 
     def getattr(self, name):
         if name == u"active":
@@ -36,18 +35,15 @@ class Handle(Object):
 
 @Handle.method(u"close", signature(Handle))
 def Handle_close(self):
+    if self.closed:
+        raise unwind(LError(u"Handle already closed"))
     response = uv_callback.close(self.handle)
     uv.close(self.handle, uv_callback.close.cb)
     response.wait()
     self.closed = True
-#    # Should be safe to release them here.
-#    # TODO: remove this
-    buffers, self.buffers = self.buffers, []
-    for pointer in buffers:
-        lltype.free(pointer, flavor='raw')
-
-    lltype.free(self.handle, flavor='raw')
-    self.handle = lltype.nullptr(uv.handle_ptr.TO)
+    if self.handle:
+        lltype.free(self.handle, flavor='raw')
+        self.handle = lltype.nullptr(uv.handle_ptr.TO)
     return null
 
 @Handle.method(u"get_send_buffer_size", signature(Handle))

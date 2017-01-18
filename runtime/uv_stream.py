@@ -9,23 +9,19 @@ from stdlib.fs import File
 import uv_callback
 from uv_callback import to_error
 
-# TODO: remove .buffers at Handle.
 class Stream(Handle):
     def __init__(self, stream):
-        self.stream = stream
-        self.read_task = None
-        self.read_obj = None
-
-        self.read_buf = lltype.nullptr(uv.buf_t)
-        self.read_offset = 0
-        self.read_nread  = 0
-
-        self.write_task = None
-        self.write_obj = None
-        self.write_req = uv.malloc_bytes(uv.write_ptr, uv.req_size(uv.WRITE))
-
         Handle.__init__(self, rffi.cast(uv.handle_ptr, stream))
-        self.buffers.append(rffi.cast(rffi.CCHARP, self.write_req))
+        self.stream = stream
+        self.listening = False
+        self.listen_count = 0
+        self.listen_status = 0
+        self.accept_greenlet = None
+
+        self.alloc_buffers = []
+        self.read_buffer_size = 0
+        self.read_queue = []
+        self.read_greenlet = None
 
     def getattr(self, name):
         if name == u"readable":
@@ -34,120 +30,160 @@ class Stream(Handle):
             return boolean(uv.is_writable(self.stream))
         return Handle.getattr(self, name)
 
-#@Stream.method(u"shutdown", signature(Stream))
-#def Stream_shutdown(self):
-#    uv.shutdown(shutdown_req, self.stream, Stream_shutdown_cb)
-#def Stream_shutdown_cb(shutdown_req, status):
-#    pass
+    def new_stream(self):
+        assert False, "abstract"
 
-#@Stream.method(u"listen", signature(Stream, Integer))
-#def Stream_listen(self, backlog):
-#    uv.listen(self.stream, backlog.value, Stream_listen_cb)
-#def Stream_listen_cb(stream, status):
-#    pass
+@Stream.method(u"shutdown", signature(Stream))
+def Stream_shutdown(self):
+    req = lltype.malloc(uv.shutdown_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.shutdown(req)
+        check( response.wait(uv.shutdown(req, self.stream, uv_callback.shutdown.cb))[0] )
+        return null
+    finally:
+        lltype.free(req, flavor='raw')
 
-# TODO: uv_accept(server.stream, client.stream) needs some awareness about stream type.
+@Stream.method(u"listen", signature(Stream, Integer))
+def Stream_listen(self, backlog):
+    ec = core.get_ec()
+    uv_callback.push(ec.uv__connection, self)
+    status = uv.listen(self.stream, backlog.value, _listen_callback_)
+    if status < 0:
+        uv_callback.drop(ec.uv__connection, self.stream)
+        raise uv_callback.to_error(status)
+    else:
+        self.listening = True
+        return null
+
+def _listen_callback_(handle, status):
+    status = int(status)
+    ec = core.get_ec()
+    if status < 0:
+        self = uv_callback.drop(ec.uv__connection, handle)
+        self.listen_status = status
+    else:
+        self = uv_callback.peek(ec.uv__connection, handle)
+        self.listen_count += 1
+    if self.accept_greenlet is not None:
+        greenlet, self.accept_greenlet = self.accept_greenlet, None
+        core.root_switch(ec, [greenlet])
+
+@Stream.method(u"accept", signature(Stream))
+def Stream_accept(self):
+    if self.listen_count > 0:
+        if self.accept_greenlet is not None:
+            raise unwind(LError(u"async collision"))
+        ec = core.get_ec()
+        self.accept_greenlet = ec.current
+        core.switch([ec.eventloop])
+    check( self.listen_status )
+    self.listen_count -= 1
+    client = self.new_stream()
+    check( uv.accept(self.stream, client.stream) )
+    return client
 
 @Stream.method(u"write", signature(Stream, Object))
-def Stream_write(self, obj):
-    if isinstance(obj, String): # TODO: do this with a cast instead?
-        obj = to_uint8array(obj.string.encode('utf-8'))
-    elif not isinstance(obj, Uint8Data):
-        raise unwind(LError(u"expected a buffer"))
-
-    ec = core.get_ec()
-    buf = lltype.malloc(rffi.CArray(uv.buf_t), 1, flavor='raw', zero=True)
-    buf[0].c_base = rffi.cast(rffi.CCHARP, obj.uint8data)
-    buf[0].c_len = rffi.r_size_t(obj.length)
+def Stream_write(self, data):
+    bufs, nbufs = uv_callback.obj2bufs(data)
+    req = lltype.malloc(uv.write_ptr.TO, flavor='raw', zero=True)
     try:
-        slot = async_begin(self.write_req, ec.uv_writers, (self, obj))
-        status = uv.write(self.write_req, self.stream, buf, 1, Stream_write_cb)
-        return async_end(ec, slot, self.write_req, ec.uv_writers, status)
+        response = uv_callback.write(req)
+        check( response.wait( uv.write(req, self.stream,
+            bufs, nbufs, uv_callback.write.cb))[0] )
+        return null
     finally:
-        lltype.free(buf, flavor='raw')
+        lltype.free(bufs, flavor='raw')
+        lltype.free(req, flavor='raw')
 
-@jit.dont_look_inside # cast_ptr_to_adr
-def Stream_write_cb(write_req, status):
+@Stream.method(u"write2", signature(Stream, Object, Stream))
+def Stream_write2(self, data, send_handle):
+    bufs, nbufs = uv_callback.obj2bufs(data)
+    req = lltype.malloc(uv.write_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.write(req)
+        check( response.wait( uv.write2(req, self.stream,
+            bufs, nbufs, send_handle.stream, uv_callback.write.cb))[0] )
+        return null
+    finally:
+        lltype.free(bufs, flavor='raw')
+        lltype.free(req, flavor='raw')
+
+@Stream.method(u"try_write", signature(Stream, Object))
+def Stream_try_write(self, data):
+    bufs, nbufs = uv_callback.obj2bufs(data)
+    try:
+        status = uv.try_write(self.stream, bufs, nbufs)
+        check(status)
+        return Integer(rffi.r_long(status))
+    finally:
+        lltype.free(bufs, flavor='raw')
+
+@Stream.method(u"read", signature(Stream))
+def Stream_read(self):
     ec = core.get_ec()
-    status = rffi.r_long(status)
-    slot, (self, obj) = ec.uv_writers.pop(rffi.cast_ptr_to_adr(write_req))
-    if status < 0:
-        slot.failure(ec, to_error(status))
-    else:
-        slot.response(ec, space.null)
-
-# TODO: write2, try_write ?
-
-
-@Stream.method(u"read", signature(Stream, Uint8Data, optional=1))
-def Stream_read(self, block):
-    assert self.read_task is None
-    if self.read_offset < self.read_nread:
-        avail = self.read_nread - self.read_offset
-        if block is not None:
-            count = min(block.length, avail)
-            rffi.c_memcpy(
-                rffi.cast(rffi.VOIDP, block.uint8data),
-                rffi.ptradd(
-                    rffi.cast(rffi.VOIDP, self.read_buf.c_base),
-                    self.read_offset),
-                count)
-            self.read_offset += count
-            return Integer(count)
-        else:
-            builder = StringBuilder()
-            builder.append_charpsize(
-                rffi.ptradd(self.read_buf.c_base, self.read_offset),
-                avail)
-            self.read_offset += avail
-            return String(builder.build().decode('utf-8'))
-    ec = core.get_ec()
-
-    slot = async_begin(self.stream, ec.uv_readers, (self, block))
-    status = uv.read_start(self.stream, Stream_alloc_cb, Stream_read_cb)
-    return async_end(ec, slot, self.stream, ec.uv_readers, status)
-
-@jit.dont_look_inside # cast_ptr_to_adr
-def Stream_alloc_cb(stream, suggested_size, buf):
-    ec = core.get_ec()
-    slot, (self, block) = ec.uv_readers[rffi.cast_ptr_to_adr(stream)]
-    buf.c_base = ptr = lltype.malloc(rffi.CCHARP.TO, suggested_size, flavor='raw')
-    buf.c_len = suggested_size
-    #assert not self.read_buf, "boom" TODO: this thing leaks memory.
-    self.read_buf = buf
-    self.buffers.append(ptr)
-
-@jit.dont_look_inside # cast_ptr_to_adr
-def Stream_read_cb(stream, nread, buf):
-    ec = core.get_ec()
-    slot, (self, block) = ec.uv_readers.pop(rffi.cast_ptr_to_adr(stream))
-    uv.read_stop(stream)
+    if len(self.read_queue) == 0:
+        uv_callback.push(ec.uv__read, self)
+        status = uv.read_start(self.stream, _alloc_callback_, _read_callback_once_)
+        if status < 0:
+            uv_callback.drop(ec.uv__read, self.stream)
+            raise uv_callback.to_error(status)
+    if len(self.read_queue) == 0:
+        if self.read_greenlet is not None:
+            raise unwind(LError(u"async collision"))
+        self.read_greenlet = ec.current
+        core.switch([ec.eventloop])
+    array, nread, status = self.read_queue.pop(0)
     if nread < 0:
-        slot.failure(ec, to_error(nread))
-    elif block is not None:
-        count = min(nread, block.length)
-        rffi.c_memcpy(
-            rffi.cast(rffi.VOIDP, block.uint8data),
-            rffi.cast(rffi.VOIDP, buf.c_base),
-            count)
-        self.read_offset = count
-        self.read_avail  = nread
-        slot.response(ec, Integer(count))
+        raise uv_callback.to_error(nread)
+    if status < 0:
+        raise uv_callback.to_error(status)
+    if array is None:
+        return Uint8Slice(lltype.nullptr(rffi.UCHARP.TO), 0, None)
+    if array.length == nread:
+        return array
+    return array.subslice(nread)
+
+def _alloc_callback_(handle, suggested_size, buf):
+    ec = core.get_ec()
+    self = uv_callback.peek(ec.uv__read, handle)
+    if self.read_buffer_size > 0:
+        array = alloc_uint8array(self.read_buffer_size)
     else:
-        builder = StringBuilder()
-        builder.append_charpsize(buf.c_base, nread)
-        #TODO: str_decode_utf_8 to handle partial symbols.
-        slot.response(ec, String(builder.build().decode('utf-8')))
+        array = alloc_uint8array(rffi.r_long(suggested_size))
+    self.alloc_buffers.append(array)
+    buf.c_base = rffi.cast(rffi.CCHARP, array.uint8data)
+    buf.c_len = rffi.r_size_t(array.length)
+
+def _read_callback_once_(stream, nread, buf):
+    ec = core.get_ec()
+    self = uv_callback.drop(ec.uv__read, stream)
+    for array in self.alloc_buffers:
+        if rffi.cast(rffi.CCHARP, array.uint8data) == buf.c_base:
+            break
+    else:
+        array = None
+    status = uv.read_stop(stream)
+    self.read_queue.append((array, nread, status))
+    if self.read_greenlet is not None:
+        greenlet, self.read_greenlet = self.read_greenlet, None
+        core.root_switch(ec, [greenlet])
 
 def initialize_tty(uv_loop, fd, readable):
     handle_type = uv.guess_handle(fd)
     if handle_type == uv.TTY:
-        tty = uv.malloc_bytes(uv.tty_ptr, uv.handle_size(uv.TTY))
-        check( uv.tty_init(uv_loop, tty, fd, readable) )
+        tty = lltype.malloc(uv.tty_ptr.TO, flavor="raw", zero=True)
+        status = uv.tty_init(uv_loop, tty, fd, readable)
+        if status < 0:
+            lltype.free(tty, flavor='raw')
+            raise uv_callback.to_error(status)
         return TTY(tty, fd)
     elif handle_type == uv.NAMED_PIPE:
-        pipe = uv.malloc_bytes(uv.pipe_ptr, uv.handle_size(uv.NAMED_PIPE))
-        check( uv.pipe_open(pipe, fd) )
+        # TODO: should you call init on this?
+        pipe = lltype.malloc(uv.pipe_ptr.TO, flavor="raw", zero=True)
+        status = uv.pipe_open(pipe, fd)
+        if status < 0:
+            lltype.free(pipe, flavor='raw')
+            raise uv_callback.to_error(status)
         return Pipe(pipe)
     elif handle_type == uv.FILE:
         return File(fd)
@@ -155,12 +191,11 @@ def initialize_tty(uv_loop, fd, readable):
         print "unfortunately this std filehandle feature not supported (yet)", str(handle_type)
         return null
 
-# TODO: delete tty/pipe handle when done with it.
 class TTY(Stream):
     def __init__(self, tty, fd):
+        Stream.__init__(self, rffi.cast(uv.stream_ptr, tty))
         self.tty = tty
         self.fd = fd
-        Stream.__init__(self, rffi.cast(uv.stream_ptr, tty))
 
 @TTY.method(u"set_mode", signature(TTY, String))
 def TTY_set_mode(self, modename_obj):
@@ -191,137 +226,141 @@ def TTY_get_winsize(self):
 
 class Pipe(Stream):
     def __init__(self, pipe):
+        Stream.__init__(self, rffi.cast(uv.stream_ptr, pipe))
         self.pipe = pipe
 
-#from interface import Object, null, signature
-#
-
-
-# wait([x, y, z])
-# do the same as with .wait(), but prepend the event
-# emitter that fires first.
-
-
-# Left this here for a moment. I'll perhaps need it later.
-#     def new_task(self, func, argv):
-#         ec = core.get_ec()
-#         greenlet = ec.current
-#         self.task_count += 1
-#         # This side is not aware about task timeouts.
-#         with self.task_lock:
-#             self.task_queue.append((ec, greenlet, func, argv))
-#             if self.task_wait_count > 0:
-#                 self.task_wait_lock.release()
-#             elif self.worker_quota > 0:
-#                 self.worker_quota -= 1
-#                 start_new_thread(async_io_thread, ())
-#         return core.switch([ec.eventloop])
-# 
-# ## new starting thread starts and ends without arguments.
-# def async_io_thread():
-#     rthread.gc_thread_start()
-#     async_io_loop(core.g.io)
-#     rthread.gc_thread_die()
-# 
-# def async_io_loop(io):
-#     while True:
-#         # Checking whether there's task 
-#         ec, greenlet, func, argv = None, None, None, []
-#         with io.task_lock:
-#             if len(io.task_queue) > 0:
-#                 ec, greenlet, func, argv = io.task_queue.pop(0)
-#             else:
-#                 io.task_wait_lock.acquire(False)
-#                 io.task_wait_count += 1
-#         if func is None:
-#             res = acquire_timed(io.task_wait_lock, 10000000) # timeout 10 seconds
-#             # Either timeout or release happened.
-#             with io.task_lock:
-#                 io.task_wait_count -= 1 # we are not waiting for now.
-#                 if res == RPY_LOCK_FAILURE and len(io.task_queue) == 0:
-#                     io.worker_quota += 1
-#                     return # At this point it is very clear that
-#                            # this task is no longer needed.
-#         else:
-#             try:
-#                 res = func(argv)
-#                 greenlet.argv.append(res)
-#             except Unwinder as unwinder:
-#                 greenlet.unwinder = unwinder
-#             except Exception as exc:
-#                 greenlet.unwinder = unwind(LError(
-#                     u"Undefined error at async_io_thread(): " +
-#                         str(exc).decode('utf-8') + u"\n"))
-#             # I hope these are atomic operations.
-#             ec.queue.append(greenlet)
-#             io.task_count -= 1
-#             eventual.et_notify(ec.handle)
-# 
-# # Taken from pypy
-# def acquire_timed(lock, microseconds):
-#     """Helper to acquire an interruptible lock with a timeout."""
-#     endtime = (time.time() * 1e6) + microseconds
-#     while True:
-#         result = lock.acquire_timed(microseconds)
-#         if result == RPY_LOCK_INTR:
-#             # Run signal handlers if we were interrupted
-#             # TODO: lever signal handlers?
-#             #space.getexecutioncontext().checksignals()
-#             if microseconds >= 0:
-#                 microseconds = r_longlong((endtime - (time.time() * 1e6))
-#                                           + 0.999)
-#                 # Check for negative values, since those mean block
-#                 # forever
-#                 if microseconds <= 0:
-#                     result = RPY_LOCK_FAILURE
-#         if result != RPY_LOCK_INTR:
-#             break
-#     return result
-# 
-# RPY_LOCK_FAILURE, RPY_LOCK_ACQUIRED, RPY_LOCK_INTR = range(3)
-
-# http://docs.libuv.org/en/v1.x/request.html
-
-@specialize.call_location()
-@jit.dont_look_inside # cast_ptr_to_adr
-def async_begin(handle, table, self):
-    adr = rffi.cast_ptr_to_adr(handle)
-    if adr in table:
-        raise unwind(LError(u"async request collision"))
-    slot = Slot(None, None, None)
-    table[adr] = (slot, self)
-    return slot
-
-@specialize.call_location()
-@jit.dont_look_inside # cast_ptr_to_adr
-def async_end(ec, slot, handle, table, status):
-    adr = rffi.cast_ptr_to_adr(handle)
+@Pipe.instantiator2(signature(Boolean))
+def Pipe_init(ipc):
+    ec = core.get_ec()
+    ipc = 1 if is_true(ipc) else 0
+    pipe = lltype.malloc(uv.pipe_ptr.TO, flavor="raw", zero=True)
+    status = uv.pipe_init(ec.uv_loop, pipe, ipc)
     if status < 0:
-        table.pop(adr)
-        raise to_error(status)
-    elif slot.result is not None:
-        return slot.result
-    elif slot.unwind is not None:
-        raise slot.unwind
-    else:
-        slot.greenlet = ec.current
-        return core.switch([ec.eventloop])
+        lltype.free(pipe, flavor='raw')
+        raise uv_callback.to_error(status)
+    return Pipe(pipe)
 
-class Slot:
-    def __init__(self, result, unwind, greenlet):
-        self.result = result
-        self.unwind = unwind
-        self.greenlet = greenlet
+@Pipe.method(u"bind", signature(Pipe, String))
+def Pipe_bind(self, name):
+    string = name.string.encode('utf-8')
+    check( uv.pipe_bind(self.pipe, string) )
+    return null
 
-    def failure(self, ec, unwind):
-        if self.greenlet is None:
-            self.unwind = unwind
-        else:
-            self.greenlet.unwind = unwind
-            core.root_switch(ec, [self.greenlet])
+@Pipe.method(u"connect", signature(Pipe, String))
+def Pipe_connect(self, name):
+    string = name.string.encode('utf-8')
+    req = lltype.malloc(uv.connect_ptr.TO, flavor='raw', zero=True)
+    try:
+        response = uv_callback.connect(req)
+        uv.pipe_connect(req, self.pipe, string, uv_callback.connect.cb)
+        check( response.wait()[0] )
+        return null
+    finally:
+        lltype.free(req, flavor='raw')
 
-    def response(self, ec, result):
-        if self.greenlet is None:
-            self.result = result
-        else:
-            core.root_switch(ec, [self.greenlet, result])
+@Pipe.method(u"pending_instances", signature(Pipe, Integer))
+def Pipe_pending_instances(self, count):
+    uv.pipe_pending_instances(self.pipe, count.value)
+    return null
+
+@Pipe.method(u"pending_count", signature(Pipe))
+def Pipe_pending_count(self):
+    result = uv.pipe_pending_count(self.pipe)
+    check(result)
+    return Integer(rffi.r_long(result))
+
+# Consider to fix this later, this thing isn't probably capable of letting one to wait.
+#@Pipe.method(u"accept", signature(Pipe))
+#def Pipe_accept(self):
+
+# if uv.pipe_pending_count(self.pipe) == 0:
+#       raise unwind(LError("No pending handles in pipe"))
+# uv_handle_type uv_pipe_pending_type(uv_pipe_t* handle)
+
+# int uv_pipe_getsockname(const uv_pipe_t* handle, char* buffer, size_t* size)
+# int uv_pipe_getpeername(const uv_pipe_t* handle, char* buffer, size_t* size)
+
+## wait([x, y, z])
+## do the same as with .wait(), but prepend the event
+## emitter that fires first.
+#
+#
+## Left this here for a moment. I'll perhaps need it later.
+##     def new_task(self, func, argv):
+##         ec = core.get_ec()
+##         greenlet = ec.current
+##         self.task_count += 1
+##         # This side is not aware about task timeouts.
+##         with self.task_lock:
+##             self.task_queue.append((ec, greenlet, func, argv))
+##             if self.task_wait_count > 0:
+##                 self.task_wait_lock.release()
+##             elif self.worker_quota > 0:
+##                 self.worker_quota -= 1
+##                 start_new_thread(async_io_thread, ())
+##         return core.switch([ec.eventloop])
+## 
+## ## new starting thread starts and ends without arguments.
+## def async_io_thread():
+##     rthread.gc_thread_start()
+##     async_io_loop(core.g.io)
+##     rthread.gc_thread_die()
+## 
+## def async_io_loop(io):
+##     while True:
+##         # Checking whether there's task 
+##         ec, greenlet, func, argv = None, None, None, []
+##         with io.task_lock:
+##             if len(io.task_queue) > 0:
+##                 ec, greenlet, func, argv = io.task_queue.pop(0)
+##             else:
+##                 io.task_wait_lock.acquire(False)
+##                 io.task_wait_count += 1
+##         if func is None:
+##             res = acquire_timed(io.task_wait_lock, 10000000) # timeout 10 seconds
+##             # Either timeout or release happened.
+##             with io.task_lock:
+##                 io.task_wait_count -= 1 # we are not waiting for now.
+##                 if res == RPY_LOCK_FAILURE and len(io.task_queue) == 0:
+##                     io.worker_quota += 1
+##                     return # At this point it is very clear that
+##                            # this task is no longer needed.
+##         else:
+##             try:
+##                 res = func(argv)
+##                 greenlet.argv.append(res)
+##             except Unwinder as unwinder:
+##                 greenlet.unwinder = unwinder
+##             except Exception as exc:
+##                 greenlet.unwinder = unwind(LError(
+##                     u"Undefined error at async_io_thread(): " +
+##                         str(exc).decode('utf-8') + u"\n"))
+##             # I hope these are atomic operations.
+##             ec.queue.append(greenlet)
+##             io.task_count -= 1
+##             eventual.et_notify(ec.handle)
+## 
+## # Taken from pypy
+## def acquire_timed(lock, microseconds):
+##     """Helper to acquire an interruptible lock with a timeout."""
+##     endtime = (time.time() * 1e6) + microseconds
+##     while True:
+##         result = lock.acquire_timed(microseconds)
+##         if result == RPY_LOCK_INTR:
+##             # Run signal handlers if we were interrupted
+##             # TODO: lever signal handlers?
+##             #space.getexecutioncontext().checksignals()
+##             if microseconds >= 0:
+##                 microseconds = r_longlong((endtime - (time.time() * 1e6))
+##                                           + 0.999)
+##                 # Check for negative values, since those mean block
+##                 # forever
+##                 if microseconds <= 0:
+##                     result = RPY_LOCK_FAILURE
+##         if result != RPY_LOCK_INTR:
+##             break
+##     return result
+## 
+## RPY_LOCK_FAILURE, RPY_LOCK_ACQUIRED, RPY_LOCK_INTR = range(3)
+#
+## http://docs.libuv.org/en/v1.x/request.html

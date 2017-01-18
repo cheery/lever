@@ -151,15 +151,12 @@ class CConfig:
     #process_t = rffi_platform.Struct("uv_process_t",
     #                                 [("data", rffi.VOIDP),
     #                                  ("pid", rffi.INT)])
-    #connect_t = rffi_platform.Struct("uv_connect_t",
+    connect_t = rffi_platform.Struct("uv_connect_t", [])
+    udp_send_t = rffi_platform.Struct("uv_udp_send_t", [])
     #                                 [("handle",
     #                                   lltype.Ptr(lltype.ForwardReference()))])
     #stream_t = rffi_platform.Struct("uv_stream_t", [("data", rffi.VOIDP)])
     #shutdown_t = rffi_platform.Struct("uv_shutdown_t", [])
-    #write_t = rffi_platform.Struct("uv_write_t", [])
-    #tcp_t = rffi_platform.Struct("uv_tcp_t", [("data", rffi.VOIDP)])
-    #pipe_t = rffi_platform.Struct("uv_pipe_t", [("data", rffi.VOIDP)])
-    #tty_t = rffi_platform.Struct("uv_tty_t", [("data", rffi.VOIDP)])
     fs_event_t = rffi_platform.Struct("uv_fs_event_t", [
         ("data", rffi.VOIDP),
     ])
@@ -167,6 +164,12 @@ class CConfig:
         ("data", rffi.VOIDP),
     ])
 
+    shutdown_t = rffi_platform.Struct("uv_shutdown_t", [])
+    write_t = rffi_platform.Struct("uv_write_t", [])
+    tcp_t = rffi_platform.Struct("uv_tcp_t", [("data", rffi.VOIDP)])
+    udp_t = rffi_platform.Struct("uv_udp_t", [("data", rffi.VOIDP)])
+    pipe_t = rffi_platform.Struct("uv_pipe_t", [("data", rffi.VOIDP)])
+    tty_t = rffi_platform.Struct("uv_tty_t", [("data", rffi.VOIDP)])
 
     fs_t = rffi_platform.Struct("uv_fs_t", [
         ("data", rffi.VOIDP),
@@ -182,6 +185,7 @@ class CConfig:
         ("base", rffi.CCHARP),
         ("len", rffi.SIZE_T)])
 
+    sockaddr_storage = rffi_platform.Struct("struct sockaddr_storage", [])
     addrinfo = rffi_platform.Struct("struct addrinfo", [
         ("ai_flags", rffi.INT),
         ("ai_family", rffi.INT),
@@ -199,8 +203,36 @@ class CConfig:
     UV_EOF = rffi_platform.ConstantInteger("UV_EOF")
     UV_ECANCELED = rffi_platform.ConstantInteger("UV_ECANCELED")
 
+    AF_UNSPEC = rffi_platform.ConstantInteger("AF_UNSPEC")
     AF_INET = rffi_platform.ConstantInteger("AF_INET")
     AF_INET6 = rffi_platform.ConstantInteger("AF_INET6")
+    SOCK_STREAM = rffi_platform.ConstantInteger("SOCK_STREAM")
+    SOCK_DGRAM = rffi_platform.ConstantInteger("SOCK_DGRAM")
+    AI_V4MAPPED = rffi_platform.ConstantInteger("AI_V4MAPPED")
+    AI_ADDRCONFIG = rffi_platform.ConstantInteger("AI_ADDRCONFIG")
+    AI_NUMERICHOST = rffi_platform.ConstantInteger("AI_NUMERICHOST")
+    AI_PASSIVE = rffi_platform.ConstantInteger("AI_PASSIVE")
+    #TCP_IPV6ONLY = rffi_platform.ConstantInteger("TCP_IPV6ONLY")
+    AI_NUMERICHOST = rffi_platform.ConstantInteger("AI_NUMERICHOST")
+    AI_PASSIVE = rffi_platform.ConstantInteger("AI_PASSIVE")
+    INADDR_ANY = rffi_platform.ConstantInteger("INADDR_ANY")
+    #IN6ADDR_ANY_INIT = rffi_platform.ConstantInteger("IN6ADDR_ANY_INIT")
+    INADDR_LOOPBACK = rffi_platform.ConstantInteger("INADDR_LOOPBACK")
+    #IN6ADDR_LOOPBACK_INIT = rffi_platform.ConstantInteger("IN6ADDR_LOOPBACK_INIT")
+    AI_NUMERICSERV = rffi_platform.ConstantInteger("AI_NUMERICSERV")
+    AI_CANONNAME = rffi_platform.ConstantInteger("AI_CANONNAME")
+    AI_IDN = rffi_platform.ConstantInteger("AI_IDN")
+    AI_CANONIDN = rffi_platform.ConstantInteger("AI_CANONIDN")
+    AI_IDN_ALLOW_UNASSIGNED = rffi_platform.ConstantInteger("AI_IDN_ALLOW_UNASSIGNED")
+    AI_IDN_USE_STD3_ASCII_RULES = rffi_platform.ConstantInteger("AI_IDN_USE_STD3_ASCII_RULES")
+    NI_NAMEREQD = rffi_platform.ConstantInteger("NI_NAMEREQD")
+    NI_DGRAM = rffi_platform.ConstantInteger("NI_DGRAM")
+    NI_NOFQDN = rffi_platform.ConstantInteger("NI_NOFQDN")
+    NI_NUMERICHOST = rffi_platform.ConstantInteger("NI_NUMERICHOST")
+    NI_NUMERICSERV = rffi_platform.ConstantInteger("NI_NUMERICSERV")
+    NI_IDN = rffi_platform.ConstantInteger("NI_IDN")
+    NI_IDN_ALLOW_UNASSIGNED = rffi_platform.ConstantInteger("NI_IDN_ALLOW_UNASSIGNED")
+    NI_IDN_USE_STD3_ASCII_RULES = rffi_platform.ConstantInteger("NI_IDN_USE_STD3_ASCII_RULES")
 
     INET6_ADDRSTRLEN = rffi_platform.ConstantInteger("INET6_ADDRSTRLEN")
 
@@ -227,6 +259,42 @@ ECANCELED = cConfig['UV_ECANCELED']
 AF_INET = cConfig['AF_INET']
 AF_INET6 = cConfig['AF_INET6']
 
+net_constants = {
+    u"AF_UNSPEC": cConfig['AF_UNSPEC'],
+    u"AF_INET": cConfig['AF_INET'],
+    u"AF_INET6": cConfig['AF_INET6'],
+#    u"TCP_IPV6ONLY": cConfig['TCP_IPV6ONLY'],
+    u"SOCK_STREAM": cConfig['SOCK_STREAM'],
+    u"SOCK_DGRAM": cConfig['SOCK_DGRAM'],
+    u"AI_V4MAPPED": cConfig['AI_V4MAPPED'],
+    u"AI_ADDRCONFIG": cConfig['AI_ADDRCONFIG'],
+    u"AI_NUMERICHOST": cConfig["AI_NUMERICHOST"],
+    u"AI_PASSIVE": cConfig["AI_PASSIVE"],
+    u"INADDR_ANY": cConfig["INADDR_ANY"],
+#    u"IN6ADDR_ANY_INIT": cConfig["IN6ADDR_ANY_INIT"],
+    u"INADDR_LOOPBACK": cConfig["INADDR_LOOPBACK"],
+#    u"IN6ADDR_LOOPBACK_INIT": cConfig["IN6ADDR_LOOPBACK_INIT"],
+    u"AI_NUMERICSERV": cConfig["AI_NUMERICSERV"],
+    u"AI_CANONNAME": cConfig["AI_CANONNAME"],
+    u"AI_IDN": cConfig["AI_IDN"],
+    u"AI_CANONIDN": cConfig["AI_CANONIDN"],
+    u"AI_IDN_ALLOW_UNASSIGNED": cConfig["AI_IDN_ALLOW_UNASSIGNED"],
+    u"AI_IDN_USE_STD3_ASCII_RULES": cConfig["AI_IDN_USE_STD3_ASCII_RULES"],
+    u"NI_NAMEREQD": cConfig["NI_NAMEREQD"],
+    u"NI_DGRAM": cConfig["NI_DGRAM"],
+    u"NI_NOFQDN": cConfig["NI_NOFQDN"],
+    u"NI_NUMERICHOST": cConfig["NI_NUMERICHOST"],
+    u"NI_NUMERICSERV": cConfig["NI_NUMERICSERV"],
+    u"NI_IDN": cConfig["NI_IDN"],
+    u"NI_IDN_ALLOW_UNASSIGNED": cConfig["NI_IDN_ALLOW_UNASSIGNED"],
+    u"NI_IDN_USE_STD3_ASCII_RULES": cConfig["NI_IDN_USE_STD3_ASCII_RULES"],
+    u"UDP_IPV6ONLY": 1,
+    u"UDP_PARTIAL": 2,
+    u"UDP_REUSEADDR": 4,
+    u"UDP_LEAVE_GROUP": 0,
+    u"UDP_JOIN_GROUP": 1,
+}
+
 INET6_ADDRSTRLEN = cConfig['INET6_ADDRSTRLEN']
 
 file_flags = {
@@ -251,10 +319,10 @@ dirent_ptr = lltype.Ptr(cConfig["dirent_t"])
 loop_ptr = rffi.COpaquePtr("uv_loop_t")
 handle_ptr = rffi.COpaquePtr("uv_handle_t")
 stream_ptr = rffi.COpaquePtr("uv_stream_t")
-tcp_ptr = rffi.COpaquePtr("uv_tcp_t")
-udp_ptr = rffi.COpaquePtr("uv_udp_t")
-pipe_ptr = rffi.COpaquePtr("uv_pipe_t")
-tty_ptr = rffi.COpaquePtr("uv_tty_t")
+tcp_ptr = lltype.Ptr(cConfig["tcp_t"])
+udp_ptr = lltype.Ptr(cConfig["udp_t"])
+pipe_ptr = lltype.Ptr(cConfig["pipe_t"])
+tty_ptr = lltype.Ptr(cConfig["tty_t"])
 poll_ptr = rffi.COpaquePtr("uv_poll_t")
 timer_ptr = rffi.COpaquePtr("uv_timer_t")
 prepare_ptr = rffi.COpaquePtr("uv_prepare_t")
@@ -274,10 +342,10 @@ req_ptr = rffi.COpaquePtr("uv_req_t")
 getaddrinfo_ptr = lltype.Ptr(cConfig["uv_getaddrinfo_t"])
 getnameinfo_ptr = lltype.Ptr(cConfig["uv_getnameinfo_t"])
 
-shutdown_ptr = rffi.COpaquePtr("uv_shutdown_t")
-write_ptr = rffi.COpaquePtr("uv_write_t")
-connect_ptr = rffi.COpaquePtr("uv_connect_t")
-udp_send_ptr = rffi.COpaquePtr("uv_udp_send_t")
+shutdown_ptr = lltype.Ptr(cConfig["shutdown_t"])
+write_ptr = lltype.Ptr(cConfig["write_t"])
+connect_ptr = lltype.Ptr(cConfig["connect_t"])
+udp_send_ptr = lltype.Ptr(cConfig["udp_send_t"])
 fs_ptr = lltype.Ptr(cConfig["fs_t"])
 work_ptr = rffi.COpaquePtr("uv_work_t")
 
@@ -373,6 +441,7 @@ fs_cb          = rffi.CCallback([fs_ptr],                                 lltype
 work_cb        = rffi.CCallback([work_ptr],                               lltype.Void)
 after_work_cb  = rffi.CCallback([work_ptr,       rffi.INT],               lltype.Void)
 
+sockaddr_storage = cConfig["sockaddr_storage"]
 addrinfo_ptr = lltype.Ptr(cConfig["addrinfo"])
 
 getaddrinfo_cb = rffi.CCallback([getaddrinfo_ptr, rffi.INT, addrinfo_ptr], lltype.Void)

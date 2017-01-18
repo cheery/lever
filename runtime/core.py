@@ -30,6 +30,8 @@ class ExecutionContext(object):
         self.uv__read = {}
         self.uv__write = {}
         self.uv__connect = {}
+        self.uv__udp_recv = {}
+        self.uv__udp_send = {}
         self.uv__shutdown = {}
         self.uv__connection = {}
         self.uv__close = {}
@@ -92,12 +94,14 @@ def schedule(argv):
 
 def to_greenlet(argv):
     ec = get_ec()
-    if len(argv) > 0 and isinstance(argv[0], Greenlet):
+    if len(argv) > 0:
         c = argv.pop(0)
-        assert isinstance(c, Greenlet)
-        c.argv += argv
+        if isinstance(c, Greenlet):
+            c.argv += argv
+        else:
+            c = Greenlet(ec.eventloop, [c] + argv)
     else:
-        c = Greenlet(ec.eventloop, argv)#, ec.debug_hook)
+        c = Greenlet(ec.eventloop, argv)
     if c.is_exhausted():
         raise space.OldError(u"attempting to put exhausted greenlet into queue")
     return c
