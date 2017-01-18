@@ -1,0 +1,43 @@
+import net
+
+main = :
+    url = path("http://leverlanguage.com")
+
+    sock = net.TCP()
+    for entry in net.getaddrinfo(url.prefix.domain, url.prefix.protocol)
+        print("flags    ", entry.flags)
+        print("family   ", entry.family)
+        print("socktype ", entry.socktype)
+        print("protocol ", entry.protocol)
+        if entry.socktype != net.SOCK_STREAM
+            continue
+        if entry.family == 2
+            print("         ", net.ip4_name(entry.addr))
+        elif entry.family == 10
+            print("         ", net.ip6_name(entry.addr))
+        print("canonname", entry.canonname)
+        sock.connect(entry.addr)
+        break
+
+    dec = Utf8Decoder()
+
+    sb = StringBuilder()
+    sb.append("GET / HTTP/1.1\r\n")
+    sb.append("Host: leverlanguage.com\r\n")
+    sb.append("Accept-Charset: UTF-8\r\n")
+    sb.append("Cache-Control: no-cache\r\n")
+    sb.append("Accept-language: en,en-us\r\n")
+    sb.append("\r\n")
+
+    header = encode_utf8(sb.build())
+    sock.write(header)
+    sock.shutdown()
+    while true
+        try
+            data = dec(sock.read())
+        except UVError as error     # TODO: make the UV errors more granular.
+            if error.name == "EOF"
+                return
+            raise error
+        stdout.write(encode_utf8(data))
+    sock.close()
