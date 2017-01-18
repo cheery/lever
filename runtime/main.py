@@ -3,7 +3,7 @@ from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 import vectormath
 from util import STDIN, STDOUT, STDERR, read_file, write
 from evaluator.loader import TraceEntry
-import async_io
+import uv_stream
 import base
 import space
 import time
@@ -44,9 +44,9 @@ def new_entry_point(config, default_lever_path=u''):
         uv.idle_init(uv_loop, uv_idler)
 
         try:
-            uv_stdin  = async_io.initialize_tty(uv_loop, 0, 1)
-            uv_stdout = async_io.initialize_tty(uv_loop, 1, 0)
-            uv_stderr = async_io.initialize_tty(uv_loop, 2, 0)
+            uv_stdin  = uv_stream.initialize_tty(uv_loop, 0, 1)
+            uv_stdout = uv_stream.initialize_tty(uv_loop, 1, 0)
+            uv_stderr = uv_stream.initialize_tty(uv_loop, 2, 0)
         except space.Unwinder as unwinder:
             base.print_traceback(unwinder.exception)
             return 1

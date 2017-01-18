@@ -1,5 +1,5 @@
-from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from rpython.rlib.objectmodel import specialize
+from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from space import *
 import core
 import rlibuv as uv

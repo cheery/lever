@@ -5,11 +5,22 @@ import space
 
 class Cell:
     _attrs_ = []
+    def getval(self):
+        assert False, "abstract"
+
+    def setval(self, value):
+        assert False, "abstract"
 
 class MutableCell(Cell):
     _attrs_ = ['slot']
     def __init__(self, slot):
         self.slot = slot
+
+    def getval(self):
+        return self.slot
+
+    def setval(self, value):
+        self.slot = value
 
 class FrozenCell(Cell):
     _attrs_ = ['slot']
@@ -17,11 +28,28 @@ class FrozenCell(Cell):
     def __init__(self, slot):
         self.slot = slot
 
+    def getval(self):
+        return self.slot
+
+    def setval(self, value):
+        assert False, "frozen"
+
 class ShadowCell(Cell):
     _attrs_ = ['slot', 'link']
-    def __init__(self, slot, link):
+    _immutable_fields_ = ['link?']  # Accessing a parent value and
+    def __init__(self, slot, link): # then overwriting it is a rare operation.
         self.slot = slot
         self.link = link
+
+    def getval(self):
+        if self.link is None:
+            return self.slot
+        else:
+            return self.link.getval()
+
+    def setval(self, value):
+        self.slot = value
+        self.link = None
 
 class Module(Object):
     _immutable_fields_ = ['extends', 'cells']
@@ -35,8 +63,8 @@ class Module(Object):
             self.setattr_force(name, namespace[name])
 
     @jit.elidable
-    def lookup(self, name):
-        if self.extends is None:
+    def lookup(self, name, to_set=False):
+        if self.extends is None or to_set:
             return self.cells[name]
         try:
             return self.cells[name]
@@ -61,42 +89,35 @@ class Module(Object):
             listing.append(space.String(name))
         return listing
 
+    @jit.look_inside
     def getattr(self, name):
         try:
             cell = jit.promote(self.lookup(name))
-            while isinstance(cell, ShadowCell):
-                if cell.link is None:
-                    return cell.slot
-                cell = cell.link
-            if isinstance(cell, FrozenCell):
-                return cell.slot
-            elif isinstance(cell, MutableCell):
-                return cell.slot
-            else:
-                assert False
+            return cell.getval()
         except KeyError:
             return Object.getattr(self, name)
 
+    @jit.look_inside
     def setattr(self, name, value):
         if self.frozen:
             raise space.unwind(space.LFrozenError(self))
-        return self.setattr_force(name, value)
+        try:
+            cell = jit.promote(self.lookup(name, True))
+            cell.setval(value)
+        except KeyError:
+            self.cells[name] = MutableCell(value)
+        return value
 
     def setattr_force(self, name, value):
         try:
-            cell = jit.promote(self.lookup(name))
+            cell = jit.promote(self.lookup(name, True))
             if isinstance(cell, FrozenCell):
                 if name == u'doc' and cell.slot == null: # this is implicit set, so we allow it.
-                    self.cells[name] = FrozenCell(value)
+                    self.cells[name] = FrozenCell(value) # violates the elidable -rule.
                 else:
                     raise space.unwind(space.LFrozenError(self))
-            elif isinstance(cell, MutableCell):
-                cell.slot = value
-            elif isinstance(cell, ShadowCell):
-                cell.slot = value
-                cell.link = None
             else:
-                assert False
+                cell.setval(value)
         except KeyError:
             if self.frozen:
                 self.cells[name] = FrozenCell(value)

@@ -72,44 +72,27 @@ def as_i(obj):
     return obj.value
 
 class Closure(space.Object):
-    _immutable_fields_ = ['parent', 'function']
+    _immutable_fields_ = ['parent', 'frame', 'function']
     def __init__(self, frame, function):
         self.frame = frame
         self.function = function
         self.doc = space.null
 
     def call(self, argv):
-        varargs = self.function.flags & 1 == 1
-        argc = self.function.argc
-        topc = self.function.topc
-        L = len(argv)
-        if L < argc:
-            # The pc=0 refers to the function itself. This entry
-            # is really helpful when trying to determine the origin of a CallError.
-            head_entry = TraceEntry(rffi.r_long(0),
-                self.function.unit.sources,
-                self.function.sourcemap, self.function.unit.path)
-            unwinder = space.unwind(space.LCallError(argc, topc, varargs, L))
-            unwinder.traceback.contents.append(head_entry)
-            raise unwinder
-        # We are using this trait.
-        #if L > topc and not varargs:
-        #    raise space.Error(u"too many arguments [%d], from %d to %d arguments allowed" % (L, argc, topc))
-        frame = Frame(self.function, self.frame.module, self.frame)
-        for i in range(min(topc, L)):
-            frame.store_local(i, argv[i])
-        if varargs:
-            frame.store_local(topc, space.List(argv[min(topc, L):]))
-        regv = new_register_array(self.function.regc)
-        if self.function.flags & 2 != 0:
-            return Generator(0, self.function.block, regv, frame)
+        frame = create_frame(self.frame, self.function, argv)
+        #regv = new_register_array(self.function.regc)
+        # shoving registers into the frame provided a valuable optimization.
+        # TODO: but it also means that some work needs to be done
+        # to improve the upscope here.
+        if jit.promote(self.function.flags & 2 != 0):
+            return Generator(0, self.function.block, frame)
         else:
-            return interpret(0, self.function.block, regv, frame)
+            return interpret(0, self.function.block, frame)
 
     def getattr(self, name):
         if name == u"doc":
             return self.doc
-        elif name == u"source_location":
+        elif name == u"source_location": # TODO: name this thing better.
             unit = self.function.unit
             trace = TraceEntry(0, unit.sources, self.function.sourcemap, unit.path)
             name, col0, lno0, col1, lno1 = trace.pc_location()
@@ -138,11 +121,36 @@ class Closure(space.Object):
         listing.append(space.String(u"spec"))
         return listing
 
+@jit.unroll_safe
+def create_frame(parent, function, argv):
+    varargs = jit.promote(function.flags & 1 == 1)
+    argc = function.argc
+    topc = function.topc
+    L = len(argv)
+    if L < argc:
+        # The pc=0 refers to the function itself. This entry
+        # is really helpful when trying to determine the origin of a CallError.
+        head_entry = TraceEntry(rffi.r_long(0),
+            function.unit.sources,
+            function.sourcemap, function.unit.path)
+        unwinder = space.unwind(space.LCallError(argc, topc, varargs, L))
+        unwinder.traceback.contents.append(head_entry)
+        raise unwinder
+    # We are using this trait.
+    #if L > topc and not varargs:
+    #    raise space.Error(u"too many arguments [%d], from %d to %d arguments allowed" % (L, argc, topc))
+    frame = Frame(function, parent.module, parent, function.regc)
+    A = min(topc, L)
+    for i in range(A):
+        frame.store_local(i, argv[i])
+    if varargs:
+        frame.store_local(topc, space.List(argv[A:]))
+    return frame
+
 class Generator(space.Object):
-    def __init__(self, pc, block, regv, frame):
+    def __init__(self, pc, block, frame):
         self.pc = pc
         self.block = block
-        self.regv = regv
         self.frame = frame
 
     def iter(self):
@@ -150,12 +158,11 @@ class Generator(space.Object):
 
 @Generator.method(u"next", space.signature(Generator))
 def Generator_next(self):
-    if self.frame is None or self.regv is None:
+    if self.frame is None:
         raise StopIteration()
     try:
-        interpret(self.pc, self.block, self.regv, self.frame)
+        interpret(self.pc, self.block, self.frame)
         self.frame = None
-        self.regv = None
         self.block = None #self.block = lltype.nullptr(u16_array)
         raise StopIteration()
     except Yield as yi:
@@ -178,9 +185,9 @@ class Program(space.Object):
         module = argv[0]
         assert isinstance(module, space.Module)
         entry = self.unit.functions[0]
-        frame = Frame(entry, module, None)
-        regv = new_register_array(entry.regc)
-        return interpret(0, entry.block, regv, frame)
+        frame = Frame(entry, module, None, entry.regc)
+        #regv = new_register_array(entry.regc)
+        return interpret(0, entry.block, frame)
 
 class Unit:
     _immutable_fields_ = ['constants[*]', 'functions[*]', 'sources[*]', 'path']
@@ -206,16 +213,17 @@ class Function:
         self.excs = excs
 
 class Frame:
-    _immutable_fields_ = ['local', 'module', 'parent', 'unit', 'sourcemap', 'excs[*]']
-    _virtualizable_ = ['local[*]']
-    def __init__(self, function, module, parent):
+    _immutable_fields_ = ['local', 'module', 'parent', 'unit', 'sourcemap', 'excs[*]', 'regs']
+    _virtualizable_ = ['local[*]', 'regs[*]']
+    def __init__(self, function, module, parent, regc):
         self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
         self.unit = function.unit
-        self.local = [space.null for i in range(function.localc)]
+        self.local = [None for i in range(function.localc)]
         self.module = module
         self.parent = parent
         self.sourcemap = function.sourcemap
         self.excs = function.excs
+        self.regs = [None] * regc
 
     @always_inline
     def store_local(self, index, value):
@@ -223,13 +231,10 @@ class Frame:
     
     @always_inline
     def load_local(self, index):
-        return self.local[index]
-
-class RegisterArray:
-#    _virtualizable_ = ['regs[*]']
-    _immutable_fields_ = ['regs']
-    def __init__(self, regs):
-        self.regs = regs
+        value = self.local[index]
+        if value is None:
+            return space.null
+        return value
 
     @always_inline
     def store(self, index, value):
@@ -237,13 +242,30 @@ class RegisterArray:
     
     @always_inline
     def load(self, index):
-        return self.regs[index]
+        value = self.regs[index]
+        if value is None:
+            return space.null
+        return value
 
-def new_register_array(regc):
-    regs = []
-    for i in range(regc):
-        regs.append(space.null)
-    return RegisterArray(regs)
+# class RegisterArray:
+# #    _virtualizable_ = ['regs[*]']
+#     _immutable_fields_ = ['regs']
+#     def __init__(self, regs):
+#         self.regs = regs
+# 
+#     @always_inline
+#     def store(self, index, value):
+#         self.regs[index] = value
+#     
+#     @always_inline
+#     def load(self, index):
+#         return self.regs[index]
+# 
+# def new_register_array(regc):
+#     regs = []
+#     for i in range(regc):
+#         regs.append(space.null)
+#     return RegisterArray(regs)
 
 def get_printable_location(pc, block, module, unit, excs): # ,ec
     opcode = rffi.r_ulong(block[pc])>>8
@@ -252,11 +274,11 @@ def get_printable_location(pc, block, module, unit, excs): # ,ec
 
 jitdriver = jit.JitDriver(
     greens=['pc', 'block', 'module', 'unit', 'excs'], #, 'ec'],
-    reds=['regv', 'frame'],
+    reds=['frame'], # 'regv', 
     virtualizables = ['frame'],
     get_printable_location=get_printable_location)
 
-def interpret(pc, block, regv, frame):
+def interpret(pc, block, frame):
     module = jit.promote(frame.module)
     unit   = jit.promote(frame.unit)
     excs   = jit.promote(frame.excs)
@@ -265,7 +287,7 @@ def interpret(pc, block, regv, frame):
             try:
                 jitdriver.jit_merge_point(
                     pc=pc, block=block, module=module, unit=unit, excs=excs,
-                    regv=regv, frame=frame) #ec=ec, 
+                    frame=frame) #ec=ec, regv=regv, 
                 opcode = rffi.r_ulong(block[pc])>>8
                 ix = pc+1
                 pc = ix+(rffi.r_ulong(block[pc])&255)
@@ -276,6 +298,7 @@ def interpret(pc, block, regv, frame):
                 #    if res != space.null:
                 #        ec.debug_hook = res
                 #print optable.dec[opcode][0]
+                regv = frame # from now on..
                 if opcode == opcode_of('assert'):
                     obj = regv.load(block[ix+0])
                     raise space.unwind(space.LAssertionError(obj))
@@ -394,7 +417,7 @@ def interpret(pc, block, regv, frame):
                 for exc in excs:
                     #print exc.start, exc.stop, exc.label, exc.reg
                     if exc.start < pc <= exc.stop:
-                        regv.store(exc.reg, unwinder.exception)
+                        frame.store(exc.reg, unwinder.exception)
                         pc = exc.label
                         #print "exception handler found"
                         break
@@ -405,7 +428,7 @@ def interpret(pc, block, regv, frame):
                 unwinder = space.unwind(space.LUncatchedStopIteration())
                 for exc in excs:
                     if exc.start < pc <= exc.stop:
-                        regv.store(exc.reg, unwinder.exception)
+                        frame.store(exc.reg, unwinder.exception)
                         pc = exc.label
                         break
                 else:

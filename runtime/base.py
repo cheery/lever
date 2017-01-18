@@ -4,6 +4,7 @@ from space import *
 from evaluator.loader import from_object, SourceLocation
 from evaluator.sourcemaps import TraceEntry
 from util import STDIN, STDOUT, STDERR, read_file, write
+from async_io import Event, Queue
 import core
 import os
 import pathobj
@@ -11,6 +12,8 @@ import pathobj
 import sys
 import time
 import vectormath
+import uv_handle
+import uv_stream
 
 # The base environment
 module = Module(u'base', {
@@ -43,6 +46,12 @@ module = Module(u'base', {
     u'SourceLocationLines': SourceLocationLines.interface,
     u'SourceLocation': SourceLocation.interface,
     u'DocRef': DocRef.interface,
+    u'Event': Event.interface,
+    u'Queue': Queue.interface,
+    u'Handle': uv_handle.Handle.interface,
+    u'Stream': uv_stream.Stream.interface,
+    u'TTY': uv_stream.TTY.interface,
+    u'Pipe': uv_stream.Pipe.interface,
 }, frozen=True)
 
 @Module.instantiator
