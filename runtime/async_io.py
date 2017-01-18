@@ -57,32 +57,39 @@ class Queue(Object):
     def __init__(self):
         self.items = []
         self.greenlet = None
+        self.closed = False
+
+    def append(self, obj):
+        if self.closed: # TODO: add granular exception.
+            raise unwind(LError(u"queue is closed"))
+        if self.greenlet is not None:
+            ec = core.get_ec()
+            self.greenlet.argv.append(obj)
+            ec.enqueue(self.greenlet)
+            self.greenlet = None
+        else:
+            self.items.append(obj)
 
 @Queue.instantiator2(signature())
 def _():
     return Queue()
-#        self.closed = False
 
-#@Queue.method(u"close", signature(Queue))
-#def Queue_close(self):
-#    self.closed = True
-#    return null # TODO: implement close properly.
+@Queue.method(u"close", signature(Queue))
+def Queue_close(self):
+    self.closed = True
+    return null # TODO: implement close properly.
         
 @Queue.method(u"append", signature(Queue, Object))
 def Queue_append(self, obj):
-    if self.greenlet is not None:
-        ec = core.get_ec()
-        self.greenlet.argv.append(obj)
-        ec.enqueue(self.greenlet)
-        self.greenlet = None
-    else:
-        self.items.append(obj)
+    self.append(obj)
     return null
 
 @Queue.method(u"wait", signature(Queue))
 def Queue_wait(self):
     if len(self.items) > 0:
         return self.items.pop(0)
+    elif self.closed: # TODO: add granular exception.
+        raise unwind(LError(u"queue is closed"))
     else:
         ec = core.get_ec()
         self.greenlet = ec.current

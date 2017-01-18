@@ -4,7 +4,6 @@ from rpython.rlib.rstring import UnicodeBuilder
 from space import *
 from evaluator.loader import from_object, SourceLocation
 from evaluator.sourcemaps import TraceEntry
-from util import STDIN, STDOUT, STDERR, read_file, write
 from async_io import Event, Queue
 import core
 import os
@@ -189,26 +188,6 @@ def isinstance_(value, which_list):
             return false
         interface = interface.parent
     return false
- 
-#def pyl_callattr(argv):
-#    assert len(argv) >= 2
-#    name = argv[1]
-#    assert isinstance(name, String)
-#    return argv[0].callattr(name.string, argv[2:len(argv)])
-
-@builtin
-def print_(argv):
-    space = u''
-    out = u""
-    for arg in argv:
-        if isinstance(arg, String):
-            string = arg.string
-        else:
-            string = arg.repr()
-        out += space + string
-        space = u' '
-    data = encode_utf8([String(out + u'\n')])
-    return module.getattr(u"stdout").callattr(u"write", [data])
   
 # And and or are macros in the compiler. These are
 # convenience functions, likely not often used.
@@ -296,33 +275,6 @@ def Range_next(self):
         return Integer(i)
     raise StopIteration()
 
-@builtin
-@signature(Object)
-def format_traceback(exception):
-    return String(format_traceback_raw(exception))
-
-def format_traceback_raw(exception):
-    traceback = exception.getattr(u"traceback")
-    if not isinstance(traceback, space.List):
-        raise space.unwind(space.LError(u"Expected null or list as .traceback: %s" % traceback.repr()))
-    out = u""
-    if len(traceback.contents) > 0:
-        out = u"\033[31mTraceback:\033[36m\n"
-    for entry in reversed(traceback.contents):
-        if not isinstance(entry, TraceEntry):
-            continue
-        name, col0, lno0, col1, lno1 = entry.pc_location()
-        out += u"    %s: %d,%d : %d,%d\n" % (name.repr(), lno0, col0, lno1, col1)
-    out += u"\033[31m"
-    out += space.get_interface(exception).name
-    out += u":\033[0m"
-    return out + u" " + exception.repr() + u"\n"
-
-# The fallback mechanism.
-def print_traceback(exception):
-    write(STDERR, format_traceback_raw(exception))
-builtin(signature(Object)(print_traceback))
-
 # These two functions are used by the lever compiler, so changing
 # them will change the language. Take care..
 @builtin
@@ -396,7 +348,7 @@ def super_(interface):
 
 import rlibuv as uv
 @builtin
-@space.signature(space.Integer, optional=1)
+@signature(space.Integer, optional=1)
 def exit(obj):
     ec = core.get_ec()
     ec.exit_status = 0 if obj is None else int(obj.value)
@@ -405,6 +357,59 @@ def exit(obj):
     return core.switch([ec.eventloop]) # Once they are created.
 
 @builtin
-@space.signature()
+@signature()
 def getcurrent():
     return core.get_ec().current
+
+@builtin
+@signature()
+def new_log():
+    queue = Queue()
+    ec = core.get_ec()
+    if queue in ec.loggers:
+        raise unwind(LError(u"queue has been registered twice."))
+    ec.loggers.append(queue)
+    return queue
+ 
+@builtin
+def print_(argv):
+    ec = core.get_ec()
+    ec.log_other(u"info", List(argv))
+    return null
+
+@builtin
+@signature(String, Object)
+def log(type, value):
+    ec = core.get_ec()
+    ec.log_other(type.string, value)
+    return null
+
+@builtin
+@signature(Object)
+def print_traceback(exception):
+    ec = core.get_ec()
+    ec.log_exception(exception)
+    return null
+
+@builtin
+@signature(Object)
+def format_traceback(exception):
+    return String(format_traceback_raw(exception))
+
+def format_traceback_raw(exception):
+    traceback = exception.getattr(u"traceback")
+    if not isinstance(traceback, space.List):
+        raise space.unwind(space.LError(u"Expected null or list as .traceback: %s" % traceback.repr()))
+    out = u""
+    if len(traceback.contents) > 0:
+        out = u"\033[31mTraceback:\033[36m\n"
+    for entry in reversed(traceback.contents):
+        if not isinstance(entry, TraceEntry):
+            continue
+        name, col0, lno0, col1, lno1 = entry.pc_location()
+        out += u"    %s: %d,%d : %d,%d\n" % (name.repr(), lno0, col0, lno1, col1)
+    out += u"\033[31m"
+    out += space.get_interface(exception).name
+    out += u":\033[0m"
+    return out + u" " + exception.repr()
+

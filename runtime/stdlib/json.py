@@ -8,7 +8,6 @@ from space import *
 from space import numbers
 from stdlib import fs
 import space
-import util
 import pathobj
 import os
 

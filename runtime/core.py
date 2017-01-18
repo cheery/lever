@@ -8,6 +8,7 @@ from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from continuations import Continuation
 import rlibuv as uv
 import space
+import os
 
 class ExecutionContext(object):
     #_immutable_fields_ = ['debug_hook?']
@@ -51,10 +52,64 @@ class ExecutionContext(object):
         self.uv__getnameinfo = {}
         #self.debug_hook = None
 
+        # You can attach a queue to log stuff with a "register_logger(queue)"
+        self.loggers = []
+
     def enqueue(self, task):
         if len(self.queue) == 0 and not uv.is_active(rffi.cast(uv.handle_ptr, self.uv_idler)):
             uv.idle_start(self.uv_idler, run_queued_tasks)
         self.queue.append(task)
+
+    def log(self, which, obj):
+        entry = space.Exnihilo()
+        entry.setattr(u"type", space.String(which))
+        entry.setattr(u"value", obj)
+        for logger in list(self.loggers):
+            if logger.closed:
+                self.loggers.remove(logger)
+            else:
+                logger.append(entry)
+        return len(self.loggers)
+
+    def log_other(self, which, obj):
+        if self.log(which, obj) == 0:
+            fd = 2 if which != u"info" else 1
+            if which == u"info" and isinstance(obj, space.List):
+                sep = u''
+                out = u""
+                for arg in obj.contents:
+                    if isinstance(arg, space.String):
+                        string = arg.string
+                    else:
+                        string = arg.repr()
+                    out += sep + string
+                    sep = u' '
+                obj = space.String(out)
+            if isinstance(obj, space.String):
+                os.write(fd, obj.string.encode('utf-8') + "\n")
+            else:
+                os.write(fd, obj.repr().encode('utf-8') + "\n")
+
+    def log_exception(self, exception):
+        if self.log(u"exception", exception) == 0:
+            import base
+            os.write(2, base.format_traceback_raw(exception).encode('utf-8') + "\n")
+
+    def last_chance_logging(self):
+        loggers, self.loggers = self.loggers, []
+        # last chance logging
+        # at this point it is best-effort.
+        try:
+            if len(loggers) > 0:
+                for item in loggers[0].items:
+                    which = item.getattr(u"type")
+                    value = item.getattr(u"value")
+                    which = space.cast(which, space.String, u"last_chance_logging")
+                    if which.string != u"exception":
+                        continue
+                    self.log_exception(value)
+        except space.Unwinder as unwinder:
+            self.log_exception(unwinder.exception)
 
 def run_queued_tasks(handle):
     ec = get_ec()
@@ -73,18 +128,13 @@ def get_ec():
     return g.ec
 
 def root_switch(ec, argv):
-    import base
     try:
         switch(argv)
     except space.Unwinder as unwinder:
-        #exception = unwinder.exception
-        #if isinstance(exception, space.LSystemExit):
-        #    return int(exception.status)
-        base.print_traceback(unwinder.exception)
+        ec.log_exception(unwinder.exception)
 
 def root_unwind(ec, unwinder):
-    import base
-    base.print_traceback(unwinder.exception)
+    ec.log_exception(unwinder.exception)
 
 def schedule(argv):
     ec = get_ec()

@@ -1,7 +1,6 @@
 from rpython.rlib import jit
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 import vectormath
-from util import STDIN, STDOUT, STDERR, read_file, write
 from evaluator.loader import TraceEntry
 import uv_stream
 import base
@@ -38,23 +37,27 @@ def new_entry_point(config, default_lever_path=u''):
         lever_path = pathobj.concat(pathobj.getcwd(), lever_path)
         
         # This should happen only once.
-
         uv_loop = uv.default_loop()
         uv_idler = uv.malloc_bytes(uv.idle_ptr, uv.handle_size(uv.IDLE))
         uv.idle_init(uv_loop, uv_idler)
 
+        # We don't have anything setup at this point.
+        # Lets indicate error by absence.
         try:
             uv_stdin  = uv_stream.initialize_tty(uv_loop, 0, 1)
-            uv_stdout = uv_stream.initialize_tty(uv_loop, 1, 0)
-            uv_stderr = uv_stream.initialize_tty(uv_loop, 2, 0)
+            base.module.setattr_force(u"stdin",  uv_stdin)
         except space.Unwinder as unwinder:
-            base.print_traceback(unwinder.exception)
-            return 1
-            
-        #TODO: consider whether these should plug to base.
-        base.module.setattr_force(u"stdin",  uv_stdin)
-        base.module.setattr_force(u"stdout", uv_stdout)
-        base.module.setattr_force(u"stderr", uv_stderr)
+            pass
+        try:
+            uv_stdout = uv_stream.initialize_tty(uv_loop, 1, 0)
+            base.module.setattr_force(u"stdout", uv_stdout)
+        except space.Unwinder as unwinder:
+            pass
+        try:
+            uv_stderr = uv_stream.initialize_tty(uv_loop, 2, 0)
+            base.module.setattr_force(u"stderr", uv_stderr)
+        except space.Unwinder as unwinder:
+            pass
         base.module.setattr_force(u"runtime_path", lever_path)
 
         core.g.ec = ec = core.ExecutionContext(config, lever_path, uv_loop, uv_idler)
@@ -71,6 +74,7 @@ def new_entry_point(config, default_lever_path=u''):
         #uv.loop_close(ec.uv_loop)
 
         uv.tty_reset_mode()
+        ec.last_chance_logging()
         return ec.exit_status
     return entry_point
 
