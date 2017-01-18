@@ -34,7 +34,7 @@ def dump(fd, data):
     elif tp is Dict.interface:
         fd.write(chr(4))
         wdict(fd, data)
-    elif tp is Uint8Array.interface:
+    elif tp is Uint8Array.interface or tp is Uint8Slice.interface: # TODO: consider this again.
         fd.write(chr(5))
         wbytes(fd, data)
     elif tp is Boolean.interface:

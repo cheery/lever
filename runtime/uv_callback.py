@@ -182,9 +182,9 @@ def obj2bufs(data):
     arrays = []
     if isinstance(data, List):
         for obj in data.contents:
-            arrays.append(cast(obj, Uint8Array, u"obj2bufs"))
+            arrays.append(cast(obj, Uint8Data, u"obj2bufs"))
     else:
-        arrays.append(cast(data, Uint8Array, u"obj2bufs"))
+        arrays.append(cast(data, Uint8Data, u"obj2bufs"))
     nbufs = len(arrays)
     bufs = lltype.malloc(rffi.CArray(uv.buf_t), nbufs, flavor='raw', zero=True)
     i = 0

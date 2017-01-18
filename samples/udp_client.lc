@@ -1,0 +1,24 @@
+import net
+
+main = :
+    addr = net.ip4_addr("127.0.0.1", 8000)
+    data = encode_utf8("hello foobar")
+    udp = net.UDP()
+
+    schedule(reader, udp)
+    schedule(writer, udp, data, addr)
+
+reader = (udp):
+    msg = udp.recv()
+    print(Utf8Decoder()(msg.data))
+    print("she got it, quitting")
+    udp.close()
+    exit(0)
+
+writer = (udp, data, addr):
+    udp.send(data, addr)
+    sleep(2.0)
+    print("aww, she didn't get it")
+    udp.close()
+    # TODO: a bit more granularity into errors is desired here,
+    #       so that we could do more.

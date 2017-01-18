@@ -35,11 +35,13 @@ def TCP_init():
 
 @TCP.method(u"nodelay", signature(TCP, Boolean))
 def TCP_nodelay(self, enable):
+    self.check_closed()
     check( uv.tcp_nodelay(self.tcp, 1 if is_true(enable) else 0) )
     return null
 
 @TCP.method(u"keepalive", signature(TCP, Boolean, Integer, optional=1))
 def TCP_nodelay(self, enable, delay):
+    self.check_closed()
     check( uv.tcp_keepalive(self.tcp,
         1 if is_true(enable) else 0,
         0 if delay is None else delay.value) )
@@ -47,11 +49,13 @@ def TCP_nodelay(self, enable, delay):
 
 @TCP.method(u"simultaneous_accepts", signature(TCP, Boolean))
 def TCP_nodelay(self, enable):
+    self.check_closed()
     check( uv.tcp_simultaneous_accepts(self.tcp, 1 if is_true(enable) else 0) )
     return null
 
 @TCP.method(u"bind", signature(TCP, Uint8Data, Integer, optional=1))
 def TCP_bind(self, addr, flags):
+    self.check_closed()
     flags = 0 if flags is None else flags.value
     sockaddr = as_sockaddr(addr)
     check( uv.tcp_bind(self.tcp, sockaddr, flags) )
@@ -59,6 +63,7 @@ def TCP_bind(self, addr, flags):
 
 @TCP.method(u"getsockname", signature(TCP))
 def TCP_getsockname(self):
+    self.check_closed()
     array = alloc_uint8array(rffi.sizeof(uv.sockaddr_storage))
     namelen = lltype.malloc(rffi.INTP.TO, 1, flavor="raw", zero=True)
     try:
@@ -71,6 +76,7 @@ def TCP_getsockname(self):
 
 @TCP.method(u"getpeername", signature(TCP))
 def TCP_getpeername(self):
+    self.check_closed()
     array = alloc_uint8array(rffi.sizeof(uv.sockaddr_storage))
     namelen = lltype.malloc(rffi.INTP.TO, 1, flavor="raw", zero=True)
     try:
@@ -83,6 +89,7 @@ def TCP_getpeername(self):
 
 @TCP.method(u"connect", signature(Stream, Uint8Data))
 def TCP_connect(self, addr):
+    self.check_closed()
     req = lltype.malloc(uv.connect_ptr.TO, flavor='raw', zero=True)
     sockaddr = as_sockaddr(addr)
     try:
@@ -115,6 +122,7 @@ def UDP_init():
 
 @UDP.method(u"bind", signature(UDP, Uint8Data, Integer, optional=1))
 def UDP_bind(self, addr, flags):
+    self.check_closed()
     flags = 0 if flags is None else flags.value
     sockaddr = as_sockaddr(addr)
     check( uv.udp_bind(self.udp, sockaddr, flags) )
@@ -123,6 +131,7 @@ def UDP_bind(self, addr, flags):
 
 @UDP.method(u"getsockname", signature(UDP))
 def UDP_getsockname(self):
+    self.check_closed()
     array = alloc_uint8array(rffi.sizeof(uv.sockaddr_storage))
     namelen = lltype.malloc(rffi.INTP.TO, 1, flavor="raw", zero=True)
     try:
@@ -139,11 +148,13 @@ def UDP_getsockname(self):
 
 @UDP.method(u"set_multicast_loop", signature(UDP, Boolean))
 def UDP_set_multicast_loop(self, enable):
+    self.check_closed()
     check( uv.udp_set_multicast_loop(self.udp, 1 if is_true(enable) else 0) )
     return null
 
 @UDP.method(u"set_multicast_ttl", signature(UDP, Integer))
 def UDP_set_multicast_ttl(self, ttl):
+    self.check_closed()
     check( uv.udp_set_multicast_ttl(self.udp, ttl.value) )
     return null
 
@@ -152,16 +163,19 @@ def UDP_set_multicast_ttl(self, ttl):
 
 @UDP.method(u"set_broadcast", signature(UDP, Boolean))
 def UDP_set_broadcast(self, on):
+    self.check_closed()
     check( uv.udp_set_broadcast(self.udp, 1 if is_true(on) else 0) )
     return null
 
 @UDP.method(u"set_ttl", signature(UDP, Integer))
 def UDP_set_ttl(self, ttl):
+    self.check_closed()
     check( uv.udp_set_ttl(self.udp, ttl.value) )
     return null
 
 @UDP.method(u"send", signature(UDP, Object, Uint8Data))
 def UDP_send(self, data, addr):
+    self.check_closed()
     bufs, nbufs = uv_callback.obj2bufs(data)
     req = lltype.malloc(uv.udp_send_ptr.TO, flavor='raw', zero=True)
     sockaddr = as_sockaddr(addr)
@@ -176,6 +190,7 @@ def UDP_send(self, data, addr):
 
 @UDP.method(u"try_send", signature(UDP, Object, Uint8Data))
 def UDP_try_send(self, data, addr):
+    self.check_closed()
     bufs, nbufs = uv_callback.obj2bufs(data)
     req = lltype.malloc(uv.udp_send_ptr.TO, flavor='raw', zero=True)
     sockaddr = as_sockaddr(addr)
@@ -189,6 +204,7 @@ def UDP_try_send(self, data, addr):
 
 @UDP.method(u"recv", signature(UDP))
 def UDP_recv(self):
+    self.check_closed()
     ec = core.get_ec()
     if len(self.read_queue) == 0:
         uv_callback.push(ec.uv__udp_recv, self)
@@ -323,14 +339,14 @@ def getnameinfo(addr, flags):
 @builtin
 @signature(String, Integer)
 def ip4_addr(address, port):
-    res = alloc_uint8array(rffi.sizeof(uv.sockaddr_ptr.TO))
+    res = alloc_uint8array(rffi.sizeof(uv.sockaddr_storage))
     check( uv.ip4_addr( address.string.encode('utf-8'), port.value, res.uint8data) )
     return res
 
 @builtin
 @signature(String, Integer)
 def ip6_addr(address, port):
-    res = alloc_uint8array(rffi.sizeof(uv.sockaddr_ptr.TO))
+    res = alloc_uint8array(rffi.sizeof(uv.sockaddr_storage))
     check( uv.ip6_addr( address.string.encode('utf-8'), port.value, res.uint8data) )
     return res
 
@@ -359,7 +375,7 @@ def ip6_name(addr):
         lltype.free(res, flavor='raw')
 
 @builtin
-@signature(Integer, Uint8Array)
+@signature(Integer, Uint8Data)
 def inet_ntop(af, src):
     af = af.value
     if af == uv.AF_INET:

@@ -10,18 +10,27 @@ class Handle(Object):
         self.closed = False
 
     def getattr(self, name):
+        if self.closed:
+            raise unwind(LError(u"Handle is closed"))
         if name == u"active":
+            if self.closed:
+                return false
             return boolean(uv.is_active(self.handle))
         if name == u"closing":
+            if self.closed:
+                return true
             return boolean(uv.is_closing(self.handle))
         if name == u"closed":
             return boolean(self.closed)
         if name == u"ref":
+            if self.closed:
+                return false
             return boolean(uv.has_ref(self.handle))
         return Object.getattr(self, name)
 
     def setattr(self, name, value):
         if name == u"ref":
+            self.check_closed()
             if is_true(value):
                 uv.ref(self.handle)
             else:
@@ -29,14 +38,17 @@ class Handle(Object):
             return value
         return Object.setattr(self, name, value)
 
+    def check_closed(self):
+        if self.closed:
+            raise unwind(LError(u"Handle is closed"))
+
     # All handles are resources, so I don't think doing
     # automatic close on losing them would do any good.
     # Besides, some handles have to override the .close
 
 @Handle.method(u"close", signature(Handle))
 def Handle_close(self):
-    if self.closed:
-        raise unwind(LError(u"Handle already closed"))
+    self.check_closed()
     response = uv_callback.close(self.handle)
     uv.close(self.handle, uv_callback.close.cb)
     response.wait()
@@ -48,6 +60,7 @@ def Handle_close(self):
 
 @Handle.method(u"get_send_buffer_size", signature(Handle))
 def Handle_get_send_buffer_size(self):
+    self.check_closed()
     value = lltype.malloc(rffi.INTP.TO, 1, flavor='raw', zero=True)
     try:
         check( uv.send_buffer_size(self.handle, value) )
@@ -57,6 +70,7 @@ def Handle_get_send_buffer_size(self):
 
 @Handle.method(u"get_recv_buffer_size", signature(Handle))
 def Handle_get_recv_buffer_size(self):
+    self.check_closed()
     value = lltype.malloc(rffi.INTP.TO, 1, flavor='raw', zero=True)
     try:
         check( uv.recv_buffer_size(self.handle, value) )

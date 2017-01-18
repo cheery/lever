@@ -239,7 +239,7 @@ def encode_utf8(value):
     return to_uint8array(value.string.encode('utf-8'))
 
 @builtin
-@signature(Uint8Array)
+@signature(Uint8Data)
 def decode_utf8(value):
     s = rffi.charp2str(rffi.cast(rffi.CCHARP, value.uint8data))
     return String(s.decode('utf-8'))

@@ -10,7 +10,7 @@ def builtin(fn):
     return fn
 
 @builtin
-@signature(Uint8Array, Integer, optional=1)
+@signature(Uint8Data, Integer, optional=1)
 def crc32(array, start):
     start = rzlib.CRC32_DEFAULT_START if start is None else start.value
     string = array.to_str()
@@ -18,7 +18,7 @@ def crc32(array, start):
     return Integer(rffi.r_long(checksum))
 
 @builtin
-@signature(Uint8Array, Integer, optional=1)
+@signature(Uint8Data, Integer, optional=1)
 def adler32(array, start):
     start = rzlib.ADLER32_DEFAULT_START if start is None else start.value
     string = array.to_str()
@@ -48,7 +48,7 @@ def Compress_init():
     except rzlib.RZlibError as e:
         raise zlib_error(e.msg)
 
-@Compress.method(u"compress", signature(Compress, Uint8Array))
+@Compress.method(u"compress", signature(Compress, Uint8Data))
 def Compress_compress(self, array):
     data = array.to_str()
     try:
@@ -91,7 +91,7 @@ def Decompress_init(wbits):
     except rzlib.RZlibError as e:
         raise zlib_error(e.msg)
 
-@Decompress.method(u"decompress", signature(Decompress, Uint8Array))
+@Decompress.method(u"decompress", signature(Decompress, Uint8Data))
 def Decompress_decompress(self, array):
     data = array.to_str()
     try:

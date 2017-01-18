@@ -35,6 +35,7 @@ class Stream(Handle):
 
 @Stream.method(u"shutdown", signature(Stream))
 def Stream_shutdown(self):
+    self.check_closed()
     req = lltype.malloc(uv.shutdown_ptr.TO, flavor='raw', zero=True)
     try:
         response = uv_callback.shutdown(req)
@@ -45,6 +46,7 @@ def Stream_shutdown(self):
 
 @Stream.method(u"listen", signature(Stream, Integer))
 def Stream_listen(self, backlog):
+    self.check_closed()
     ec = core.get_ec()
     uv_callback.push(ec.uv__connection, self)
     status = uv.listen(self.stream, backlog.value, _listen_callback_)
@@ -70,6 +72,7 @@ def _listen_callback_(handle, status):
 
 @Stream.method(u"accept", signature(Stream))
 def Stream_accept(self):
+    self.check_closed()
     if self.listen_count > 0:
         if self.accept_greenlet is not None:
             raise unwind(LError(u"async collision"))
@@ -84,6 +87,7 @@ def Stream_accept(self):
 
 @Stream.method(u"write", signature(Stream, Object))
 def Stream_write(self, data):
+    self.check_closed()
     bufs, nbufs = uv_callback.obj2bufs(data)
     req = lltype.malloc(uv.write_ptr.TO, flavor='raw', zero=True)
     try:
@@ -97,6 +101,7 @@ def Stream_write(self, data):
 
 @Stream.method(u"write2", signature(Stream, Object, Stream))
 def Stream_write2(self, data, send_handle):
+    self.check_closed()
     bufs, nbufs = uv_callback.obj2bufs(data)
     req = lltype.malloc(uv.write_ptr.TO, flavor='raw', zero=True)
     try:
@@ -110,6 +115,7 @@ def Stream_write2(self, data, send_handle):
 
 @Stream.method(u"try_write", signature(Stream, Object))
 def Stream_try_write(self, data):
+    self.check_closed()
     bufs, nbufs = uv_callback.obj2bufs(data)
     try:
         status = uv.try_write(self.stream, bufs, nbufs)
@@ -120,6 +126,7 @@ def Stream_try_write(self, data):
 
 @Stream.method(u"read", signature(Stream))
 def Stream_read(self):
+    self.check_closed()
     ec = core.get_ec()
     if len(self.read_queue) == 0:
         uv_callback.push(ec.uv__read, self)
@@ -199,6 +206,7 @@ class TTY(Stream):
 
 @TTY.method(u"set_mode", signature(TTY, String))
 def TTY_set_mode(self, modename_obj):
+    self.check_closed()
     modename = string_upper(modename_obj.string)
     if modename == u"NORMAL":
         mode = uv.TTY_MODE_NORMAL
@@ -213,6 +221,7 @@ def TTY_set_mode(self, modename_obj):
 
 @TTY.method(u"get_winsize", signature(TTY))
 def TTY_get_winsize(self):
+    self.check_closed()
     width  = lltype.malloc(rffi.INTP.TO, 1, flavor='raw', zero=True)
     height = lltype.malloc(rffi.INTP.TO, 1, flavor='raw', zero=True)
     try:
@@ -242,12 +251,14 @@ def Pipe_init(ipc):
 
 @Pipe.method(u"bind", signature(Pipe, String))
 def Pipe_bind(self, name):
+    self.check_closed()
     string = name.string.encode('utf-8')
     check( uv.pipe_bind(self.pipe, string) )
     return null
 
 @Pipe.method(u"connect", signature(Pipe, String))
 def Pipe_connect(self, name):
+    self.check_closed()
     string = name.string.encode('utf-8')
     req = lltype.malloc(uv.connect_ptr.TO, flavor='raw', zero=True)
     try:
@@ -260,11 +271,13 @@ def Pipe_connect(self, name):
 
 @Pipe.method(u"pending_instances", signature(Pipe, Integer))
 def Pipe_pending_instances(self, count):
+    self.check_closed()
     uv.pipe_pending_instances(self.pipe, count.value)
     return null
 
 @Pipe.method(u"pending_count", signature(Pipe))
 def Pipe_pending_count(self):
+    self.check_closed()
     result = uv.pipe_pending_count(self.pipe)
     check(result)
     return Integer(rffi.r_long(result))
