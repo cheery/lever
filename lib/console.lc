@@ -178,6 +178,8 @@ input_loop = (console):
                 if console.focus.process(ch)
                     console.log("refresh", null)
                 elif console.focus and ch == "\x1b[5~"
+                    # If you aren't using pgup, pgdown, lets use it for
+                    # switching focus.
                     index = console.visuals.index(console.focus) - 1
                     for visual in console.visuals[index:.]
                         if can_obtain_focus(visual)
