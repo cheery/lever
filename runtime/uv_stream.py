@@ -228,7 +228,10 @@ def TTY_get_winsize(self):
         check( uv.tty_get_winsize(self.tty, width, height) )
         w = rffi.r_long(width[0])
         h = rffi.r_long(height[0])
-        return List([Integer(w), Integer(h)])
+        obj = Exnihilo()
+        obj.setattr(u"width", Integer(w))
+        obj.setattr(u"height", Integer(h))
+        return obj
     finally:
         lltype.free(width, flavor='raw')
         lltype.free(height, flavor='raw')

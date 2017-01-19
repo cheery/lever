@@ -1,384 +1,242 @@
+from console import get_system_console
 import compiler
 import base
 
 main = :
-    term_startup()
-
-    console = :module("console", base)
+    console = get_system_console()
+    this = :module("console", base)
         dir = getcwd()
         name = "console"
         %"import" = Import(dir,
             ModuleScope(dir, %"import".scope.parent))
-        print = print
-        input = input
+        console = console
+    print("LEVER 0.x.x")
 
-    attempt_completion := (results, prefix):
-        scope = null
-        start = 0
-        try
-            word = ""
-            i = 0
-            for ch in prefix
-                if ch == "."
-                    if scope
-                        scope = getattr(scope, word)
-                    else
-                        scope = getattr(console, word)
-                    word = ""
-                    start = i+1
-                else
-                    word ++= ch
-                i += 1
-            prefix = word
-        except AttributeError as e
-            return 0
-        if scope
-            completion_scan(results, prefix, scope)
-        else
-            completion_scan(results, prefix, console)
-            completion_scan(results, prefix, base)
-        results.sort()
-        return start
-
-    completion_scan = (results, prefix, obj):
-        for name in listattr(obj)
-            if name == prefix
-                term_completion_apropos := apropos(name, getattr(obj, name))
-                continue
-            if name.length > 0 and not name[0].is_alpha()
-                continue
-            if name.startswith(prefix)
-                results.append(name)
-
-    print("LEVER 0.8.0")
     buffer = []
     while true
         prompt = ">> "
         if buffer.length > 0
             prompt = "   "
-        string = input(prompt)
+        string = console.input(prompt)
         buffer.append(string)
+
         try
             source = "\n".join(buffer)
-            add_history(source)
+#             add_history(source)
             print("\033[32;2m"++source++"\033[0m")
-
+ 
             code = compiler.read_string(source, "console")
-            print("\033[33;1m"++repr(load(code)(console))++"\033[0m")
+            print("\033[33;1m"++repr(load(code)(this))++"\033[0m")
         except compiler.SyntaxError as syn
             if syn.at_eof
                 continue
             print("\033[35;1m"++repr(syn)++"\033[0m")
-        except SystemExit as exit
-            raise exit
         except Exception as exc
             print_traceback(exc)
         buffer = []
 
-apropos = (name, obj):
-    try
-        if isinstance(obj, interface)
-            result = "class " ++ name ++ format_spec(
-                getattr(obj, "+init").spec)
-        else
-            result = name ++ format_spec(obj.spec)
-    except AttributeError as attr
-
-        if isinstance(obj, multimethod)
-            result = name ++ " " ++ repr(obj) ++ format_multimethod(obj)
-        else
-            result = name ++ " = " ++ repr(obj)
-    return result
-
-format_multimethod = (mm):
-    res = StringBuilder()
-    for argtypes in mm.keys()
-        res.append("\n    " ++ repr(argtypes) ++ format_spec(mm[argtypes].spec, []))
-    return res.build()
-
-format_spec = (spec, argtypes=null):
-    res = StringBuilder()
-    res.append("(")
-
-    comma = ""
-    varnames = varnames_then_some_more(spec.varnames)
-    if not argtypes
-        argtypes = []
-        try
-            if spec.argtypes
-                argtypes = list(spec.argtypes)
-        except AttributeError as attr
-            null
-    for i in range(spec.argc)
-        res.append(comma)
-
-        vname = varnames.next()
-        res.append(vname)
-        if argtypes.length > 0
-            tname = repr(argtypes.pop(0))
-            if tname != vname
-                res.append(":")
-                res.append(tname)
-        comma = ", "
-
-    for i in range(spec.optional)
-        res.append(comma)
-
-        res.append("[")
-        vname = varnames.next()
-        res.append(vname)
-        if argtypes.length > 0
-            tname = repr(argtypes.pop(0))
-            if tname != vname
-                res.append(":")
-                res.append(tname)
-        res.append("]")
-        comma = ", "
-    
-    if spec.is_variadic
-        res.append(comma)
-        res.append(varnames.next())
-        res.append("...")
-
-    res.append(")")
-    return res.build()
-
-varnames_then_some_more = (varnames):
-    if varnames
-        for name in varnames
-            yield name
-    n = ord("a")
-    while true
-        yield chr(n)
-        n += 1
-
-
-term_startup = :
-    stdin.set_mode('raw')
-    schedule(term_refresh_loop)
-    schedule(term_editor_loop)
-
-max_history_length = 1000
-term_history = []
-add_history = (text):
-    term_history.append(text)
-    if term_history.length > max_history_length
-        term_history.pop(0)
-
-term_completion_apropos = null
-term_completion_options = null
-term_seg0 = []
-term_seg1 = []
-term_readline = Event()
-term_prompt = ""
-term_history_index = -1
-input = (next_prompt):
-    term_prompt := next_prompt
-    return term_readline.wait()
-
-term_editor_loop = :
-    while true
-        for s in ansi_read_sequence()
-            term_completion_apropos := null
-            term_completion_options := null
-            if s == "\x03"
-                stdout.write("\n") # should be done by the refresh_loop()
-                exit(0)            # no proper shutdown schema present yet.
-                continue
-            if s == "\r" or s == "\n"
-                line = "".join(term_seg0 ++ term_seg1)
-                term_seg0 := []
-                term_seg1 := []
-                term_history_index := -1
-                term_readline.dispatch(line)
-                continue
-            if s.length == 1
-                n = ord(s)
-                if (0x20 <= n and n < 127) or n > 255
-                    term_seg0.append(s)
-                    continue
-            if s == "\t"
-                results = []
-                start = attempt_completion(results, "".join(term_seg0))
-                if results.length == 1
-                    term_seg0 := term_seg0[0 .: start]
-                    term_seg0.extend(results[0])
-                elif results.length > 1
-                    term_completion_options := results
-                continue
-            if s == "\x7f"
-                if term_seg0.length > 0
-                    term_seg0.pop()
-                continue
-            if s == "\x1b[3~"
-                if term_seg1.length > 0
-                    term_seg1.pop(0)
-                continue
-            if s == "\x1b[A"
-                if term_history.length == 0
-                    continue
-                if term_history_index == -1
-                    term_history_index := term_history.length - 1
-                else
-                    term_history_index -= 1
-                term_history_index := clamp(term_history_index, 0, term_history.length-1)
-                term_seg0 := list(term_history[term_history_index])
-                term_seg1 := []
-                continue
-            if s == "\x1b[B"
-                if term_history.length == 0
-                    continue
-                elif term_history_index == -1
-                    continue
-                elif term_history_index == term_history.length - 1
-                    term_seg0 := []
-                    term_seg1 := []
-                    continue
-                else
-                    term_history_index += 1
-                term_history_index := clamp(term_history_index, 0, term_history.length-1)
-                term_seg0 := list(term_history[term_history_index])
-                term_seg1 := []
-                continue
-            if s == "\x1b[C"
-                if term_seg1.length > 0
-                    term_seg0.append(term_seg1.pop(0))
-                continue
-            if s == "\x1b[D"
-                if term_seg0.length > 0
-                    term_seg1.insert(0, term_seg0.pop())
-                continue
-            if s == "\x1b[H"
-                term_seg0.extend(term_seg1)
-                term_seg1 := term_seg0
-                term_seg0 := []
-                continue
-            if s == "\x1b[F"
-                term_seg0.extend(term_seg1)
-                term_seg1 := []
-                continue
-            print("unknown character", repr(s))
-            print("you can extend the",
-                term_editor_loop.source_location.source, "starting at line",
-                term_editor_loop.source_location.start_lno, "to support the command")
-        term_refresh.dispatch()
-
-ansi_read_sequence = :
-    seq = ""
-    for ch in stdin.read()
-        if ch == "\x1b"
-            seq ++= ch
-            continue
-        if seq == "\x1b" and ch == "[" 
-            seq ++= ch
-            continue
-        if seq.startswith("\x1b[") and ch.is_digit()
-            seq ++= ch
-            continue
-        yield seq ++ ch
-        seq = ""
+# main2 = :
+#     attempt_completion := (results, prefix):
+#         scope = null
+#         start = 0
+#         try
+#             word = ""
+#             i = 0
+#             for ch in prefix
+#                 if ch == "."
+#                     if scope
+#                         scope = getattr(scope, word)
+#                     else
+#                         scope = getattr(console, word)
+#                     word = ""
+#                     start = i+1
+#                 else
+#                     word ++= ch
+#                 i += 1
+#             prefix = word
+#         except AttributeError as e
+#             return 0
+#         if scope
+#             completion_scan(results, prefix, scope)
+#         else
+#             completion_scan(results, prefix, console)
+#             completion_scan(results, prefix, base)
+#         results.sort()
+#         return start
+# 
+#     completion_scan = (results, prefix, obj):
+#         for name in listattr(obj)
+#             if name == prefix
+#                 term_completion_apropos := apropos(name, getattr(obj, name))
+#                 continue
+#             if name.length > 0 and not name[0].is_alpha()
+#                 continue
+#             if name.startswith(prefix)
+#                 results.append(name)
+# 
+# apropos = (name, obj):
+#     try
+#         if isinstance(obj, interface)
+#             result = "class " ++ name ++ format_spec(
+#                 getattr(obj, "+init").spec)
+#         else
+#             result = name ++ format_spec(obj.spec)
+#     except AttributeError as attr
+# 
+#         if isinstance(obj, multimethod)
+#             result = name ++ " " ++ repr(obj) ++ format_multimethod(obj)
+#         else
+#             result = name ++ " = " ++ repr(obj)
+#     return result
+# 
+# format_multimethod = (mm):
+#     res = StringBuilder()
+#     for argtypes in mm.keys()
+#         res.append("\n    " ++ repr(argtypes) ++ format_spec(mm[argtypes].spec, []))
+#     return res.build()
+# 
+# format_spec = (spec, argtypes=null):
+#     res = StringBuilder()
+#     res.append("(")
+# 
+#     comma = ""
+#     varnames = varnames_then_some_more(spec.varnames)
+#     if not argtypes
+#         argtypes = []
+#         try
+#             if spec.argtypes
+#                 argtypes = list(spec.argtypes)
+#         except AttributeError as attr
+#             null
+#     for i in range(spec.argc)
+#         res.append(comma)
+# 
+#         vname = varnames.next()
+#         res.append(vname)
+#         if argtypes.length > 0
+#             tname = repr(argtypes.pop(0))
+#             if tname != vname
+#                 res.append(":")
+#                 res.append(tname)
+#         comma = ", "
+# 
+#     for i in range(spec.optional)
+#         res.append(comma)
+# 
+#         res.append("[")
+#         vname = varnames.next()
+#         res.append(vname)
+#         if argtypes.length > 0
+#             tname = repr(argtypes.pop(0))
+#             if tname != vname
+#                 res.append(":")
+#                 res.append(tname)
+#         res.append("]")
+#         comma = ", "
+#     
+#     if spec.is_variadic
+#         res.append(comma)
+#         res.append(varnames.next())
+#         res.append("...")
+# 
+#     res.append(")")
+#     return res.build()
+# 
+# varnames_then_some_more = (varnames):
+#     if varnames
+#         for name in varnames
+#             yield name
+#     n = ord("a")
+#     while true
+#         yield chr(n)
+#         n += 1
+# 
+# max_history_length = 1000
+# term_history = []
+# add_history = (text):
+#     term_history.append(text)
+#     if term_history.length > max_history_length
+#         term_history.pop(0)
+# 
+# term_completion_apropos = null
+# term_completion_options = null
+# term_seg0 = []
+# term_seg1 = []
+# term_readline = Event()
+# term_prompt = ""
+# term_history_index = -1
+# input = (next_prompt):
+#     term_prompt := next_prompt
+#     return term_readline.wait()
+# 
+# term_editor_loop = :
+#     while true
+#         for s in ansi_read_sequence()
+#             term_completion_apropos := null
+#             term_completion_options := null
+#             if s == "\r" or s == "\n"
+#                 line = "".join(term_seg0 ++ term_seg1)
+#                 term_seg0 := []
+#                 term_seg1 := []
+#                 term_history_index := -1
+#                 term_readline.dispatch(line)
+#                 continue
+#             if s == "\t"
+#                 results = []
+#                 start = attempt_completion(results, "".join(term_seg0))
+#                 if results.length == 1
+#                     term_seg0 := term_seg0[0 .: start]
+#                     term_seg0.extend(results[0])
+#                 elif results.length > 1
+#                     term_completion_options := results
+#                 continue
+#             if s == "\x1b[A"
+#                 if term_history.length == 0
+#                     continue
+#                 if term_history_index == -1
+#                     term_history_index := term_history.length - 1
+#                 else
+#                     term_history_index -= 1
+#                 term_history_index := clamp(term_history_index, 0, term_history.length-1)
+#                 term_seg0 := list(term_history[term_history_index])
+#                 term_seg1 := []
+#                 continue
+#             if s == "\x1b[B"
+#                 if term_history.length == 0
+#                     continue
+#                 elif term_history_index == -1
+#                     continue
+#                 elif term_history_index == term_history.length - 1
+#                     term_seg0 := []
+#                     term_seg1 := []
+#                     continue
+#                 else
+#                     term_history_index += 1
+#                 term_history_index := clamp(term_history_index, 0, term_history.length-1)
+#                 term_seg0 := list(term_history[term_history_index])
+#                 term_seg1 := []
+#                 continue
 
 
-term_output = StringBuilder()
-term_tracebacks = []
-term_refresh = Event()
-term_refresh_loop = :
-    while true
-        out = term_output.build()
-        term_output := StringBuilder()
-        stdout.write(out)
-        while term_tracebacks.length > 0 # hax
-            real_print_traceback( term_tracebacks.pop(0) )
-
-        seg0 = term_prompt ++ "".join(term_seg0)
-        seg1 = seg0 ++ "".join(term_seg1)
-
-        width = stdout.get_winsize()[0]
-
-        if term_completion_options
-            column = 1
-            for option in term_completion_options
-                column = max(column, option.length + 2)
-
-            rows = term_completion_options[0 .: 15]
-            j = 15
-            for x in range(column, width-column, column)
-                i = 0
-                for option in term_completion_options[j .: j+15]
-                    rows[i] ++= (x - rows[i].length)*" "
-                    rows[i] ++= option
-                    i += 1
-                    j += 1
-
-            seg1 ++= "\n" ++ "\n".join(rows)
-            if term_completion_options.length >= 10
-                seg1 ++= "..."
-
-        if term_completion_apropos
-            seg1 ++= "\n" ++ term_completion_apropos
-
-
-        a = calculate_offset(seg0, width)
-        b = calculate_offset(seg1, width)
-        stdout.write(seg1)
-        stdout.write("".join(cursor_motion(a.x-b.x, a.y-b.y)))
-
-        term_refresh.wait()
-
-        backclear_motion(a.y)
-
-# Imitates the system print command in behavior.
-print = (args...):
-    space = ""
-    for arg in args
-        term_output.append(space)
-        #stream_block.append(space)
-        if isinstance(arg, str)
-            term_output.append(arg)
-        else
-            term_output.append(repr(arg))
-        space = " "
-    term_output.append("\n")
-    term_refresh.dispatch()
-
-real_print_traceback = print_traceback
-print_traceback = (exc):
-    term_tracebacks.append(exc)
-    
-
-# State of the art method for implementing a line editor in
-# an ANSI-compliant terminal. We measure where the text
-# lands to stay on the track.
-cursor_motion = (x, y):
-    if y < 0
-        yield "\033["++(-y).to_string()++"A"
-    if y > 0
-        yield "\033["++(-y).to_string()++"B"
-    if x > 0
-        yield "\033["++(-x).to_string()++"C"
-    if x < 0
-        yield "\033["++(-x).to_string()++"D"
-
-backclear_motion = (y):
-    # push above the terminal and clear the screen.
-    if y == 0
-        stdout.write("\033["++y.to_string()++"G") # Absolute horizontal position.
-    else
-        stdout.write("\033["++y.to_string()++"F") # To the beginning of last line.
-    stdout.write("\033[0J") # clear off the display from under the cursor.
-
-calculate_offset = (line, width):
-    y = 0
-    x = 0
-    for ch in line
-        if ch == "\n" or x >= width
-            y += 1
-            x = 0
-        else
-            x += 1
-    return :exnihilo()
-        x = x
-        y = y
-
-attempt_completion = (results, prefix):
-    return 0
+# 
+#         if term_completion_options
+#             column = 1
+#             for option in term_completion_options
+#                 column = max(column, option.length + 2)
+# 
+#             rows = term_completion_options[0 .: 15]
+#             j = 15
+#             for x in range(column, width-column, column)
+#                 i = 0
+#                 for option in term_completion_options[j .: j+15]
+#                     rows[i] ++= (x - rows[i].length)*" "
+#                     rows[i] ++= option
+#                     i += 1
+#                     j += 1
+# 
+#             seg1 ++= "\n" ++ "\n".join(rows)
+#             if term_completion_options.length >= 10
+#                 seg1 ++= "..."
+# 
+#         if term_completion_apropos
+#             seg1 ++= "\n" ++ term_completion_apropos

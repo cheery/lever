@@ -1,0 +1,285 @@
+import fs
+
+system_console = null
+get_system_console = ():
+    if system_console
+        return system_console
+    if isinstance(stdin, TTY)
+        infd = stdin
+    else
+        raise NoConsole()
+    if isinstance(stdout, TTY)
+        outfd = stdout
+    else
+        raise NoConsole()
+    logger = new_log()
+    infd.set_mode('raw')
+    if isinstance(stderr, [TTY, Pipe])
+        errfd = stderr
+    elif isinstance(stderr, fs.File)
+        errfd = ErrorFileStream(stderr)
+    else
+        warn = object()
+        warn.type = "warning"
+        warn.value = "stderr is incompatible and ignored"
+        logger.append(warn)
+        warn = object()
+        warn.type = "warning"
+        warn.value = "error fed to stdout"
+        logger.append(warn)
+        errfd = stdout # TODO: do something smarter here.
+    system_console := Console(infd, outfd, errfd, logger)
+    return system_console
+
+class NoConsole extends Exception
+    +init = (self):
+        self.traceback = []
+
+    +repr = (self):
+        return "NoConsole: Interactive console unavailable"
+    
+class ErrorFileStream
+    +init = (self, file):
+        self.file = file
+        self.offset = 0
+    
+    write = (self, buffer):
+        count = self.file.pwrite(buffer, self.offset)
+        self.offset += count
+
+    close = (self):
+        self.file.close()
+
+class Console
+    +init = (self, infd, outfd, errfd, logger):
+        self.infd = infd
+        self.outfd = outfd
+        self.errfd = errfd
+        self.visuals = []
+        self.focus = null
+        self.logger = logger
+        schedule(refresh_loop, self)
+        self.infd.ref = false 
+        schedule(input_loop, self)
+
+#   Not sure how to close the input_loop yet,
+#   other than closing the infd. Not very good approach.
+#    close = (self):
+#        self.logger.close()
+
+    attach = (self, visual):
+        self.visuals.append(visual)
+        self.focus = visual
+        self.infd.ref = true
+        return visual
+
+    detach = (self, visual):
+        self.visuals.remove(visual)
+        self.focus = null     # TODO: if there are more 
+        self.infd.ref = false #       visuals with input,
+                              #       then shift attention
+                              #       to them.
+
+    input = (self, prompt=""):
+        this = self.attach(InputVisual(self, prompt))
+        return this.response.wait()
+
+    log = (self, type, value):
+        obj = object()
+        obj.type = type
+        obj.value = value
+        self.logger.append(obj)
+        
+class InputVisual
+    +init = (self, console, prompt):
+        self.console = console
+        self.prompt = prompt
+        self.response = Event()
+        self.line0 = []
+        self.line1 = []
+
+    process = (self, ch):
+        if ch.length == 1
+            n = ord(ch)
+            if (0x20 <= n and n < 127) or n > 255
+                self.line0.append(ch)
+                return true
+        if ch == "\r" or ch == "\n"
+            self.response.dispatch("".join(self.line0 ++ self.line1))
+            self.console.detach(self)
+            return true
+        if ch == "\x7f"
+            if self.line0.length > 0
+                self.line0.pop()
+            return true
+        if ch == "\x1b[3~"
+            if self.line1.length > 0
+                self.line1.pop(0)
+            return true
+        if ch == "\x1b[C"
+            if self.line1.length > 0
+                self.line0.append(self.line1.pop(0))
+            return true
+        if ch == "\x1b[D"
+            if self.line0.length > 0
+                self.line1.insert(0, self.line0.pop())
+            return true
+        if ch == "\x1b[H"
+            self.line0.extend(self.line1)
+            self.line1 = self.line0
+            self.line0 = []
+            return true
+        if ch == "\x1b[F"
+            self.line0.extend(self.line1)
+            self.line1 = []
+            return true
+        return false
+
+    refresh = (self, sketch):
+        sketch.append(self.prompt)
+        sketch.append("".join(self.line0))
+        self.pos = sketch.get_cursor_pos()
+        sketch.append("".join(self.line1))
+
+# Before input loop is scheduled, the infd handle
+# is unreferenced in order to allow the program quit
+# even if the loop was active.
+input_loop = (console):
+    while true
+        for ch in parse_ansi_stream(console.infd)
+            if ch == "\x03"
+                console.log("exit", 0)
+            elif console.focus and console.focus.process(ch)
+                console.log("refresh", null)
+            else
+                console.log("info", "unknown command: " ++ repr(ch))
+
+# The console.logger is unable to be a .ref==true
+# handle that would keep the eventloop alive.
+# Surprisingly, this refresh loop can capture even
+# the death gurgles of your program despite it. 
+refresh_loop = (console):
+    try
+        while true
+            winsize = console.outfd.get_winsize()
+            sketch = EtchySketchy(winsize.width, winsize.height)
+            for visual in console.visuals
+                visual.refresh(sketch)
+            if console.focus
+                sketch.set_cursor_pos(console.focus.pos)
+            console.outfd.write(sketch.out.build().utf8)
+            entry = console.logger.wait()
+            console.outfd.write(sketch.backclear().utf8)
+            if entry.type == 'exit'
+                exit(entry.value)
+            elif entry.type == 'refresh'
+                null
+            else
+                print_log_message(
+                    entry.type, entry.value,
+                    console.outfd, console.errfd)
+    except Exception as error  # reveals the reason of failure.
+        console.logger.close()
+        raise error
+
+print_log_message = (type, value, outfd, errfd):
+    s = StringBuilder()
+    if type == "error"
+        outfd = errfd
+        type = "info"
+    if type == "exception"
+        outfd = errfd
+        s.append(format_traceback(value))
+    elif type == "info"
+        if isinstance(value, list)
+            sp = ''
+            for arg in value
+                s.append(sp)
+                s.append(format_value(arg))
+                sp = ' '
+        else
+            s.append(format_value(value))
+    else
+        s.append(type)
+        s.append(": ")
+        s.append(format_value(value))
+    s.append("\n")
+    outfd.write(s.build().utf8)
+
+format_value = (value):
+    if isinstance(value, str)
+        return value
+    else
+        return repr(value)
+
+parse_ansi_stream = (stream):
+    dec = Utf8Decoder()
+    seq = ""
+    for ch in dec(stream.read())
+        if ch == "\x1b"
+            seq ++= ch
+            continue
+        if seq == "\x1b" and ch == "[" 
+            seq ++= ch
+            continue
+        if seq.startswith("\x1b[") and ch.is_digit()
+            seq ++= ch
+            continue
+        yield seq ++ ch
+        seq = ""
+
+class EtchySketchy
+    +init = (self, width, height):
+        self.x = 0
+        self.y = 0
+        self.width = width
+        self.height = height
+        self.out = StringBuilder()
+
+    get_cursor_pos = (self):
+        return :object()
+            x = self.x
+            y = self.y
+
+    set_cursor_pos = (self, pos):
+        motion = cursor_motion(pos.x - self.x, pos.y - self.y)
+        self.x = pos.x
+        self.y = pos.y
+        self.out.append(motion)
+
+    backclear = (self):
+        return backclear_motion(self.y)
+
+    append = (self, text):
+        self.out.append(text)
+        for ch in text
+            if ch == "\n" or self.x >= self.width
+                self.y += 1
+                self.x = 0
+            else
+                self.x += 1
+
+# State of the art method for implementing a line editor in
+# an ANSI-compliant terminal. We measure where the text
+# lands to stay on the track.
+cursor_motion = (x, y):
+    out = StringBuilder()
+    if y < 0
+        out.append("\033["++(-y).to_string()++"A")
+    if y > 0
+        out.append("\033["++(-y).to_string()++"B")
+    if x > 0
+        out.append("\033["++(-x).to_string()++"C")
+    if x < 0
+        out.append("\033["++(-x).to_string()++"D")
+    return out.build()
+
+backclear_motion = (y):
+    # push above the terminal and clear the screen.
+    out = StringBuilder()
+    if y == 0
+        out.append("\033["++y.to_string()++"G") # Absolute horizontal position.
+    else
+        out.append("\033["++y.to_string()++"F") # To the beginning of last line.
+    out.append("\033[0J") # clear off the display from under the cursor.
+    return out.build()

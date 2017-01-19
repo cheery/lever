@@ -183,7 +183,8 @@ class Program(space.Object):
         if len(argv) != 1:
             raise space.unwind(space.LCallError(1, 1, False, len(argv)))
         module = argv[0]
-        assert isinstance(module, space.Module)
+        if not isinstance(module, space.Module):
+            raise space.unwind(space.LError(u"Argument to program must be a module"))
         entry = self.unit.functions[0]
         frame = Frame(entry, module, None, entry.regc)
         #regv = new_register_array(entry.regc)

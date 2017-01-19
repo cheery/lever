@@ -28,6 +28,9 @@ class String(Object):
     def getattr(self, name):
         if name == u'length':
             return numbers.Integer(len(self.string))
+        if name == u'utf8':
+            return space.to_uint8array(
+                self.string.encode('utf-8'))
         return Object.getattr(self, name)
 
     def getitem(self, index):

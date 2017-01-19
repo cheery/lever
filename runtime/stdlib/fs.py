@@ -720,3 +720,4 @@ def Watch_wait(self):
         return core.switch([ec.eventloop])
 
 module.setattr_force(u"watch", Watch.interface)
+module.setattr_force(u"File", File.interface)
