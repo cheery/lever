@@ -31,24 +31,24 @@ class Slice(Object):
             step = space.to_int(self.step)
             return SliceRange(start, stop, step) 
 
-    def clamped(self, start, stop):
+    def clamped(self, low, high):
         step = space.to_int(self.step)
         if self.start is null:
             if step < 0:
-                a = stop - 1 
+                a = high
             else:
-                a = start
+                a = low
         else:
             a = space.to_int(self.start)
-            a = max(start, min(stop, a))
+            a = max(low, min(high, a))
         if self.stop is null:
             if step < 0:
-                b = start - 1 
+                b = low - 1
             else:
-                b = stop
+                b = high + 1
         else:
             b = space.to_int(self.stop)
-            b = max(start-1, min(stop, b))
+            b = max(low-1, min(high+1, b))
         return (a, b, step)
 
 @Slice.instantiator2(signature(Object, Object, Object, optional=1))

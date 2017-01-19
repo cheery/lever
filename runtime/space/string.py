@@ -36,7 +36,7 @@ class String(Object):
     def getitem(self, index):
         if isinstance(index, space.Slice):
             result = []
-            start, stop, step = index.clamped(0, len(self.string))
+            start, stop, step = index.clamped(0, len(self.string)-1)
             for i in range(start, stop, step):
                 result.append(self.string[i])
             return String(u"".join(result))

@@ -52,7 +52,7 @@ class List(Object):
     
     def getitem(self, index):
         if isinstance(index, space.Slice):
-            start, stop, step = index.clamped(0, len(self.contents))
+            start, stop, step = index.clamped(0, len(self.contents)-1)
             result = []
             for i in range(start, stop, step):
                 result.append(self.contents[i])

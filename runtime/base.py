@@ -21,8 +21,9 @@ module = Module(u'base', {
     u'greenlet': core.Greenlet.interface,
     u'interface': Interface.interface,
     u'dict': Dict.interface,
-    u'module': Module.interface,
-    u'exnihilo': Exnihilo.interface,
+    u'Module': Module.interface,
+    u'module': Module.interface,     # TODO: deprecate and then remove
+    u'exnihilo': Exnihilo.interface, # TODO: deprecate and then remove
     u'object': Object.interface,
     u'list': List.interface,
     u'multimethod': Multimethod.interface,

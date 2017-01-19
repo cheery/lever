@@ -69,16 +69,21 @@ class Console
 
     attach = (self, visual):
         self.visuals.append(visual)
-        self.focus = visual
-        self.infd.ref = true
+        if can_obtain_focus(visual)
+            if not self.focus        # focus is gained if given.
+                self.focus = visual
+                self.infd.ref = true
         return visual
 
     detach = (self, visual):
+        index = self.visuals.index(visual)
         self.visuals.remove(visual)
-        self.focus = null     # TODO: if there are more 
-        self.infd.ref = false #       visuals with input,
-                              #       then shift attention
-                              #       to them.
+        self.focus = null
+        for visual in self.visuals[index:.]
+            if can_obtain_focus(visual)
+                self.focus = visual
+                break
+        self.infd.ref = bool(self.focus)
 
     input = (self, prompt=""):
         this = self.attach(InputVisual(self, prompt))
@@ -95,8 +100,31 @@ class InputVisual
         self.console = console
         self.prompt = prompt
         self.response = Event()
-        self.line0 = []
+        self.editor = LineEditor()
+
+    process = (self, ch):
+        if self.editor.process(ch)
+            return true
+        if ch == "\r" or ch == "\n"
+            self.response.dispatch(self.editor.get_line())
+            self.console.detach(self)
+            return true
+        return false
+
+    refresh = (self, sketch):
+        sketch.append(self.prompt)
+        self.pos = self.editor.refresh(sketch)
+
+# This is separated to allow reuse. See an example of it in
+# lib/repl.lc (once it's up)
+class LineEditor
+    +init = (self, text=""):
+        self.line0 = list(text)
         self.line1 = []
+        self.pos = object({x = 0, y = 0})
+
+    get_line = (self):
+        return "".join(self.line0 ++ self.line1)
 
     process = (self, ch):
         if ch.length == 1
@@ -104,10 +132,6 @@ class InputVisual
             if (0x20 <= n and n < 127) or n > 255
                 self.line0.append(ch)
                 return true
-        if ch == "\r" or ch == "\n"
-            self.response.dispatch("".join(self.line0 ++ self.line1))
-            self.console.detach(self)
-            return true
         if ch == "\x7f"
             if self.line0.length > 0
                 self.line0.pop()
@@ -136,10 +160,10 @@ class InputVisual
         return false
 
     refresh = (self, sketch):
-        sketch.append(self.prompt)
         sketch.append("".join(self.line0))
         self.pos = sketch.get_cursor_pos()
         sketch.append("".join(self.line1))
+        return self.pos
 
 # Before input loop is scheduled, the infd handle
 # is unreferenced in order to allow the program quit
@@ -149,10 +173,24 @@ input_loop = (console):
         for ch in parse_ansi_stream(console.infd)
             if ch == "\x03"
                 console.log("exit", 0)
-            elif console.focus and console.focus.process(ch)
-                console.log("refresh", null)
-            else
-                console.log("info", "unknown command: " ++ repr(ch))
+            elif console.focus
+                # This way it doesn't nag when there is no focus.
+                if console.focus.process(ch)
+                    console.log("refresh", null)
+                elif console.focus and ch == "\x1b[5~"
+                    index = console.visuals.index(console.focus) - 1
+                    for visual in console.visuals[index:.]
+                        if can_obtain_focus(visual)
+                            console.focus = visual
+                            break
+                elif console.focus and ch == "\x1b[6~"
+                    index = console.visuals.index(console.focus) + 1
+                    for visual in console.visuals[index.:]
+                        if can_obtain_focus(visual)
+                            console.focus = visual
+                            break
+                else
+                    console.log("error", "unknown command: " ++ repr(ch))
 
 # The console.logger is unable to be a .ref==true
 # handle that would keep the eventloop alive.
@@ -283,3 +321,10 @@ backclear_motion = (y):
         out.append("\033["++y.to_string()++"F") # To the beginning of last line.
     out.append("\033[0J") # clear off the display from under the cursor.
     return out.build()
+
+can_obtain_focus = (visual):   # yes, we check it this way
+    try                        # to determine it.
+        visual.process
+        return true
+    except AttributeError as _
+        return false

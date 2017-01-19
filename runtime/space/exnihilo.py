@@ -1,4 +1,5 @@
 import space
+from builtin import signature
 from interface import Object
 from rpython.rlib import jit
 
@@ -43,13 +44,18 @@ class Exnihilo(Object):
 
         return u"<object %s>" % cellnames
 
+# Exnihilo doesn't exist for the user. He only sees an object.
 Exnihilo.interface = Object.interface
 
-@Object.instantiator
-def instantiate(argv):
-    assert len(argv) == 0
-    return Exnihilo()
-
+@Object.instantiator2(signature(Object, optional=1))
+def instantiate(obj):
+    res = Exnihilo()
+    if obj is not None:
+        obj = space.cast(obj, space.Dict, u"object instantiation")
+        for key, value in obj.data.items():
+            key = space.cast(key, space.String, u"setattr")
+            res.setattr(key.string, value)
+    return res
 
 # Attribute optimization for exnihilo objects.
 class Map(object):

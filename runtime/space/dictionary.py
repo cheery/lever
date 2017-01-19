@@ -119,13 +119,15 @@ class ValueIterator(Object):
 def next(self):
     return self.iterator.next()
 
-@Dict.instantiator
-def instantiate(argv):
+@Dict.instantiator2(signature(Object, optional=1))
+def instantiate(other):
     dict_ = Dict()
-    if len(argv) > 0:
-        other = argv[0]
+    if other is not None:
         if isinstance(other, Dict):
             dict_.data.update(other.data)
+        elif isinstance(other, space.Exnihilo):
+            for name in other.map.attribute_indexes:
+                dict_.setitem(space.String(name), other.getattr(name))
         else:
             it = other.iter()
             try:

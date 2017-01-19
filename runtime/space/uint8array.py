@@ -29,7 +29,7 @@ class Uint8Data(Object):
         
     def getitem(self, index):
         if isinstance(index, space.Slice):
-            start, stop, step = index.clamped(0, self.length)
+            start, stop, step = index.clamped(0, self.length-1)
             if step != 1:
                 result = [] # TODO: keep it as Uint8Array?
                 for i in range(start, stop, step):
