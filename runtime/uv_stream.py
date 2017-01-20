@@ -124,6 +124,12 @@ def Stream_try_write(self, data):
     finally:
         lltype.free(bufs, flavor='raw')
 
+# TODO: see what happens when you call this.
+@Stream.method(u"stop", signature(Stream))
+def Stream_stop(self):
+    check( uv.read_stop(self.stream) )
+    return null
+
 @Stream.method(u"read", signature(Stream))
 def Stream_read(self):
     self.check_closed()

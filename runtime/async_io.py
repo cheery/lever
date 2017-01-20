@@ -63,6 +63,11 @@ class Queue(Object):
         self.greenlet = None
         self.closed = False
 
+    def getattr(self, name):
+        if self.name == u"length":
+            return Integer(len(self.items))
+        return Object.getattr(self, name)
+
     def append(self, obj):
         if self.closed: # TODO: add granular exception.
             raise unwind(LError(u"queue is closed"))
@@ -99,10 +104,6 @@ def Queue_wait(self):
         self.greenlet = ec.current
         return core.switch([ec.eventloop])
 
-# TODO: We could probably make the timer a non-critical
-#       item that will close itself if lost, and applies
-#       .ref=false when it stops.
-#       Then we could derive it from an Event.
 class Timer(Handle):
     def __init__(self, timer):
         Handle.__init__(self, rffi.cast(uv.handle_ptr, timer))
@@ -152,6 +153,7 @@ def Timer_stop(self):
     check( uv.timer_stop(self.timer) )
     return null
 
+# Close is required anyway, because the Timer may have events waiting on it.
 @Timer.method(u"close", signature(Timer))
 def Timer_close(self):
     timer = self.timer
