@@ -134,7 +134,6 @@ class CConfig:
 
     #loop_t = rffi_platform.Struct("uv_loop_t", [("data", rffi.VOIDP)])
     #handle_t = rffi_platform.Struct("uv_handle_t", [("data", rffi.VOIDP)])
-    #timer_t = rffi_platform.Struct("uv_timer_t", [("data", rffi.VOIDP)])
     #prepare_t = rffi_platform.Struct("uv_prepare_t", [("data", rffi.VOIDP)])
     #idle_t = rffi_platform.Struct("uv_idle_t", [("data", rffi.VOIDP)])
     #process_options_t = rffi_platform.Struct(
@@ -164,6 +163,7 @@ class CConfig:
         ("data", rffi.VOIDP),
     ])
 
+    timer_t = rffi_platform.Struct("uv_timer_t", [])
     shutdown_t = rffi_platform.Struct("uv_shutdown_t", [])
     write_t = rffi_platform.Struct("uv_write_t", [])
     tcp_t = rffi_platform.Struct("uv_tcp_t", [("data", rffi.VOIDP)])
@@ -324,7 +324,7 @@ udp_ptr = lltype.Ptr(cConfig["udp_t"])
 pipe_ptr = lltype.Ptr(cConfig["pipe_t"])
 tty_ptr = lltype.Ptr(cConfig["tty_t"])
 poll_ptr = rffi.COpaquePtr("uv_poll_t")
-timer_ptr = rffi.COpaquePtr("uv_timer_t")
+timer_ptr = lltype.Ptr(cConfig["timer_t"])
 prepare_ptr = rffi.COpaquePtr("uv_prepare_t")
 check_ptr = rffi.COpaquePtr("uv_check_t")
 idle_ptr = rffi.COpaquePtr("uv_idle_t")

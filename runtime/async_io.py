@@ -1,5 +1,9 @@
+from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from space import *
 import core
+import uv_callback
+from uv_handle import Handle, check, Handle_close
+import rlibuv as uv
 
 class Event(Object):
     def __init__(self):
@@ -94,3 +98,65 @@ def Queue_wait(self):
         ec = core.get_ec()
         self.greenlet = ec.current
         return core.switch([ec.eventloop])
+
+# TODO: We could probably make the timer a non-critical
+#       item that will close itself if lost, and applies
+#       .ref=false when it stops.
+#       Then we could derive it from an Event.
+class Timer(Handle):
+    def __init__(self, timer):
+        Handle.__init__(self, rffi.cast(uv.handle_ptr, timer))
+        self.timer = timer
+        self.on_tick = Event()
+
+    def getattr(self, name):
+        if name == u"on_tick":
+            return self.on_tick
+        return Handle.getattr(self, name)
+
+@Timer.instantiator2(signature()) # Remember that timers must be closed.
+def Timer_init():
+    ec = core.get_ec()
+    timer = lltype.malloc(uv.timer_ptr.TO, flavor="raw", zero=True)
+    uv.timer_init(ec.uv_loop, timer)
+    self = Timer(timer)
+    uv_callback.push(ec.uv__timer, self)
+    return self
+
+@Timer.method(u"start", signature(Timer, Float, Float, optional=1))
+def Timer_start(self, delay, repeat):
+    if repeat is None:
+        rep = 0
+    else:
+        rep = int(repeat.number * 1000)
+    check( uv.timer_start(self.timer, _timer_callback_, int(delay.number*1000), 0) )
+    return null
+
+def _timer_callback_(handle):
+    ec = core.get_ec()
+    self = uv_callback.peek(ec.uv__timer, handle)
+    Event_dispatch(self.on_tick, [])
+
+@Timer.method(u"set_repeat", signature(Timer, Float))
+def Timer_set_repeat(self, value):
+    uv.timer_set_repeat(self.timer, int(value.number*1000))
+    return null
+
+@Timer.method(u"again", signature(Timer))
+def Timer_again(self):
+    check( uv.timer_again(self.timer) )
+    return null
+
+@Timer.method(u"stop", signature(Timer))
+def Timer_stop(self):
+    check( uv.timer_stop(self.timer) )
+    return null
+
+@Timer.method(u"close", signature(Timer))
+def Timer_close(self):
+    timer = self.timer
+    Handle_close(self)
+    # TODO: on Timer.close, close the .on_tick event handle as well.
+    ec = core.get_ec()
+    uv_callback.drop(ec.uv__timer, timer)
+    return null

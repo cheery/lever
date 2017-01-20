@@ -4,7 +4,7 @@ from rpython.rlib.rstring import UnicodeBuilder
 from space import *
 from evaluator.loader import from_object, SourceLocation
 from evaluator.sourcemaps import TraceEntry
-from async_io import Event, Queue
+from async_io import Event, Queue, Timer
 import core
 import os
 import pathobj
@@ -49,6 +49,7 @@ module = Module(u'base', {
     u'DocRef': DocRef.interface,
     u'Event': Event.interface,
     u'Queue': Queue.interface,
+    u'Timer': Timer.interface,
     u'Handle': uv_handle.Handle.interface,
     u'Stream': uv_stream.Stream.interface,
     u'TTY': uv_stream.TTY.interface,

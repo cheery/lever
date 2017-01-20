@@ -1,4 +1,5 @@
-from console import get_system_console
+from console import get_system_console, LineEditor
+import console
 import compiler
 import base
 
@@ -10,6 +11,14 @@ main = :
         %"import" = Import(dir,
             ModuleScope(dir, %"import".scope.parent))
         console = console
+        toys = ():
+            console.refresh_interval = 0.016
+            toy = ProgressToy(console, "arbitrary progress")
+            console.attach(toy)
+            toy = ColorToy(console)
+            console.attach(toy)
+            toy = FPSCounterToy(console)
+            console.attach(toy)
     print("LEVER 0.x.x")
 
     buffer = []
@@ -34,6 +43,93 @@ main = :
         except Exception as exc
             print_traceback(exc)
         buffer = []
+
+class FPSCounterToy # "lol"
+    +init = (self, console):
+        self.console = console
+        self.now = time()
+
+    refresh = (self, sketch):
+        now = time()
+        sketch.append("FPS ")
+        sketch.append(int(1.0/(now-self.now)).to_string())
+        self.now = now
+        self.console.refresh()
+
+class ColorToy
+    +init = (self, console):
+        self.console = console
+    
+    refresh = (self, sketch):
+        for x in range(sketch.width)
+            sketch.color(
+                vec3(random(), random(), random()),
+                vec3(random(), random(), random()))
+            sketch.append("#")
+        sketch.normal()
+        self.console.refresh()
+
+class ProgressToy
+    +init = (self, console, label=null):
+        self.console = console
+        self.label = label
+        self.progress = 0.0
+        self.now = time()
+        self.running = true
+
+    refresh = (self, sketch):
+        now = time()
+        self.progress += (now - self.now) / 10
+        self.now = now
+        if self.progress >= 1.0 and self.running
+            schedule(self.console.detach, self)
+            if self.label
+                self.console.log("info", [self.label, "done"])
+            self.running = false
+        w = min(43, sketch.width-2)
+        k = int(w * self.progress)
+        sketch.color(vec3(1,1,1))
+        if self.label
+            sketch.append(self.label)
+            sketch.append(" ")
+        sketch.append("|")
+        for x in range(k)
+            sketch.color(vec3(1,1,1))
+            sketch.append("#")
+        for x in range(k, w)
+            sketch.color(vec3(0,0,0))
+            sketch.append("-")
+        sketch.color(vec3(1,1,1))
+        sketch.append("| ")
+        sketch.append(int(self.progress * 100).to_string() ++ "%")
+        sketch.normal()
+        self.console.refresh()
+
+# Starting point.
+# class InputVisual
+#     +init = (self, console, prompt):
+#         self.console = console
+#         self.prompt = prompt
+#         self.response = Event()
+#         self.editor = LineEditor()
+# 
+#     process = (self, ch):
+#         if self.editor.process(ch)
+#             return true
+#         if ch == "\r" or ch == "\n"
+#             self.response.dispatch(self.editor.get_line())
+#             self.console.detach(self)
+#             return true
+#         return false
+# 
+#     refresh = (self, sketch):
+#         sketch.append(self.prompt)
+#         self.pos = self.editor.refresh(sketch)
+
+
+
+
+
 
 # main2 = :
 #     attempt_completion := (results, prefix):

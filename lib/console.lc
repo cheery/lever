@@ -1,7 +1,7 @@
 import fs
 
 system_console = null
-get_system_console = ():
+get_system_console = (options=default_options):
     if system_console
         return system_console
     if isinstance(stdin, TTY)
@@ -28,7 +28,7 @@ get_system_console = ():
         warn.value = "error fed to stdout"
         logger.append(warn)
         errfd = stdout # TODO: do something smarter here.
-    system_console := Console(infd, outfd, errfd, logger)
+    system_console := Console(infd, outfd, errfd, logger, options)
     return system_console
 
 class NoConsole extends Exception
@@ -51,21 +51,29 @@ class ErrorFileStream
         self.file.close()
 
 class Console
-    +init = (self, infd, outfd, errfd, logger):
+    +init = (self, infd, outfd, errfd, logger, options):
         self.infd = infd
         self.outfd = outfd
         self.errfd = errfd
         self.visuals = []
         self.focus = null
         self.logger = logger
-        schedule(refresh_loop, self)
+        schedule(refresh_loop, self, options.colors)
         self.infd.ref = false 
         schedule(input_loop, self)
+        #  
+        self.refresh_interval = options.refresh_interval
+        self.timer = Timer()
+        self.timer.ref = false
+        self.timer.on_tick.register(self.allow_refresh)
+        self.refresh_ok = true
+        self.refresh_pending = false
 
 #   Not sure how to close the input_loop yet,
 #   other than closing the infd. Not very good approach.
 #    close = (self):
 #        self.logger.close()
+#        self.timer.close()
 
     attach = (self, visual):
         self.visuals.append(visual)
@@ -78,7 +86,8 @@ class Console
     detach = (self, visual):
         index = self.visuals.index(visual)
         self.visuals.remove(visual)
-        self.focus = null
+        if visual == self.focus
+            self.focus = null
         for visual in self.visuals[index:.]
             if can_obtain_focus(visual)
                 self.focus = visual
@@ -94,6 +103,20 @@ class Console
         obj.type = type
         obj.value = value
         self.logger.append(obj)
+
+    allow_refresh = (self):
+        if self.refresh_pending
+            self.log("refresh", null)
+            self.refresh_pending = false
+        else
+            self.refresh_ok = true
+
+    refresh = (self):
+        self.refresh_pending = true
+        if self.refresh_ok
+            self.log("refresh", null)
+            self.refresh_pending = false
+            self.refresh_ok = false
         
 class InputVisual
     +init = (self, console, prompt):
@@ -198,23 +221,37 @@ input_loop = (console):
 # handle that would keep the eventloop alive.
 # Surprisingly, this refresh loop can capture even
 # the death gurgles of your program despite it. 
-refresh_loop = (console):
+refresh_loop = (console, colors):
     try
+        backpedal = "" # defers the backpedal so we can expect the cursor
+                       # to sit in where we leave it.
         while true
             winsize = console.outfd.get_winsize()
-            sketch = EtchySketchy(winsize.width, winsize.height)
+            sketch = EtchySketchy(winsize.width, winsize.height, colors)
+            sketch.out.append(backpedal)
             for visual in console.visuals
+                if sketch.x != 0
+                    sketch.append("\n")
                 visual.refresh(sketch)
+            sketch.out.append("\033[0J") # clear off the display from under the cursor.
+                                         # as a precaution in case there is garbage there.
             if console.focus
                 sketch.set_cursor_pos(console.focus.pos)
             console.outfd.write(sketch.out.build().utf8)
             entry = console.logger.wait()
-            console.outfd.write(sketch.backclear().utf8)
+            console.timer.start(console.refresh_interval)
+            backpedal = sketch.backpedal()
             if entry.type == 'exit'
+                # Clear because we don't want garbage to output.
+                # Although we seem to get it anyway.
+                console.outfd.write((backpedal ++ "\033[0J").utf8)
                 exit(entry.value)
             elif entry.type == 'refresh'
                 null
             else
+                # Here we clear too, so we won't get garbage to stdout.
+                console.outfd.write((backpedal ++ "\033[0J").utf8)
+                backpedal = ""
                 print_log_message(
                     entry.type, entry.value,
                     console.outfd, console.errfd)
@@ -269,12 +306,13 @@ parse_ansi_stream = (stream):
         seq = ""
 
 class EtchySketchy
-    +init = (self, width, height):
+    +init = (self, width, height, colors):
         self.x = 0
         self.y = 0
         self.width = width
         self.height = height
         self.out = StringBuilder()
+        self.colors = colors
 
     get_cursor_pos = (self):
         return :object()
@@ -287,17 +325,32 @@ class EtchySketchy
         self.y = pos.y
         self.out.append(motion)
 
-    backclear = (self):
-        return backclear_motion(self.y)
+    backpedal = (self):
+        return backpedal_motion(self.y)
 
     append = (self, text):
-        self.out.append(text)
         for ch in text
+            if ch == "\n"
+                self.out.append("\033[K\n") # clear end of line.
             if ch == "\n" or self.x >= self.width
                 self.y += 1
                 self.x = 0
             else
+                self.out.append(ch)
                 self.x += 1
+
+    color = (self, fg, bg=null):
+        self.out.append("\033[")
+        if bg
+            self.out.append(self.colors(bg, 'bg'))
+        self.out.append("m")
+        self.out.append("\033[")
+        if fg
+            self.out.append(self.colors(fg, 'fg'))
+        self.out.append("m")
+    
+    normal = (self):
+        self.out.append("\033[0m")
 
 # State of the art method for implementing a line editor in
 # an ANSI-compliant terminal. We measure where the text
@@ -314,14 +367,13 @@ cursor_motion = (x, y):
         out.append("\033["++(-x).to_string()++"D")
     return out.build()
 
-backclear_motion = (y):
+backpedal_motion = (y):
     # push above the terminal and clear the screen.
     out = StringBuilder()
     if y == 0
         out.append("\033["++y.to_string()++"G") # Absolute horizontal position.
     else
         out.append("\033["++y.to_string()++"F") # To the beginning of last line.
-    out.append("\033[0J") # clear off the display from under the cursor.
     return out.build()
 
 can_obtain_focus = (visual):   # yes, we check it this way
@@ -330,3 +382,95 @@ can_obtain_focus = (visual):   # yes, we check it this way
         return true
     except AttributeError as _
         return false
+
+# This method of selecting colors is forwards-compatible
+black   = vec3(0.0, 0.0, 0.0)
+red     = vec3(0.5, 0.0, 0.0)
+green   = vec3(0.0, 0.5, 0.0)
+yellow  = vec3(0.5, 0.5, 0.0)
+blue    = vec3(0.0, 0.0, 0.5)
+magenta = vec3(0.5, 0.0, 0.5)
+cyan    = vec3(0.0, 0.5, 0.5)
+gray    = vec3(0.75, 0.75, 0.75)
+
+darkgray      = vec3(0.5, 0.5, 0.5)
+light_red     = vec3(1, 0, 0)
+light_green   = vec3(0, 1, 0)
+light_yellow  = vec3(1, 1, 0)
+light_blue    = vec3(0, 0, 1)
+light_magenta = vec3(1, 0, 1)
+light_cyan    = vec3(0, 1, 1)
+white         = vec3(1, 1, 1)
+
+fg_ansi_palette = [
+    object({color = black,         index = "30;22"}),
+    object({color = red,           index = "31;22"}),
+    object({color = green,         index = "32;22"}),
+    object({color = yellow,        index = "33;22"}),
+    object({color = blue,          index = "34;22"}),
+    object({color = magenta,       index = "35;22"}),
+    object({color = cyan,          index = "36;22"}),
+    object({color = gray,          index = "37;22"}),
+    object({color = darkgray,      index = "30;1"}),
+    object({color = light_red,     index = "31;1"}),
+    object({color = light_green,   index = "32;1"}),
+    object({color = light_yellow,  index = "33;1"}),
+    object({color = light_blue,    index = "34;1"}),
+    object({color = light_magenta, index = "35;1"}),
+    object({color = light_cyan,    index = "36;1"}),
+    object({color = white,         index = "37;1"}),
+]
+
+bg_ansi_palette = [
+    object({color = black,         index = "40"}),
+    object({color = red,           index = "41"}),
+    object({color = green,         index = "42"}),
+    object({color = yellow,        index = "43"}),
+    object({color = blue,          index = "44"}),
+    object({color = magenta,       index = "45"}),
+    object({color = cyan,          index = "46"}),
+    object({color = gray,          index = "47"}),
+]
+
+legacy_ansi_colors = (color, mode="fg"):
+    if mode == "fg"
+        palette = fg_ansi_palette
+    elif mode == "bg"
+        palette = bg_ansi_palette
+    else
+        return ""
+    closest = 100.0
+    index = ""
+    for entry in palette
+        k = length(entry.color - color)
+        if k < closest
+            closest = k
+            index = entry.index
+    return index
+
+# I have this for RGB ansi colors. Unfortunately
+# too many terminals do not support them, so I have
+# this unused here.
+rgb_ansi_colors = (color, mode="fg"):
+    s = StringBuilder()
+    if mode == "fg"
+        s.append("38;2")
+    elif mode == "bg"
+        s.append("48;2")
+    else
+        return ""
+    s.append(int(color.x*255 + 0.5).to_string())
+    s.append(";")
+    s.append(int(color.y*255 + 0.5).to_string())
+    s.append(";")
+    s.append(int(color.z*255 + 0.5).to_string())
+    return s.build()
+
+default_options = :object()
+    colors = legacy_ansi_colors
+    refresh_interval = 0.1      # Once we'll get the Timer
+                                # so that we can .ref=false, this is the
+                                # shortest refresh interval we accept.
+                                # Also, going to grab multiple objects
+                                # from queue at once, before going to
+                                # waiting.
