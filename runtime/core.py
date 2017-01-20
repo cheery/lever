@@ -6,9 +6,12 @@ from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 #from rpython.rlib.rthread import ThreadLocalReference
 #from rpython.rlib import rgc
 from continuations import Continuation
+import os
 import rlibuv as uv
 import space
-import os
+import uv_util
+
+handle_stash = uv_util.stashFor("handle")
 
 class ExecutionContext(object):
     #_immutable_fields_ = ['debug_hook?']
@@ -51,6 +54,8 @@ class ExecutionContext(object):
         self.uv__getaddrinfo = {}
         self.uv__getnameinfo = {}
         #self.debug_hook = None
+
+        self.handles = handle_stash(self.uv_loop)
 
         # You can attach a queue to log stuff with a "register_logger(queue)"
         self.loggers = []

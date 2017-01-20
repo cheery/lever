@@ -81,7 +81,7 @@ class Console
             if not self.focus        # focus is gained if given.
                 self.focus = visual
                 self.infd.ref = true
-        return visual
+        return self
 
     detach = (self, visual):
         index = self.visuals.index(visual)
@@ -95,7 +95,7 @@ class Console
         self.infd.ref = bool(self.focus)
 
     input = (self, prompt=""):
-        this = self.attach(InputVisual(self, prompt))
+        this = InputVisual(self, prompt)
         return this.response.wait()
 
     log = (self, type, value):
@@ -120,7 +120,7 @@ class Console
         
 class InputVisual
     +init = (self, console, prompt):
-        self.console = console
+        self.console = console.attach(self)
         self.prompt = prompt
         self.response = Event()
         self.editor = LineEditor()

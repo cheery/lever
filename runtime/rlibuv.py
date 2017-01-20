@@ -132,10 +132,21 @@ class CConfig:
     sockaddr = rffi_platform.Struct("struct sockaddr", [
         ("sa_family", rffi.USHORT)])
 
+    handle_t = rffi_platform.Struct("uv_handle_t", [("data", rffi.VOIDP)])
+    stream_t = rffi_platform.Struct("uv_stream_t", [("data", rffi.VOIDP)])
+    tcp_t    = rffi_platform.Struct("uv_tcp_t",    [("data", rffi.VOIDP)])
+    udp_t    = rffi_platform.Struct("uv_udp_t",    [("data", rffi.VOIDP)])
+    pipe_t   = rffi_platform.Struct("uv_pipe_t",   [("data", rffi.VOIDP)])
+    tty_t    = rffi_platform.Struct("uv_tty_t",    [("data", rffi.VOIDP)])
+    poll_t   = rffi_platform.Struct("uv_poll_t",   [("data", rffi.VOIDP)])
+    timer_t  = rffi_platform.Struct("uv_timer_t",  [("data", rffi.VOIDP)])
+    prepare_t = rffi_platform.Struct("uv_prepare_t", [("data", rffi.VOIDP)])
+    check_t   = rffi_platform.Struct("uv_check_t",   [("data", rffi.VOIDP)])
+    idle_t    = rffi_platform.Struct("uv_idle_t",    [("data", rffi.VOIDP)])
+    async_t   = rffi_platform.Struct("uv_async_t",   [("data", rffi.VOIDP)])
+    process_t = rffi_platform.Struct("uv_process_t", [("data", rffi.VOIDP)])
+
     #loop_t = rffi_platform.Struct("uv_loop_t", [("data", rffi.VOIDP)])
-    #handle_t = rffi_platform.Struct("uv_handle_t", [("data", rffi.VOIDP)])
-    #prepare_t = rffi_platform.Struct("uv_prepare_t", [("data", rffi.VOIDP)])
-    #idle_t = rffi_platform.Struct("uv_idle_t", [("data", rffi.VOIDP)])
     #process_options_t = rffi_platform.Struct(
     #    "uv_process_options_t", [
     #        ("file", rffi.CCHARP),
@@ -150,26 +161,17 @@ class CConfig:
     #process_t = rffi_platform.Struct("uv_process_t",
     #                                 [("data", rffi.VOIDP),
     #                                  ("pid", rffi.INT)])
-    connect_t = rffi_platform.Struct("uv_connect_t", [])
-    udp_send_t = rffi_platform.Struct("uv_udp_send_t", [])
+    connect_t  = rffi_platform.Struct("uv_connect_t",  [("data", rffi.VOIDP)])
+    udp_send_t = rffi_platform.Struct("uv_udp_send_t", [("data", rffi.VOIDP)])
     #                                 [("handle",
     #                                   lltype.Ptr(lltype.ForwardReference()))])
-    #stream_t = rffi_platform.Struct("uv_stream_t", [("data", rffi.VOIDP)])
     #shutdown_t = rffi_platform.Struct("uv_shutdown_t", [])
-    fs_event_t = rffi_platform.Struct("uv_fs_event_t", [
-        ("data", rffi.VOIDP),
-    ])
-    fs_poll_t = rffi_platform.Struct("uv_fs_poll_t", [
-        ("data", rffi.VOIDP),
-    ])
+    fs_event_t  = rffi_platform.Struct("uv_fs_event_t", [("data", rffi.VOIDP)])
+    fs_poll_t   = rffi_platform.Struct("uv_fs_poll_t",  [("data", rffi.VOIDP)])
+    signal_t    = rffi_platform.Struct("uv_signal_t",   [("data", rffi.VOIDP)])
 
-    timer_t = rffi_platform.Struct("uv_timer_t", [])
-    shutdown_t = rffi_platform.Struct("uv_shutdown_t", [])
-    write_t = rffi_platform.Struct("uv_write_t", [])
-    tcp_t = rffi_platform.Struct("uv_tcp_t", [("data", rffi.VOIDP)])
-    udp_t = rffi_platform.Struct("uv_udp_t", [("data", rffi.VOIDP)])
-    pipe_t = rffi_platform.Struct("uv_pipe_t", [("data", rffi.VOIDP)])
-    tty_t = rffi_platform.Struct("uv_tty_t", [("data", rffi.VOIDP)])
+    shutdown_t = rffi_platform.Struct("uv_shutdown_t", [("data", rffi.VOIDP)])
+    write_t = rffi_platform.Struct("uv_write_t", [("data", rffi.VOIDP)])
 
     fs_t = rffi_platform.Struct("uv_fs_t", [
         ("data", rffi.VOIDP),
@@ -177,10 +179,8 @@ class CConfig:
         ("result", rffi.SSIZE_T),
         ("statbuf", stat_t),
         ("ptr", rffi.VOIDP)])
-    uv_getaddrinfo_t = rffi_platform.Struct("uv_getaddrinfo_t", [
-        ("data", rffi.VOIDP)])
-    uv_getnameinfo_t = rffi_platform.Struct("uv_getnameinfo_t", [
-        ("data", rffi.VOIDP)])
+    uv_getaddrinfo_t = rffi_platform.Struct("uv_getaddrinfo_t", [("data", rffi.VOIDP)])
+    uv_getnameinfo_t = rffi_platform.Struct("uv_getnameinfo_t", [("data", rffi.VOIDP)])
     buf_t = rffi_platform.Struct("uv_buf_t", [
         ("base", rffi.CCHARP),
         ("len", rffi.SIZE_T)])
@@ -317,24 +317,24 @@ dirent_ptr = lltype.Ptr(cConfig["dirent_t"])
 
 # Handle types
 loop_ptr = rffi.COpaquePtr("uv_loop_t")
-handle_ptr = rffi.COpaquePtr("uv_handle_t")
-stream_ptr = rffi.COpaquePtr("uv_stream_t")
-tcp_ptr = lltype.Ptr(cConfig["tcp_t"])
-udp_ptr = lltype.Ptr(cConfig["udp_t"])
-pipe_ptr = lltype.Ptr(cConfig["pipe_t"])
-tty_ptr = lltype.Ptr(cConfig["tty_t"])
-poll_ptr = rffi.COpaquePtr("uv_poll_t")
-timer_ptr = lltype.Ptr(cConfig["timer_t"])
-prepare_ptr = rffi.COpaquePtr("uv_prepare_t")
-check_ptr = rffi.COpaquePtr("uv_check_t")
-idle_ptr = rffi.COpaquePtr("uv_idle_t")
-async_ptr = rffi.COpaquePtr("uv_async_t")
-process_ptr = rffi.COpaquePtr("uv_process_t")
+handle_ptr  = lltype.Ptr(cConfig["handle_t"])
+stream_ptr  = lltype.Ptr(cConfig["stream_t"])
+tcp_ptr     = lltype.Ptr(cConfig["tcp_t"])
+udp_ptr     = lltype.Ptr(cConfig["udp_t"])
+pipe_ptr    = lltype.Ptr(cConfig["pipe_t"])
+tty_ptr     = lltype.Ptr(cConfig["tty_t"])
+poll_ptr    = lltype.Ptr(cConfig["poll_t"])
+timer_ptr   = lltype.Ptr(cConfig["timer_t"])
+prepare_ptr = lltype.Ptr(cConfig["prepare_t"])
+check_ptr   = lltype.Ptr(cConfig["check_t"])
+idle_ptr    = lltype.Ptr(cConfig["idle_t"])
+async_ptr   = lltype.Ptr(cConfig["async_t"])
+process_ptr = lltype.Ptr(cConfig["process_t"])
 
 fs_event_ptr = lltype.Ptr(cConfig["fs_event_t"])
-fs_poll_ptr = lltype.Ptr(cConfig["fs_poll_t"])
+fs_poll_ptr  = lltype.Ptr(cConfig["fs_poll_t"])
 
-signal_ptr = rffi.COpaquePtr("uv_signal_t")
+signal_ptr = lltype.Ptr(cConfig["signal_t"])
 
 # Request types
 req_ptr = rffi.COpaquePtr("uv_req_t")
@@ -480,8 +480,8 @@ recv_buffer_size = llexternal("uv_recv_buffer_size", [handle_ptr, rffi.INTP], rf
 
 # UV_EXTERN int uv_fileno(const uv_handle_t* handle, uv_os_fd_t* fd);
  
-def buf_init(uv_buf, base, length):
-    uv_buf
+#def buf_init(uv_buf, base, length):
+#    uv_buf
 #buf_init = llexternal("uv_buf_init", [rffi.CCHARP, rffi.UINT], buf_t)
 
 listen = llexternal("uv_listen", [stream_ptr, rffi.INT, connection_cb], rffi.INT)
