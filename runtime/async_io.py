@@ -64,7 +64,7 @@ class Queue(Object):
         self.closed = False
 
     def getattr(self, name):
-        if self.name == u"length":
+        if name == u"length":
             return Integer(len(self.items))
         return Object.getattr(self, name)
 
