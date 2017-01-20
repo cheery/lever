@@ -58,10 +58,10 @@ class Console
         self.visuals = []
         self.focus = null
         self.logger = logger
-        schedule(refresh_loop, self, options.colors)
+        self.colors = options.colors
+        schedule(refresh_loop, self)
         self.infd.ref = false 
         schedule(input_loop, self)
-        #  
         self.refresh_interval = options.refresh_interval
         self.timer = Timer()
         self.timer.ref = false
@@ -221,13 +221,13 @@ input_loop = (console):
 # handle that would keep the eventloop alive.
 # Surprisingly, this refresh loop can capture even
 # the death gurgles of your program despite it. 
-refresh_loop = (console, colors):
+refresh_loop = (console):
     try
         backpedal = "" # defers the backpedal so we can expect the cursor
                        # to sit in where we leave it.
         while true
             winsize = console.outfd.get_winsize()
-            sketch = EtchySketchy(winsize.width, winsize.height, colors)
+            sketch = EtchySketchy(winsize.width, winsize.height, console.colors)
             sketch.out.append(backpedal)
             for visual in console.visuals
                 if sketch.x != 0
