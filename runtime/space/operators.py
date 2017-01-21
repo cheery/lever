@@ -42,7 +42,8 @@ by_symbol = {
 def coerce_by_default(method):
     def default(argv):
         args = coerce.call(argv)
-        assert isinstance(args, List)
+        if not isinstance(args, List):
+            raise space.unwind(space.LError(u"coerce should return list"))
         return method.call_suppressed(args.contents)
     method.default = Builtin(default)
 
@@ -71,6 +72,7 @@ shl  = arithmetic_multimethod(u'<<',  (lambda a, b: a << b))
 shr  = arithmetic_multimethod(u'>>',  (lambda a, b: a >> b))
 min_ = arithmetic_multimethod(u'min', (lambda a, b: min(a, b)), flo=True)
 max_ = arithmetic_multimethod(u'max', (lambda a, b: max(a, b)), flo=True)
+# min default and max default redefined below.
 
 # You get a float if you divide.
 div  = by_symbol[u'/'] = Multimethod(2)
@@ -284,3 +286,25 @@ def _(c, a):
 @mul.multimethod_s(String, Integer)
 def _(a, c):
     return String(a.string * c.value)
+
+def min_default(argv):
+    if len(argv) == 2 and argv[1] is null:
+        return argv[0]
+    if len(argv) == 2 and argv[0] is null:
+        return argv[1]
+    args = coerce.call(argv)
+    if not isinstance(args, List):
+        raise space.unwind(space.LError(u"coerce should return list"))
+    return min_.call_suppressed(args.contents)
+min_.default = Builtin(min_default)
+
+def max_default(argv):
+    if len(argv) == 2 and argv[1] is null:
+        return argv[0]
+    if len(argv) == 2 and argv[0] is null:
+        return argv[1]
+    args = coerce.call(argv)
+    if not isinstance(args, List):
+        raise space.unwind(space.LError(u"coerce should return list"))
+    return max_.call_suppressed(args.contents)
+max_.default = Builtin(max_default)

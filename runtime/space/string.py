@@ -3,7 +3,7 @@ from interface import Object
 from rpython.rlib.objectmodel import compute_hash
 from rpython.rlib.unicodedata import unicodedb_6_2_0 as unicodedb
 from rpython.rlib.rstring import UnicodeBuilder
-import numbers
+from numbers import Integer
 import space
 
 class String(Object):
@@ -27,7 +27,7 @@ class String(Object):
 
     def getattr(self, name):
         if name == u'length':
-            return numbers.Integer(len(self.string))
+            return Integer(len(self.string))
         if name == u'utf8':
             return space.to_uint8array(
                 self.string.encode('utf-8'))
@@ -40,10 +40,15 @@ class String(Object):
             for i in range(start, stop, step):
                 result.append(self.string[i])
             return String(u"".join(result))
-        index = space.cast(index, numbers.Integer, u"index not an integer")
+        index = space.cast(index, Integer, u"index not an integer")
         if not 0 <= index.value < len(self.string):
             raise space.unwind(space.LKeyError(self, index))
         return String(self.string[index.value])
+
+    def contains(self, item):
+        if isinstance(item, String):
+            return item.string in self.string
+        return False
 
     def iter(self):
         return StringIterator(iter(self.string))
@@ -62,11 +67,10 @@ def String_count(self, ch):
     for ch in self.string:
         if ch == x:
             count += 1
-    return space.Integer(count)
+    return Integer(count)
 
-@String.builtin_method
-@signature(String, Object)
-def join(string, seq):
+@String.method(u"join", signature(String, Object))
+def String_join(string, seq):
     strings = []
     it = seq.iter()
     while True:
@@ -79,29 +83,25 @@ def join(string, seq):
             break
     return String(string.string.join(strings))
 
-@String.builtin_method
-@signature(String)
-def is_alpha(string):
+@String.method(u"is_alpha", signature(String))
+def String_is_alpha(string):
     for ch in string.string:
         if not unicodedb.isalpha(ord(ch)):
             return space.false
+    if len(string.string) == 0:
+        return space.false
     return space.true
 
-@String.builtin_method
-def is_digit(argv):
-    assert len(argv) >= 1
-    a0 = argv[0]
-    assert isinstance(a0, String)
-    base = 10
-    if len(argv) >= 2:
-        assert len(argv) == 2
-        a1 = argv[1]
-        assert isinstance(a1, numbers.Integer)
-        base = a1.value
-    assert 0 <= base <= 36
-    for ch in a0.string:
+@String.method(u"is_digit", signature(String, Integer, optional=1))
+def String_is_digit(string, base):
+    base = 10 if base is None else base.value
+    if not 0 <= base <= 36:
+        raise space.unwind(space.LError(u"is_digit base not in range .:36")) 
+    for ch in string.string:
         if not 0 <= as_alphadigit_i(ord(ch)) < base:
             return space.false
+    if len(string.string) == 0:
+        return space.false
     return space.true
 
 def as_alphadigit_i(index):
@@ -113,12 +113,13 @@ def as_alphadigit_i(index):
         return index - ord('a') + 10
     return -1
 
-@String.builtin_method
-@signature(String)
+@String.method(u"is_space", signature(String))
 def is_space(string):
     for ch in string.string:
         if not unicodedb.isspace(ord(ch)):
             return space.false
+    if len(string.string) == 0:
+        return space.false
     return space.true
 
 @String.method(u"startswith", signature(String, String))
