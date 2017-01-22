@@ -51,6 +51,7 @@ next_token = (stream, table):
             return Literal(start, stream.position, "hex", string)
         while stream.is_digit()
             string ++= stream.advance()
+        name = "int"
         # The stream.pair_ahead is quite of a special case. I'm not sure it's
         # the right thing to do. But we have .: punctuation in our grammar.
         # Add a number immediately ahead 0.: and you wouldn't get what you
@@ -58,20 +59,20 @@ next_token = (stream, table):
         # Optical grouping between those characters feel clean enough, so
         # I implemented some precedence into the tokenizer with 'pair_ahead'
         if stream.filled and stream.current == "." and not stream.pair_ahead(table)
+            name = "float"
             string ++= stream.advance()
             while stream.is_digit()
                 string ++= stream.advance()
-            if stream.filled and (stream.current == 'e' or stream.current == 'E')
+        if stream.filled and (stream.current == 'e' or stream.current == 'E')
+            name = "float"
+            string ++= stream.advance()
+            if stream.current == '+' or stream.current == '-'
                 string ++= stream.advance()
-                if stream.current == '+' or stream.current == '-'
-                    string ++= stream.advance()
-                if not stream.is_digit()
-                    raise SyntaxError(start, stream.position, "expected a digit")
-                while stream.is_digit()
-                    string ++= stream.advance()
-            return Literal(start, stream.position, "float", string)
-        # todo: support whole floating point notation.
-        return Literal(start, stream.position, "int", string)
+            if not stream.is_digit()
+                raise SyntaxError(start, stream.position, "expected a digit")
+            while stream.is_digit()
+                string ++= stream.advance()
+        return Literal(start, stream.position, name, string)
     elif stream.current == "'" or stream.current == '"'
         terminal = stream.advance()
         string = ""

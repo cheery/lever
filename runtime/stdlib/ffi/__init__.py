@@ -1,10 +1,12 @@
-from rpython.rlib import rdynload, objectmodel, clibffi, rgc
+from rpython.rlib import rdynload, objectmodel, clibffi, rgc, rgil
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from simple import Type, to_type
 from space import *
 from systemv import Mem, Pointer, CFunc, Struct, Union, Array
 from bitmask import Bitmask
+import core
 import simple
+import space
 import systemv
 import sys, os
 
@@ -233,12 +235,19 @@ class Callback(Mem):
         if closure_ptr.c_user_data != unique_id:
             raise unwind(LError(u"ffi_prep_closure(): bad user_data"))
 
+        # The function might be called in separate thread,
+        # so allocate GIL here, just in case.
+        rgil.allocate()
+
     def __del__(self): # Move into  separate class if this not sufficient.
         clibffi.closureHeap.free(rffi.cast(clibffi.FFI_CLOSUREP, self.pointer))
 
 @Callback.instantiator
-@signature(CFunc, Object)
+@signature(Type, Object)
 def _(cfunc, callback):
+    if isinstance(cfunc, Pointer):
+        cfunc = cfunc.to
+    cfunc = space.cast(cfunc, CFunc, u"callback")
     return Callback(cfunc, callback)
 
 module.setattr_force(u"callback", Callback.interface)
@@ -273,7 +282,10 @@ def invoke_callback(ffi_cif, ll_res, ll_args, ll_userdata):
             for i in range(0, len(cfunc.argtypes)):
                 argv.append( cfunc.argtypes[i].load(ll_args[i], False) )
             value = callback.callback.call(argv)
-            cfunc.restype.store(None, ll_res, value)
+            if isinstance(cfunc.restype, Type):
+                cfunc.restype.store(None, ll_res, value)
+        except Unwinder as unwinder:
+            core.root_unwind(core.get_ec(), unwinder)
         except Exception as e:
             try:
                 os.write(STDERR, "SystemError: callback raised ")

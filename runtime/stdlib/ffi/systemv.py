@@ -219,6 +219,11 @@ class Pointer(Type):
             return True
         return False
 
+    def getattr(self, name):
+        if name == u"to":
+            return self.to
+        return Type.getattr(self, name)
+
     def repr(self):
         return u"<pointer %s>" % self.to.repr()
 

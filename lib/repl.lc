@@ -32,7 +32,7 @@ class REPL
 #                 elif results.length > 1
 #                     term_completion_options := results
             return false
-        if s == "\x1b[A"
+        if ch == "\x1b[A"
 #                 if term_history.length == 0
 #                     continue
 #                 if term_history_index == -1
@@ -43,7 +43,7 @@ class REPL
 #                 term_seg0 := list(term_history[term_history_index])
 #                 term_seg1 := []
             return false
-        if s == "\x1b[B"
+        if ch == "\x1b[B"
 #                 if term_history.length == 0
 #                     continue
 #                 elif term_history_index == -1
