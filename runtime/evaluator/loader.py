@@ -1,7 +1,8 @@
-from rpython.rlib import jit
+from rpython.rlib import jit, rvmprof
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi, lltype
 from sourcemaps import TraceEntry
+import pathobj
 import optable
 import space
 
@@ -200,7 +201,7 @@ class Unit:
         for function in functions:
             function.unit = self
 
-class Function:
+class Function(space.Object):
     _immutable_fields_ = ['flags', 'regc', 'argc', 'topc', 'localc', 'block[*]', 'unit', 'sourcemap', 'excs[*]']
     def __init__(self, flags, regc, argc, topc, localc, block, sourcemap, excs):
         self.flags = flags
@@ -212,12 +213,14 @@ class Function:
         self.unit = None
         self.sourcemap = sourcemap
         self.excs = excs
+        rvmprof.register_code(self, get_function_name)
 
 class Frame:
-    _immutable_fields_ = ['local', 'module', 'parent', 'unit', 'sourcemap', 'excs[*]', 'regs']
+    _immutable_fields_ = ['function', 'local', 'module', 'parent', 'unit', 'sourcemap', 'excs[*]', 'regs']
     _virtualizable_ = ['local[*]', 'regs[*]']
     def __init__(self, function, module, parent, regc):
         self = jit.hint(self, access_directly=True, fresh_virtualizable=True)
+        self.function = function
         self.unit = function.unit
         self.local = [None] * function.localc
         self.module = module
@@ -268,18 +271,46 @@ class Frame:
 #         regs.append(space.null)
 #     return RegisterArray(regs)
 
-def get_printable_location(pc, block, module, unit, excs): # ,ec
+def get_function_name(function):
+    entry = TraceEntry(rffi.r_long(0),
+        function.unit.sources,
+        function.sourcemap, function.unit.path)
+    source, col0, lno0, col1, lno1 = entry.pc_location()
+    if isinstance(source, pathobj.Path):
+        source = pathobj.Path_to_string(source)
+    if isinstance(source, space.String):
+        src = source.string.encode('utf-8')
+    else:
+        src = source.repr().encode('utf-8')
+    if len(src) > 200:          # Must not be longer than 255 chars.
+        src = src[:197] + '...'
+    src = src.replace(':', ';')
+    return "lc:%s:%d:%s" % ("%d-%d" % (lno0, lno1), lno0, src)
+
+def get_printable_location(pc, block, module, unit, excs, function): # ,ec
     opcode = rffi.r_ulong(block[pc])>>8
     name = optable.names[opcode]
     return "pc=%d %s module=%s" % (pc, name, module.repr().encode('utf-8'))
 
+rvmprof.register_code_object_class(Function, get_function_name)
+
+def get_code(pc, block, frame):
+    return frame.function
+
+#def get_unique_id(next_instr, is_being_profiled, bytecode):
+def get_unique_id(pc, block, module, unit, exc, function):
+    return rvmprof.get_unique_id(function)
+
 jitdriver = jit.JitDriver(
-    greens=['pc', 'block', 'module', 'unit', 'excs'], #, 'ec'],
+    greens=['pc', 'block', 'module', 'unit', 'excs', 'function'], #, 'ec'],
     reds=['frame'], # 'regv', 
     virtualizables = ['frame'],
-    get_printable_location=get_printable_location)
+    get_printable_location=get_printable_location,
+    get_unique_id=get_unique_id, is_recursive=True)
 
+@rvmprof.vmprof_execute_code("lever", get_code)
 def interpret(pc, block, frame):
+    function = jit.promote(frame.function)
     module = jit.promote(frame.module)
     unit   = jit.promote(frame.unit)
     excs   = jit.promote(frame.excs)
@@ -288,6 +319,7 @@ def interpret(pc, block, frame):
             try:
                 jitdriver.jit_merge_point(
                     pc=pc, block=block, module=module, unit=unit, excs=excs,
+                    function=function,
                     frame=frame) #ec=ec, regv=regv, 
                 opcode = rffi.r_ulong(block[pc])>>8
                 ix = pc+1

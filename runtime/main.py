@@ -60,7 +60,7 @@ def new_entry_point(config, default_lever_path=u''):
             pass
         base.module.setattr_force(u"runtime_path", lever_path)
 
-        core.g.ec = ec = core.ExecutionContext(config, lever_path, uv_loop, uv_idler)
+        ec = core.init_executioncontext(config, lever_path, uv_loop, uv_idler)
         api.init(lever_path)
         vectormath.init_random()
 

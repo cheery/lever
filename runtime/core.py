@@ -3,7 +3,7 @@
 
 #from rpython.rlib.objectmodel import we_are_translated, keepalive_until_here
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
-#from rpython.rlib.rthread import ThreadLocalReference
+from rpython.rlib.rthread import ThreadLocalReference
 #from rpython.rlib import rgc
 from continuations import Continuation
 import os
@@ -125,12 +125,21 @@ def run_queued_tasks(handle):
         uv.idle_stop(ec.uv_idler)
 
 class GlobalState(object):
-    ec = None
+    ec = ThreadLocalReference(ExecutionContext, loop_invariant=True)
+
+def init_executioncontext(*args):
+    ec = ExecutionContext(*args)
+    g.ec.set(ec)
+    return ec
 
 #global_state = ThreadLocalReference(GlobalState)
 g = GlobalState()
 def get_ec():
-    return g.ec
+    ec = g.ec.get()
+    if isinstance(ec, ExecutionContext):
+        return ec
+    os.write(2, "threads don't support get_ec now.")
+    assert False, "failure"
 
 def root_switch(ec, argv):
     try:
