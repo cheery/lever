@@ -181,29 +181,6 @@ def _read_callback_once_(stream, nread, buf):
         greenlet, self.read_greenlet = self.read_greenlet, None
         core.root_switch(ec, [greenlet])
 
-def initialize_tty(uv_loop, fd, readable):
-    handle_type = uv.guess_handle(fd)
-    if handle_type == uv.TTY:
-        tty = lltype.malloc(uv.tty_ptr.TO, flavor="raw", zero=True)
-        status = uv.tty_init(uv_loop, tty, fd, readable)
-        if status < 0:
-            lltype.free(tty, flavor='raw')
-            raise uv_callback.to_error(status)
-        return TTY(tty, fd)
-    elif handle_type == uv.NAMED_PIPE:
-        # TODO: should you call init on this?
-        pipe = lltype.malloc(uv.pipe_ptr.TO, flavor="raw", zero=True)
-        status = uv.pipe_open(pipe, fd)
-        if status < 0:
-            lltype.free(pipe, flavor='raw')
-            raise uv_callback.to_error(status)
-        return Pipe(pipe)
-    elif handle_type == uv.FILE:
-        return File(fd)
-    else:
-        print "unfortunately this std filehandle feature not supported (yet)", str(handle_type)
-        return null
-
 class TTY(Stream):
     def __init__(self, tty, fd):
         Stream.__init__(self, rffi.cast(uv.stream_ptr, tty))

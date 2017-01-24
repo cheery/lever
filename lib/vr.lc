@@ -1,6 +1,6 @@
 import api, ffi
 
-doc = "doc:/doc/vr"
+doc = path("doc:/vr")
 
 init = (gl):
     gl.enable(gl.FRAMEBUFFER_SRGB)

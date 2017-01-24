@@ -5,7 +5,7 @@ import optable
 import base
 import binon
 
-doc = runtime_path ++ "doc/compiler"
+doc = path("doc:/compiler")
 
 # It is expected these classes are here.
 SyntaxError = chartparser.SyntaxError

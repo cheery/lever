@@ -1,4 +1,4 @@
-doc = runtime_path ++ "doc/re"
+doc = path("doc:/re")
 
 #a{n}   == aaaaa
 #a{n,}  == aaaaa+

@@ -1,6 +1,6 @@
 import api, ffi
 
-doc = runtime_path ++ "doc/vulkan"
+doc = path("doc:/vulkan")
 
 class vkstruct
     +init = (self, shadow, defaults, aliases, autoarrays):
@@ -72,7 +72,7 @@ vkdecorator = (api, name, desc):
             return vkhandle(api.build_type(name, desc), name)
     return api.build_type(name, desc)
 
-lib = api.open_nobind("libvulkan.json", null, vkdecorator)
+lib = api.read_file("libvulkan.json", null, vkdecorator)
 
 checker = exnihilo()
 checker.shadow = lib.lookup_type("Result")

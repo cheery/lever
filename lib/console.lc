@@ -1,34 +1,19 @@
 import fs
 
+doc = path("doc:/console")
+
 system_console = null
 get_system_console = (options=default_options):
     if system_console
         return system_console
-    if isinstance(stdin, TTY)
-        infd = stdin
-    else
+    if not isinstance(stdin, TTY)
         raise NoConsole()
-    if isinstance(stdout, TTY)
-        outfd = stdout
-    else
+    if not isinstance(stdout, TTY)
         raise NoConsole()
     logger = new_log()
     infd.set_mode('raw')
-    if isinstance(stderr, [TTY, Pipe])
-        errfd = stderr
-    elif isinstance(stderr, fs.File)
-        errfd = ErrorFileStream(stderr)
-    else
-        warn = object()
-        warn.type = "warning"
-        warn.value = "stderr is incompatible and ignored"
-        logger.append(warn)
-        warn = object()
-        warn.type = "warning"
-        warn.value = "error fed to stdout"
-        logger.append(warn)
-        errfd = stdout # TODO: do something smarter here.
-    system_console := Console(infd, outfd, errfd, logger, options)
+    system_console := Console(
+        stdin, stdout, stderr, logger, options)
     return system_console
 
 class NoConsole extends Exception
@@ -38,18 +23,6 @@ class NoConsole extends Exception
     +repr = (self):
         return "NoConsole: Interactive console unavailable"
     
-class ErrorFileStream
-    +init = (self, file):
-        self.file = file
-        self.offset = 0
-    
-    write = (self, buffer):
-        count = self.file.pwrite(buffer, self.offset)
-        self.offset += count
-
-    close = (self):
-        self.file.close()
-
 class Console
     +init = (self, infd, outfd, errfd, logger, options):
         self.infd = infd

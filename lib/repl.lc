@@ -1,6 +1,8 @@
 from console import get_system_console, LineEditor
 import compiler
 
+doc = path("doc:/repl")
+
 class REPL
     +init = (self, module, console=get_system_console()):
         self.module = module

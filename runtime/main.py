@@ -13,6 +13,7 @@ import rlibuv as uv
 from stdlib import api # XXX: perhaps give every module an init?
                        # Probably better way is to move the path resolution from api into here.
 import core
+import uv_logging
 
 @jit.dont_look_inside # cast_ptr_to_adr
 def wakeup_sleeper(handle):
@@ -41,26 +42,17 @@ def new_entry_point(config, default_lever_path=u''):
         uv_idler = uv.malloc_bytes(uv.idle_ptr, uv.handle_size(uv.IDLE))
         uv.idle_init(uv_loop, uv_idler)
 
-        # We don't have anything setup at this point.
-        # Lets indicate error by absence.
-        try:
-            uv_stdin  = uv_stream.initialize_tty(uv_loop, 0, 1)
-            base.module.setattr_force(u"stdin",  uv_stdin)
-        except space.Unwinder as unwinder:
-            pass
-        try:
-            uv_stdout = uv_stream.initialize_tty(uv_loop, 1, 0)
-            base.module.setattr_force(u"stdout", uv_stdout)
-        except space.Unwinder as unwinder:
-            pass
-        try:
-            uv_stderr = uv_stream.initialize_tty(uv_loop, 2, 0)
-            base.module.setattr_force(u"stderr", uv_stderr)
-        except space.Unwinder as unwinder:
-            pass
+        uv_stdin  = initialize_stdio(uv_loop, 0, 1)
+        uv_stdout = initialize_stdio(uv_loop, 1, 0)
+        uv_stderr = initialize_stdio(uv_loop, 2, 0)
+
+        base.module.setattr_force(u"stdin", uv_stdin)
+        base.module.setattr_force(u"stdout", uv_stdout)
+        base.module.setattr_force(u"stderr", uv_stderr)
         base.module.setattr_force(u"runtime_path", lever_path)
 
         ec = core.init_executioncontext(config, lever_path, uv_loop, uv_idler)
+        g.log = log = uv_logging.Logger(ec, uv_stdout, uv_stderr)
         api.init(lever_path)
         vectormath.init_random()
 
@@ -74,7 +66,7 @@ def new_entry_point(config, default_lever_path=u''):
         #uv.loop_close(ec.uv_loop)
 
         uv.tty_reset_mode()
-        ec.last_chance_logging()
+        log.last_chance_logging()
         return ec.exit_status
     return entry_point
 
@@ -135,3 +127,35 @@ def sleep_callback(duration, func):
     uv.timer_init(ec.uv_loop, uv_sleeper)
     uv.timer_start(uv_sleeper, wakeup_sleeper, int(duration.number*1000), 0)
     return space.null
+
+
+# This is a rare case when it's better to do nothing than
+# something, even if it means that we won't get any
+# diagnostics of the error.
+def initialize_stdio(uv_loop, fd, readable):
+    from uv_stream import TTY, Pipe
+    from stdlib.fs import File, ReadStream, WriteStream
+    handle_type = uv.guess_handle(fd)
+    if handle_type == uv.TTY:
+        tty = lltype.malloc(uv.tty_ptr.TO, flavor="raw", zero=True)
+        status = uv.tty_init(uv_loop, tty, fd, readable)
+        if status < 0:
+            lltype.free(tty, flavor='raw')
+            return space.null
+        return TTY(tty, fd)
+    elif handle_type == uv.NAMED_PIPE:
+        pipe = lltype.malloc(uv.pipe_ptr.TO, flavor="raw", zero=True)
+        status = uv.pipe_init(uv_loop, pipe, 1)
+        if status >= 0:
+            status = uv.pipe_open(pipe, fd)
+        if status < 0:
+            lltype.free(pipe, flavor='raw')
+            return space.null
+        return Pipe(pipe)
+    elif handle_type == uv.FILE:
+        if readable != 0:
+            return ReadStream(File(fd), 0)
+        else:
+            return WriteStream(File(fd), 0)
+    else:
+        return space.null

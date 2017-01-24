@@ -1,6 +1,6 @@
 import fs
 
-doc = runtime_path ++ "doc/tokenizer"
+doc = path("doc:/tokenizer")
 
 read_file = (path, table={}):
     return read_string(fs.read_file(path), table)

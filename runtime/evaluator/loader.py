@@ -41,7 +41,8 @@ def from_object(obj, path):
         #excs = []
         #for n in exc_table:
         #    excs.append()
-        functions.append(Function(flags, regc, argc, topc, localc, block, sourcemap, excs[:]))
+        varnames = space.null # TODO: #function_list.getitem(space.String(u"varnames"))
+        functions.append(Function(flags, regc, argc, topc, localc, block, sourcemap, excs[:], varnames))
     return Program(Unit(constants[:], functions[:], sources[:], path))
 
 def getindex_u16(block_list, i):
@@ -93,17 +94,27 @@ class Closure(space.Object):
     def getattr(self, name):
         if name == u"doc":
             return self.doc
-        elif name == u"source_location": # TODO: name this thing better.
+        elif name == u"loc":
             unit = self.function.unit
             trace = TraceEntry(0, unit.sources, self.function.sourcemap, unit.path)
             name, col0, lno0, col1, lno1 = trace.pc_location()
-            return SourceLocation(name, col0, lno0, col1, lno1)
+            start = space.Exnihilo()
+            start.setattr(u"col", space.Integer(col0))
+            start.setattr(u"lno", space.Integer(lno0))
+            stop = space.Exnihilo()
+            stop.setattr(u"col", space.Integer(col1))
+            stop.setattr(u"lno", space.Integer(lno1))
+            obj = space.Exnihilo()
+            obj.setattr(u"source", name)
+            obj.setattr(u"start", start)
+            obj.setattr(u"stop", stop)
+            return obj
         elif name == u"spec":
             spec = space.Exnihilo()
             spec.setattr(u'argc', space.Integer(rffi.r_long(self.function.argc)))
             spec.setattr(u'optional', space.Integer(rffi.r_long(self.function.topc - self.function.argc)))
             spec.setattr(u'is_variadic', space.boolean(self.function.flags & 1 == 1))
-            spec.setattr(u'varnames', space.null) #space.List(varnames))
+            spec.setattr(u'varnames', self.function.varnames)
             return spec
         else:
             return space.Object.getattr(self, name)
@@ -202,8 +213,8 @@ class Unit:
             function.unit = self
 
 class Function(space.Object):
-    _immutable_fields_ = ['flags', 'regc', 'argc', 'topc', 'localc', 'block[*]', 'unit', 'sourcemap', 'excs[*]']
-    def __init__(self, flags, regc, argc, topc, localc, block, sourcemap, excs):
+    _immutable_fields_ = ['flags', 'regc', 'argc', 'topc', 'localc', 'block[*]', 'unit', 'sourcemap', 'excs[*]', 'varnames']
+    def __init__(self, flags, regc, argc, topc, localc, block, sourcemap, excs, varnames):
         self.flags = flags
         self.regc = regc
         self.argc = argc
@@ -213,6 +224,7 @@ class Function(space.Object):
         self.unit = None
         self.sourcemap = sourcemap
         self.excs = excs
+        self.varnames = varnames
         rvmprof.register_code(self, get_function_name)
 
 class Frame:
@@ -528,34 +540,3 @@ def get_string(unit, block, i):
 #        space.Integer(col0), space.Integer(lno0),
 #        space.Integer(col1), space.Integer(lno1)
 #    ])
-
-
-class SourceLocation(space.Object):
-    def __init__(self, source, start_col, start_lno, stop_col, stop_lno):
-        self.source = source
-        self.start_col = start_col
-        self.start_lno = start_lno
-        self.stop_col = stop_col
-        self.stop_lno = stop_lno
-
-    def listattr(self):
-        listing = space.Object.listattr(self)
-        listing.append(space.String(u"origin"))
-        listing.append(space.String(u"start_col"))
-        listing.append(space.String(u"start_lno"))
-        listing.append(space.String(u"stop_col"))
-        listing.append(space.String(u"stop_lno"))
-        return listing
-
-    def getattr(self, name):
-        if name == u"source":
-            return self.source
-        if name == u"start_col":
-            return space.Integer(self.start_col)
-        if name == u"start_lno":
-            return space.Integer(self.start_lno)
-        if name == u"stop_col":
-            return space.Integer(self.stop_col)
-        if name == u"stop_lno":
-            return space.Integer(self.stop_lno)
-        return space.Object.getattr(self, name)

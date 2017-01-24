@@ -1,6 +1,6 @@
 from rpython.rlib.objectmodel import specialize, always_inline
-from interface import Object, Interface, null, cast, cast_n, cast_for
-from builtin import Builtin, signature, SourceLocationLines
+from interface import Object, Interface, null, cast, cast_n, cast_for, Id
+from builtin import Builtin, signature
 from dictionary import Dict
 from listobject import List
 from module import Module, importer_poststage, DocRef

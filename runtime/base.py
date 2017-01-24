@@ -2,7 +2,7 @@ from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi
 from rpython.rlib.rstring import UnicodeBuilder
 from space import *
-from evaluator.loader import from_object, SourceLocation
+from evaluator.loader import from_object
 from evaluator.sourcemaps import TraceEntry
 from async_io import Event, Queue
 import core
@@ -21,6 +21,7 @@ module = Module(u'base', {
     u'builtin': Builtin.interface,
     u'greenlet': core.Greenlet.interface,
     u'interface': Interface.interface,
+    u'Id': Id.interface,
     u'dict': Dict.interface,
     u'Module': Module.interface,
     u'module': Module.interface,     # TODO: deprecate and then remove
@@ -45,8 +46,6 @@ module = Module(u'base', {
     u'schedule': Builtin(core.schedule, u'schedule'),
     u'set': Set.interface,
     u'slice': Slice.interface,
-    u'SourceLocationLines': SourceLocationLines.interface,
-    u'SourceLocation': SourceLocation.interface,
     u'DocRef': DocRef.interface,
     u'Event': Event.interface,
     u'Queue': Queue.interface,
@@ -368,30 +367,26 @@ def getcurrent():
 @signature()
 def new_log():
     queue = Queue()
-    ec = core.get_ec()
-    if queue in ec.loggers:
+    if queue in core.g.log.loggers:
         raise unwind(LError(u"queue has been registered twice."))
-    ec.loggers.append(queue)
+    core.g.log.loggers.append(queue)
     return queue
  
 @builtin
 def print_(argv):
-    ec = core.get_ec()
-    ec.log_other(u"info", List(argv))
+    core.g.log.other(u"info", List(argv))
     return null
 
 @builtin
 @signature(String, Object)
 def log(type, value):
-    ec = core.get_ec()
-    ec.log_other(type.string, value)
+    core.g.log.other(type.string, value)
     return null
 
 @builtin
 @signature(Object)
 def print_traceback(exception):
-    ec = core.get_ec()
-    ec.log_exception(exception)
+    core.g.log.exception(exception)
     return null
 
 @builtin

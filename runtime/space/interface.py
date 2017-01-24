@@ -17,7 +17,7 @@ class Object:
                     name = re.sub("(.)([A-Z]+)", r"\1_\2", name).lower().decode('utf-8'))
                 if re.match("^L[A-Z]", name):
                     cls.interface.name = name[1:].decode('utf-8')
-                if name not in ('BoundMethod', 'Builtin', 'SourceLocationLines'):
+                if name not in ('BoundMethod', 'Builtin'):
                     expose_internal_methods(cls.interface, dict)
 
     def call(self, argv):
@@ -263,9 +263,28 @@ def hate_them(argv):
 # I doubt we miss these.
 #expose_internal_methods(BoundMethod)
 #expose_internal_methods(builtin.Builtin)
-#expose_internal_methods(builtin.SourceLocationLines)
 
 # When your good names are your best.
 @Interface.instantiator2(builtin.signature(Object))
 def Interface_init_is_cast(obj):
     return space.get_interface(obj)
+
+
+# Id is for situations when you'd want to compare or
+# hash things by identity.
+
+class Id(Object):
+    def __init__(self, ref):
+        self.ref = ref
+
+    def getattr(self, name):
+        if name == u"ref":
+            return self.ref
+        return Object.getattr(self, name)
+
+    def hash(self):
+        return compute_hash(self.ref)
+
+@Id.instantiator2(builtin.signature(Object))
+def Id_init(ref):
+    return Id(ref)

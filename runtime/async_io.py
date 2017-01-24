@@ -33,11 +33,12 @@ def Event_dispatch(self, argv):
     ec = core.get_ec()
 
     for cb in self.callbacks:
-        ec.enqueue(core.to_greenlet([cb] + argv))
+        c = core.to_greenlet([cb] + argv)
+        c.ec.enqueue(c)
     waiters, self.waiters = self.waiters, []
     for waiter in waiters:
         waiter.argv.extend(argv)
-        ec.enqueue(waiter)
+        waiter.ec.enqueue(waiter)
     return null
 
 @Event.method(u"register", signature(Event, Object))
@@ -75,9 +76,8 @@ class Queue(Object):
         if self.closed: # TODO: add granular exception.
             raise unwind(LError(u"queue is closed"))
         if self.greenlet is not None:
-            ec = core.get_ec()
             self.greenlet.argv.append(obj)
-            ec.enqueue(self.greenlet)
+            self.greenlet.ec.enqueue(self.greenlet)
             self.greenlet = None
         else:
             self.items.append(obj)

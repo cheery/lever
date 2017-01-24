@@ -26,8 +26,13 @@ class Builtin(Object):
     def getattr(self, name):
         if name == u"doc":
             return self.doc
-        elif name == u"source_location":
-            return self.source_location
+        elif name == u"loc":
+            source, start, stop = self.source_location
+            obj = space.Exnihilo()
+            obj.setattr(u"source", space.String(source))
+            obj.setattr(u"start",  space.Integer(start))
+            obj.setattr(u"stop",   space.Integer(stop))
+            return obj
         elif name == u"spec":
             argc, optional, variadic, varnames, argtypes = self.spec
             varnames = [space.String(name.decode('utf-8')) for name in varnames]
@@ -54,7 +59,7 @@ class Builtin(Object):
     def listattr(self):
         listing = Object.listattr(self)
         listing.append(space.String(u"doc"))
-        listing.append(space.String(u"source_location"))
+        listing.append(space.String(u"loc"))
         listing.append(space.String(u"spec"))
         return listing
     
@@ -113,29 +118,7 @@ def get_source_location(func):
     filename = inspect.getsourcefile(func)
     source = os.path.join("builtin:/", os.path.relpath(filename, "runtime")).decode('utf-8')
     lines, firstline = inspect.getsourcelines(func)
-    return SourceLocationLines(source, firstline, firstline+len(lines))
+    return source, firstline, firstline+len(lines)
 
 spec_table = {}
 source_table = {}
-
-class SourceLocationLines(Object):
-    def __init__(self, source, start, stop):
-        self.source = source
-        self.start = start
-        self.stop = stop
-
-    def listattr(self):
-        listing = Object.listattr(self)
-        listing.append(space.String(u"source"))
-        listing.append(space.String(u"start"))
-        listing.append(space.String(u"stop"))
-        return listing
-
-    def getattr(self, name):
-        if name == u"source":
-            return space.String(self.source)
-        if name == u"start":
-            return space.Integer(self.start)
-        if name == u"stop":
-            return space.Integer(self.stop)
-        return Object.getattr(self, name)

@@ -129,9 +129,11 @@ def open_(path, flags, mode):
 class File(Object):
     def __init__(self, fd):
         self.fd = fd
+        self.closed = False
 
 @File.method(u"close", signature(File))
 def File_close(self):
+    self.closed = True
     req = lltype.malloc(uv.fs_ptr.TO, flavor='raw', zero=True)
     try:
         response = uv_callback.fs(req)
@@ -719,5 +721,63 @@ def Watch_wait(self):
         self.greenlet = ec.current
         return core.switch([ec.eventloop])
 
+class FileStream(Object):
+    def __init__(self, fileobj, offset):
+        self.fileobj = fileobj
+        self.offset = offset
+
+    def getattr(self, name):
+        if name == u"file":
+            return self.fileobj
+        elif name == u"offset":
+            return Integer(self.offset)
+        else:
+            return Object.getattr(self, name)
+
+    def setattr(self, name, value):
+        if name == u"offset":
+            self.offset = cast(value, Integer, u"FileStream.offset").value
+            return value
+        else:
+            return Object.setattr(self, name, value)
+
+@FileStream.method(u"close", signature(FileStream))
+def FileStream_close(self):
+    return File_close(self.fileobj)
+
+class ReadStream(FileStream):
+    pass
+
+@ReadStream.instantiator2(signature(File, Integer, optional=1))
+def ReadStream_init(fileobj, offset):
+    offset = 0 if offset is None else offset.value
+    return WriteStream(fileobj, offset)
+
+@ReadStream.method(u"read", signature(ReadStream))
+def ReadStream_read(self):
+    data = alloc_uint8array(64*1024)
+    count = File_pread(self.fileobj, data, Integer(self.offset))
+    self.offset += count.value
+    if count.value == 0:
+        raise uv_callback.to_error(uv.EOF)
+    return data.subslice(count.value)
+
+class WriteStream(FileStream):
+    pass
+
+@WriteStream.instantiator2(signature(File, Integer, optional=1))
+def WriteStream_init(fileobj, offset):
+    offset = 0 if offset is None else offset.value
+    return WriteStream(fileobj, offset)
+
+@WriteStream.method(u"write", signature(WriteStream, Object))
+def WriteStream_write(self, data):
+    count = File_pwrite(self.fileobj, data, Integer(self.offset))
+    self.offset += count.value
+    return null
+
 module.setattr_force(u"watch", Watch.interface)
 module.setattr_force(u"File", File.interface)
+module.setattr_force(u"ReadStream",  ReadStream.interface)
+module.setattr_force(u"WriteStream", WriteStream.interface)
+

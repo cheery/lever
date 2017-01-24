@@ -1,6 +1,6 @@
 # We may want to invert many of these dependencies.
 from builtin import Builtin, signature
-from interface import Object, Interface, null
+from interface import Object, Interface, null, Id
 from multimethod import Multimethod
 from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean
 from rpython.rlib.objectmodel import specialize, always_inline
@@ -198,6 +198,10 @@ def _(a, b):
         if is_false(eq.call([a.contents[i], b.contents[i]])):
             return false
     return true
+
+@eq.multimethod_s(Id, Id)
+def _(a, b):
+    return boolean(a.ref == b.ref)
 
 @neg.multimethod_s(Integer)
 def _(a):

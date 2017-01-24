@@ -1,0 +1,18 @@
+import fs
+
+doc = path("doc:/doctools")
+
+# Never run this on a scope you do not trust.
+import_all_modules = (scope):
+    if path("builtin:/") <= scope.local
+        for name in scope
+            yield scope[name].module
+    else
+        imp = Import(scope.local, scope)
+        for entry in fs.scandir(scope.local)
+            if not entry.path.endswith(".lc")
+                continue
+            assert entry.type == "file"
+                "TODO: entry type: " ++ entry.type
+            name = entry.path[.:entry.path.length-3]
+            yield imp(name)
