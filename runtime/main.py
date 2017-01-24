@@ -52,7 +52,7 @@ def new_entry_point(config, default_lever_path=u''):
         base.module.setattr_force(u"runtime_path", lever_path)
 
         ec = core.init_executioncontext(config, lever_path, uv_loop, uv_idler)
-        g.log = log = uv_logging.Logger(ec, uv_stdout, uv_stderr)
+        core.g.log = log = uv_logging.Logger(ec, uv_stdout, uv_stderr)
         api.init(lever_path)
         vectormath.init_random()
 
