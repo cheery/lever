@@ -16,3 +16,122 @@ import_all_modules = (scope):
                 "TODO: entry type: " ++ entry.type
             name = entry.path[.:entry.path.length-3]
             yield imp(name)
+
+# Same goes for this.
+get_scope_index = (scope, recursive=true):
+    if recursive and scope.parent
+        index = get_scope_index(scope.parent)
+    else
+        index = {}
+    for module in import_all_modules(scope)
+        key = module.doc.to_string()
+        index[key] =
+            get_module_index(module, index.get(key))
+    return index
+
+# Stuff below this are safe, unless you imported
+# a malicious module.
+get_module_index = (module, block={}):
+    scan(block, block, module.doc, module)
+    return block
+
+scan = (members, this, link, base):
+    for name in listattr(base)
+        if name == "doc"
+            continue
+        if isinstance(base, Module) and name.startswith('+')
+            continue
+        val = getattr(base, name)
+        doc = try_getattr(val, 'doc')
+        if isinstance(doc, DocRef) and doc.link == link
+            block = get_block(members, doc)
+            if isinstance(val, interface)
+                block["type"] = "interface"
+                if "fields" not in block
+                    block["fields"] = {}
+                scan(members, block["fields"], link, val)
+            if isinstance(val, multimethod)
+                block["type"] = "multimethod"
+                block["methods"] = table = []
+                for argtypes in val.keys()
+                    func = val[argtypes]
+                    desc = {}
+                    if is_function(func)
+                        scan_function(desc, func)
+                    else
+                        desc["type"] = "object"
+                        desc["interface"] = get_link(interface(func))
+                    arglinks = []
+                    for argtype in argtypes
+                        arglinks.append(get_link(argtype))
+                    table.append({
+                        argtypes = arglinks
+                        function = desc
+                    })
+            if is_function(val)
+                scan_function(block, val)
+        else
+            this[name] = {
+                type = "object"
+                interface = get_link(interface(val))
+            }
+
+is_function = (val):
+    spec = try_getattr(val, "spec")
+    loc = try_getattr(val, "loc")
+    return spec and loc
+
+scan_function = (block, func):
+    spec = func.spec
+    loc = func.loc
+    if spec and loc
+        block["type"] = "function"
+        if not isinstance(loc.start, int)
+            loc.start = dict(loc.start)
+        if not isinstance(loc.stop, int)
+            loc.stop = dict(loc.stop)
+        block["loc"] = dict(loc)
+
+        arglist = null
+        argtypes = try_getattr(spec, "argtypes")
+        if argtypes
+            arglist = []
+            for argt in argtypes
+                arglist.append(get_link(argt))
+            
+        block["spec"] = {
+            argc        = spec.argc
+            is_variadic = spec.is_variadic
+            optional = spec.optional
+            varnames = spec.varnames
+            argtypes = arglist
+        }
+        
+get_block = (members, ref):
+    if ref.parent
+        block = get_block(members, ref.parent)
+        if "fields" in block
+            members = block["fields"]
+        else
+            members = block["fields"] = {}
+    if ref.name in members
+        return members[ref.name]
+    else
+        res = members[ref.name] = {}
+        return res
+
+get_link = (obj, ref=obj.doc):
+    if not ref
+        return [null, repr(obj)]
+    if ref.parent
+        link = get_link(obj, ref.parent)
+    else
+        link = [ref.link.to_string()]
+    link.append(ref.name)
+    return link
+
+try_getattr = (obj, name, default=null):
+    try
+        return getattr(obj, name)
+    except Exception as _
+        return default

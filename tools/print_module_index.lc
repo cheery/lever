@@ -1,0 +1,9 @@
+import console
+import fs
+import doctools
+import json
+
+main = :
+    scope = %"import".scope.parent
+    index = doctools.get_scope_index(scope)
+    print(json.write_string(index, {sort_keys=true, indent=4}))
