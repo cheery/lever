@@ -11,7 +11,7 @@ get_system_console = (options=default_options):
     if not isinstance(stdout, TTY)
         raise NoConsole()
     logger = new_log()
-    infd.set_mode('raw')
+    stdin.set_mode('raw')
     system_console := Console(
         stdin, stdout, stderr, logger, options)
     return system_console

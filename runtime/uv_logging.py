@@ -85,11 +85,19 @@ class Logger:
                 bufs, nbufs, std.offset, lltype.nullptr(uv.fs_cb.TO))
             if rffi.r_long(req.c_result) > 0:
                 std.offset += rffi.r_long(req.c_result)
+            lltype.free(bufs, flavor="raw")
+            lltype.free(req, flavor="raw")
         elif isinstance(std, uv_stream.Stream) and not std.closed:
             stream = std.stream
             req = lltype.malloc(uv.write_ptr.TO, flavor='raw', zero=True)
-            _ = uv.write(req, stream, bufs, nbufs, lltype.nullptr(uv.write_cb.TO))
-            lltype.free(req, flavor="raw")
+            req.c_data = rffi.cast(rffi.VOIDP, bufs)
+            res = uv.write(req, stream, bufs, nbufs, _logging_write_callback_)
+            if rffi.r_long(res) < 0:
+                lltype.free(bufs, flavor="raw")
+                lltype.free(req, flavor="raw")
         else:
             return
-        lltype.free(bufs, flavor="raw")
+
+def _logging_write_callback_(write_req, status):
+    lltype.free(write_req.c_data, flavor="raw")
+    lltype.free(write_req, flavor="raw")
