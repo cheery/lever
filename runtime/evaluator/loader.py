@@ -211,6 +211,7 @@ class Unit:
         self.path = path
         for function in functions:
             function.unit = self
+            rvmprof.register_code(function, get_function_name)
 
 class Function(space.Object):
     _immutable_fields_ = ['flags', 'regc', 'argc', 'topc', 'localc', 'block[*]', 'unit', 'sourcemap', 'excs[*]', 'varnames']
@@ -225,7 +226,6 @@ class Function(space.Object):
         self.sourcemap = sourcemap
         self.excs = excs
         self.varnames = varnames
-        rvmprof.register_code(self, get_function_name)
 
 class Frame:
     _immutable_fields_ = ['function', 'local', 'module', 'parent', 'unit', 'sourcemap', 'excs[*]', 'regs']
@@ -297,7 +297,7 @@ def get_function_name(function):
     if len(src) > 200:          # Must not be longer than 255 chars.
         src = src[:197] + '...'
     src = src.replace(':', ';')
-    return "lc:%s:%d:%s" % ("%d-%d" % (lno0, lno1), lno0, src)
+    return "py:L%s:%d:%s" % ("%d_%d" % (lno0, lno1), lno0, src)
 
 def get_printable_location(pc, block, module, unit, excs, function): # ,ec
     opcode = rffi.r_ulong(block[pc])>>8
@@ -320,7 +320,7 @@ jitdriver = jit.JitDriver(
     get_printable_location=get_printable_location,
     get_unique_id=get_unique_id, is_recursive=True)
 
-@rvmprof.vmprof_execute_code("lever", get_code)
+@rvmprof.vmprof_execute_code("pypy", get_code, space.Object)
 def interpret(pc, block, frame):
     function = jit.promote(frame.function)
     module = jit.promote(frame.module)
