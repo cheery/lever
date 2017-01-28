@@ -57,11 +57,7 @@ def response_handler(name, *blank_data):
     response.__name__ = name + "_response"
     return response
 
-def to_error(result):
-    raise unwind(LUVError(
-        rffi.charp2str(uv.err_name(result)).decode('utf-8'),
-        rffi.charp2str(uv.strerror(result)).decode('utf-8')
-    ))
+from uv_util import to_error
 
 # TODO: Organize this stuff.
 # int uv_fs_mkdir(uv_loop_t* loop, uv_fs_t* req, const char* path, int mode, uv_fs_cb cb)

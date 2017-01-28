@@ -14,6 +14,9 @@ class Unwinder(Exception):
 
 # The exceptions themselves must be able to hold traceback.
 class LException(Object):
+    def __init__(self):
+        self.traceback = null
+
     def getattr(self, name):
         if name == u"traceback":
             return self.traceback
@@ -59,6 +62,7 @@ def _(thing):
 class LSystemExit(LException):
     def __init__(self, status):
         self.status = status
+        self.traceback = null
 
     def repr(self):
         return u"%d" % self.status
@@ -114,6 +118,7 @@ def _(obj, value):
 
 class LTypeError(LException):
     def __init__(self, message):
+        self.traceback = null
         self.message = message
 
     def repr(self):
@@ -126,6 +131,7 @@ def _(message):
 
 class LFrozenError(LException):
     def __init__(self, obj):
+        self.traceback = null
         self.obj = obj
 
     def repr(self):
@@ -142,6 +148,7 @@ def _(obj):
 # entries as well.
 class LCallError(LException):
     def __init__(self, min, max, variadic, got):
+        self.traceback = null
         self.min = min
         self.max = max
         self.variadic = variadic
@@ -154,6 +161,7 @@ class LCallError(LException):
 
 class LInstructionError(LException):
     def __init__(self, name, opcode):
+        self.traceback = null
         self.name = name
         self.opcode = opcode
 
@@ -162,6 +170,7 @@ class LInstructionError(LException):
 
 class LIOError(LException):
     def __init__(self, filename, errno):
+        self.traceback = null
         self.filename = filename
         self.errno = errno
 
@@ -171,6 +180,7 @@ class LIOError(LException):
 
 class LUVError(LException):
     def __init__(self, error_name, strerror):
+        self.traceback = null
         self.error_name = error_name
         self.strerror = strerror
 

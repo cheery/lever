@@ -12,6 +12,7 @@ import pathobj
 import sys
 import time
 import vectormath
+import uv_util
 import uv_handle
 import uv_stream
 import uv_timer
@@ -63,6 +64,9 @@ def module_instantiate(name, extends):
 
 # we may later want to do the same for the stuff you see above.
 for error in all_errors:
+    module.setattr_force(error.interface.name, error.interface)
+
+for _, error in uv_util.errors:
     module.setattr_force(error.interface.name, error.interface)
 
 for name, value in operators.by_symbol.iteritems():

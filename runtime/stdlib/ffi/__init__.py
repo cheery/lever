@@ -65,6 +65,7 @@ def _(name, apispec):
 
 class LLoadError(LException):
     def __init__(self, name):
+        LException.__init__(self)
         self.name = name
 
     def repr(self):

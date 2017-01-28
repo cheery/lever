@@ -99,6 +99,24 @@ REQ_TYPE_PRIVATE,
 REQ_TYPE_MAX
 ) = range(12)
 
+error_names = [
+    "E2BIG", "EACCES", "EADDRINUSE", "EADDRNOTAVAIL", "EAFNOSUPPORT",
+    "EAGAIN", "EAI_ADDRFAMILY", "EAI_AGAIN", "EAI_BADFLAGS",
+    "EAI_BADHINTS", "EAI_CANCELED", "EAI_FAIL", "EAI_FAMILY",
+    "EAI_MEMORY", "EAI_NODATA", "EAI_NONAME", "EAI_OVERFLOW",
+    "EAI_PROTOCOL", "EAI_SERVICE", "EAI_SOCKTYPE", "EALREADY",
+    "EBADF", "EBUSY", "ECANCELED", "ECHARSET", "ECONNABORTED",
+    "ECONNREFUSED", "ECONNRESET", "EDESTADDRREQ", "EEXIST", "EFAULT",
+    "EFBIG", "EHOSTDOWN", "EHOSTUNREACH", "EINTR", "EINVAL", "EIO",
+    "EISCONN", "EISDIR", "ELOOP", "EMFILE", "EMLINK", "EMSGSIZE",
+    "ENAMETOOLONG", "ENETDOWN", "ENETUNREACH", "ENFILE", "ENOBUFS",
+    "ENODEV", "ENOENT", "ENOMEM", "ENONET", "ENOPROTOOPT", "ENOSPC",
+    "ENOSYS", "ENOTCONN", "ENOTDIR", "ENOTEMPTY", "ENOTSOCK",
+    "ENOTSUP", "ENXIO", "EOF", "EPERM", "EPIPE", "EPROTO",
+    "EPROTONOSUPPORT", "EPROTOTYPE", "ERANGE", "EROFS", "ESHUTDOWN",
+    "ESPIPE", "ESRCH", "ETIMEDOUT", "ETXTBSY", "EXDEV", "UNKNOWN",
+]
+
 class CConfig:
     _compilation_info_ = eci
 
@@ -245,7 +263,14 @@ class CConfig:
     O_EXCL = rffi_platform.ConstantInteger("O_EXCL")
     O_TRUNC = rffi_platform.ConstantInteger("O_TRUNC")
 
+    for name in error_names:
+        locals()[name] = rffi_platform.ConstantInteger("UV_"+name)
+
 cConfig = rffi_platform.configure(CConfig)
+
+errors = dict(
+    (cConfig[name], name)
+    for name in error_names)
 
 uid_t = cConfig['uid_t']
 gid_t = cConfig['gid_t']

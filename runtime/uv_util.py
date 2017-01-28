@@ -1,4 +1,5 @@
 from rpython.rlib.objectmodel import specialize
+from rpython.rlib import unroll
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 import space
 import rlibuv as uv
@@ -80,15 +81,46 @@ def check(result):
     if rffi.r_long(result) < 0:
         raise to_error(result)
 
-def to_error(result):
-    raise space.unwind(space.LUVError(
-        rffi.charp2str(uv.err_name(result)).decode('utf-8'),
-        rffi.charp2str(uv.strerror(result)).decode('utf-8')
-    ))
-
 def dont_init(uv_loop, this):
     return 0
 
 # TODO: Simplify the uv_callback.response_handler
 #       with the above stash, if it turns
 #       out as very nice.
+
+def init_errors():
+    for errno, err_name in uv.errors.items():
+        class Exc(space.LException):
+            def getattr(self, name):
+                if name == u"name":
+                    return space.String(err_name.decode('utf-8'))
+                elif name == u"strerror":
+                    return space.String(
+                        rffi.charp2str(uv.strerror(errno)).decode('utf-8'))
+                else:
+                    return space.LException.getattr(self, name)
+                
+            def listattr(self):
+                listing = space.LException.listattr(self)
+                listing.append(space.String(u"name"))
+                listing.append(space.String(u"strerror"))
+                return listing
+
+            def repr(self):
+                return err_name.decode('utf-8')
+        Exc.interface.parent = space.LUVError.interface
+        Exc.interface.name = err_name.decode('utf-8')
+        Exc.__name__ = err_name
+        yield errno, Exc
+
+errors = unroll.unrolling_iterable(list(init_errors()))
+
+def to_error(result):
+    for errno, Exc in errors:
+        if errno == rffi.r_long(result):
+            return space.unwind(Exc())
+    else:
+        return space.unwind(space.LUVError(
+            rffi.charp2str(uv.err_name(result)).decode('utf-8'),
+            rffi.charp2str(uv.strerror(result)).decode('utf-8')
+        ))
