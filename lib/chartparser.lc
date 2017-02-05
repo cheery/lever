@@ -528,6 +528,15 @@ class IndentParser
                 self.level = pos.col
             self.line = pos.lno
 
+    # This can be used to terminate dedent if the parsing cannot
+    # continue otherwise. Though note that this function, and to
+    # some extent the whole indent parser in its current form
+    # provides bias for certain interpretations of the input.
+    slip = (self, parser, pos, source):
+        if parser.expecting(self.dedent)
+            parser.step(self.dedent, null, pos, pos)
+            self.level = self.stack.pop()
+
     # Most languages have a bug if this function returns false.
     finish = (self, parser, pos):
         while self.stack.length > 0 and parser.expecting(self.dedent)

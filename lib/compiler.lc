@@ -45,6 +45,8 @@ read_tokens = (tokens, source=null):
         indent.step(parser, token.start, source)
         terminal = language.table.terminal(token.name)
         if not parser.expecting(terminal)
+            indent.slip(parser, token.start, source)
+        if not parser.expecting(terminal)
             raise chartparser.SyntaxErrorExpected(parser.expect, token.start, source)
         parser.step(terminal, token, token.start, token.stop)
     indent.finish(parser, token.stop)
