@@ -1,20 +1,52 @@
 #!/usr/bin/env python2
-"""
-    This script should help setting up environment for lever.
-    Run it without arguments, and it just setups the environment.
-    Run it with 'compile' -argument, eg. "./setup.py compile" and it compiles.
-
-    Compiling takes some time to finish.
-"""
+#"""
+#    This script should help setting up environment for lever.
+#    Run it without arguments, and it just setups the environment.
+#    Run it with 'compile' -argument, eg. "./setup.py compile" and it compiles.
+#
+#    Compiling takes some time to finish.
+#"""
+from StringIO import StringIO
 from subprocess import call, check_call
 from urllib import urlopen
-from StringIO import StringIO
 from zipfile import ZipFile
+import argparse
+import glob
+import os
 import platform
 import re
 import sys
-import glob
-import os
+
+def main():
+    parser = argparse.ArgumentParser()
+    subparsers = parser.add_subparsers()
+
+    cmd = subparsers.add_parser('compile',
+        help="Compile the lever runtime")
+    cmd.set_defaults(func=compile_lever)
+    cmd.add_argument("--lldebug", action="store_true",
+        help="Compile in debug mode")
+    cmd.add_argument("--nojit", action="store_true",
+        help="Compile without jit")
+    cmd.add_argument("--stm", action="store_true",
+        help="Waiting for this day")
+    cmd.add_argument("--use-pypy", action="store_true",
+        help="Use pypy for compiling")
+
+    cmd = subparsers.add_parser('compile-lib',
+        help="Compile lib/ contents",
+        description=compile_lib_desc)
+    cmd.set_defaults(func=compile_lib)
+    cmd.add_argument("--all", action="store_true",
+        help="recompile all")
+
+    cmd = subparsers.add_parser('win32-dist',
+        help="Create win32 distribution",
+        description=win32_dist.__doc__)
+    cmd.set_defaults(func=win32_dist)
+
+    args = parser.parse_args()
+    return args.func(args)
 
 # On linux the system checks whether the tools required to build it respond.
 # Then it checks whether the system has the required C libraries to have
@@ -35,13 +67,49 @@ import os
 pypy_src_url = 'https://bitbucket.org/pypy/pypy/downloads/pypy2-v5.6.0-src'
 pypy_src_dir = 'pypy2-v5.6.0-src'
 
+# If the untagged 'pypy' -directory is around, we will use that.
+# But the pypy_src_url is still downloaded.
+
 # These are listed in "Building PyPy from Source":
 #                     http://doc.pypy.org/en/latest/build.html
 command_depends = "pkg-config gcc make bzip2".split(' ')
 library_depends = "libffi zlib sqlite3 ncurses expat libssl".split(' ')
 
-devnull = open(os.devnull, 'w')
-def linux_main():
+def compile_lever(args):
+    system = platform.system()
+    if system == "Linux":
+        linux_build_depedencies()
+    elif system == "Windows":
+        windows_build_dependencies()
+    else:
+        assert False, "no dependency fetching script for {}".format(system)
+    if os.path.exists('pypy'):
+        os.environ['PYTHONPATH'] = 'pypy'
+    else:
+        os.environ['PYTHONPATH'] = pypy_src_dir
+    rpython_bin = os.path.join(pypy_src_dir, 'rpython', 'bin', 'rpython')
+
+    build_flags = []
+    if not args.nojit:
+        build_flags.append('--translation-jit')
+    build_flags.append('--gc=incminimark')
+    build_flags.append('--opt=2')
+    if args.lldebug:
+        build_flags.append('--lldebug')
+    # PyPy STM was tried once. The plans are to
+    # pick it up when it improves.
+    if args.stm:
+        build_flags.append('--stm')
+    if args.use_pypy:
+        check_call(['pypy', rpython_bin] +
+            build_flags + ["runtime/goal_standalone.py"])
+    else:
+        check_call(['python', rpython_bin] +
+            build_flags + ["runtime/goal_standalone.py"])
+    compile_libraries(preserve_cache=False)
+
+def linux_build_depedencies():
+    devnull = open(os.devnull, 'w')
     for cmd in command_depends:
         if call([cmd, '--version'], stdout=devnull, stderr=devnull) != 0:
             return linux_troubleshoot(cmd)
@@ -49,50 +117,29 @@ def linux_main():
         if call(['pkg-config', '--exists', dependency]) != 0:
             return linux_troubleshoot(dependency)
     linux_download_and_extract(pypy_src_dir, pypy_src_url + '.tar.bz2')
-    compiling_commands()
 
 # On windows, you're going to need Visual studio 9.0 and you need to
 # know how to use it. (You might obtain it by checking for "visual studio for python 2.7")
 # Having frequent releases start to seem relevant, so I may have to setup a build computer that
 # automates it. Maybe some day...
-def windows_main():
+def windows_build_dependencies():
     if not os.path.exists(pypy_src_dir):
         url = urlopen(pypy_src_url + '.zip')
         zipfile = ZipFile(StringIO(url.read()))
         zipfile.extractall()
         print("Note that building from source for windows isn't frequent.")
-        print("Experienced computer operator is required after this point.")
-    compiling_commands()
 
-def compiling_commands():
-    os.environ['PYTHONPATH'] = pypy_src_dir
-    rpython_bin = os.path.join(pypy_src_dir, 'rpython', 'bin', 'rpython')
-    if len(sys.argv) > 1 and sys.argv[1] == 'pypy-compile-debug':
-        check_call(['pypy', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 --lldebug runtime/goal_standalone.py".split(' '))
-        compile_libraries(preserve_cache=False)
-    if len(sys.argv) > 1 and sys.argv[1] == 'pypy-compile':
-        check_call(['pypy', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 runtime/goal_standalone.py".split(' '))
-        compile_libraries(preserve_cache=False)
-    if len(sys.argv) > 1 and sys.argv[1] == 'compile-debug':
-        check_call(['python', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 --lldebug runtime/goal_standalone.py".split(' '))
-        compile_libraries(preserve_cache=False)
-    if len(sys.argv) > 1 and sys.argv[1] == 'compile':
-        check_call(['python', rpython_bin] + "--translation-jit --gc=incminimark --opt=2 runtime/goal_standalone.py".split(' '))
-        compile_libraries(preserve_cache=False)
-    if len(sys.argv) > 1 and sys.argv[1] == 'compile-debug-nojit':
-        check_call(['python', rpython_bin] + "--gc=incminimark --opt=2 --lldebug runtime/goal_standalone.py".split(' '))
-        compile_libraries(preserve_cache=False)
-    if len(sys.argv) > 1 and sys.argv[1] == 'compile-nojit':
-        check_call(['python', rpython_bin] + "--gc=incminimark runtime/goal_standalone.py".split(' '))
-        compile_libraries(preserve_cache=False)
-    if len(sys.argv) > 1 and sys.argv[1] == 'compile-lib':
-        compile_libraries()
-    if len(sys.argv) > 1 and sys.argv[1] == 'compile-lib-all':
-        compile_libraries(preserve_cache=False)
-# It was tried once.. Plans are to pick it up when PyPy STM improves.
-#    if len(sys.argv) > 1 and sys.argv[1] == 'compile-stm':
-#        os.environ['PYTHONPATH'] = "pypy-stm"
-#        check_call("python pypy-stm/rpython/bin/rpython --translation-jit --opt=2 --stm main.py".split(' '))
+compile_lib_desc = """This command compiles the scripts in the lib/
+
+If this command has not been run successfully,
+the lever runtime will exclaim that bytecode
+compiler is stale or missing. 
+
+This command is automatically run along the compile.
+"""
+
+def compile_lib(args):
+    compile_libraries(not args.all)
 
 def compile_libraries(preserve_cache=True):
     from compiler import compile
@@ -112,11 +159,6 @@ def compile_libraries(preserve_cache=True):
                     compile.compile_file(cb_name, lc_name)
                 except Exception as e:
                     print("{}:{}".format(lc_name, e))
-
-#--continuation --gc=incminimark --gcrootfinder=shadowstack --opt=2
-
-#def is_env_64bit():
-#    return platform.machine().endswith('64')
 
 def linux_troubleshoot(item):
     print("Dependencies to compile or run:")
@@ -139,19 +181,59 @@ def linux_download_and_extract(target, archive):
             check_call(['wget', archive])
         check_call(["tar", "-xf", target + '.tar.bz2'])
 
-# Well this was not really needed, but it might be needed later on.
-#if is_env_64bit():
-#    target = 'pypy-c-jit64'
-#    archive = 'pypy-c-jit-latest-linux64.tar.bz2'
-#else:
-#    target = 'pypy-c-jit'
-#    archive = 'pypy-c-jit-latest-linux.tar.bz2'
+
+def win32_dist(args):
+    """
+        This script creates a win32 distribution for lever
+    """
+    import shutil
+    if not os.path.exists("lever.exe"):
+        print("Need something to distribute first. Run setup.py compile on win32")
+        sys.exit(1)
+    mtime = os.path.getmtime("lever.exe")
+# I do not want to release stale distribution.
+    for root, dirs, fils in os.walk("evaluator"):
+        for fil in fils:
+            mtime = min(mtime, os.path.getmtime(os.path.join(root, fil)))
+    for root, dirs, fils in os.walk("space"):
+        for fil in fils:
+            mtime = min(mtime, os.path.getmtime(os.path.join(root, fil)))
+    for root, dirs, fils in os.walk("runtime"):
+        for fil in fils:
+            mtime = min(mtime, os.path.getmtime(os.path.join(root, fil)))
+    if mtime > os.path.getmtime("lever.exe"):
+        print("Stale executable, re-run setup.py compile on win32")
+        sys.exit(1)
+    VERSION = open("VERSION").read().strip()
+    archive = 'lever-{}.zip'.format(VERSION)
+    zf = zipfile.ZipFile(archive, 'w', zipfile.ZIP_DEFLATED)
+    def include(path, to=None):
+        to = path if to is None else to
+        assert not os.path.isabs(path)
+        zf.write(path, os.path.join("lever", to))
+    def include_dir(dirname):
+        for root, dirs, fils in os.walk(dirname):
+            for fil in fils:
+                include(os.path.join(root, fil))
+    def include_contents(dirname):
+        for root, dirs, fils in os.walk(dirname):
+            for fil in fils:
+                path = os.path.join(root, fil)
+                include(path, os.path.relpath(path, dirname))
+
+    include("lever.exe")
+    include("lever-0.8.0.grammar")
+    include("VERSION")
+    include_dir("app")
+    include_dir("lib")
+
+    include_dir("samples")
+    include_dir("headers")
+    include("LICENSE.md", "LICENSE.lever.txt")
+    include_contents("win32_extras")
+
+    zf.close()
+    print os.path.abspath(archive)
 
 if __name__=='__main__':
-    system = platform.system()
-    if system == "Linux":
-        linux_main()
-    elif system == "Windows":
-        windows_main()
-    else:
-        assert False, "no setup script for {}".format(system)
+    main()
