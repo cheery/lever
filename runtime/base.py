@@ -382,9 +382,12 @@ def print_(argv):
     return null
 
 @builtin
-@signature(String, Object)
-def log(type, value):
-    core.g.log.other(type.string, value)
+@signature(Object, String, optional=1)
+def info(value, type):
+    if type is None:
+        core.g.log.other(u"info",     value)
+    else:
+        core.g.log.other(type.string, value)
     return null
 
 @builtin

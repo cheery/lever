@@ -1,0 +1,84 @@
+from console import get_system_console
+import console
+import base
+import repl
+
+
+main = :
+    module = :Module("console", base)
+        dir = getcwd()
+        name = "console"
+        %"import" = Import(dir,
+            ModuleScope(dir, %"import".scope.parent))
+        humans  = 100.0
+        zombies = 100.0
+        alpha = 1.0
+        beta  = 0.001
+        delta = 0.001
+        gamma = 0.5
+    ZombieToy(module, get_system_console())
+    repl = repl.REPL(module)
+
+# https://en.wikipedia.org/wiki/Lotka%E2%80%93Volterra_equations
+# https://en.wikipedia.org/wiki/Competitive_Lotka%E2%80%93Volterra_equations
+
+# Once in a while the population tended to collapse entirely.
+# I guessed it's due to the method I used to integrate so I
+# switched away from euler. The current model feels nice.
+class ZombieToy
+    +init = (self, module, console):
+        self.console = console.attach(self)
+        self.module = module
+        self.dt = 0.1
+
+    refresh = (self, sketch):
+        m = self.module
+
+        sketch.append("Humans:  " ++ int(m.humans).to_string() ++ "\n")
+        sketch.append("Zombies: " ++ int(m.zombies).to_string() ++ "\n")
+        sketch.append("alpha: " ++ m.alpha.to_string() ++ "\n")
+        sketch.append("beta: " ++ m.beta.to_string() ++ "\n")
+        sketch.append("delta: " ++ m.delta.to_string() ++ "\n")
+        sketch.append("gamma: " ++ m.gamma.to_string() ++ "\n")
+
+        steps = 32
+        s = self.dt / steps
+
+        for i in range(steps)
+            #dh = m.humans  * (a - b*m.zombies)
+            #dz = m.zombies * (d*m.humans - g)
+            
+            # a runge-kutta, the equations have no dependence on time so
+            # we can just put in the offsets.
+            k1 = simulate(m, 0,           0)
+            k2 = simulate(m, k1.dh*0.5*s, k1.dz*0.5*s)
+            k3 = simulate(m, k2.dh*0.5*s, k2.dz*0.5*s)
+            k4 = simulate(m, k3.dh*s,     k3.dz*s)
+
+            dh = k1.dh + 2*k2.dh + 2*k3.dh + k4.dh 
+            dz = k1.dz + 2*k2.dz + 2*k3.dz + k4.dz 
+            if float(m.humans) >= 1.0
+                m.humans += dh * s / 6
+                m.humans = max(0, m.humans)
+            else
+                m.humans = 0
+            if float(m.zombies) >= 1.0
+                m.zombies += dz * s / 6
+                m.zombies = max(0, m.zombies)
+            else
+                m.zombies = 0
+
+        sleep(self.dt, self.console.refresh)
+
+simulate = (m, h_k, z_k):
+    a = m.alpha
+    b = m.beta
+    d = m.delta
+    g = m.gamma
+    h = m.humans  + h_k
+    z = m.zombies + z_k
+
+    res = object()
+    res.dh = h * (a - b*z)
+    res.dz = z * (b*h - g)
+    return res

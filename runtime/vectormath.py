@@ -1,4 +1,4 @@
-from math import sqrt, sin, cos, tan, pi, acos, asin, atan, atan2, pow
+from math import sqrt, sin, cos, tan, pi, acos, asin, atan, atan2, pow, exp, log, e
 from rpython.rlib.rrandom import Random
 from rpython.rlib.rarithmetic import r_uint, r_ulonglong
 from space import *
@@ -537,6 +537,21 @@ def pow_(a, b):
 
 @Builtin
 @signature(Float)
+def exp_(a):
+    return Float(exp(a.number))
+
+@Builtin
+@signature(Float, Float)
+def log_(a, b):
+    return Float(log(a.number) / log(b.number))
+
+@Builtin
+@signature(Float)
+def ln(a):
+    return Float(log(a.number))
+
+@Builtin
+@signature(Float)
 def abs_(f):
     if f.number < 0.0:
         return Float(-f.number)
@@ -599,4 +614,8 @@ by_symbol = {
     u"abs":       abs_,
     u"sign":      sign,
     u"pow":       pow_,
+    u"exp":       exp_,
+    u"log":       log_,
+    u"ln":        ln,
+    u"e":         Float(e),
 }

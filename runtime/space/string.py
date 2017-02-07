@@ -1,5 +1,6 @@
 from builtin import signature
 from interface import Object
+from rpython.rlib import rstring
 from rpython.rlib.objectmodel import compute_hash
 from rpython.rlib.unicodedata import unicodedb_6_2_0 as unicodedb
 from rpython.rlib.rstring import UnicodeBuilder
@@ -164,6 +165,9 @@ def string_lower(string):
         b.append(unichr(unicodedb.tolower(ord(ch))))
     return b.build()
 
+@String.method(u"replace", signature(String, String, String))
+def String_replace(a, b, c):
+    return String(rstring.replace(a.string, b.string, c.string))
 
 def escape_string(string):
     out = UnicodeBuilder()
