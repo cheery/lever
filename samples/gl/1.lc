@@ -1,0 +1,127 @@
+import ffi, util, fs
+
+main = :
+    util.run_sdl(options)
+
+options = object({
+    name = "gl demo " ++ name
+    resolution = object({x=1024, y=1024})
+    init = (gl):
+        po := gl.createProgram()
+        vso := gl.createShader(gl.VERTEX_SHADER)
+        fso := gl.createShader(gl.FRAGMENT_SHADER)
+        build_shader(gl, vso, fs.read_file(dir ++ "glsl/1.vert"))
+
+        build_shader(gl, fso, fs.read_file(dir ++ "glsl/1.frag"))
+        gl.attachShader(po, vso)
+        gl.attachShader(po, fso)
+        gl.linkProgram(po)
+        linked = ffi.automem(ffi.int)
+        gl.getProgramiv(po, gl.LINK_STATUS, linked)
+        assert linked.to == gl.TRUE
+            get_info_log(gl, po)
+
+        vertex_count = 6
+        # vertex data
+        data = autoarray(ffi.float, [
+           -1.0,-1.0, 0.0,
+            1.0,-1.0, 0.0,
+           -1.0, 1.0, 0.0,
+           -1.0, 1.0, 0.0,
+            1.0,-1.0, 0.0,
+            1.0, 1.0, 0.0,
+        ])
+        ids = ffi.automem(ffi.int)
+        gl.genBuffers(1, ids)
+        quad := object({
+            count = vertex_count
+            size = ffi.sizeof(ffi.float) * vertex_count*3
+            vbo = ids.to
+        })
+
+        gl.bindBuffer(gl.ARRAY_BUFFER, quad.vbo)
+        gl.bufferData(gl.ARRAY_BUFFER, quad.size, data, gl.STATIC_DRAW)
+
+        # vertex array object (binds to the vbo above)
+        v_position = gl.getAttribLocation(po, "position")
+        ids = ffi.automem(ffi.int)
+        gl.genVertexArrays(1, ids)
+        vao := ids.to
+        gl.bindVertexArray(vao)
+        gl.enableVertexAttribArray(v_position)
+        gl.vertexAttribPointer(v_position,
+            3, gl.FLOAT, gl.FALSE,
+            ffi.sizeof(ffi.float)*3,
+            ffi.cast(0, ffi.voidp))
+        gl.bindBuffer(gl.ARRAY_BUFFER, 0)
+
+        u_screen := gl.getUniformLocation(po, "screen")
+        u_time := gl.getUniformLocation(po, "time")
+        #u_inv_gamma := gl.getUniformLocation(po, "gamma")
+
+
+    render = (gl):
+        gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
+        gl.useProgram(po)
+        gl.uniform1f(u_time, time()-app_start)
+        gl.uniform2f(u_screen, 
+            options.resolution.x, options.resolution.y)
+        gl.drawArrays(gl.TRIANGLES, 0, quad.count)
+
+
+        #bg = color_cycle(time())
+        #gl.clearColor(bg.x, bg.y, bg.z, 1.0)
+})
+app_start = time()
+
+color_cycle = (t):
+    return vec3(
+        pow(0.5+0.5*sin(t),         1/gamma),
+        pow(0.5+0.5*sin(t+tau*1/3), 1/gamma),
+        pow(0.5+0.5*sin(t+tau*2/3), 1/gamma),
+    )
+
+# Gamma for correction.
+# http://http.developer.nvidia.com/GPUGems3/gpugems3_ch24.html
+gamma = 2.2
+
+
+tmp_matrix = ffi.automem(ffi.float, 16)
+uniform_mat4 = (gl, loc, matrix):
+    arraycopy(tmp_matrix, matrix)
+    gl.uniformMatrix4fv(loc, 1, 0, tmp_matrix)
+
+build_shader = (gl, so, source):
+    source = encode_utf8(source)
+    source_length = ffi.automem(ffi.uint)
+    source_length.to = source.length
+    gl.shaderSource(so, 1, ffi.ref(source), source_length)
+
+    compiled = ffi.automem(ffi.int)
+
+    gl.compileShader(so)
+    gl.getShaderiv(so, gl.COMPILE_STATUS, compiled)
+    assert compiled.to == gl.TRUE
+        get_info_log(gl, so)
+
+get_info_log = (gl, obj):
+    blen = ffi.automem(ffi.uint)
+    gl.getObjectParameterivARB(obj, gl.OBJECT_INFO_LOG_LENGTH_ARB, blen)
+    gl.getShaderiv(obj, gl.INFO_LOG_LENGTH, blen)
+    log = ffi.automem(ffi.ubyte, blen.to)
+    gl.getInfoLogARB(obj, blen.to, null, log)
+    return log.str
+
+autoarray = (ctype, sequence):
+    mem = ffi.automem(ctype, sequence.length)
+    i = 0
+    for x in sequence
+        mem[i] = x 
+        i = i + 1
+    return mem
+
+arraycopy = (dst, src):
+    i = 0
+    for x in src
+        dst[i] = x
+        i = i + 1
