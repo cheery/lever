@@ -163,6 +163,9 @@ postfix =>
     callv {postfix "(" arguments "..." ")"}
     getitem {postfix "[" subexpr "]"}
     getattr {postfix "." @symbol}
+    scopegrabber {postfix ";" block} # It occured to me that scope grab
+                                     # is an useful concept for passing values around.
+                                     # so we need some syntax for it.
 
 arguments =>
     empty_list {}
@@ -187,7 +190,10 @@ term =>
     dict     {"{" nl_pairs "}"}
     lookup   {"{" escaped_keyword "}"}
     lookup   {"%" @string}
-    scopegrabber {":" expr block}
+    scopegrabber {":" expr block} # DEPRECATED: remove soon.
+                                  # The notation to use ':' on the
+                                  # left side of expression could be
+                                  # argued to be confusing.
 
 # This may end up ambiguous within a function call.
 # Introduced this rule to allow nesting of functions.

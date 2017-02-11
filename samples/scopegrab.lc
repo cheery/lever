@@ -1,0 +1,14 @@
+# Earlier the scope grabbing happened with
+#   term -> ':' expr block
+# Now it happens with
+#   postfix -> expr ';' block
+
+# The earlier approach was definitely confusing.
+# it will be left for observation whether this
+# method is also confusing.
+
+foo = object();
+    bar = 5
+    guux = 10
+
+print(foo.bar, foo.guux)
