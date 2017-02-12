@@ -1,0 +1,62 @@
+import api, ffi, platform
+
+if platform.name == "win32"
+    sdl = ffi.library("SDL2.dll", api.open_nobind("libSDL2", {}))
+else
+    sdl = ffi.library("libSDL2.so", api.open_nobind("libSDL2", {}))
+
+class Window
+    +init = (self, name, options={}):
+        assert sdl.Init(sdl.INIT_VIDEO) == 0
+            sdl.GetError()
+
+        self.handle = sdl.CreateWindow(name,
+            options.get("x", 0x1FFF0000),
+            options.get("y", 0x1FFF0000),
+            options.get("width",  512),
+            options.get("height", 512),
+            options.get("flags", sdl.WINDOW_SHOWN))
+        assert self.handle, sdl.GetError()
+
+        w = ffi.automem(ffi.int)
+        h = ffi.automem(ffi.int)
+        sdl.GetWindowSize(self.handle, w, h)
+        self.width  = w.to
+        self.height = h.to
+
+        self.wsi = WSI(self.handle)
+
+    close = (self):
+        sdl.DestroyWindow(self.handle)
+        self.handle = null
+        sdl.Quit()
+
+class WSI
+    +init = (self, window):
+        self.window = window
+    
+    required_extensions = (self, extensions):
+        enabledExtensionNames = ["VK_KHR_surface"]
+        if "VK_KHR_xcb_surface" in extensions
+            enabledExtensionNames.append("VK_KHR_xcb_surface")
+        else
+            raise Exception("The app lacks swapchain instantiator for your platform.")
+        return enabledExtensionNames
+
+    create_surface = (self, vulkan, instance):
+        surface = ffi.automem(vulkan.vk.SurfaceKHR)
+        info = ffi.automem(sdl.SysWMinfo)
+        info.version = {major=2, minor=0, patch=2}
+        if sdl.GetWindowWMInfo(self.window, info) == 0
+            raise Exception("GetWindowWMInfo failed")
+
+        if info.subsystem == sdl.SYSWM_X11
+            VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR = 1000005000
+            vulkan.vk.createXcbSurfaceKHR(instance, {
+                sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR
+                connection = info.info.x11.display
+                window = ffi.cast(info.info.x11.window, ffi.voidp)
+            }, null, surface)
+        else
+            raise Exception("The app lacks swapchain instantiator for your platform.")
+        return vulkan.Surface(instance, surface.to)
