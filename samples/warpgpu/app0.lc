@@ -7,53 +7,38 @@ main = ():
         height = 512
     })
 
-    extensions = vulkan.listInstanceExtensions()
-    enabledExtensionNames = window.wsi.required_extensions(extensions)
+    gpu = GPU(window)
 
-    instance = vulkan.Instance({
-        enabledExtensionNames = enabledExtensionNames
-    })
+    device = gpu.device
 
-    screen = :exnihilo()
-        width = window.width
-        height = window.height
-        offset = {x = 0, y = 0}
-        extent = {width = width, height = height}
-        area = {offset=offset, extent=extent}
-        viewport = {x = 0, y = 0,
-            width = width, height = height,
-            minDepth = 0.0, maxDepth = 1.0}
+    vertex_layout = object();
+        input = {
+            flags = 0
+            vertexBindingDescriptions = [{
+                binding = 0
+                stride = 6 * ffi.sizeof(ffi.float)
+                inputRate = "VERTEX"
+            }]
+            vertexAttributeDescriptions = [
+                {
+                    binding = 0
+                    location = 0
+                    format = "R32G32B32_SFLOAT"
+                    offset = 0
+                },
+                {
+                    binding = 0
+                    location = 1
+                    format = "R32G32B32_SFLOAT"
+                    offset = 3 * ffi.sizeof(ffi.float)
+                }
+            ]
+        }
+        assembly = {topology = "TRIANGLE_LIST"}
 
-    surface = window.wsi.create_surface(vulkan, instance)
-
-    gpu = null
-    queueIndex = null
-    for device in instance.listPhysicalDevices()
-        prop = device.getProperties()
-        i = 0
-        for x in device.listQueueFamilyProperties()
-            if not device.getSurfaceSupport(i, surface)
-                continue
-            if x.queueFlags.GRAPHICS_BIT
-                #print("Device name:", prop.deviceName.str)
-                #print("            ", prop.deviceType)
-                queueIndex = i
-                gpu = device
-            i += 1
-    assert gpu, "Did not find a suitable GPU"
-
-    device = vulkan.Device(gpu, {
-        enabledExtensionNames = ["VK_KHR_swapchain"]
-        queueCreateInfos = [{
-            queueFamilyIndex = queueIndex
-            queuePriorities = [1.0]
-        }]
-    })
-    gpumem = GPUMemory(device)
-
-    vbo = :exnihilo()
+    vbo = object();
         size = 8 * 1024
-        buffer = gpumem.createBuffer(size, "VERTEX_BUFFER_BIT")
+        buffer = gpu.mem.createBuffer(size, "VERTEX_BUFFER_BIT")
         data = buffer.mem.map(ffi.float, buffer.offset, buffer.size)
         stuff = [
             0.0, 0.0, 0.0, 1.0, 0.5, 0.5,
@@ -69,7 +54,7 @@ main = ():
 
     ubo = object();
         size = 2 * 4 * 4 * ffi.sizeof(ffi.float)
-        buffer = gpumem.createBuffer(size, "UNIFORM_BUFFER_BIT")
+        buffer = gpu.mem.createBuffer(size, "UNIFORM_BUFFER_BIT")
         data = buffer.mem.map(ffi.float, buffer.offset, buffer.size)
         stuff = [
             1.0, 0.0, 0.0, 0.0,
@@ -85,18 +70,7 @@ main = ():
             data[i] = stuff[i]
         buffer.mem.unmap()
 
-
-    queue = device.getQueue(0, 0)
-    queue.index = 0
-    queue.pool = vulkan.CommandPool(device, {
-        flags = "RESET_COMMAND_BUFFER_BIT" # allow reset on cbuf.
-        queueFamilyIndex = queue.index
-    })
-    swapchain = get_swapchain(device, surface, screen)
-
-    cbuf = queue.pool.allocate({level = "PRIMARY", commandBufferCount = 1})[0]
-
-    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR = 1000001002
+    cbuf = gpu.queue.pool.allocate({level = "PRIMARY", commandBufferCount = 1})[0]
 
     descset_layout = vulkan.DescriptorSetLayout(device, {
         bindings = [{
@@ -133,42 +107,44 @@ main = ():
         dstBinding = 0
         dstArrayElement = 0
         descriptorType = "UNIFORM_BUFFER"
-        descriptorCount = 1
-        pBufferInfo = {
+        bufferInfo = [{
             buffer = ubo.buffer
             offset = 0
             range  = ubo.buffer.size
-        }
+        }]
     }], [])
     # DEP: cbuf
 
-    render_pass = vulkan.RenderPass(device, {
-        attachments = [
-            {
-                # These values will likely require adjustment.
-                format = swapchain.format
-                samples = "1_BIT"
-                loadOp = "CLEAR"
-                storeOp = "STORE"
-                stencilLoadOp = "DONT_CARE"
-                stencilStoreOp = "DONT_CARE"
-                # I'm not sure about these.. going to read on them soon.
-                initialLayout = "COLOR_ATTACHMENT_OPTIMAL"
-                finalLayout = "COLOR_ATTACHMENT_OPTIMAL"
-            }
-        ]
-        subpasses = [
-            {
-                pipelineBindPoint = "GRAPHICS"
-                inputAttachments = []
-                colorAttachments = [
-                    {attachment = 0, layout = "COLOR_ATTACHMENT_OPTIMAL"}
-                ]
-            }
-        ]
-    })
+    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR = 1000001002
+
+    pass = gpu.default_pass();
+        renderPass = vulkan.RenderPass(device, {
+            attachments = [
+                {
+                    # These values will likely require adjustment.
+                    format = gpu.swapchain.format
+                    samples = "1_BIT"
+                    loadOp = "CLEAR"
+                    storeOp = "STORE"
+                    stencilLoadOp = "DONT_CARE"
+                    stencilStoreOp = "DONT_CARE"
+                    initialLayout = 0 #UNDEFINED
+                    finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR #"COLOR_ATTACHMENT_OPTIMAL"
+                }
+            ]
+            subpasses = [
+                {
+                    pipelineBindPoint = "GRAPHICS"
+                    inputAttachments = []
+                    colorAttachments = [
+                        {attachment = 0, layout = "COLOR_ATTACHMENT_OPTIMAL"}
+                    ]
+                }
+            ]
+        })
     # DEP: framebuffer, pipeline, cbuf
 
+    swapchain = gpu.swapchain
     swapchain.views = []
     swapchain.fences = []
     swapchain.framebuffers = []
@@ -187,32 +163,22 @@ main = ():
         swapchain.fences.append(fence)
 
         framebuffer = vulkan.Framebuffer(device, {
-            renderPass = render_pass
+            renderPass = pass.renderPass
             attachments = [view]
-            width = screen.width
-            height = screen.height
+            width = gpu.screen.width
+            height = gpu.screen.height
             layers = 1
         })
         swapchain.framebuffers.append(framebuffer)
         # DEP: cbuf, begin of renderpass
 
-    vertex_blob = fs.read_file(dir ++ "vertex_shader.spv", "b")
-    vertex_shader = vulkan.ShaderModule(device, {
-        codeSize = vertex_blob.length
-        pCode = vertex_blob
-    })
-
-    fragment_blob = fs.read_file(dir ++ "fragment_shader.spv", "b")
-    fragment_shader = vulkan.ShaderModule(device, {
-        codeSize = fragment_blob.length
-        pCode = fragment_blob
-    })
+    vertex_shader = createShader(device,
+        fs.read_file(dir ++ "vertex_shader.spv", "b"))
+    fragment_shader = createShader(device,
+        fs.read_file(dir ++ "fragment_shader.spv", "b"))
     # DEP: pipeline
 
-    pipeline_cache = vulkan.PipelineCache(device, {})
-    # DEP: pipeline creation
-
-    pipeline = device.createGraphicsPipeline(pipeline_cache, {
+    pipeline = gpu.createGraphicsPipeline({
         flags = 0
         stages = [
             {
@@ -226,63 +192,18 @@ main = ():
                 name = "main"
             }
         ]
-        vertexInputState = {
-            flags = 0
-            vertexBindingDescriptions = [{
-                binding = 0
-                stride = 6 * ffi.sizeof(ffi.float)
-                inputRate = "VERTEX"
-            }]
-            vertexAttributeDescriptions = [
-                {
-                    binding = 0
-                    location = 0
-                    format = "R32G32B32_SFLOAT"
-                    offset = 0
-                },
-                {
-                    binding = 0
-                    location = 1
-                    format = "R32G32B32_SFLOAT"
-                    offset = 3 * ffi.sizeof(ffi.float)
-                }
-            ]
-        }
-        inputAssemblyState = {topology = "TRIANGLE_LIST"}
-        viewportState = {
-            viewports = [screen.viewport]
-            scissors = [screen.area]
-        }
-        rasterizationState = {
-            polygonMode = "FILL"
-            cullMode = 0
-            frontFace = "COUNTER_CLOCKWISE"
-        }
-        multisampleState = {rasterizationSamples = "1_BIT"}
-        colorBlendState = {
-            logicOpEnable = false
-            logicOp = "CLEAR"
-            attachments = [{
-                blendEnable = false
-                colorWriteMask = 0xf
-                srcColorBlendFactor = "ZERO"
-                dstColorBlendFactor = "ZERO"
-                colorBlendOp = "ADD"
-                srcAlphaBlendFactor = "ZERO"
-                dstAlphaBlendFactor = "ZERO"
-                alphaBlendOp = "ADD"
-            }]
-            blendConstants = [0.0, 0.0, 0.0, 0.0]
-        }
-        dynamicState = null
+        vertexInputState = vertex_layout.input
+        inputAssemblyState = vertex_layout.assembly
+        viewportState = pass.viewport
+        rasterizationState = pass.rasterization
+        multisampleState = pass.multisample
+        colorBlendState = pass.colorBlend
+        dynamicState = pass.dynamic
         layout = pipeline_layout
-        renderPass = render_pass
+        renderPass = pass.renderPass
         subpass = 0
     })
     # DEP: cbuf
-
-    image_acquired = vulkan.Semaphore(device)
-    rendering_done = vulkan.Semaphore(device)
 
     frame_statistics = []
     last_image = 0
@@ -291,25 +212,15 @@ main = ():
         # Need to check with performance counter later, whether this is sufficient
         if swapchain.fences[last_image].getStatus().NOT_READY
             return null
-        current_image = device.acquireNextImage(swapchain, 0xFFFFFFFFFFFFFFFF, image_acquired)
+        current_image = device.acquireNextImage(swapchain, 0xFFFFFFFFFFFFFFFF, swapchain.image_acquired)
         frame_begin = time()
         device.resetFences([swapchain.fences[current_image]])
 
         cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
-        cbuf.pipelineBarrier("ALL_GRAPHICS_BIT", "COLOR_ATTACHMENT_OUTPUT_BIT", 0, [], [], [{
-            srcAccessMask = "MEMORY_READ_BIT"
-            dstAccessMask = "COLOR_ATTACHMENT_WRITE_BIT"
-            oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-            newLayout = "COLOR_ATTACHMENT_OPTIMAL"
-            srcQueueFamilyIndex = queueIndex
-            dstQueueFamilyIndex = queueIndex
-            image = swapchain.images[current_image]
-            subresourceRange = swapchain.subresource_range
-        }])
         cbuf.beginRenderPass({
-            renderPass = render_pass
+            renderPass = pass.renderPass
             framebuffer = swapchain.framebuffers[current_image]
-            renderArea = screen.area
+            renderArea = gpu.screen.area
             clearValues = [
                 {color = {float32 = [
                     sin(time()) * 0.5 + 0.5,
@@ -324,27 +235,17 @@ main = ():
         cbuf.bindVertexBuffers(0, [vbo.buffer], [0])
         cbuf.draw(6, 1, 0, 0)
         cbuf.endRenderPass()
-        cbuf.pipelineBarrier("COLOR_ATTACHMENT_OUTPUT_BIT", "ALL_GRAPHICS_BIT", 0, [], [], [{
-            srcAccessMask = "COLOR_ATTACHMENT_WRITE_BIT"
-            dstAccessMask = "MEMORY_READ_BIT"
-            oldLayout = "COLOR_ATTACHMENT_OPTIMAL"
-            newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
-            srcQueueFamilyIndex = queueIndex
-            dstQueueFamilyIndex = queueIndex
-            image = swapchain.images[current_image]
-            subresourceRange = swapchain.subresource_range
-        }])
         cbuf.end()
-        queue.submit([{
-            waitSemaphores = [image_acquired]
+        gpu.queue.submit([{
+            waitSemaphores = [swapchain.image_acquired]
             commandBuffers = [cbuf]
-            signalSemaphores = [rendering_done]
+            signalSemaphores = [swapchain.rendering_done]
         }], swapchain.fences[current_image])
         frame_end = time()
         frame_statistics.append(frame_end - frame_begin)
 
-        queue.present({
-            waitSemaphores = [rendering_done]
+        gpu.queue.present({
+            waitSemaphores = [swapchain.rendering_done]
             swapchains = [swapchain.id]
             imageIndices = [current_image]
         })
@@ -359,7 +260,7 @@ main = ():
                 worst = max(worst, stat)
                 avg += stat
             avg /= frame_statistics.length
-            print("best:", best, "worst:", worst, "avg:", avg)
+            print("best:", 1/best, "worst:", 1/worst, "avg:", 1/avg)
             frame_statistics := []
 
     event = ffi.automem(sdl.sdl.Event)
@@ -371,8 +272,8 @@ main = ():
             if event.type == sdl.sdl.QUIT
                 running = false
 
-    queue.waitIdle()
-    device.waitIdle()
+    gpu.queue.waitIdle()
+    gpu.device.waitIdle()
 
     for obj in swapchain.fences ++ swapchain.framebuffers ++ swapchain.views
         obj.destroy()
@@ -380,21 +281,111 @@ main = ():
     descset_layout.destroy()
     pipeline.destroy()
     pipeline_layout.destroy()
-    pipeline_cache.destroy()
     vbo.buffer.destroy()
     vbo.buffer.mem.free()
     ubo.buffer.destroy()
     ubo.buffer.mem.free()
     vertex_shader.destroy()
     fragment_shader.destroy()
-    render_pass.destroy()
-    image_acquired.destroy()
-    rendering_done.destroy()
-    queue.pool.destroy()
-    swapchain.destroy()
-    device.destroy()
-    surface.destroy()
-    instance.destroy()
+    pass.renderPass.destroy()
+    gpu.destroy()
+
+class GPU
+    +init = (self, window):
+        self.window = window
+        self.instance = vulkan.Instance({
+            enabledExtensionNames = window.wsi.required_extensions(
+                vulkan.listInstanceExtensions())})
+        self.screen = exnihilo();
+            width = window.width
+            height = window.height
+            offset = {x = 0, y = 0}
+            extent = {width = width, height = height}
+            area = {offset=offset, extent=extent}
+            viewport = {x = 0, y = 0,
+                width = width, height = height,
+                minDepth = 0.0, maxDepth = 1.0}
+        self.surface = window.wsi.create_surface(vulkan, self.instance)
+        init_device(self, self.instance, self.surface)
+        self.swapchain = get_swapchain(self.device, self.surface, self.screen)
+        self.mem = GPUMemory(self.device)
+        # needed for pipeline creation
+        self.pipeline_cache = vulkan.PipelineCache(self.device, {})
+
+    createGraphicsPipeline = (self, options):
+        return self.device.createGraphicsPipeline(self.pipeline_cache, options)
+
+    destroy = (self):
+        self.pipeline_cache.destroy()
+        self.queue.pool.destroy()
+        self.swapchain.image_acquired.destroy()
+        self.swapchain.rendering_done.destroy()
+        self.swapchain.destroy()
+        self.device.destroy()
+        self.surface.destroy()
+        self.instance.destroy()
+
+    default_pass = (self):
+        return object();
+            viewport = {
+                viewports = [self.screen.viewport]
+                scissors = [self.screen.area]
+            }
+            rasterization = {
+                polygonMode = "FILL"
+                cullMode = 0
+                frontFace = "COUNTER_CLOCKWISE"
+            }
+            multisample = {rasterizationSamples = "1_BIT"}
+            colorBlend = {
+                logicOpEnable = false
+                logicOp = "CLEAR"
+                attachments = [{
+                    blendEnable = false
+                    colorWriteMask = 0xf
+                    srcColorBlendFactor = "ZERO"
+                    dstColorBlendFactor = "ZERO"
+                    colorBlendOp = "ADD"
+                    srcAlphaBlendFactor = "ZERO"
+                    dstAlphaBlendFactor = "ZERO"
+                    alphaBlendOp = "ADD"
+                }]
+                blendConstants = [0.0, 0.0, 0.0, 0.0]
+            }
+            dynamic = null
+
+
+init_device = (self, instance, surface):
+    gpu = null
+    queueFamilyIndex = null
+    for device in instance.listPhysicalDevices()
+        prop = device.getProperties()
+        i = 0
+        for x in device.listQueueFamilyProperties()
+            if not device.getSurfaceSupport(i, surface)
+                continue
+            if x.queueFlags.GRAPHICS_BIT
+                #print("Device name:", prop.deviceName.str)
+                #print("            ", prop.deviceType)
+                queueFamilyIndex = i
+                gpu = device
+            i += 1
+    assert gpu, "Did not find a suitable GPU"
+
+    self.device = vulkan.Device(gpu, {
+        enabledExtensionNames = ["VK_KHR_swapchain"]
+        queueCreateInfos = [{
+            queueFamilyIndex = queueFamilyIndex
+            queuePriorities = [1.0]
+        }]
+    })
+    queue = self.device.getQueue(queueFamilyIndex, 0)
+    queue.index = queueFamilyIndex # allow later command pool allocations.
+    queue.pool = vulkan.CommandPool(self.device, {
+        flags = "RESET_COMMAND_BUFFER_BIT" # allow reset on cbuf.
+        queueFamilyIndex = queue.index
+    })
+    self.queue = queue
 
 get_swapchain = (device, surface, screen):
     imageUsage = "COLOR_ATTACHMENT_BIT"
@@ -448,7 +439,7 @@ get_swapchain = (device, surface, screen):
         clipped = true
     })
 
-    return :swapchain
+    return swapchain;
         screen = screen
         images = swapchain.getImages()
         format = format
@@ -460,6 +451,8 @@ get_swapchain = (device, surface, screen):
             baseArrayLayer = 0
             layerCount = 1
         }
+        image_acquired = vulkan.Semaphore(device)
+        rendering_done = vulkan.Semaphore(device)
 
 class GPUMemory
     +init = (self, gpu):
@@ -510,3 +503,9 @@ memory_report = (gpu):
     return object();
         heaps = heaps
         types = types
+
+createShader = (device, data):
+    return vulkan.ShaderModule(device, {
+        codeSize = data.length
+        pCode = data
+    })
