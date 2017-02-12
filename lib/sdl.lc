@@ -1,9 +1,9 @@
 import api, ffi, platform
 
 if platform.name == "win32"
-    sdl = ffi.library("SDL2.dll", api.open_nobind("libSDL2", {}))
+    sdl = ffi.library("SDL2.dll", api.read_file("libSDL2", {}))
 else
-    sdl = ffi.library("libSDL2.so", api.open_nobind("libSDL2", {}))
+    sdl = ffi.library("libSDL2.so", api.read_file("libSDL2", {}))
 
 class Window
     +init = (self, name, options={}):

@@ -51,15 +51,15 @@ main = ():
     })
     gpumem = GPUMemory(device)
 
+
     queue = device.getQueue(0, 0)
-    swapchain = get_swapchain(device, surface, screen)
-
-    command_pool = vulkan.CommandPool(device, {
-        flags = "RESET_COMMAND_BUFFER_BIT"
-        queueFamilyIndex = queueIndex
+    queue.index = 0
+    queue.pool = vulkan.CommandPool(device, {
+        flags = "RESET_COMMAND_BUFFER_BIT" # allow reset on cbuf.
+        queueFamilyIndex = queue.index
     })
-
-    buffer = command_pool.allocate({level = "PRIMARY", commandBufferCount = 1})[0]
+    swapchain = get_swapchain(device, surface, screen)
+    cbuf = queue.pool.allocate({level = "PRIMARY", commandBufferCount = 1})[0]
 
     render_pass = vulkan.RenderPass(device, {
         attachments = [
@@ -284,8 +284,8 @@ main = ():
         frame_begin = time()
         device.resetFences([swapchain.fences[current_image]])
 
-        buffer.begin({flags = "ONE_TIME_SUBMIT_BIT"})
-        buffer.pipelineBarrier("ALL_GRAPHICS_BIT", "COLOR_ATTACHMENT_OUTPUT_BIT", 0, [], [], [{
+        cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
+        cbuf.pipelineBarrier("ALL_GRAPHICS_BIT", "COLOR_ATTACHMENT_OUTPUT_BIT", 0, [], [], [{
             srcAccessMask = "MEMORY_READ_BIT"
             dstAccessMask = "COLOR_ATTACHMENT_WRITE_BIT"
             oldLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR
@@ -295,7 +295,7 @@ main = ():
             image = swapchain.images[current_image]
             subresourceRange = swapchain.subresource_range
         }])
-        buffer.beginRenderPass({
+        cbuf.beginRenderPass({
             renderPass = render_pass
             framebuffer = swapchain.framebuffers[current_image]
             renderArea = screen.area
@@ -308,12 +308,12 @@ main = ():
                 ]}}
             ]
         }, "INLINE")
-        buffer.bindPipeline("GRAPHICS", pipeline)
-        buffer.bindDescriptorSets("GRAPHICS", pipeline_layout, 0, [descset], [])
-        buffer.bindVertexBuffers(0, [vbo.buffer], [0])
-        buffer.draw(6, 1, 0, 0)
-        buffer.endRenderPass()
-        buffer.pipelineBarrier("COLOR_ATTACHMENT_OUTPUT_BIT", "ALL_GRAPHICS_BIT", 0, [], [], [{
+        cbuf.bindPipeline("GRAPHICS", pipeline)
+        cbuf.bindDescriptorSets("GRAPHICS", pipeline_layout, 0, [descset], [])
+        cbuf.bindVertexBuffers(0, [vbo.buffer], [0])
+        cbuf.draw(6, 1, 0, 0)
+        cbuf.endRenderPass()
+        cbuf.pipelineBarrier("COLOR_ATTACHMENT_OUTPUT_BIT", "ALL_GRAPHICS_BIT", 0, [], [], [{
             srcAccessMask = "COLOR_ATTACHMENT_WRITE_BIT"
             dstAccessMask = "MEMORY_READ_BIT"
             oldLayout = "COLOR_ATTACHMENT_OPTIMAL"
@@ -323,10 +323,10 @@ main = ():
             image = swapchain.images[current_image]
             subresourceRange = swapchain.subresource_range
         }])
-        buffer.end()
+        cbuf.end()
         queue.submit([{
             waitSemaphores = [image_acquired]
-            commandBuffers = [buffer]
+            commandBuffers = [cbuf]
             signalSemaphores = [rendering_done]
         }], swapchain.fences[current_image])
         frame_end = time()
@@ -351,7 +351,6 @@ main = ():
             print("best:", best, "worst:", worst, "avg:", avg)
             frame_statistics := []
 
-    print("ready to draw")
     event = ffi.automem(sdl.sdl.Event)
     running = true
     while running
@@ -380,12 +379,11 @@ main = ():
     render_pass.destroy()
     image_acquired.destroy()
     rendering_done.destroy()
-    command_pool.destroy()
+    queue.pool.destroy()
     swapchain.destroy()
     device.destroy()
     surface.destroy()
     instance.destroy()
-    print("quit")
 
 get_swapchain = (device, surface, screen):
     imageUsage = "COLOR_ATTACHMENT_BIT"
