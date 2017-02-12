@@ -51,59 +51,6 @@ main = ():
     })
     gpumem = GPUMemory(device)
 
-
-    queue = device.getQueue(0, 0)
-    queue.index = 0
-    queue.pool = vulkan.CommandPool(device, {
-        flags = "RESET_COMMAND_BUFFER_BIT" # allow reset on cbuf.
-        queueFamilyIndex = queue.index
-    })
-    swapchain = get_swapchain(device, surface, screen)
-    cbuf = queue.pool.allocate({level = "PRIMARY", commandBufferCount = 1})[0]
-
-    render_pass = vulkan.RenderPass(device, {
-        attachments = [
-            {
-                # These values will likely require adjustment.
-                format = swapchain.format
-                samples = "1_BIT"
-                loadOp = "CLEAR"
-                storeOp = "STORE"
-                stencilLoadOp = "DONT_CARE"
-                stencilStoreOp = "DONT_CARE"
-                # I'm not sure about these.. going to read on them soon.
-                initialLayout = "COLOR_ATTACHMENT_OPTIMAL"
-                finalLayout = "COLOR_ATTACHMENT_OPTIMAL"
-            }
-        ]
-        subpasses = [
-            {
-                pipelineBindPoint = "GRAPHICS"
-                inputAttachments = []
-                colorAttachments = [
-                    {attachment = 0, layout = "COLOR_ATTACHMENT_OPTIMAL"}
-                ]
-            }
-        ]
-    })
-
-    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR = 1000001002
-
-    descset_layout = vulkan.DescriptorSetLayout(device, {
-        bindings = [{
-            binding = 0
-            descriptorType = "UNIFORM_BUFFER"
-            descriptorCount = 1
-            stageFlags = "VERTEX_BIT"
-        }]
-    })
-
-    pipeline_layout = vulkan.PipelineLayout(device, {
-        flags = 0
-        setLayouts = [descset_layout]
-        pushConstantRanges = []
-    })
-
     vbo = :exnihilo()
         size = 8 * 1024
         buffer = gpumem.createBuffer(size, "VERTEX_BUFFER_BIT")
@@ -138,12 +85,43 @@ main = ():
             data[i] = stuff[i]
         buffer.mem.unmap()
 
+
+    queue = device.getQueue(0, 0)
+    queue.index = 0
+    queue.pool = vulkan.CommandPool(device, {
+        flags = "RESET_COMMAND_BUFFER_BIT" # allow reset on cbuf.
+        queueFamilyIndex = queue.index
+    })
+    swapchain = get_swapchain(device, surface, screen)
+
+    cbuf = queue.pool.allocate({level = "PRIMARY", commandBufferCount = 1})[0]
+
+    VK_IMAGE_LAYOUT_PRESENT_SRC_KHR = 1000001002
+
+    descset_layout = vulkan.DescriptorSetLayout(device, {
+        bindings = [{
+            binding = 0
+            descriptorType = "UNIFORM_BUFFER"
+            descriptorCount = 1
+            stageFlags = "VERTEX_BIT"
+        }]
+    })
+    # DEP: pipeline_layout, descset
+
+    pipeline_layout = vulkan.PipelineLayout(device, {
+        flags = 0
+        setLayouts = [descset_layout]
+        pushConstantRanges = []
+    })
+    # DEP: cbuf, pipeline
+
     descriptor_pool = vulkan.DescriptorPool(device, {
         maxSets = 1
         poolSizes = [
             {type = "UNIFORM_BUFFER", descriptorCount = 1}
         ]
     })
+    # DEP: descset
 
     descset = device.allocateDescriptorSets({
         descriptorPool = descriptor_pool
@@ -162,6 +140,34 @@ main = ():
             range  = ubo.buffer.size
         }
     }], [])
+    # DEP: cbuf
+
+    render_pass = vulkan.RenderPass(device, {
+        attachments = [
+            {
+                # These values will likely require adjustment.
+                format = swapchain.format
+                samples = "1_BIT"
+                loadOp = "CLEAR"
+                storeOp = "STORE"
+                stencilLoadOp = "DONT_CARE"
+                stencilStoreOp = "DONT_CARE"
+                # I'm not sure about these.. going to read on them soon.
+                initialLayout = "COLOR_ATTACHMENT_OPTIMAL"
+                finalLayout = "COLOR_ATTACHMENT_OPTIMAL"
+            }
+        ]
+        subpasses = [
+            {
+                pipelineBindPoint = "GRAPHICS"
+                inputAttachments = []
+                colorAttachments = [
+                    {attachment = 0, layout = "COLOR_ATTACHMENT_OPTIMAL"}
+                ]
+            }
+        ]
+    })
+    # DEP: framebuffer, pipeline, cbuf
 
     swapchain.views = []
     swapchain.fences = []
@@ -175,6 +181,7 @@ main = ():
             subresourceRange = swapchain.subresource_range
         })
         swapchain.views.append(view)
+        # DEP: framebuffer
 
         fence = vulkan.Fence(device, {flags = "SIGNALED_BIT"})
         swapchain.fences.append(fence)
@@ -187,6 +194,7 @@ main = ():
             layers = 1
         })
         swapchain.framebuffers.append(framebuffer)
+        # DEP: cbuf, begin of renderpass
 
     vertex_blob = fs.read_file(dir ++ "vertex_shader.spv", "b")
     vertex_shader = vulkan.ShaderModule(device, {
@@ -199,8 +207,10 @@ main = ():
         codeSize = fragment_blob.length
         pCode = fragment_blob
     })
+    # DEP: pipeline
 
     pipeline_cache = vulkan.PipelineCache(device, {})
+    # DEP: pipeline creation
 
     pipeline = device.createGraphicsPipeline(pipeline_cache, {
         flags = 0
@@ -269,6 +279,7 @@ main = ():
         renderPass = render_pass
         subpass = 0
     })
+    # DEP: cbuf
 
     image_acquired = vulkan.Semaphore(device)
     rendering_done = vulkan.Semaphore(device)
