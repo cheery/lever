@@ -1,0 +1,222 @@
+import sdl
+import vulkan, ffi, api, fs
+from warpgpu import *
+
+# 2D shading effect imitating waves with sine functions.
+# https://developer.nvidia.com/gpugems/GPUGems/gpugems_ch01.html
+
+main = :
+    window = sdl.Window(name, {
+        width = 1024
+        height = 1024
+        flags = sdl.sdl.WINDOW_SHOWN # | sdl.sdl.WINDOW_FULLSCREEN_DESKTOP
+                                     # Add if you want fullscreen
+    })
+    gpu = GPU(window)
+
+    # DATA: PUSH CONSTANTS
+    constants = ffi.automem(ffi.float, 1)
+    constants_size = ffi.sizeof(ffi.float)*1
+
+    # DATA: VERTEX
+    quad_mesh = object();
+        pipeline = {
+            vertexInputState = {
+                flags = 0
+                vertexBindingDescriptions = [{
+                    binding = 0
+                    stride = 2 * ffi.sizeof(ffi.float)
+                    inputRate = "VERTEX"
+                }]
+                vertexAttributeDescriptions = [
+                    {
+                        binding = 0
+                        location = 0
+                        format = "R32G32_SFLOAT"
+                        offset = 0
+                    }
+                ]
+            }
+            inputAssemblyState = {topology = "TRIANGLE_LIST"}
+        }
+        size = 4096
+        buffer = gpu.mem.createBuffer(size, "VERTEX_BUFFER_BIT")
+        data = buffer.mem.map(ffi.float, buffer.offset, buffer.size)
+        quad_vertices = [
+            -1.0, -1.0,  -1.0, +1.0,  +1.0, -1.0,
+            -1.0, +1.0,  +1.0, +1.0,  +1.0, -1.0,
+        ]
+        for i in range(quad_vertices.length)
+            data[i] = quad_vertices[i]
+        buffer.mem.unmap()
+
+    # NO UNIFORM DATA, therefore no descriptors.
+
+    # RENDER PASS
+    layout = vulkan.PipelineLayout(gpu.device, {
+        flags = 0
+        setLayouts = []
+        pushConstantRanges = [{
+            stageFlags = "FRAGMENT_BIT"
+            offset = 0
+            size = constants_size
+        }]
+    })
+    
+    pass = gpu.default_pass();
+        renderPass = vulkan.RenderPass(gpu.device, {
+            attachments = [
+                {
+                    format = gpu.swapchain.format
+                    samples = "1_BIT"
+                    loadOp = "CLEAR"
+                    storeOp = "STORE"
+                    stencilLoadOp = "DONT_CARE"
+                    stencilStoreOp = "DONT_CARE"
+                    initialLayout = 0 #UNDEFINED
+                    finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR #"COLOR_ATTACHMENT_OPTIMAL"
+                }
+            ]
+            subpasses = [
+                {
+                    pipelineBindPoint = "GRAPHICS"
+                    inputAttachments = []
+                    colorAttachments = [
+                        {attachment = 0, layout = "COLOR_ATTACHMENT_OPTIMAL"}
+                    ]
+                }
+            ]
+        })
+
+    # RENDER TARGET
+    swapchain = gpu.swapchain
+    swapchain.views = []
+    swapchain.fences = []
+    swapchain.framebuffers = []
+    for image in swapchain.images
+        view = vulkan.ImageView(gpu.device, {
+            image = image
+            viewType = "2D"
+            format = swapchain.format
+            components = {r = "R", g = "G", b = "B", a = "A"}
+            subresourceRange = swapchain.subresource_range
+        })
+        swapchain.views.append(view)
+        # DEP: framebuffer
+
+        fence = vulkan.Fence(gpu.device, {flags = "SIGNALED_BIT"})
+        swapchain.fences.append(fence)
+
+        framebuffer = vulkan.Framebuffer(gpu.device, {
+            renderPass = pass.renderPass
+            attachments = [view]
+            width = gpu.screen.width
+            height = gpu.screen.height
+            layers = 1
+        })
+        swapchain.framebuffers.append(framebuffer)
+        # DEP: cbuf, begin of renderpass
+
+    # PIPELINE
+    vertex_shader = createShader(gpu.device,
+        fs.read_file(dir ++ "glsl/ocean_waves_vert.spv", "b"))
+    fragment_shader = createShader(gpu.device,
+        fs.read_file(dir ++ "glsl/ocean_waves_frag.spv", "b"))
+
+    pipeline_config = {}
+    pipeline_config.update(pass.pipeline)
+    pipeline_config.update(quad_mesh.pipeline)
+    pipeline_config.update({
+        flags = 0
+        stages = [
+            {
+                stage = "VERTEX_BIT"
+                module = vertex_shader
+                name = "main"
+            },
+            {
+                stage = "FRAGMENT_BIT"
+                module = fragment_shader
+                name = "main"
+            }
+        ]
+        layout = layout
+        renderPass = pass.renderPass
+        subpass = 0
+    })
+    pipeline = gpu.createGraphicsPipeline(pipeline_config)
+
+    # COMMAND BUFFER
+    cbuf = gpu.queue.pool.allocate(
+        {level = "PRIMARY", commandBufferCount = 1})[0]
+
+    start_time = time()
+    last_image = 0
+    render = ():
+        # TODO: abstract this out so you can fix it later.
+        for i in range(10) # 10ms
+            if swapchain.fences[last_image].getStatus().NOT_READY
+                sleep(0.001)
+            else
+                break
+        if swapchain.fences[last_image].getStatus().NOT_READY
+            return null
+
+        current_image = gpu.device.acquireNextImage(swapchain,
+            0xFFFFFFFFFFFFFFFF, swapchain.image_acquired)
+        gpu.device.resetFences([swapchain.fences[current_image]])
+
+        constants[0] = time() - start_time
+
+        cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
+        cbuf.beginRenderPass({
+            renderPass = pass.renderPass
+            framebuffer = swapchain.framebuffers[current_image]
+            renderArea = gpu.screen.area
+            clearValues = [
+                {color = {float32 = [0, 0, 0, 1]}}
+            ]
+        }, "INLINE")
+        cbuf.bindPipeline("GRAPHICS", pipeline)
+        cbuf.bindVertexBuffers(0, [quad_mesh.buffer], [0])
+        cbuf.pushConstants(layout, "FRAGMENT_BIT", 
+            0, constants_size, constants)
+        cbuf.draw(6, 1, 0, 0) # 6 vertices, one instance.
+        cbuf.endRenderPass()
+        cbuf.end()
+        gpu.queue.submit([{
+            waitSemaphores = [swapchain.image_acquired]
+            commandBuffers = [cbuf]
+            signalSemaphores = [swapchain.rendering_done]
+        }], swapchain.fences[current_image])
+
+        gpu.queue.present({
+            waitSemaphores = [swapchain.rendering_done]
+            swapchains = [swapchain.id]
+            imageIndices = [current_image]
+        })
+        last_image := current_image
+
+    event = ffi.automem(sdl.sdl.Event)
+    running = true
+    while running
+        render()
+        while sdl.sdl.PollEvent(event) != 0
+            if event.type == sdl.sdl.QUIT
+                running = false
+            if event.type == sdl.sdl.KEYDOWN
+                running = false
+
+    gpu.queue.waitIdle()
+    gpu.device.waitIdle()
+
+    for obj in swapchain.fences ++ swapchain.framebuffers ++ swapchain.views
+        obj.destroy()
+    pipeline.destroy()
+    layout.destroy()
+    quad_mesh.buffer.destroy()
+    quad_mesh.buffer.mem.free()
+    vertex_shader.destroy()
+    fragment_shader.destroy()
+    pass.renderPass.destroy()
+    gpu.destroy()

@@ -1,0 +1,257 @@
+import vulkan, ffi, api
+
+VK_IMAGE_LAYOUT_PRESENT_SRC_KHR = 1000001002
+
+class GPU
+    +init = (self, window):
+        self.window = window
+        self.instance = vulkan.Instance({
+            enabledExtensionNames = window.wsi.required_extensions(
+                vulkan.listInstanceExtensions())})
+        self.screen = exnihilo();
+            width = window.width
+            height = window.height
+            offset = {x = 0, y = 0}
+            extent = {width = width, height = height}
+            area = {offset=offset, extent=extent}
+            viewport = {x = 0, y = 0,
+                width = width, height = height,
+                minDepth = 0.0, maxDepth = 1.0}
+        self.surface = window.wsi.create_surface(vulkan, self.instance)
+        init_device(self, self.instance, self.surface)
+        self.swapchain = get_swapchain(self.device, self.surface, self.screen)
+        self.mem = GPUMemory(self.device)
+        # needed for pipeline creation
+        self.pipeline_cache = vulkan.PipelineCache(self.device, {})
+
+    createGraphicsPipeline = (self, options):
+        return self.device.createGraphicsPipeline(self.pipeline_cache, options)
+
+    destroy = (self):
+        self.pipeline_cache.destroy()
+        self.queue.pool.destroy()
+        self.swapchain.image_acquired.destroy()
+        self.swapchain.rendering_done.destroy()
+        self.swapchain.destroy()
+        self.device.destroy()
+        self.surface.destroy()
+        self.instance.destroy()
+
+    default_pass = (self):
+        return object();
+            pipeline = {
+                viewportState = {
+                    viewports = [self.screen.viewport]
+                    scissors = [self.screen.area]
+                }
+                rasterizationState = {
+                    polygonMode = "FILL"
+                    cullMode = 0
+                    frontFace = "COUNTER_CLOCKWISE"
+                }
+                multisampleState = {rasterizationSamples = "1_BIT"}
+                colorBlendState = {
+                    logicOpEnable = false
+                    logicOp = "CLEAR"
+                    attachments = [{
+                        blendEnable = false
+                        colorWriteMask = 0xf
+                        srcColorBlendFactor = "ZERO"
+                        dstColorBlendFactor = "ZERO"
+                        colorBlendOp = "ADD"
+                        srcAlphaBlendFactor = "ZERO"
+                        dstAlphaBlendFactor = "ZERO"
+                        alphaBlendOp = "ADD"
+                    }]
+                    blendConstants = [0.0, 0.0, 0.0, 0.0]
+                }
+                dynamicState = null
+            }
+
+
+init_device = (self, instance, surface):
+    gpu = null
+    queueFamilyIndex = null
+    for device in instance.listPhysicalDevices()
+        prop = device.getProperties()
+        i = 0
+        for x in device.listQueueFamilyProperties()
+            if not device.getSurfaceSupport(i, surface)
+                continue
+            if x.queueFlags.GRAPHICS_BIT
+                #print("Device name:", prop.deviceName.str)
+                #print("            ", prop.deviceType)
+                queueFamilyIndex = i
+                gpu = device
+            i += 1
+    assert gpu, "Did not find a suitable GPU"
+
+    self.device = vulkan.Device(gpu, {
+        enabledExtensionNames = ["VK_KHR_swapchain"]
+        queueCreateInfos = [{
+            queueFamilyIndex = queueFamilyIndex
+            queuePriorities = [1.0]
+        }]
+    })
+    queue = self.device.getQueue(queueFamilyIndex, 0)
+    queue.index = queueFamilyIndex # allow later command pool allocations.
+    queue.pool = vulkan.CommandPool(self.device, {
+        flags = "RESET_COMMAND_BUFFER_BIT" # allow reset on cbuf.
+        queueFamilyIndex = queue.index
+    })
+    self.queue = queue
+
+get_swapchain = (device, surface, screen):
+    imageUsage = "COLOR_ATTACHMENT_BIT"
+    gpu = device.physicalDevice
+
+    cap = gpu.getSurfaceCapabilities(surface)
+    # uint32_t                         minImageCount;
+    # uint32_t                         maxImageCount;
+    # VkExtent2D                       currentExtent;
+    # VkExtent2D                       minImageExtent;
+    # VkExtent2D                       maxImageExtent;
+    # uint32_t                         maxImageArrayLayers;
+    # VkSurfaceTransformFlagsKHR       supportedTransforms;
+    # VkSurfaceTransformFlagBitsKHR    currentTransform;
+    # VkCompositeAlphaFlagsKHR         supportedCompositeAlpha;
+    if not cap.currentTransform.IDENTITY_BIT_KHR
+        print("Surface transform not desired")
+        exit(1)
+    if not cap.supportedUsageFlags.COLOR_ATTACHMENT_BIT
+        print("Surface does not support the desired usage")
+        exit(1)
+
+    imageFormat = null
+    colorSpace = null
+    for prop in gpu.listSurfaceFormats(surface)
+        imageFormat = prop.format
+        colorSpace = prop.colorSpace
+        break
+
+    presentMode = "FIFO_KHR"
+    for mode in gpu.listSurfacePresentModes(surface)
+        continue
+
+    format = "B8G8R8A8_UNORM" # hack, should enumerate the damn surface caps already.
+    # Fourth temporary measure, no idea where this works.
+    swapchain = vulkan.Swapchain(device, {
+        surface = surface
+        minImageCount = 2
+        imageFormat = imageFormat
+        imageColorSpace = colorSpace
+        imageExtent = screen.extent
+        imageUsage = imageUsage
+        preTransform = "IDENTITY_BIT_KHR" # ?
+        compositeAlpha = "OPAQUE_BIT_KHR"
+        imageArrayLayers = 1
+        imageSharingMode = "EXCLUSIVE"
+        #queueFamilyIndexCount = 0
+        #pQueueFamilyIndices = null
+        presentMode = presentMode
+        #oldSwapchain = null
+        clipped = true
+    })
+
+    return swapchain;
+        screen = screen
+        images = swapchain.getImages()
+        format = format
+        surface = surface
+        subresource_range = {
+            aspectMask = "COLOR_BIT"
+            baseMipLevel = 0
+            levelCount = 1
+            baseArrayLayer = 0
+            layerCount = 1
+        }
+        image_acquired = vulkan.Semaphore(device)
+        rendering_done = vulkan.Semaphore(device)
+
+class GPUMemory
+    +init = (self, gpu):
+        self.gpu = gpu
+
+    createBuffer = (self, size, usage):
+        buffer = vulkan.Buffer(self.gpu, {size = size, usage = usage})
+        buffer.mem = self.associate(buffer)
+        return buffer
+
+    # replace this with proper allocator when it starts to matter.
+    associate = (self, obj):
+        req = obj.getMemoryRequirements()
+
+        memoryIndex = null
+        for memtype in memory_report(self.gpu.physicalDevice).types
+            if (memtype.flags.HOST_VISIBLE_BIT and
+                1 & (req.memoryTypeBits >> memtype.index) != 0)
+                memoryIndex = memtype.index
+        assert memoryIndex, "No gpu-visible memory available for this resource"
+
+        #print(req.size, req.alignment, req.memoryTypeBits)
+        mem = self.gpu.allocateMemory({
+            allocationSize = req.size
+            memoryTypeIndex = memoryIndex
+        })
+        obj.bindMemory(mem, 0)
+        obj.offset = 0
+        obj.size = req.size
+        return mem
+
+memory_report = (gpu): 
+    properties = gpu.getMemoryProperties()
+    heaps = []
+    for i in range(properties.memoryHeapCount)
+        memheap = properties.memoryHeaps[i]
+        heaps.append(object();
+            index = i
+            size = memheap.size
+            flags = memheap.flags)
+    types = []
+    for i in range(properties.memoryTypeCount)
+        memtype = properties.memoryTypes[i]
+        types.append(object();
+            index = i
+            flags = memtype.propertyFlags
+            heap = heaps[memtype.heapIndex])
+    return object();
+        heaps = heaps
+        types = types
+
+createShader = (device, data):
+    return vulkan.ShaderModule(device, {
+        codeSize = data.length
+        pCode = data
+    })
+
+class DescriptorSet
+    +init = (self, device, bindings):
+        self.device = device
+        self.bindings = bindings
+        self.layout = vulkan.DescriptorSetLayout(device,
+            {bindings = bindings})
+        
+    +call = (self):
+        pool = vulkan.DescriptorPool(self.device,
+            desc_pool_config(self.bindings, 1))
+        descset = self.device.allocateDescriptorSets({
+            descriptorPool = pool
+            setLayouts = [self.layout]
+        })[0]
+        descset.pool = pool
+        return descset
+
+    destroy = (self):
+        self.layout.destroy()
+
+desc_pool_config = (config, maxSets):
+    poolSizes = {}
+    for desc in config
+        type = desc["descriptorType"]
+        count = desc["descriptorCount"]
+        if type not in poolSizes
+            poolSizes[type] = { type = type, descriptorCount = count }
+        else
+            poolSizes[type]["descriptorCount"] += count
+    return {maxSets = maxSets, poolSizes = list(poolSizes.values())}
+
