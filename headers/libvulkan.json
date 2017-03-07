@@ -7,11 +7,14 @@
         "ATTACHMENT_UNUSED": -1, 
         "FALSE": 0, 
         "LOD_CLAMP_NONE": 1000.0, 
+        "LUID_SIZE_KHX": 8, 
         "MAX_DESCRIPTION_SIZE": 256, 
+        "MAX_DEVICE_GROUP_SIZE_KHX": 32, 
         "MAX_EXTENSION_NAME_SIZE": 256, 
         "MAX_MEMORY_HEAPS": 16, 
         "MAX_MEMORY_TYPES": 32, 
         "MAX_PHYSICAL_DEVICE_NAME_SIZE": 256, 
+        "QUEUE_FAMILY_EXTERNAL_KHX": -2, 
         "QUEUE_FAMILY_IGNORED": -1, 
         "REMAINING_ARRAY_LAYERS": -1, 
         "REMAINING_MIP_LEVELS": -1, 
@@ -43,6 +46,47 @@
             }, 
             "ctype": "i32", 
             "type": "bitmask"
+        }, 
+        "AcquireNextImageInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "ACQUIRE_NEXT_IMAGE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "swapchain", 
+                    "SwapchainKHR"
+                ], 
+                [
+                    "timeout", 
+                    "u64"
+                ], 
+                [
+                    "semaphore", 
+                    "Semaphore"
+                ], 
+                [
+                    "fence", 
+                    "Fence"
+                ], 
+                [
+                    "deviceMask", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
         }, 
         "AllocationCallbacks": {
             "aliases": {
@@ -247,6 +291,148 @@
             }, 
             "ctype": "i32", 
             "type": "enum"
+        }, 
+        "BindBufferMemoryInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {
+                "deviceIndices": [
+                    "deviceIndexCount", 
+                    "pDeviceIndices"
+                ]
+            }, 
+            "defaults": {
+                "sType": "BIND_BUFFER_MEMORY_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "buffer", 
+                    "Buffer"
+                ], 
+                [
+                    "memory", 
+                    "DeviceMemory"
+                ], 
+                [
+                    "memoryOffset", 
+                    "u64"
+                ], 
+                [
+                    "deviceIndexCount", 
+                    "u32"
+                ], 
+                [
+                    "pDeviceIndices", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "BindImageMemoryInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {
+                "deviceIndices": [
+                    "deviceIndexCount", 
+                    "pDeviceIndices"
+                ], 
+                "sFRRects": [
+                    "SFRRectCount", 
+                    "pSFRRects"
+                ]
+            }, 
+            "defaults": {
+                "sType": "BIND_IMAGE_MEMORY_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "image", 
+                    "Image"
+                ], 
+                [
+                    "memory", 
+                    "DeviceMemory"
+                ], 
+                [
+                    "memoryOffset", 
+                    "u64"
+                ], 
+                [
+                    "deviceIndexCount", 
+                    "u32"
+                ], 
+                [
+                    "pDeviceIndices", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "SFRRectCount", 
+                    "u32"
+                ], 
+                [
+                    "pSFRRects", 
+                    {
+                        "to": "Rect2D", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "BindImageMemorySwapchainInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "BIND_IMAGE_MEMORY_SWAPCHAIN_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "swapchain", 
+                    "SwapchainKHR"
+                ], 
+                [
+                    "imageIndex", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
         }, 
         "BindSparseInfo": {
             "aliases": {}, 
@@ -725,6 +911,108 @@
             ], 
             "type": "union"
         }, 
+        "CmdProcessCommandsInfoNVX": {
+            "aliases": {}, 
+            "autoarrays": {
+                "indirectCommandsTokens": [
+                    "indirectCommandsTokenCount", 
+                    "pIndirectCommandsTokens"
+                ]
+            }, 
+            "defaults": {
+                "sType": "CMD_PROCESS_COMMANDS_INFO_NVX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "objectTable", 
+                    "ObjectTableNVX"
+                ], 
+                [
+                    "indirectCommandsLayout", 
+                    "IndirectCommandsLayoutNVX"
+                ], 
+                [
+                    "indirectCommandsTokenCount", 
+                    "u32"
+                ], 
+                [
+                    "pIndirectCommandsTokens", 
+                    {
+                        "to": "IndirectCommandsTokenNVX", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "maxSequencesCount", 
+                    "u32"
+                ], 
+                [
+                    "targetCommandBuffer", 
+                    "CommandBuffer"
+                ], 
+                [
+                    "sequencesCountBuffer", 
+                    "Buffer"
+                ], 
+                [
+                    "sequencesCountOffset", 
+                    "u64"
+                ], 
+                [
+                    "sequencesIndexBuffer", 
+                    "Buffer"
+                ], 
+                [
+                    "sequencesIndexOffset", 
+                    "u64"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "CmdReserveSpaceForCommandsInfoNVX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "CMD_RESERVE_SPACE_FOR_COMMANDS_INFO_NVX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "objectTable", 
+                    "ObjectTableNVX"
+                ], 
+                [
+                    "indirectCommandsLayout", 
+                    "IndirectCommandsLayoutNVX"
+                ], 
+                [
+                    "maxSequencesCount", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "ColorComponentFlags": {
             "constants": {
                 "A_BIT": 8, 
@@ -737,7 +1025,7 @@
         }, 
         "ColorSpaceKHR": {
             "constants": {
-                "COLORSPACE_SRGB_NONLINEAR_KHR": 0
+                "SRGB_NONLINEAR_KHR": 0
             }, 
             "ctype": "i32", 
             "type": "enum"
@@ -936,6 +1224,7 @@
             "ctype": "i32", 
             "type": "bitmask"
         }, 
+        "CommandPoolTrimFlagsKHR": "i32", 
         "CompareOp": {
             "constants": {
                 "ALWAYS": 7, 
@@ -1097,6 +1386,183 @@
             "ctype": "i32", 
             "type": "bitmask"
         }, 
+        "D3D12FenceSubmitInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {
+                "signalSemaphoreValues": [
+                    "signalSemaphoreValuesCount", 
+                    "pSignalSemaphoreValues"
+                ], 
+                "waitSemaphoreValues": [
+                    "waitSemaphoreValuesCount", 
+                    "pWaitSemaphoreValues"
+                ]
+            }, 
+            "defaults": {
+                "sType": "D3D12_FENCE_SUBMIT_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "waitSemaphoreValuesCount", 
+                    "u32"
+                ], 
+                [
+                    "pWaitSemaphoreValues", 
+                    {
+                        "to": "u64", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "signalSemaphoreValuesCount", 
+                    "u32"
+                ], 
+                [
+                    "pSignalSemaphoreValues", 
+                    {
+                        "to": "u64", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DebugMarkerMarkerInfoEXT": {
+            "aliases": {
+                "markerName": "pMarkerName"
+            }, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DEBUG_MARKER_MARKER_INFO_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pMarkerName", 
+                    {
+                        "to": "char", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "color", 
+                    {
+                        "ctype": "float", 
+                        "length": 4, 
+                        "type": "array"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DebugMarkerObjectNameInfoEXT": {
+            "aliases": {
+                "objectName": "pObjectName"
+            }, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DEBUG_MARKER_OBJECT_NAME_INFO_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "objectType", 
+                    "DebugReportObjectTypeEXT"
+                ], 
+                [
+                    "object", 
+                    "u64"
+                ], 
+                [
+                    "pObjectName", 
+                    {
+                        "to": "char", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DebugMarkerObjectTagInfoEXT": {
+            "aliases": {}, 
+            "autoarrays": {
+                "tag": [
+                    "tagSize", 
+                    "pTag"
+                ]
+            }, 
+            "defaults": {
+                "sType": "DEBUG_MARKER_OBJECT_TAG_INFO_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "objectType", 
+                    "DebugReportObjectTypeEXT"
+                ], 
+                [
+                    "object", 
+                    "u64"
+                ], 
+                [
+                    "tagName", 
+                    "u64"
+                ], 
+                [
+                    "tagSize", 
+                    "size_t"
+                ], 
+                [
+                    "pTag", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "DebugReportCallbackCreateInfoEXT": {
             "aliases": {
                 "userData": "pUserData"
@@ -1173,12 +1639,16 @@
                 "DESCRIPTOR_SET_LAYOUT_EXT": 20, 
                 "DEVICE_EXT": 3, 
                 "DEVICE_MEMORY_EXT": 8, 
+                "DISPLAY_KHR_EXT": 29, 
+                "DISPLAY_MODE_KHR_EXT": 30, 
                 "EVENT_EXT": 11, 
                 "FENCE_EXT": 7, 
                 "FRAMEBUFFER_EXT": 24, 
                 "IMAGE_EXT": 10, 
                 "IMAGE_VIEW_EXT": 14, 
+                "INDIRECT_COMMANDS_LAYOUT_NVX_EXT": 32, 
                 "INSTANCE_EXT": 1, 
+                "OBJECT_TABLE_NVX_EXT": 31, 
                 "PHYSICAL_DEVICE_EXT": 2, 
                 "PIPELINE_CACHE_EXT": 16, 
                 "PIPELINE_EXT": 19, 
@@ -1195,6 +1665,85 @@
             }, 
             "ctype": "i32", 
             "type": "enum"
+        }, 
+        "DedicatedAllocationBufferCreateInfoNV": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DEDICATED_ALLOCATION_BUFFER_CREATE_INFO_NV"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "dedicatedAllocation", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DedicatedAllocationImageCreateInfoNV": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DEDICATED_ALLOCATION_IMAGE_CREATE_INFO_NV"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "dedicatedAllocation", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DedicatedAllocationMemoryAllocateInfoNV": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DEDICATED_ALLOCATION_MEMORY_ALLOCATE_INFO_NV"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "image", 
+                    "Image"
+                ], 
+                [
+                    "buffer", 
+                    "Buffer"
+                ]
+            ], 
+            "type": "struct"
         }, 
         "DependencyFlags": {
             "constants": {
@@ -1410,7 +1959,11 @@
             ], 
             "type": "struct"
         }, 
-        "DescriptorSetLayoutCreateFlags": "i32", 
+        "DescriptorSetLayoutCreateFlags": {
+            "constants": {}, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
         "DescriptorSetLayoutCreateInfo": {
             "aliases": {}, 
             "autoarrays": {
@@ -1465,6 +2018,115 @@
                 "UNIFORM_BUFFER": 6, 
                 "UNIFORM_BUFFER_DYNAMIC": 8, 
                 "UNIFORM_TEXEL_BUFFER": 4
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
+        }, 
+        "DescriptorUpdateTemplateCreateFlagsKHR": "i32", 
+        "DescriptorUpdateTemplateCreateInfoKHR": {
+            "aliases": {}, 
+            "autoarrays": {
+                "descriptorUpdateEntries": [
+                    "descriptorUpdateEntryCount", 
+                    "pDescriptorUpdateEntries"
+                ]
+            }, 
+            "defaults": {
+                "sType": "DESCRIPTOR_UPDATE_TEMPLATE_CREATE_INFO_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "flags", 
+                    "DescriptorUpdateTemplateCreateFlagsKHR"
+                ], 
+                [
+                    "descriptorUpdateEntryCount", 
+                    "u32"
+                ], 
+                [
+                    "pDescriptorUpdateEntries", 
+                    {
+                        "to": "DescriptorUpdateTemplateEntryKHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "templateType", 
+                    "DescriptorUpdateTemplateTypeKHR"
+                ], 
+                [
+                    "descriptorSetLayout", 
+                    "DescriptorSetLayout"
+                ], 
+                [
+                    "pipelineBindPoint", 
+                    "PipelineBindPoint"
+                ], 
+                [
+                    "pipelineLayout", 
+                    "PipelineLayout"
+                ], 
+                [
+                    "set", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DescriptorUpdateTemplateEntryKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "dstBinding", 
+                    "u32"
+                ], 
+                [
+                    "dstArrayElement", 
+                    "u32"
+                ], 
+                [
+                    "descriptorCount", 
+                    "u32"
+                ], 
+                [
+                    "descriptorType", 
+                    "DescriptorType"
+                ], 
+                [
+                    "offset", 
+                    "size_t"
+                ], 
+                [
+                    "stride", 
+                    "size_t"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DescriptorUpdateTemplateKHR": {
+            "to": {
+                "name": "DescriptorUpdateTemplateKHR", 
+                "type": "opaque"
+            }, 
+            "type": "pointer"
+        }, 
+        "DescriptorUpdateTemplateTypeKHR": {
+            "constants": {
+                "DESCRIPTOR_SET_KHR": 0, 
+                "PUSH_DESCRIPTORS_KHR": 1
             }, 
             "ctype": "i32", 
             "type": "enum"
@@ -1563,6 +2225,412 @@
             ], 
             "type": "struct"
         }, 
+        "DeviceEventInfoEXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DEVICE_EVENT_INFO_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "deviceEvent", 
+                    "DeviceEventTypeEXT"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DeviceEventTypeEXT": {
+            "constants": {
+                "DISPLAY_HOTPLUG_EXT": 0
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
+        }, 
+        "DeviceGeneratedCommandsFeaturesNVX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DEVICE_GENERATED_COMMANDS_FEATURES_NVX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "computeBindingPointSupport", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DeviceGeneratedCommandsLimitsNVX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DEVICE_GENERATED_COMMANDS_LIMITS_NVX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "maxIndirectCommandsLayoutTokenCount", 
+                    "u32"
+                ], 
+                [
+                    "maxObjectEntryCounts", 
+                    "u32"
+                ], 
+                [
+                    "minSequenceCountBufferOffsetAlignment", 
+                    "u32"
+                ], 
+                [
+                    "minSequenceIndexBufferOffsetAlignment", 
+                    "u32"
+                ], 
+                [
+                    "minCommandsTokenBufferOffsetAlignment", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DeviceGroupBindSparseInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DEVICE_GROUP_BIND_SPARSE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "resourceDeviceIndex", 
+                    "u32"
+                ], 
+                [
+                    "memoryDeviceIndex", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DeviceGroupCommandBufferBeginInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DEVICE_GROUP_COMMAND_BUFFER_BEGIN_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "deviceMask", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DeviceGroupDeviceCreateInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {
+                "physicalDevices": [
+                    "physicalDeviceCount", 
+                    "pPhysicalDevices"
+                ]
+            }, 
+            "defaults": {
+                "sType": "DEVICE_GROUP_DEVICE_CREATE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "physicalDeviceCount", 
+                    "u32"
+                ], 
+                [
+                    "pPhysicalDevices", 
+                    {
+                        "to": "PhysicalDevice", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DeviceGroupPresentCapabilitiesKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DEVICE_GROUP_PRESENT_CAPABILITIES_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "presentMask", 
+                    {
+                        "ctype": "u32", 
+                        "length": 32, 
+                        "type": "array"
+                    }
+                ], 
+                [
+                    "modes", 
+                    "DeviceGroupPresentModeFlagsKHX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DeviceGroupPresentInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {
+                "deviceMasks": [
+                    "swapchainCount", 
+                    "pDeviceMasks"
+                ]
+            }, 
+            "defaults": {
+                "sType": "DEVICE_GROUP_PRESENT_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "swapchainCount", 
+                    "u32"
+                ], 
+                [
+                    "pDeviceMasks", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "mode", 
+                    "DeviceGroupPresentModeFlagsKHX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DeviceGroupPresentModeFlagsKHX": {
+            "constants": {
+                "LOCAL_BIT_KHX": 1, 
+                "LOCAL_MULTI_DEVICE_BIT_KHX": 8, 
+                "REMOTE_BIT_KHX": 2, 
+                "SUM_BIT_KHX": 4
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
+        "DeviceGroupRenderPassBeginInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {
+                "deviceRenderAreas": [
+                    "deviceRenderAreaCount", 
+                    "pDeviceRenderAreas"
+                ]
+            }, 
+            "defaults": {
+                "sType": "DEVICE_GROUP_RENDER_PASS_BEGIN_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "deviceMask", 
+                    "u32"
+                ], 
+                [
+                    "deviceRenderAreaCount", 
+                    "u32"
+                ], 
+                [
+                    "pDeviceRenderAreas", 
+                    {
+                        "to": "Rect2D", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DeviceGroupSubmitInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {
+                "commandBufferDeviceMasks": [
+                    "commandBufferCount", 
+                    "pCommandBufferDeviceMasks"
+                ], 
+                "signalSemaphoreDeviceIndices": [
+                    "signalSemaphoreCount", 
+                    "pSignalSemaphoreDeviceIndices"
+                ], 
+                "waitSemaphoreDeviceIndices": [
+                    "waitSemaphoreCount", 
+                    "pWaitSemaphoreDeviceIndices"
+                ]
+            }, 
+            "defaults": {
+                "sType": "DEVICE_GROUP_SUBMIT_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "waitSemaphoreCount", 
+                    "u32"
+                ], 
+                [
+                    "pWaitSemaphoreDeviceIndices", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "commandBufferCount", 
+                    "u32"
+                ], 
+                [
+                    "pCommandBufferDeviceMasks", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "signalSemaphoreCount", 
+                    "u32"
+                ], 
+                [
+                    "pSignalSemaphoreDeviceIndices", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DeviceGroupSwapchainCreateInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DEVICE_GROUP_SWAPCHAIN_CREATE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "modes", 
+                    "DeviceGroupPresentModeFlagsKHX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "DeviceMemory": {
             "to": {
                 "name": "DeviceMemory", 
@@ -1616,6 +2684,14 @@
             ], 
             "type": "struct"
         }, 
+        "DiscardRectangleModeEXT": {
+            "constants": {
+                "EXCLUSIVE_EXT": 1, 
+                "INCLUSIVE_EXT": 0
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
+        }, 
         "DispatchIndirectCommand": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -1635,6 +2711,38 @@
                 ]
             ], 
             "type": "struct"
+        }, 
+        "DisplayEventInfoEXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DISPLAY_EVENT_INFO_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "displayEvent", 
+                    "DisplayEventTypeEXT"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DisplayEventTypeEXT": {
+            "constants": {
+                "FIRST_PIXEL_OUT_EXT": 0
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
         }, 
         "DisplayKHR": {
             "to": {
@@ -1781,6 +2889,40 @@
                 ]
             ], 
             "type": "struct"
+        }, 
+        "DisplayPowerInfoEXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "DISPLAY_POWER_INFO_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "powerState", 
+                    "DisplayPowerStateEXT"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "DisplayPowerStateEXT": {
+            "constants": {
+                "OFF_EXT": 0, 
+                "ON_EXT": 2, 
+                "SUSPEND_EXT": 1
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
         }, 
         "DisplayPresentInfoKHR": {
             "aliases": {}, 
@@ -2008,6 +3150,191 @@
             ], 
             "type": "struct"
         }, 
+        "ExportMemoryAllocateInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXPORT_MEMORY_ALLOCATE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleTypes", 
+                    "ExternalMemoryHandleTypeFlagsKHX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExportMemoryAllocateInfoNV": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXPORT_MEMORY_ALLOCATE_INFO_NV"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleTypes", 
+                    "ExternalMemoryHandleTypeFlagsNV"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExportMemoryWin32HandleInfoKHX": {
+            "aliases": {
+                "attributes": "pAttributes"
+            }, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXPORT_MEMORY_WIN_32_HANDLE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pAttributes", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "dwAccess", 
+                    "u32"
+                ], 
+                [
+                    "name", 
+                    "void*"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExportMemoryWin32HandleInfoNV": {
+            "aliases": {
+                "attributes": "pAttributes"
+            }, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXPORT_MEMORY_WIN_32_HANDLE_INFO_NV"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pAttributes", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "dwAccess", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExportSemaphoreCreateInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXPORT_SEMAPHORE_CREATE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleTypes", 
+                    "ExternalSemaphoreHandleTypeFlagsKHX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExportSemaphoreWin32HandleInfoKHX": {
+            "aliases": {
+                "attributes": "pAttributes"
+            }, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXPORT_SEMAPHORE_WIN_32_HANDLE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pAttributes", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "dwAccess", 
+                    "u32"
+                ], 
+                [
+                    "name", 
+                    "void*"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "ExtensionProperties": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -2060,6 +3387,268 @@
                 [
                     "depth", 
                     "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExternalBufferPropertiesKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXTERNAL_BUFFER_PROPERTIES_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "externalMemoryProperties", 
+                    "ExternalMemoryPropertiesKHX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExternalImageFormatPropertiesKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXTERNAL_IMAGE_FORMAT_PROPERTIES_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "externalMemoryProperties", 
+                    "ExternalMemoryPropertiesKHX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExternalImageFormatPropertiesNV": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "imageFormatProperties", 
+                    "ImageFormatProperties"
+                ], 
+                [
+                    "externalMemoryFeatures", 
+                    "ExternalMemoryFeatureFlagsNV"
+                ], 
+                [
+                    "exportFromImportedHandleTypes", 
+                    "ExternalMemoryHandleTypeFlagsNV"
+                ], 
+                [
+                    "compatibleHandleTypes", 
+                    "ExternalMemoryHandleTypeFlagsNV"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExternalMemoryBufferCreateInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleTypes", 
+                    "ExternalMemoryHandleTypeFlagsKHX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExternalMemoryFeatureFlagsKHX": {
+            "constants": {
+                "DEDICATED_ONLY_BIT_KHX": 1, 
+                "EXPORTABLE_BIT_KHX": 2, 
+                "IMPORTABLE_BIT_KHX": 4
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
+        "ExternalMemoryFeatureFlagsNV": {
+            "constants": {
+                "DEDICATED_ONLY_BIT_NV": 1, 
+                "EXPORTABLE_BIT_NV": 2, 
+                "IMPORTABLE_BIT_NV": 4
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
+        "ExternalMemoryHandleTypeFlagsKHX": {
+            "constants": {
+                "D3D11_TEXTURE_BIT_KHX": 8, 
+                "D3D11_TEXTURE_KMT_BIT_KHX": 16, 
+                "D3D12_HEAP_BIT_KHX": 32, 
+                "D3D12_RESOURCE_BIT_KHX": 64, 
+                "OPAQUE_FD_BIT_KHX": 1, 
+                "OPAQUE_WIN32_BIT_KHX": 2, 
+                "OPAQUE_WIN32_KMT_BIT_KHX": 4
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
+        "ExternalMemoryHandleTypeFlagsNV": {
+            "constants": {
+                "D3D11_IMAGE_BIT_NV": 4, 
+                "D3D11_IMAGE_KMT_BIT_NV": 8, 
+                "OPAQUE_WIN32_BIT_NV": 1, 
+                "OPAQUE_WIN32_KMT_BIT_NV": 2
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
+        "ExternalMemoryImageCreateInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXTERNAL_MEMORY_IMAGE_CREATE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleTypes", 
+                    "ExternalMemoryHandleTypeFlagsKHX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExternalMemoryImageCreateInfoNV": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleTypes", 
+                    "ExternalMemoryHandleTypeFlagsNV"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExternalMemoryPropertiesKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "externalMemoryFeatures", 
+                    "ExternalMemoryFeatureFlagsKHX"
+                ], 
+                [
+                    "exportFromImportedHandleTypes", 
+                    "ExternalMemoryHandleTypeFlagsKHX"
+                ], 
+                [
+                    "compatibleHandleTypes", 
+                    "ExternalMemoryHandleTypeFlagsKHX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExternalSemaphoreFeatureFlagsKHX": {
+            "constants": {
+                "EXPORTABLE_BIT_KHX": 1, 
+                "IMPORTABLE_BIT_KHX": 2
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
+        "ExternalSemaphoreHandleTypeFlagsKHX": {
+            "constants": {
+                "D3D12_FENCE_BIT_KHX": 8, 
+                "FENCE_FD_BIT_KHX": 16, 
+                "OPAQUE_FD_BIT_KHX": 1, 
+                "OPAQUE_WIN32_BIT_KHX": 2, 
+                "OPAQUE_WIN32_KMT_BIT_KHX": 4
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
+        "ExternalSemaphorePropertiesKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXTERNAL_SEMAPHORE_PROPERTIES_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "exportFromImportedHandleTypes", 
+                    "ExternalSemaphoreHandleTypeFlagsKHX"
+                ], 
+                [
+                    "compatibleHandleTypes", 
+                    "ExternalSemaphoreHandleTypeFlagsKHX"
+                ], 
+                [
+                    "externalSemaphoreFeatures", 
+                    "ExternalSemaphoreFeatureFlagsKHX"
                 ]
             ], 
             "type": "struct"
@@ -2341,6 +3930,31 @@
             ], 
             "type": "struct"
         }, 
+        "FormatProperties2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "FORMAT_PROPERTIES_2KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "formatProperties", 
+                    "FormatProperties"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "Framebuffer": {
             "to": {
                 "name": "Framebuffer", 
@@ -2548,6 +4162,41 @@
             ], 
             "type": "struct"
         }, 
+        "IOSSurfaceCreateFlagsMVK": "i32", 
+        "IOSSurfaceCreateInfoMVK": {
+            "aliases": {
+                "view": "pView"
+            }, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IOSSURFACE_CREATE_INFO_MVK"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "flags", 
+                    "IOSSurfaceCreateFlagsMVK"
+                ], 
+                [
+                    "pView", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "Image": {
             "to": {
                 "name": "Image", 
@@ -2575,16 +4224,24 @@
                     "ImageSubresourceLayers"
                 ], 
                 [
-                    "srcOffsets[2]", 
-                    "Offset3D"
+                    "srcOffsets", 
+                    {
+                        "ctype": "Offset3D", 
+                        "length": 2, 
+                        "type": "array"
+                    }
                 ], 
                 [
                     "dstSubresource", 
                     "ImageSubresourceLayers"
                 ], 
                 [
-                    "dstOffsets[2]", 
-                    "Offset3D"
+                    "dstOffsets", 
+                    {
+                        "ctype": "Offset3D", 
+                        "length": 2, 
+                        "type": "array"
+                    }
                 ]
             ], 
             "type": "struct"
@@ -2733,6 +4390,56 @@
                 [
                     "maxResourceSize", 
                     "u64"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ImageFormatProperties2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IMAGE_FORMAT_PROPERTIES_2KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "imageFormatProperties", 
+                    "ImageFormatProperties"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ImageFormatProperties2KHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IMAGE_FORMAT_PROPERTIES_2KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "imageFormatProperties", 
+                    "ImageFormatProperties"
                 ]
             ], 
             "type": "struct"
@@ -2905,6 +4612,31 @@
             ], 
             "type": "struct"
         }, 
+        "ImageSwapchainCreateInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IMAGE_SWAPCHAIN_CREATE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "swapchain", 
+                    "SwapchainKHR"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "ImageTiling": {
             "constants": {
                 "LINEAR": 1, 
@@ -3002,10 +4734,283 @@
             "ctype": "i32", 
             "type": "enum"
         }, 
+        "ImportMemoryFdInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IMPORT_MEMORY_FD_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleType", 
+                    "ExternalMemoryHandleTypeFlagsKHX"
+                ], 
+                [
+                    "fd", 
+                    "int"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ImportMemoryWin32HandleInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IMPORT_MEMORY_WIN_32_HANDLE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleType", 
+                    "ExternalMemoryHandleTypeFlagsKHX"
+                ], 
+                [
+                    "handle", 
+                    "void*"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ImportMemoryWin32HandleInfoNV": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IMPORT_MEMORY_WIN_32_HANDLE_INFO_NV"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleType", 
+                    "ExternalMemoryHandleTypeFlagsNV"
+                ], 
+                [
+                    "handle", 
+                    "void*"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ImportSemaphoreFdInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IMPORT_SEMAPHORE_FD_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "semaphore", 
+                    "Semaphore"
+                ], 
+                [
+                    "handleType", 
+                    "ExternalSemaphoreHandleTypeFlagsKHX"
+                ], 
+                [
+                    "fd", 
+                    "int"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ImportSemaphoreWin32HandleInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IMPORT_SEMAPHORE_WIN_32_HANDLE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "semaphore", 
+                    "Semaphore"
+                ], 
+                [
+                    "handleType", 
+                    "ExternalSemaphoreHandleTypeFlagsKHX"
+                ], 
+                [
+                    "handle", 
+                    "void*"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "IndexType": {
             "constants": {
                 "UINT16": 0, 
                 "UINT32": 1
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
+        }, 
+        "IndirectCommandsLayoutCreateInfoNVX": {
+            "aliases": {}, 
+            "autoarrays": {
+                "tokens": [
+                    "tokenCount", 
+                    "pTokens"
+                ]
+            }, 
+            "defaults": {
+                "sType": "INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_NVX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pipelineBindPoint", 
+                    "PipelineBindPoint"
+                ], 
+                [
+                    "flags", 
+                    "IndirectCommandsLayoutUsageFlagsNVX"
+                ], 
+                [
+                    "tokenCount", 
+                    "u32"
+                ], 
+                [
+                    "pTokens", 
+                    {
+                        "to": "IndirectCommandsLayoutTokenNVX", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "IndirectCommandsLayoutNVX": {
+            "to": {
+                "name": "IndirectCommandsLayoutNVX", 
+                "type": "opaque"
+            }, 
+            "type": "pointer"
+        }, 
+        "IndirectCommandsLayoutTokenNVX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "tokenType", 
+                    "IndirectCommandsTokenTypeNVX"
+                ], 
+                [
+                    "bindingUnit", 
+                    "u32"
+                ], 
+                [
+                    "dynamicCount", 
+                    "u32"
+                ], 
+                [
+                    "divisor", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "IndirectCommandsLayoutUsageFlagsNVX": {
+            "constants": {
+                "EMPTY_EXECUTIONS_BIT_NVX": 4, 
+                "INDEXED_SEQUENCES_BIT_NVX": 8, 
+                "SPARSE_SEQUENCES_BIT_NVX": 2, 
+                "UNORDERED_SEQUENCES_BIT_NVX": 1
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
+        "IndirectCommandsTokenNVX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "tokenType", 
+                    "IndirectCommandsTokenTypeNVX"
+                ], 
+                [
+                    "buffer", 
+                    "Buffer"
+                ], 
+                [
+                    "offset", 
+                    "u64"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "IndirectCommandsTokenTypeNVX": {
+            "constants": {
+                "DESCRIPTOR_SET_NVX": 1, 
+                "DISPATCH_NVX": 7, 
+                "DRAW_INDEXED_NVX": 5, 
+                "DRAW_NVX": 6, 
+                "INDEX_BUFFER_NVX": 2, 
+                "PIPELINE_NVX": 0, 
+                "PUSH_CONSTANT_NVX": 4, 
+                "VERTEX_BUFFER_NVX": 3
             }, 
             "ctype": "i32", 
             "type": "enum"
@@ -3150,6 +5155,41 @@
             "ctype": "i32", 
             "type": "enum"
         }, 
+        "MacOSSurfaceCreateFlagsMVK": "i32", 
+        "MacOSSurfaceCreateInfoMVK": {
+            "aliases": {
+                "view": "pView"
+            }, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "MAC_OSSURFACE_CREATE_INFO_MVK"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "flags", 
+                    "MacOSSurfaceCreateFlagsMVK"
+                ], 
+                [
+                    "pView", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "MappedMemoryRange": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -3182,6 +5222,42 @@
                 ]
             ], 
             "type": "struct"
+        }, 
+        "MemoryAllocateFlagsInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "MEMORY_ALLOCATE_FLAGS_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "flags", 
+                    "MemoryAllocateFlagsKHX"
+                ], 
+                [
+                    "deviceMask", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "MemoryAllocateFlagsKHX": {
+            "constants": {
+                "DEVICE_MASK_BIT_KHX": 1
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
         }, 
         "MemoryAllocateInfo": {
             "aliases": {}, 
@@ -3237,6 +5313,31 @@
                 [
                     "dstAccessMask", 
                     "AccessFlags"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "MemoryFdPropertiesKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "MEMORY_FD_PROPERTIES_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "memoryTypeBits", 
+                    "u32"
                 ]
             ], 
             "type": "struct"
@@ -3312,6 +5413,31 @@
             ], 
             "type": "struct"
         }, 
+        "MemoryWin32HandlePropertiesKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "MEMORY_WIN_32_HANDLE_PROPERTIES_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "memoryTypeBits", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "MirSurfaceCreateFlagsKHR": "i32", 
         "MirSurfaceCreateInfoKHR": {
             "aliases": {}, 
@@ -3348,6 +5474,239 @@
                         "to": "void*", 
                         "type": "pointer"
                     }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ObjectEntryTypeNVX": {
+            "constants": {
+                "DESCRIPTOR_SET_NVX": 0, 
+                "INDEX_BUFFER_NVX": 2, 
+                "PIPELINE_NVX": 1, 
+                "PUSH_CONSTANT_NVX": 4, 
+                "VERTEX_BUFFER_NVX": 3
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
+        }, 
+        "ObjectEntryUsageFlagsNVX": {
+            "constants": {
+                "COMPUTE_BIT_NVX": 2, 
+                "GRAPHICS_BIT_NVX": 1
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
+        "ObjectTableCreateInfoNVX": {
+            "aliases": {}, 
+            "autoarrays": {
+                "objectEntryCounts": [
+                    "objectCount", 
+                    "pObjectEntryCounts"
+                ], 
+                "objectEntryTypes": [
+                    "objectCount", 
+                    "pObjectEntryTypes"
+                ], 
+                "objectEntryUsageFlags": [
+                    "objectCount", 
+                    "pObjectEntryUsageFlags"
+                ]
+            }, 
+            "defaults": {
+                "sType": "OBJECT_TABLE_CREATE_INFO_NVX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "objectCount", 
+                    "u32"
+                ], 
+                [
+                    "pObjectEntryTypes", 
+                    {
+                        "to": "ObjectEntryTypeNVX", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pObjectEntryCounts", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pObjectEntryUsageFlags", 
+                    {
+                        "to": "ObjectEntryUsageFlagsNVX", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "maxUniformBuffersPerDescriptor", 
+                    "u32"
+                ], 
+                [
+                    "maxStorageBuffersPerDescriptor", 
+                    "u32"
+                ], 
+                [
+                    "maxStorageImagesPerDescriptor", 
+                    "u32"
+                ], 
+                [
+                    "maxSampledImagesPerDescriptor", 
+                    "u32"
+                ], 
+                [
+                    "maxPipelineLayouts", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ObjectTableDescriptorSetEntryNVX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "type", 
+                    "ObjectEntryTypeNVX"
+                ], 
+                [
+                    "flags", 
+                    "ObjectEntryUsageFlagsNVX"
+                ], 
+                [
+                    "pipelineLayout", 
+                    "PipelineLayout"
+                ], 
+                [
+                    "descriptorSet", 
+                    "DescriptorSet"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ObjectTableEntryNVX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "type", 
+                    "ObjectEntryTypeNVX"
+                ], 
+                [
+                    "flags", 
+                    "ObjectEntryUsageFlagsNVX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ObjectTableIndexBufferEntryNVX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "type", 
+                    "ObjectEntryTypeNVX"
+                ], 
+                [
+                    "flags", 
+                    "ObjectEntryUsageFlagsNVX"
+                ], 
+                [
+                    "buffer", 
+                    "Buffer"
+                ], 
+                [
+                    "indexType", 
+                    "IndexType"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ObjectTableNVX": {
+            "to": {
+                "name": "ObjectTableNVX", 
+                "type": "opaque"
+            }, 
+            "type": "pointer"
+        }, 
+        "ObjectTablePipelineEntryNVX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "type", 
+                    "ObjectEntryTypeNVX"
+                ], 
+                [
+                    "flags", 
+                    "ObjectEntryUsageFlagsNVX"
+                ], 
+                [
+                    "pipeline", 
+                    "Pipeline"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ObjectTablePushConstantEntryNVX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "type", 
+                    "ObjectEntryTypeNVX"
+                ], 
+                [
+                    "flags", 
+                    "ObjectEntryUsageFlagsNVX"
+                ], 
+                [
+                    "pipelineLayout", 
+                    "PipelineLayout"
+                ], 
+                [
+                    "stageFlags", 
+                    "ShaderStageFlags"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ObjectTableVertexBufferEntryNVX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "type", 
+                    "ObjectEntryTypeNVX"
+                ], 
+                [
+                    "flags", 
+                    "ObjectEntryUsageFlagsNVX"
+                ], 
+                [
+                    "buffer", 
+                    "Buffer"
                 ]
             ], 
             "type": "struct"
@@ -3489,12 +5848,130 @@
             "restype": "void", 
             "type": "cfunc"
         }, 
+        "PeerMemoryFeatureFlagsKHX": {
+            "constants": {
+                "COPY_DST_BIT_KHX": 2, 
+                "COPY_SRC_BIT_KHX": 1, 
+                "GENERIC_DST_BIT_KHX": 8, 
+                "GENERIC_SRC_BIT_KHX": 4
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
         "PhysicalDevice": {
             "to": {
                 "name": "PhysicalDevice", 
                 "type": "opaque"
             }, 
             "type": "pointer"
+        }, 
+        "PhysicalDeviceDiscardRectanglePropertiesEXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "maxDiscardRectangles", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceExternalBufferInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "flags", 
+                    "BufferCreateFlags"
+                ], 
+                [
+                    "usage", 
+                    "BufferUsageFlags"
+                ], 
+                [
+                    "handleType", 
+                    "ExternalMemoryHandleTypeFlagsKHX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceExternalImageFormatInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleType", 
+                    "ExternalMemoryHandleTypeFlagsKHX"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceExternalSemaphoreInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleType", 
+                    "ExternalSemaphoreHandleTypeFlagsKHX"
+                ]
+            ], 
+            "type": "struct"
         }, 
         "PhysicalDeviceFeatures": {
             "aliases": {}, 
@@ -3720,6 +6197,199 @@
                 [
                     "inheritedQueries", 
                     "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceFeatures2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_FEATURES_2KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "features", 
+                    "PhysicalDeviceFeatures"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceGroupPropertiesKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_GROUP_PROPERTIES_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "physicalDeviceCount", 
+                    "u32"
+                ], 
+                [
+                    "physicalDevices", 
+                    {
+                        "ctype": "PhysicalDevice", 
+                        "length": 32, 
+                        "type": "array"
+                    }
+                ], 
+                [
+                    "subsetAllocation", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceIDPropertiesKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_IDPROPERTIES_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "deviceUUID", 
+                    {
+                        "ctype": "u8", 
+                        "length": 16, 
+                        "type": "array"
+                    }
+                ], 
+                [
+                    "driverUUID", 
+                    {
+                        "ctype": "u8", 
+                        "length": 16, 
+                        "type": "array"
+                    }
+                ], 
+                [
+                    "deviceLUID", 
+                    {
+                        "ctype": "u8", 
+                        "length": 8, 
+                        "type": "array"
+                    }
+                ], 
+                [
+                    "deviceLUIDValid", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceImageFormatInfo2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "format", 
+                    "Format"
+                ], 
+                [
+                    "type", 
+                    "ImageType"
+                ], 
+                [
+                    "tiling", 
+                    "ImageTiling"
+                ], 
+                [
+                    "usage", 
+                    "ImageUsageFlags"
+                ], 
+                [
+                    "flags", 
+                    "ImageCreateFlags"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceImageFormatInfo2KHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "format", 
+                    "Format"
+                ], 
+                [
+                    "type", 
+                    "ImageType"
+                ], 
+                [
+                    "tiling", 
+                    "ImageTiling"
+                ], 
+                [
+                    "usage", 
+                    "ImageUsageFlags"
+                ], 
+                [
+                    "flags", 
+                    "ImageCreateFlags"
                 ]
             ], 
             "type": "struct"
@@ -4212,6 +6882,118 @@
             ], 
             "type": "struct"
         }, 
+        "PhysicalDeviceMemoryProperties2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_MEMORY_PROPERTIES_2KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "memoryProperties", 
+                    "PhysicalDeviceMemoryProperties"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceMultiviewFeaturesKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "multiview", 
+                    "u32"
+                ], 
+                [
+                    "multiviewGeometryShader", 
+                    "u32"
+                ], 
+                [
+                    "multiviewTessellationShader", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceMultiviewPerViewAttributesPropertiesNVX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_ATTRIBUTES_PROPERTIES_NVX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "perViewPositionAllComponents", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceMultiviewPropertiesKHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "maxMultiviewViewCount", 
+                    "u32"
+                ], 
+                [
+                    "maxMultiviewInstanceIndex", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "PhysicalDeviceProperties": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -4260,6 +7042,122 @@
                 [
                     "sparseProperties", 
                     "PhysicalDeviceSparseProperties"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceProperties2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_PROPERTIES_2KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "properties", 
+                    "PhysicalDeviceProperties"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceProperties2KHX": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_PROPERTIES_2KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "properties", 
+                    "PhysicalDeviceProperties"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDevicePushDescriptorPropertiesKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "maxPushDescriptors", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceSparseImageFormatInfo2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "format", 
+                    "Format"
+                ], 
+                [
+                    "type", 
+                    "ImageType"
+                ], 
+                [
+                    "samples", 
+                    "SampleCountFlags"
+                ], 
+                [
+                    "usage", 
+                    "ImageUsageFlags"
+                ], 
+                [
+                    "tiling", 
+                    "ImageTiling"
                 ]
             ], 
             "type": "struct"
@@ -4543,6 +7441,52 @@
             ], 
             "type": "struct"
         }, 
+        "PipelineDiscardRectangleStateCreateFlagsEXT": "i32", 
+        "PipelineDiscardRectangleStateCreateInfoEXT": {
+            "aliases": {}, 
+            "autoarrays": {
+                "discardRectangles": [
+                    "discardRectangleCount", 
+                    "pDiscardRectangles"
+                ]
+            }, 
+            "defaults": {
+                "sType": "PIPELINE_DISCARD_RECTANGLE_STATE_CREATE_INFO_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "flags", 
+                    "PipelineDiscardRectangleStateCreateFlagsEXT"
+                ], 
+                [
+                    "discardRectangleMode", 
+                    "DiscardRectangleModeEXT"
+                ], 
+                [
+                    "discardRectangleCount", 
+                    "u32"
+                ], 
+                [
+                    "pDiscardRectangles", 
+                    {
+                        "to": "Rect2D", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "PipelineDynamicStateCreateFlags": "i32", 
         "PipelineDynamicStateCreateInfo": {
             "aliases": {}, 
@@ -4804,6 +7748,31 @@
             ], 
             "type": "struct"
         }, 
+        "PipelineRasterizationStateRasterizationOrderAMD": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PIPELINE_RASTERIZATION_STATE_RASTERIZATION_ORDER_AMD"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "rasterizationOrder", 
+                    "RasterizationOrderAMD"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "PipelineShaderStageCreateFlags": "i32", 
         "PipelineShaderStageCreateInfo": {
             "aliases": {
@@ -5016,6 +7985,89 @@
                     "pScissors", 
                     {
                         "to": "Rect2D", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PipelineViewportSwizzleStateCreateFlagsNV": "i32", 
+        "PipelineViewportSwizzleStateCreateInfoNV": {
+            "aliases": {}, 
+            "autoarrays": {
+                "viewportSwizzles": [
+                    "viewportCount", 
+                    "pViewportSwizzles"
+                ]
+            }, 
+            "defaults": {
+                "sType": "PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "flags", 
+                    "PipelineViewportSwizzleStateCreateFlagsNV"
+                ], 
+                [
+                    "viewportCount", 
+                    "u32"
+                ], 
+                [
+                    "pViewportSwizzles", 
+                    {
+                        "to": "ViewportSwizzleNV", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PipelineViewportWScalingStateCreateInfoNV": {
+            "aliases": {}, 
+            "autoarrays": {
+                "viewportWScalings": [
+                    "viewportCount", 
+                    "pViewportWScalings"
+                ]
+            }, 
+            "defaults": {
+                "sType": "PIPELINE_VIEWPORT_WSCALING_STATE_CREATE_INFO_NV"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "viewportWScalingEnable", 
+                    "u32"
+                ], 
+                [
+                    "viewportCount", 
+                    "u32"
+                ], 
+                [
+                    "pViewportWScalings", 
+                    {
+                        "to": "ViewportWScalingNV", 
                         "type": "pointer"
                     }
                 ]
@@ -5271,6 +8323,31 @@
             ], 
             "type": "struct"
         }, 
+        "QueueFamilyProperties2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "QUEUE_FAMILY_PROPERTIES_2KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "queueFamilyProperties", 
+                    "QueueFamilyProperties"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "QueueFlags": {
             "constants": {
                 "COMPUTE_BIT": 2, 
@@ -5280,6 +8357,14 @@
             }, 
             "ctype": "i32", 
             "type": "bitmask"
+        }, 
+        "RasterizationOrderAMD": {
+            "constants": {
+                "RELAXED_AMD": 1, 
+                "STRICT_AMD": 0
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
         }, 
         "Rect2D": {
             "aliases": {}, 
@@ -5441,12 +8526,80 @@
             ], 
             "type": "struct"
         }, 
+        "RenderPassMultiviewCreateInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {
+                "correlationMasks": [
+                    "correlationMaskCount", 
+                    "pCorrelationMasks"
+                ], 
+                "viewMasks": [
+                    "subpassCount", 
+                    "pViewMasks"
+                ], 
+                "viewOffsets": [
+                    "dependencyCount", 
+                    "pViewOffsets"
+                ]
+            }, 
+            "defaults": {
+                "sType": "RENDER_PASS_MULTIVIEW_CREATE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "subpassCount", 
+                    "u32"
+                ], 
+                [
+                    "pViewMasks", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "dependencyCount", 
+                    "u32"
+                ], 
+                [
+                    "pViewOffsets", 
+                    {
+                        "to": "i32", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "correlationMaskCount", 
+                    "u32"
+                ], 
+                [
+                    "pCorrelationMasks", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "Result": {
             "constants": {
                 "ERROR_DEVICE_LOST": -4, 
                 "ERROR_EXTENSION_NOT_PRESENT": -7, 
                 "ERROR_FEATURE_NOT_PRESENT": -8, 
                 "ERROR_FORMAT_NOT_SUPPORTED": -11, 
+                "ERROR_FRAGMENTED_POOL": -12, 
                 "ERROR_INCOMPATIBLE_DRIVER": -9, 
                 "ERROR_INITIALIZATION_FAILED": -3, 
                 "ERROR_LAYER_NOT_PRESENT": -6, 
@@ -5463,6 +8616,38 @@
             }, 
             "ctype": "i32", 
             "type": "enum"
+        }, 
+        "SMPTE2086MetadataEXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "displayPrimaryRed", 
+                    "XYColorEXT"
+                ], 
+                [
+                    "displayPrimaryGreen", 
+                    "XYColorEXT"
+                ], 
+                [
+                    "displayPrimaryBlue", 
+                    "XYColorEXT"
+                ], 
+                [
+                    "whitePoint", 
+                    "XYColorEXT"
+                ], 
+                [
+                    "maxLuminance", 
+                    "float"
+                ], 
+                [
+                    "minLuminance", 
+                    "float"
+                ]
+            ], 
+            "type": "struct"
         }, 
         "SampleCountFlags": {
             "constants": {
@@ -5742,6 +8927,31 @@
                 [
                     "flags", 
                     "SparseImageFormatFlags"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "SparseImageFormatProperties2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "SPARSE_IMAGE_FORMAT_PROPERTIES_2KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "properties", 
+                    "SparseImageFormatProperties"
                 ]
             ], 
             "type": "struct"
@@ -6274,7 +9484,11 @@
             ], 
             "type": "struct"
         }, 
-        "SubpassDescriptionFlags": "i32", 
+        "SubpassDescriptionFlags": {
+            "constants": {}, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
         "SubresourceLayout": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -6299,6 +9513,71 @@
                 [
                     "depthPitch", 
                     "u64"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "SurfaceCapabilities2EXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "SURFACE_CAPABILITIES_2EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "minImageCount", 
+                    "u32"
+                ], 
+                [
+                    "maxImageCount", 
+                    "u32"
+                ], 
+                [
+                    "currentExtent", 
+                    "Extent2D"
+                ], 
+                [
+                    "minImageExtent", 
+                    "Extent2D"
+                ], 
+                [
+                    "maxImageExtent", 
+                    "Extent2D"
+                ], 
+                [
+                    "maxImageArrayLayers", 
+                    "u32"
+                ], 
+                [
+                    "supportedTransforms", 
+                    "SurfaceTransformFlagsKHR"
+                ], 
+                [
+                    "currentTransform", 
+                    "SurfaceTransformFlagsKHR"
+                ], 
+                [
+                    "supportedCompositeAlpha", 
+                    "CompositeAlphaFlagsKHR"
+                ], 
+                [
+                    "supportedUsageFlags", 
+                    "ImageUsageFlags"
+                ], 
+                [
+                    "supportedSurfaceCounters", 
+                    "SurfaceCounterFlagsEXT"
                 ]
             ], 
             "type": "struct"
@@ -6351,6 +9630,13 @@
             ], 
             "type": "struct"
         }, 
+        "SurfaceCounterFlagsEXT": {
+            "constants": {
+                "VBLANK_EXT": 1
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
         "SurfaceFormatKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -6389,7 +9675,36 @@
             "ctype": "i32", 
             "type": "bitmask"
         }, 
-        "SwapchainCreateFlagsKHR": "i32", 
+        "SwapchainCounterCreateInfoEXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "SWAPCHAIN_COUNTER_CREATE_INFO_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "surfaceCounters", 
+                    "SurfaceCounterFlagsEXT"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "SwapchainCreateFlagsKHR": {
+            "constants": {}, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
         "SwapchainCreateInfoKHR": {
             "aliases": {}, 
             "autoarrays": {
@@ -6501,6 +9816,50 @@
             "ctype": "i32", 
             "type": "enum"
         }, 
+        "ValidationCheckEXT": {
+            "constants": {
+                "ALL_EXT": 0
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
+        }, 
+        "ValidationFlagsEXT": {
+            "aliases": {}, 
+            "autoarrays": {
+                "disabledValidationChecks": [
+                    "disabledValidationCheckCount", 
+                    "pDisabledValidationChecks"
+                ]
+            }, 
+            "defaults": {
+                "sType": "VALIDATION_FLAGS_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "disabledValidationCheckCount", 
+                    "u32"
+                ], 
+                [
+                    "pDisabledValidationChecks", 
+                    {
+                        "to": "ValidationCheckEXT", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "VertexInputAttributeDescription": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -6553,6 +9912,39 @@
             "ctype": "i32", 
             "type": "enum"
         }, 
+        "ViSurfaceCreateFlagsNN": "i32", 
+        "ViSurfaceCreateInfoNN": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "VI_SURFACE_CREATE_INFO_NN"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "flags", 
+                    "ViSurfaceCreateFlagsNN"
+                ], 
+                [
+                    "window", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "Viewport": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -6580,6 +9972,60 @@
                 ], 
                 [
                     "maxDepth", 
+                    "float"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ViewportCoordinateSwizzleNV": {
+            "constants": {
+                "NEGATIVE_W_NV": 7, 
+                "NEGATIVE_X_NV": 1, 
+                "NEGATIVE_Y_NV": 3, 
+                "NEGATIVE_Z_NV": 5, 
+                "POSITIVE_W_NV": 6, 
+                "POSITIVE_X_NV": 0, 
+                "POSITIVE_Y_NV": 2, 
+                "POSITIVE_Z_NV": 4
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
+        }, 
+        "ViewportSwizzleNV": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "x", 
+                    "ViewportCoordinateSwizzleNV"
+                ], 
+                [
+                    "y", 
+                    "ViewportCoordinateSwizzleNV"
+                ], 
+                [
+                    "z", 
+                    "ViewportCoordinateSwizzleNV"
+                ], 
+                [
+                    "w", 
+                    "ViewportCoordinateSwizzleNV"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ViewportWScalingNV": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "xcoeff", 
+                    "float"
+                ], 
+                [
+                    "ycoeff", 
                     "float"
                 ]
             ], 
@@ -6619,6 +10065,176 @@
                     "surface", 
                     {
                         "to": "void", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "Win32KeyedMutexAcquireReleaseInfoKHX": {
+            "aliases": {}, 
+            "autoarrays": {
+                "acquireKeys": [
+                    "acquireCount", 
+                    "pAcquireKeys"
+                ], 
+                "acquireSyncs": [
+                    "acquireCount", 
+                    "pAcquireSyncs"
+                ], 
+                "acquireTimeouts": [
+                    "acquireCount", 
+                    "pAcquireTimeouts"
+                ], 
+                "releaseKeys": [
+                    "releaseCount", 
+                    "pReleaseKeys"
+                ], 
+                "releaseSyncs": [
+                    "releaseCount", 
+                    "pReleaseSyncs"
+                ]
+            }, 
+            "defaults": {
+                "sType": "WIN_32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHX"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "acquireCount", 
+                    "u32"
+                ], 
+                [
+                    "pAcquireSyncs", 
+                    {
+                        "to": "DeviceMemory", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pAcquireKeys", 
+                    {
+                        "to": "u64", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pAcquireTimeouts", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "releaseCount", 
+                    "u32"
+                ], 
+                [
+                    "pReleaseSyncs", 
+                    {
+                        "to": "DeviceMemory", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pReleaseKeys", 
+                    {
+                        "to": "u64", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "Win32KeyedMutexAcquireReleaseInfoNV": {
+            "aliases": {}, 
+            "autoarrays": {
+                "acquireKeys": [
+                    "acquireCount", 
+                    "pAcquireKeys"
+                ], 
+                "acquireSyncs": [
+                    "acquireCount", 
+                    "pAcquireSyncs"
+                ], 
+                "acquireTimeoutMilliseconds": [
+                    "acquireCount", 
+                    "pAcquireTimeoutMilliseconds"
+                ], 
+                "releaseKeys": [
+                    "releaseCount", 
+                    "pReleaseKeys"
+                ], 
+                "releaseSyncs": [
+                    "releaseCount", 
+                    "pReleaseSyncs"
+                ]
+            }, 
+            "defaults": {
+                "sType": "WIN_32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "acquireCount", 
+                    "u32"
+                ], 
+                [
+                    "pAcquireSyncs", 
+                    {
+                        "to": "DeviceMemory", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pAcquireKeys", 
+                    {
+                        "to": "u64", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pAcquireTimeoutMilliseconds", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "releaseCount", 
+                    "u32"
+                ], 
+                [
+                    "pReleaseSyncs", 
+                    {
+                        "to": "DeviceMemory", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pReleaseKeys", 
+                    {
+                        "to": "u64", 
                         "type": "pointer"
                     }
                 ]
@@ -6734,6 +10350,22 @@
             ], 
             "type": "struct"
         }, 
+        "XYColorEXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "x", 
+                    "float"
+                ], 
+                [
+                    "y", 
+                    "float"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "XcbSurfaceCreateFlagsKHR": "i32", 
         "XcbSurfaceCreateInfoKHR": {
             "aliases": {}, 
@@ -6810,6 +10442,24 @@
         }
     }, 
     "variables": {
+        "acquireNextImage2KHX": {
+            "name": "vkAcquireNextImage2KHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "AcquireNextImageInfoKHX", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "acquireNextImageKHR": {
             "name": "vkAcquireNextImageKHR", 
             "type": {
@@ -6823,6 +10473,21 @@
                         "to": "u32", 
                         "type": "pointer"
                     }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "acquireXlibDisplayEXT": {
+            "name": "vkAcquireXlibDisplayEXT", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "void*", 
+                        "type": "pointer"
+                    }, 
+                    "DisplayKHR"
                 ], 
                 "restype": "Result", 
                 "type": "cfunc"
@@ -6913,6 +10578,21 @@
                 "type": "cfunc"
             }
         }, 
+        "bindBufferMemory2KHX": {
+            "name": "vkBindBufferMemory2KHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "u32", 
+                    {
+                        "to": "BindBufferMemoryInfoKHX", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "bindImageMemory": {
             "name": "vkBindImageMemory", 
             "type": {
@@ -6921,6 +10601,21 @@
                     "Image", 
                     "DeviceMemory", 
                     "u64"
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "bindImageMemory2KHX": {
+            "name": "vkBindImageMemory2KHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "u32", 
+                    {
+                        "to": "BindImageMemoryInfoKHX", 
+                        "type": "pointer"
+                    }
                 ], 
                 "restype": "Result", 
                 "type": "cfunc"
@@ -7193,11 +10888,65 @@
                 "type": "cfunc"
             }
         }, 
+        "cmdDebugMarkerBeginEXT": {
+            "name": "vkCmdDebugMarkerBeginEXT", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer", 
+                    {
+                        "to": "DebugMarkerMarkerInfoEXT", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "cmdDebugMarkerEndEXT": {
+            "name": "vkCmdDebugMarkerEndEXT", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer"
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "cmdDebugMarkerInsertEXT": {
+            "name": "vkCmdDebugMarkerInsertEXT", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer", 
+                    {
+                        "to": "DebugMarkerMarkerInfoEXT", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
         "cmdDispatch": {
             "name": "vkCmdDispatch", 
             "type": {
                 "argtypes": [
                     "CommandBuffer", 
+                    "u32", 
+                    "u32", 
+                    "u32"
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "cmdDispatchBaseKHX": {
+            "name": "vkCmdDispatchBaseKHX", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer", 
+                    "u32", 
+                    "u32", 
+                    "u32", 
                     "u32", 
                     "u32", 
                     "u32"
@@ -7261,11 +11010,43 @@
                 "type": "cfunc"
             }
         }, 
+        "cmdDrawIndexedIndirectCountAMD": {
+            "name": "vkCmdDrawIndexedIndirectCountAMD", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer", 
+                    "Buffer", 
+                    "u64", 
+                    "Buffer", 
+                    "u64", 
+                    "u32", 
+                    "u32"
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
         "cmdDrawIndirect": {
             "name": "vkCmdDrawIndirect", 
             "type": {
                 "argtypes": [
                     "CommandBuffer", 
+                    "Buffer", 
+                    "u64", 
+                    "u32", 
+                    "u32"
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "cmdDrawIndirectCountAMD": {
+            "name": "vkCmdDrawIndirectCountAMD", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer", 
+                    "Buffer", 
+                    "u64", 
                     "Buffer", 
                     "u64", 
                     "u32", 
@@ -7365,6 +11146,20 @@
                 "type": "cfunc"
             }
         }, 
+        "cmdProcessCommandsNVX": {
+            "name": "vkCmdProcessCommandsNVX", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer", 
+                    {
+                        "to": "CmdProcessCommandsInfoNVX", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
         "cmdPushConstants": {
             "name": "vkCmdPushConstants", 
             "type": {
@@ -7376,6 +11171,55 @@
                     "u32", 
                     {
                         "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "cmdPushDescriptorSetKHR": {
+            "name": "vkCmdPushDescriptorSetKHR", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer", 
+                    "PipelineBindPoint", 
+                    "PipelineLayout", 
+                    "u32", 
+                    "u32", 
+                    {
+                        "to": "WriteDescriptorSet", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "cmdPushDescriptorSetWithTemplateKHR": {
+            "name": "vkCmdPushDescriptorSetWithTemplateKHR", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer", 
+                    "DescriptorUpdateTemplateKHR", 
+                    "PipelineLayout", 
+                    "u32", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "cmdReserveSpaceForCommandsNVX": {
+            "name": "vkCmdReserveSpaceForCommandsNVX", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer", 
+                    {
+                        "to": "CmdReserveSpaceForCommandsInfoNVX", 
                         "type": "pointer"
                     }
                 ], 
@@ -7462,6 +11306,33 @@
                     "CommandBuffer", 
                     "float", 
                     "float"
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "cmdSetDeviceMaskKHX": {
+            "name": "vkCmdSetDeviceMaskKHX", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer", 
+                    "u32"
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "cmdSetDiscardRectangleEXT": {
+            "name": "vkCmdSetDiscardRectangleEXT", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer", 
+                    "u32", 
+                    "u32", 
+                    {
+                        "to": "Rect2D", 
+                        "type": "pointer"
+                    }
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
@@ -7558,6 +11429,22 @@
                 "type": "cfunc"
             }
         }, 
+        "cmdSetViewportWScalingNV": {
+            "name": "vkCmdSetViewportWScalingNV", 
+            "type": {
+                "argtypes": [
+                    "CommandBuffer", 
+                    "u32", 
+                    "u32", 
+                    {
+                        "to": "ViewportWScalingNV", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
         "cmdUpdateBuffer": {
             "name": "vkCmdUpdateBuffer", 
             "type": {
@@ -7567,7 +11454,7 @@
                     "u64", 
                     "u64", 
                     {
-                        "to": "u32", 
+                        "to": "void", 
                         "type": "pointer"
                     }
                 ], 
@@ -7798,6 +11685,28 @@
                 "type": "cfunc"
             }
         }, 
+        "createDescriptorUpdateTemplateKHR": {
+            "name": "vkCreateDescriptorUpdateTemplateKHR", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "DescriptorUpdateTemplateCreateInfoKHR", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "AllocationCallbacks", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "DescriptorUpdateTemplateKHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "createDevice": {
             "name": "vkCreateDevice", 
             "type": {
@@ -7955,6 +11864,28 @@
                 "type": "cfunc"
             }
         }, 
+        "createIOSSurfaceMVK": {
+            "name": "vkCreateIOSSurfaceMVK", 
+            "type": {
+                "argtypes": [
+                    "Instance", 
+                    {
+                        "to": "IOSSurfaceCreateInfoMVK", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "AllocationCallbacks", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "SurfaceKHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "createImage": {
             "name": "vkCreateImage", 
             "type": {
@@ -7999,6 +11930,28 @@
                 "type": "cfunc"
             }
         }, 
+        "createIndirectCommandsLayoutNVX": {
+            "name": "vkCreateIndirectCommandsLayoutNVX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "IndirectCommandsLayoutCreateInfoNVX", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "AllocationCallbacks", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "IndirectCommandsLayoutNVX", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "createInstance": {
             "name": "vkCreateInstance", 
             "type": {
@@ -8013,6 +11966,28 @@
                     }, 
                     {
                         "to": "Instance", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "createMacOSSurfaceMVK": {
+            "name": "vkCreateMacOSSurfaceMVK", 
+            "type": {
+                "argtypes": [
+                    "Instance", 
+                    {
+                        "to": "MacOSSurfaceCreateInfoMVK", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "AllocationCallbacks", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "SurfaceKHR", 
                         "type": "pointer"
                     }
                 ], 
@@ -8035,6 +12010,28 @@
                     }, 
                     {
                         "to": "SurfaceKHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "createObjectTableNVX": {
+            "name": "vkCreateObjectTableNVX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "ObjectTableCreateInfoNVX", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "AllocationCallbacks", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "ObjectTableNVX", 
                         "type": "pointer"
                     }
                 ], 
@@ -8241,6 +12238,28 @@
                 "type": "cfunc"
             }
         }, 
+        "createViSurfaceNN": {
+            "name": "vkCreateViSurfaceNN", 
+            "type": {
+                "argtypes": [
+                    "Instance", 
+                    {
+                        "to": "ViSurfaceCreateInfoNN", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "AllocationCallbacks", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "SurfaceKHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "createWaylandSurfaceKHR": {
             "name": "vkCreateWaylandSurfaceKHR", 
             "type": {
@@ -8322,6 +12341,34 @@
                     }, 
                     {
                         "to": "SurfaceKHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "debugMarkerSetObjectNameEXT": {
+            "name": "vkDebugMarkerSetObjectNameEXT", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "DebugMarkerObjectNameInfoEXT", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "debugMarkerSetObjectTagEXT": {
+            "name": "vkDebugMarkerSetObjectTagEXT", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "DebugMarkerObjectTagInfoEXT", 
                         "type": "pointer"
                     }
                 ], 
@@ -8442,6 +12489,21 @@
                 "type": "cfunc"
             }
         }, 
+        "destroyDescriptorUpdateTemplateKHR": {
+            "name": "vkDestroyDescriptorUpdateTemplateKHR", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "DescriptorUpdateTemplateKHR", 
+                    {
+                        "to": "AllocationCallbacks", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
         "destroyDevice": {
             "name": "vkDestroyDevice", 
             "type": {
@@ -8531,11 +12593,41 @@
                 "type": "cfunc"
             }
         }, 
+        "destroyIndirectCommandsLayoutNVX": {
+            "name": "vkDestroyIndirectCommandsLayoutNVX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "IndirectCommandsLayoutNVX", 
+                    {
+                        "to": "AllocationCallbacks", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
         "destroyInstance": {
             "name": "vkDestroyInstance", 
             "type": {
                 "argtypes": [
                     "Instance", 
+                    {
+                        "to": "AllocationCallbacks", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "destroyObjectTableNVX": {
+            "name": "vkDestroyObjectTableNVX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "ObjectTableNVX", 
                     {
                         "to": "AllocationCallbacks", 
                         "type": "pointer"
@@ -8705,6 +12797,21 @@
                 "type": "cfunc"
             }
         }, 
+        "displayPowerControlEXT": {
+            "name": "vkDisplayPowerControlEXT", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "DisplayKHR", 
+                    {
+                        "to": "DisplayPowerInfoEXT", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "endCommandBuffer": {
             "name": "vkEndCommandBuffer", 
             "type": {
@@ -8786,6 +12893,24 @@
                     }, 
                     {
                         "to": "LayerProperties", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "enumeratePhysicalDeviceGroupsKHX": {
+            "name": "vkEnumeratePhysicalDeviceGroupsKHX", 
+            "type": {
+                "argtypes": [
+                    "Instance", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "PhysicalDeviceGroupPropertiesKHX", 
                         "type": "pointer"
                     }
                 ], 
@@ -8885,6 +13010,52 @@
                     }
                 ], 
                 "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getDeviceGroupPeerMemoryFeaturesKHX": {
+            "name": "vkGetDeviceGroupPeerMemoryFeaturesKHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "u32", 
+                    "u32", 
+                    "u32", 
+                    {
+                        "to": "PeerMemoryFeatureFlagsKHX", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getDeviceGroupPresentCapabilitiesKHX": {
+            "name": "vkGetDeviceGroupPresentCapabilitiesKHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "DeviceGroupPresentCapabilitiesKHX", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "getDeviceGroupSurfacePresentModesKHX": {
+            "name": "vkGetDeviceGroupSurfacePresentModesKHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "SurfaceKHR", 
+                    {
+                        "to": "DeviceGroupPresentModeFlagsKHX", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
                 "type": "cfunc"
             }
         }, 
@@ -9076,6 +13247,86 @@
                 "type": "cfunc"
             }
         }, 
+        "getMemoryFdKHX": {
+            "name": "vkGetMemoryFdKHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "DeviceMemory", 
+                    "ExternalMemoryHandleTypeFlagsKHX", 
+                    {
+                        "to": "int", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "getMemoryFdPropertiesKHX": {
+            "name": "vkGetMemoryFdPropertiesKHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "ExternalMemoryHandleTypeFlagsKHX", 
+                    "int", 
+                    {
+                        "to": "MemoryFdPropertiesKHX", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "getMemoryWin32HandleKHX": {
+            "name": "vkGetMemoryWin32HandleKHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "DeviceMemory", 
+                    "ExternalMemoryHandleTypeFlagsKHX", 
+                    {
+                        "to": "void*", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "getMemoryWin32HandleNV": {
+            "name": "vkGetMemoryWin32HandleNV", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "DeviceMemory", 
+                    "ExternalMemoryHandleTypeFlagsNV", 
+                    {
+                        "to": "void*", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "getMemoryWin32HandlePropertiesKHX": {
+            "name": "vkGetMemoryWin32HandlePropertiesKHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "ExternalMemoryHandleTypeFlagsKHX", 
+                    "void*", 
+                    {
+                        "to": "MemoryWin32HandlePropertiesKHX", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "getPhysicalDeviceDisplayPlanePropertiesKHR": {
             "name": "vkGetPhysicalDeviceDisplayPlanePropertiesKHR", 
             "type": {
@@ -9112,6 +13363,62 @@
                 "type": "cfunc"
             }
         }, 
+        "getPhysicalDeviceExternalBufferPropertiesKHX": {
+            "name": "vkGetPhysicalDeviceExternalBufferPropertiesKHX", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "PhysicalDeviceExternalBufferInfoKHX", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "ExternalBufferPropertiesKHX", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceExternalImageFormatPropertiesNV": {
+            "name": "vkGetPhysicalDeviceExternalImageFormatPropertiesNV", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    "Format", 
+                    "ImageType", 
+                    "ImageTiling", 
+                    "ImageUsageFlags", 
+                    "ImageCreateFlags", 
+                    "ExternalMemoryHandleTypeFlagsNV", 
+                    {
+                        "to": "ExternalImageFormatPropertiesNV", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceExternalSemaphorePropertiesKHX": {
+            "name": "vkGetPhysicalDeviceExternalSemaphorePropertiesKHX", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "PhysicalDeviceExternalSemaphoreInfoKHX", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "ExternalSemaphorePropertiesKHX", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
         "getPhysicalDeviceFeatures": {
             "name": "vkGetPhysicalDeviceFeatures", 
             "type": {
@@ -9119,6 +13426,20 @@
                     "PhysicalDevice", 
                     {
                         "to": "PhysicalDeviceFeatures", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceFeatures2KHR": {
+            "name": "vkGetPhysicalDeviceFeatures2KHR", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "PhysicalDeviceFeatures2KHR", 
                         "type": "pointer"
                     }
                 ], 
@@ -9134,6 +13455,39 @@
                     "Format", 
                     {
                         "to": "FormatProperties", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceFormatProperties2KHR": {
+            "name": "vkGetPhysicalDeviceFormatProperties2KHR", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    "Format", 
+                    {
+                        "to": "FormatProperties2KHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceGeneratedCommandsPropertiesNVX": {
+            "name": "vkGetPhysicalDeviceGeneratedCommandsPropertiesNVX", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "DeviceGeneratedCommandsFeaturesNVX", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "DeviceGeneratedCommandsLimitsNVX", 
                         "type": "pointer"
                     }
                 ], 
@@ -9160,6 +13514,42 @@
                 "type": "cfunc"
             }
         }, 
+        "getPhysicalDeviceImageFormatProperties2KHR": {
+            "name": "vkGetPhysicalDeviceImageFormatProperties2KHR", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "PhysicalDeviceImageFormatInfo2KHR", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "ImageFormatProperties2KHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceImageFormatProperties2KHX": {
+            "name": "vkGetPhysicalDeviceImageFormatProperties2KHX", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "PhysicalDeviceImageFormatInfo2KHX", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "ImageFormatProperties2KHX", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "getPhysicalDeviceMemoryProperties": {
             "name": "vkGetPhysicalDeviceMemoryProperties", 
             "type": {
@@ -9167,6 +13557,20 @@
                     "PhysicalDevice", 
                     {
                         "to": "PhysicalDeviceMemoryProperties", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceMemoryProperties2KHR": {
+            "name": "vkGetPhysicalDeviceMemoryProperties2KHR", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "PhysicalDeviceMemoryProperties2KHR", 
                         "type": "pointer"
                     }
                 ], 
@@ -9189,6 +13593,25 @@
                 "type": "cfunc"
             }
         }, 
+        "getPhysicalDevicePresentRectanglesKHX": {
+            "name": "vkGetPhysicalDevicePresentRectanglesKHX", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    "SurfaceKHR", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "Rect2D", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "getPhysicalDeviceProperties": {
             "name": "vkGetPhysicalDeviceProperties", 
             "type": {
@@ -9196,6 +13619,34 @@
                     "PhysicalDevice", 
                     {
                         "to": "PhysicalDeviceProperties", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceProperties2KHR": {
+            "name": "vkGetPhysicalDeviceProperties2KHR", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "PhysicalDeviceProperties2KHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceProperties2KHX": {
+            "name": "vkGetPhysicalDeviceProperties2KHX", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "PhysicalDeviceProperties2KHX", 
                         "type": "pointer"
                     }
                 ], 
@@ -9214,6 +13665,24 @@
                     }, 
                     {
                         "to": "QueueFamilyProperties", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceQueueFamilyProperties2KHR": {
+            "name": "vkGetPhysicalDeviceQueueFamilyProperties2KHR", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "QueueFamilyProperties2KHR", 
                         "type": "pointer"
                     }
                 ], 
@@ -9241,6 +13710,43 @@
                     }
                 ], 
                 "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceSparseImageFormatProperties2KHR": {
+            "name": "vkGetPhysicalDeviceSparseImageFormatProperties2KHR", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "PhysicalDeviceSparseImageFormatInfo2KHR", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "SparseImageFormatProperties2KHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceSurfaceCapabilities2EXT": {
+            "name": "vkGetPhysicalDeviceSurfaceCapabilities2EXT", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    "SurfaceKHR", 
+                    {
+                        "to": "SurfaceCapabilities2EXT", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
                 "type": "cfunc"
             }
         }, 
@@ -9410,6 +13916,25 @@
                 "type": "cfunc"
             }
         }, 
+        "getRandROutputDisplayEXT": {
+            "name": "vkGetRandROutputDisplayEXT", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "void*", 
+                        "type": "pointer"
+                    }, 
+                    "void", 
+                    {
+                        "to": "DisplayKHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "getRenderAreaGranularity": {
             "name": "vkGetRenderAreaGranularity", 
             "type": {
@@ -9425,6 +13950,54 @@
                 "type": "cfunc"
             }
         }, 
+        "getSemaphoreFdKHX": {
+            "name": "vkGetSemaphoreFdKHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "Semaphore", 
+                    "ExternalSemaphoreHandleTypeFlagsKHX", 
+                    {
+                        "to": "int", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "getSemaphoreWin32HandleKHX": {
+            "name": "vkGetSemaphoreWin32HandleKHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "Semaphore", 
+                    "ExternalSemaphoreHandleTypeFlagsKHX", 
+                    {
+                        "to": "void*", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "getSwapchainCounterEXT": {
+            "name": "vkGetSwapchainCounterEXT", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "SwapchainKHR", 
+                    "SurfaceCounterFlagsEXT", 
+                    {
+                        "to": "u64", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "getSwapchainImagesKHR": {
             "name": "vkGetSwapchainImagesKHR", 
             "type": {
@@ -9437,6 +14010,34 @@
                     }, 
                     {
                         "to": "Image", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "importSemaphoreFdKHX": {
+            "name": "vkImportSemaphoreFdKHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "ImportSemaphoreFdInfoKHX", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "importSemaphoreWin32HandleKHX": {
+            "name": "vkImportSemaphoreWin32HandleKHX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "ImportSemaphoreWin32HandleInfoKHX", 
                         "type": "pointer"
                     }
                 ], 
@@ -9552,6 +14153,85 @@
                 "type": "cfunc"
             }
         }, 
+        "registerDeviceEventEXT": {
+            "name": "vkRegisterDeviceEventEXT", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "DeviceEventInfoEXT", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "AllocationCallbacks", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "Fence", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "registerDisplayEventEXT": {
+            "name": "vkRegisterDisplayEventEXT", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "DisplayKHR", 
+                    {
+                        "to": "DisplayEventInfoEXT", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "AllocationCallbacks", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "Fence", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "registerObjectsNVX": {
+            "name": "vkRegisterObjectsNVX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "ObjectTableNVX", 
+                    "u32", 
+                    {
+                        "to": {
+                            "to": "ObjectTableEntryNVX", 
+                            "type": "pointer"
+                        }, 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "releaseDisplayEXT": {
+            "name": "vkReleaseDisplayEXT", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    "DisplayKHR"
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "resetCommandBuffer": {
             "name": "vkResetCommandBuffer", 
             "type": {
@@ -9624,12 +14304,79 @@
                 "type": "cfunc"
             }
         }, 
+        "setSMPTE2086MetadataEXT": {
+            "name": "vkSetSMPTE2086MetadataEXT", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "u32", 
+                    {
+                        "to": "SwapchainKHR", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "SMPTE2086MetadataEXT", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "trimCommandPoolKHR": {
+            "name": "vkTrimCommandPoolKHR", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "CommandPool", 
+                    "CommandPoolTrimFlagsKHR"
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
         "unmapMemory": {
             "name": "vkUnmapMemory", 
             "type": {
                 "argtypes": [
                     "Device", 
                     "DeviceMemory"
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "unregisterObjectsNVX": {
+            "name": "vkUnregisterObjectsNVX", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "ObjectTableNVX", 
+                    "u32", 
+                    {
+                        "to": "ObjectEntryTypeNVX", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "updateDescriptorSetWithTemplateKHR": {
+            "name": "vkUpdateDescriptorSetWithTemplateKHR", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "DescriptorSet", 
+                    "DescriptorUpdateTemplateKHR", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
                 ], 
                 "restype": "void", 
                 "type": "cfunc"
