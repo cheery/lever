@@ -38,36 +38,38 @@ class GPU
         self.instance.destroy()
 
     default_pass = (self):
-        return object();
-            pipeline = {
-                viewportState = {
-                    viewports = [self.screen.viewport]
-                    scissors = [self.screen.area]
-                }
-                rasterizationState = {
-                    polygonMode = "FILL"
-                    cullMode = 0
-                    frontFace = "COUNTER_CLOCKWISE"
-                }
-                multisampleState = {rasterizationSamples = "1_BIT"}
-                colorBlendState = {
-                    logicOpEnable = false
-                    logicOp = "CLEAR"
-                    attachments = [{
-                        blendEnable = false
-                        colorWriteMask = 0xf
-                        srcColorBlendFactor = "ZERO"
-                        dstColorBlendFactor = "ZERO"
-                        colorBlendOp = "ADD"
-                        srcAlphaBlendFactor = "ZERO"
-                        dstAlphaBlendFactor = "ZERO"
-                        alphaBlendOp = "ADD"
-                    }]
-                    blendConstants = [0.0, 0.0, 0.0, 0.0]
-                }
-                dynamicState = null
-            }
+        return make_default_pass(self.swapchain)
 
+make_default_pass = (swapchain):
+    return object();
+        pipeline = {
+            viewportState = {
+                viewports = [swapchain.screen.viewport]
+                scissors = [swapchain.screen.area]
+            }
+            rasterizationState = {
+                polygonMode = "FILL"
+                cullMode = 0
+                frontFace = "COUNTER_CLOCKWISE"
+            }
+            multisampleState = {rasterizationSamples = swapchain.samples}
+            colorBlendState = {
+                logicOpEnable = false
+                logicOp = "CLEAR"
+                attachments = [{
+                    blendEnable = false
+                    colorWriteMask = 0xf
+                    srcColorBlendFactor = "ZERO"
+                    dstColorBlendFactor = "ZERO"
+                    colorBlendOp = "ADD"
+                    srcAlphaBlendFactor = "ZERO"
+                    dstAlphaBlendFactor = "ZERO"
+                    alphaBlendOp = "ADD"
+                }]
+                blendConstants = [0.0, 0.0, 0.0, 0.0]
+            }
+            dynamicState = null
+        }
 
 init_device = (self, instance, surface):
     gpu = null
@@ -167,6 +169,7 @@ get_swapchain = (device, surface, screen):
         }
         image_acquired = vulkan.Semaphore(device)
         rendering_done = vulkan.Semaphore(device)
+        samples = "1_BIT"
 
 class GPUMemory
     +init = (self, gpu):

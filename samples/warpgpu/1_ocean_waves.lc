@@ -9,7 +9,7 @@ main = :
     window = sdl.Window(name, {
         width = 1024
         height = 1024
-        flags = sdl.sdl.WINDOW_SHOWN # | sdl.sdl.WINDOW_FULLSCREEN_DESKTOP
+        flags = sdl.sdl.WINDOW_SHOWN | sdl.sdl.WINDOW_FULLSCREEN_DESKTOP
                                      # Add if you want fullscreen
     })
     gpu = GPU(window)
@@ -68,7 +68,7 @@ main = :
             attachments = [
                 {
                     format = gpu.swapchain.format
-                    samples = "1_BIT"
+                    samples = gpu.swapchain.samples
                     loadOp = "CLEAR"
                     storeOp = "STORE"
                     stencilLoadOp = "DONT_CARE"
@@ -86,6 +86,7 @@ main = :
                     ]
                 }
             ]
+            # dependencies = []
         })
 
     # RENDER TARGET

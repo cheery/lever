@@ -123,19 +123,24 @@ def next(self):
 def instantiate(other):
     dict_ = Dict()
     if other is not None:
-        if isinstance(other, Dict):
-            dict_.data.update(other.data)
-        elif isinstance(other, space.Exnihilo):
-            for name in other.map.attribute_indexes:
-                dict_.setitem(space.String(name), other.getattr(name))
-        else:
-            it = other.iter()
-            try:
-                while True:
-                    item = it.callattr(u"next", [])
-                    key = item.getitem(Integer(0))
-                    val = item.getitem(Integer(1))
-                    dict_.setitem(key, val)
-            except StopIteration as stop:
-                pass
+        Dict_update(dict_, other)
     return dict_
+
+@Dict.method(u"update", signature(Dict, Object))
+def Dict_update(self, other):
+    if isinstance(other, Dict):
+        self.data.update(other.data)
+    elif isinstance(other, space.Exnihilo):
+        for name in other.map.attribute_indexes:
+            self.setitem(space.String(name), other.getattr(name))
+    else:
+        it = other.iter()
+        try:
+            while True:
+                item = it.callattr(u"next", [])
+                key = item.getitem(Integer(0))
+                val = item.getitem(Integer(1))
+                self.setitem(key, val)
+        except StopIteration as stop:
+            pass
+    return space.null

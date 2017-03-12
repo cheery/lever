@@ -1,0 +1,11 @@
+import vulkan
+
+main = :
+    print("instance extensions")
+    for name in vulkan.listInstanceExtensions()
+        print(name)
+    instance = vulkan.Instance({})
+    for dev in instance.listPhysicalDevices()
+        print("device extensions")
+        for name in dev.listExtensions()
+            print(name)

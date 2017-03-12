@@ -34,7 +34,7 @@ class Window
 class WSI
     +init = (self, window):
         self.window = window
-    
+
     required_extensions = (self, extensions):
         enabledExtensionNames = ["VK_KHR_surface"]
         if "VK_KHR_xcb_surface" in extensions

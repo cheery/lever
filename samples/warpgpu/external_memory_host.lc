@@ -1,0 +1,375 @@
+import sdl
+import vulkan
+import warpgpu
+import ffi, fs
+
+main = ():
+    window = sdl.Window(name, {
+        width = 512
+        height = 512})
+
+    extensions = set(required_instance_extensions)
+    extensions.update(window.wsi.required_extensions(
+        vulkan.listInstanceExtensions()))
+    
+    instance = vulkan.Instance({
+        enabledExtensionNames = list(extensions)
+    })
+    surface = window.wsi.create_surface(vulkan, instance)
+
+    gpu = find_device(instance, surface)
+    gpu.mem = warpgpu.GPUMemory(gpu)
+
+    # Lets keep the hacks a little longer.
+    swapchain = warpgpu.get_swapchain(gpu, surface, object();
+        width = window.width
+        height = window.height
+        offset = {x = 0, y = 0}
+        extent = {width = window.width, height = window.height}
+        area = {offset = offset, extent = extent}
+        viewport = {x = 0, y = 0, width = width, height = height,
+            minDepth = 0.0, maxDepth = 1.0})
+
+    vertex_layout = object();
+        input = {
+            flags = 0
+            vertexBindingDescriptions = [{
+                binding = 0
+                stride    = 6 * ffi.sizeof(ffi.float)
+                inputRate = "VERTEX"
+            }]
+            vertexAttributeDescriptions = [
+                {
+                    binding = 0
+                    location = 0
+                    format = "R32G32B32_SFLOAT"
+                    offset = 0
+                },
+                {
+                    binding = 0
+                    location = 1
+                    format = "R32G32B32_SFLOAT"
+                    offset = 3 * ffi.sizeof(ffi.float)
+                }
+            ]
+        }
+        assembly = {topology = "TRIANGLE_LIST"}
+
+    vbo = object();
+        size = 8 * 1024
+        buffer = gpu.mem.createBuffer(size, "VERTEX_BUFFER_BIT")
+        data = buffer.mem.map(ffi.float, buffer.offset, buffer.size)
+        stuff = [
+            0.0, 0.0, 0.0, 1.0, 0.5, 0.5,
+            0.0, 1.0, 0.0, 0.5, 1.0, 0.5,
+            1.0, 0.0, 0.0, 0.5, 0.5, 1.0,
+            0.0, 1.0, 0.0, 0.5, 0.5, 1.0,
+            1.0, 1.0, 0.0, 0.5, 1.0, 1.0,
+            1.0, 0.0, 0.0, 1.0, 1.0, 0.5,
+        ]
+        for i in range(stuff.length)
+            data[i] = stuff[i]
+        buffer.mem.unmap()
+
+    ubo = object();
+        size = 2 * 4 * 4 * ffi.sizeof(ffi.float)
+        buffer = gpu.mem.createBuffer(size, "UNIFORM_BUFFER_BIT")
+        data = buffer.mem.map(ffi.float, buffer.offset, buffer.size)
+        stuff = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+           -0.2,-0.2, 0.0, 1.0,
+
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0]
+        for i in range(stuff.length)
+            data[i] = stuff[i]
+        buffer.mem.unmap()
+
+    cbuf = gpu.queue.pool.allocate({level = "PRIMARY", commandBufferCount = 1})[0]
+
+    Desc0 = warpgpu.DescriptorSet(gpu, [
+        {
+            binding = 0
+            descriptorType = "UNIFORM_BUFFER"
+            descriptorCount = 1
+            stageFlags = "VERTEX_BIT"
+        }
+    ])
+    descset = Desc0()
+
+    # DEP: pipeline_layout, descset
+
+    pipeline_layout = vulkan.PipelineLayout(gpu, {
+        flags = 0
+        setLayouts = [Desc0.layout]
+        pushConstantRanges = []
+    })
+    # DEP: cbuf, pipeline
+
+    gpu.updateDescriptorSets([{
+        dstSet = descset
+        dstBinding = 0
+        dstArrayElement = 0
+        descriptorType = "UNIFORM_BUFFER"
+        bufferInfo = [{
+            buffer = ubo.buffer
+            offset = 0
+            range  = ubo.buffer.size
+        }]
+    }], [])
+    # DEP: cbuf
+
+    pass = warpgpu.make_default_pass(swapchain);
+        renderPass = vulkan.RenderPass(gpu, {
+            attachments = [
+                {
+                    # These values will likely require adjustment.
+                    format = swapchain.format
+                    samples = "1_BIT"
+                    loadOp = "CLEAR"
+                    storeOp = "STORE"
+                    stencilLoadOp = "DONT_CARE"
+                    stencilStoreOp = "DONT_CARE"
+                    initialLayout = 0 #UNDEFINED
+                    finalLayout = warpgpu.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR #"COLOR_ATTACHMENT_OPTIMAL"
+                }
+            ]
+            subpasses = [
+                {
+                    pipelineBindPoint = "GRAPHICS"
+                    inputAttachments = []
+                    colorAttachments = [
+                        {attachment = 0, layout = "COLOR_ATTACHMENT_OPTIMAL"}
+                    ]
+                }
+            ]
+        })
+    # DEP: framebuffer, pipeline, cbuf
+
+    swapchain.views = []
+    swapchain.fences = []
+    swapchain.framebuffers = []
+    for image in swapchain.images
+        view = vulkan.ImageView(gpu, {
+            image = image
+            viewType = "2D"
+            format = swapchain.format
+            components = {r = "R", g = "G", b = "B", a = "A"}
+            subresourceRange = swapchain.subresource_range
+        })
+        swapchain.views.append(view)
+        # DEP: framebuffer
+
+        fence = vulkan.Fence(gpu, {flags = "SIGNALED_BIT"})
+        swapchain.fences.append(fence)
+
+        framebuffer = vulkan.Framebuffer(gpu, {
+            renderPass = pass.renderPass
+            attachments = [view]
+            width = swapchain.screen.width
+            height = swapchain.screen.height
+            layers = 1
+        })
+        swapchain.framebuffers.append(framebuffer)
+        # DEP: cbuf, begin of renderpass
+
+    vertex_shader = warpgpu.createShader(gpu,
+        fs.read_file(dir ++ "vertex_shader.spv", "b"))
+    fragment_shader = warpgpu.createShader(gpu,
+        fs.read_file(dir ++ "fragment_shader.spv", "b"))
+    # DEP: pipeline
+
+    pipeline_config = {}
+    pipeline_config.update(pass.pipeline)
+    pipeline_config.update({
+        flags = 0
+        stages = [
+            {
+                stage = "VERTEX_BIT"
+                module = vertex_shader
+                name = "main"
+            },
+            {
+                stage = "FRAGMENT_BIT"
+                module = fragment_shader
+                name = "main"
+            }
+        ]
+        vertexInputState = vertex_layout.input
+        inputAssemblyState = vertex_layout.assembly
+        layout = pipeline_layout
+        renderPass = pass.renderPass
+        subpass = 0
+    })
+    pipeline = gpu.createGraphicsPipeline(
+        gpu.pipeline_cache, pipeline_config)
+    # DEP: cbuf
+
+    frame_statistics = []
+    last_image = 0
+    render = ():
+        # This is lazy. It means we can't continue before the previous frame has been submitted.
+        # Need to check with performance counter later, whether this is sufficient
+        for i in range(10) # 10ms
+            if swapchain.fences[last_image].getStatus().NOT_READY
+                sleep(0.001)
+            else
+                break
+        if swapchain.fences[last_image].getStatus().NOT_READY
+            return null
+        current_image = gpu.acquireNextImage(swapchain,
+            0xFFFFFFFFFFFFFFFF, swapchain.image_acquired)
+        frame_begin = time()
+        gpu.resetFences([swapchain.fences[current_image]])
+
+        cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
+        cbuf.beginRenderPass({
+            renderPass = pass.renderPass
+            framebuffer = swapchain.framebuffers[current_image]
+            renderArea = swapchain.screen.area
+            clearValues = [
+                {color = {float32 = [
+                    sin(time()) * 0.5 + 0.5,
+                    sin(time() + 2*pi * 1 / 3) * 0.5 + 0.5,
+                    sin(time() + 2*pi * 2 / 3) * 0.5 + 0.5,
+                    1.0
+                ]}}
+            ]
+        }, "INLINE")
+        cbuf.bindPipeline("GRAPHICS", pipeline)
+        cbuf.bindDescriptorSets("GRAPHICS", pipeline_layout, 0, [descset], [])
+        cbuf.bindVertexBuffers(0, [vbo.buffer], [0])
+        cbuf.draw(6, 1, 0, 0)
+        cbuf.endRenderPass()
+        cbuf.end()
+        gpu.queue.submit([{
+            waitSemaphores = [swapchain.image_acquired]
+            commandBuffers = [cbuf]
+            signalSemaphores = [swapchain.rendering_done]
+        }], swapchain.fences[current_image])
+        frame_end = time()
+        frame_statistics.append(frame_end - frame_begin)
+
+        gpu.queue.present({
+            waitSemaphores = [swapchain.rendering_done]
+            swapchains = [swapchain.id]
+            imageIndices = [current_image]
+        })
+        last_image := current_image
+
+        if frame_statistics.length >= 1000
+            best  = 1.0
+            worst = 0.0
+            avg   = 0.0
+            for stat in frame_statistics
+                best = min(best, stat)
+                worst = max(worst, stat)
+                avg += stat
+            avg /= frame_statistics.length
+            print("best:", 1/best, "worst:", 1/worst, "avg:", 1/avg)
+            frame_statistics := []
+
+    event = ffi.automem(sdl.sdl.Event)
+    running = true
+    while running
+        render()
+        while sdl.sdl.PollEvent(event) != 0
+            if event.type == sdl.sdl.QUIT
+                running = false
+
+    gpu.queue.waitIdle()
+    gpu.waitIdle()
+
+    pipeline.destroy()
+    pipeline_layout.destroy()
+
+    descset.pool.destroy()
+    Desc0.destroy()
+
+    vbo.buffer.destroy()
+    vbo.buffer.mem.free()
+
+    ubo.buffer.destroy()
+    ubo.buffer.mem.free()
+
+    swapchain.image_acquired.destroy()
+    swapchain.rendering_done.destroy()
+    swapchain.destroy()
+
+    gpu.queue.pool.destroy()
+    gpu.pipeline_cache.destroy()
+    gpu.destroy()
+    surface.destroy()
+    instance.destroy()
+    window.close()
+
+
+find_device = (instance, surface):
+    extensions = set(required_device_extensions)
+    for dev in instance.listPhysicalDevices()
+        missing = extensions - set(dev.listExtensions())
+        if missing.length > 0
+            continue
+        queueFamilyIndex = 0
+        for q in dev.listQueueFamilyProperties()
+            if not dev.getSurfaceSupport(queueFamilyIndex, surface)
+                continue
+            if q.queueFlags.GRAPHICS_BIT and q.queueFlags.COMPUTE_BIT
+                return init_gpu(dev, queueFamilyIndex)
+            queueFamilyIndex += 1
+    assert false
+        "No suitable gpu device found"
+
+init_gpu = (dev, queueFamilyIndex):
+    extensions = set(required_device_extensions)
+    extensions.add("VK_KHR_swapchain")
+    gpu = vulkan.Device(dev, {
+        enabledExtensionNames = list(extensions)
+        queueCreateInfos = [{
+            queueFamilyIndex = queueFamilyIndex
+            queuePriorities = [1.0]}]})
+    gpu.queue = gpu.getQueue(queueFamilyIndex, 0)
+    gpu.queue.pool = vulkan.CommandPool(gpu, {
+        flags = "RESET_COMMAND_BUFFER_BIT" # allow reset
+        queueFamilyIndex = queueFamilyIndex
+    })
+    gpu.pipeline_cache = vulkan.PipelineCache(gpu, {})
+    return gpu
+
+
+required_instance_extensions = [
+    "VK_KHR_get_physical_device_properties2",
+    "VK_KHX_external_memory_capabilities",
+    "VK_KHX_external_semaphore_capabilities",
+]
+required_device_extensions = [
+    "VK_KHX_external_memory",
+    "VK_KHX_external_memory_fd",
+    "VK_KHX_external_semaphore",
+    "VK_KHX_external_semaphore_fd",
+]
+
+# external_memory
+# VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHX
+# VK_STRUCTURE_TYPE_EXTERNAL_MEMORY_IMAGE_CREATE_INFO_KHX
+# VK_STRUCTURE_TYPE_EXPORT_MEMORY_ALLOCATE_INFO_KHX
+# VK_QUEUE_FAMILY_EXTERNAL_KHX
+# VK_ERROR_INVALID_EXTERNAL_HANDLE_KHX
+
+# VkExternalMemoryImageCreateInfoKHX
+# VkExternalMemoryBufferCreateInfoKHX
+# VkExportMemoryAllocateInfoKHX
+
+# VK_STRUCTURE_TYPE_IMPORT_MEMORY_FD_INFO_KHX
+# VkImportMemoryFdInfoKHX
+# VkMemoryFdPropertiesKHX
+# vkGetMemoryFdKHX
+# vkGetMemoryFdPropertiesKHX
+
+# VK_STRUCTURE_TYPE_EXPORT_SEMAPHORE_CREATE_INFO_KHX
+# VK_ERROR_INVALID_EXTERNAL_HANDLE_KHX
+# VkExportSemaphoreCreateInfoKHX
