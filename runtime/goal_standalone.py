@@ -1,5 +1,4 @@
 from rpython.rlib.objectmodel import we_are_translated, keepalive_until_here
-from util import STDIN, STDOUT, STDERR, read_file, write
 from stdlib import api
 import main
 import space
