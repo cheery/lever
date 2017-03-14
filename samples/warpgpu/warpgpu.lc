@@ -1,7 +1,5 @@
 import vulkan, ffi, api
 
-VK_IMAGE_LAYOUT_PRESENT_SRC_KHR = 1000001002
-
 class GPU
     +init = (self, window):
         self.window = window
@@ -51,6 +49,7 @@ make_default_pass = (swapchain):
                 polygonMode = "FILL"
                 cullMode = 0
                 frontFace = "COUNTER_CLOCKWISE"
+                lineWidth = 1.0
             }
             multisampleState = {rasterizationSamples = swapchain.samples}
             colorBlendState = {
@@ -94,6 +93,10 @@ init_device = (self, instance, surface):
             queueFamilyIndex = queueFamilyIndex
             queuePriorities = [1.0]
         }]
+        enabledFeatures = {
+            shaderClipDistance = true
+            shaderCullDistance = true
+        }
     })
     queue = self.device.getQueue(queueFamilyIndex, 0)
     queue.index = queueFamilyIndex # allow later command pool allocations.

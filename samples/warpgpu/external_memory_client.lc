@@ -1,7 +1,7 @@
 import sdl
 import vulkan
 import warpgpu
-import ffi, fs
+import api, ffi, fs
 
 main = ():
     window = sdl.Window(name, {
@@ -19,6 +19,55 @@ main = ():
 
     gpu = find_device(instance, surface)
     gpu.mem = warpgpu.GPUMemory(gpu)
+
+    # something I'll try later if nothing else works.
+    #vk = api.funclibrary(vulkan.lib, gpu.getProcAddr)
+    # Turns out I'll need it for vkGetMemoryFdKHX anyway.
+    external_image_info = ffi.automem(vulkan.vk.ExternalMemoryImageCreateInfoKHX)
+    external_image_info[0] = {
+        handleTypes = "OPAQUE_FD_BIT_KHX"
+    }
+    external_image = vulkan.Image(gpu, {
+        pNext = external_image_info
+        imageType = "2D"
+        format = "R8G8B8A8_UNORM"
+        extent = {width = 512, height = 512, depth = 1}
+        mipLevels = 1
+        arrayLayers = 1
+        samples = "1_BIT"
+        tiling = "OPTIMAL"
+        usage = ["SAMPLED_BIT", "COLOR_ATTACHMENT_BIT"]
+        initialLayout = "COLOR_ATTACHMENT_OPTIMAL"
+    })
+
+    req = external_image.getMemoryRequirements()
+    memoryIndex = null
+    for memtype in warpgpu.memory_report(gpu.physicalDevice).types
+        if 1 & (req.memoryTypeBits >> memtype.index) != 0
+            memoryIndex = memtype.index
+            break
+    assert memoryIndex, "No memory available for this resource"
+
+    mem_info = ffi.automem(vulkan.vk.MemoryAllocateInfo)
+    export_info = ffi.automem(vulkan.vk.ExportMemoryAllocateInfoKHX)
+    export_info[0] = {
+        handleTypes = "OPAQUE_FD_BIT_KHX"
+    }
+    mem_info[0] = {
+        pNext = export_info # if I comment this away, no crash.
+        allocationSize = req.size
+        memoryTypeIndex = memoryIndex
+    }
+    mem = gpu.allocateMemory(mem_info) #CRASH
+
+    #external_image.bindMemory(mem, 0)
+
+    #fd = ffi.automem(ffi.int, 1)
+    #vk.getMemoryFdKHX(gpu, mem, "OPAQUE_FD_BIT_KHX", fd)
+    #fd = fd.to
+    #print(fd)
+
+
 
     # Lets keep the hacks a little longer.
     swapchain = warpgpu.get_swapchain(gpu, surface, object();
@@ -118,7 +167,7 @@ main = ():
         bufferInfo = [{
             buffer = ubo.buffer
             offset = 0
-            range  = ubo.buffer.size
+            range  = vulkan.vk.WHOLE_SIZE
         }]
     }], [])
     # DEP: cbuf
@@ -135,7 +184,7 @@ main = ():
                     stencilLoadOp = "DONT_CARE"
                     stencilStoreOp = "DONT_CARE"
                     initialLayout = 0 #UNDEFINED
-                    finalLayout = warpgpu.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR #"COLOR_ATTACHMENT_OPTIMAL"
+                    finalLayout = "PRESENT_SRC_KHR" #"COLOR_ATTACHMENT_OPTIMAL"
                 }
             ]
             subpasses = [
@@ -248,6 +297,7 @@ main = ():
         cbuf.end()
         gpu.queue.submit([{
             waitSemaphores = [swapchain.image_acquired]
+            waitDstStageMask = ["TOP_OF_PIPE_BIT"]
             commandBuffers = [cbuf]
             signalSemaphores = [swapchain.rendering_done]
         }], swapchain.fences[current_image])
@@ -331,7 +381,11 @@ init_gpu = (dev, queueFamilyIndex):
         enabledExtensionNames = list(extensions)
         queueCreateInfos = [{
             queueFamilyIndex = queueFamilyIndex
-            queuePriorities = [1.0]}]})
+            queuePriorities = [1.0]}]
+        enabledFeatures = {
+            shaderClipDistance = true
+            shaderCullDistance = true
+        }})
     gpu.queue = gpu.getQueue(queueFamilyIndex, 0)
     gpu.queue.pool = vulkan.CommandPool(gpu, {
         flags = "RESET_COMMAND_BUFFER_BIT" # allow reset

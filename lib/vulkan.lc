@@ -87,7 +87,7 @@ checker.load = (result):
 checker.store = (value):
     return value
 
-vk = ffi.library("libvulkan.so", lib)
+vk = ffi.library("libvulkan.so.1", lib)
 
 
 listInstanceExtensions = (name=null):
@@ -497,12 +497,10 @@ class Surface extends Handle
     destroy = (self):
         vk.destroySurfaceKHR(self.instance, self, null)
 
-VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR = 1000001000
 class Swapchain extends Handle
     +init = (self, device, create_info):
         self.device = device
         p_id = ffi.automem(vk.SwapchainKHR)
-        create_info["sType"] = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR
         vk.createSwapchainKHR(device, create_info, null, p_id)
         self.id = p_id.to
 
@@ -519,7 +517,6 @@ class Swapchain extends Handle
             result.append(Image(self.device, image))
         return result
         
-VK_STRUCTURE_TYPE_PRESENT_INFO_KHR = 1000001001
 class Queue extends Handle
     +init = (self, id):
         self.id = id
@@ -531,7 +528,6 @@ class Queue extends Handle
         return vk.queueSubmit(self, submits.length, submits, fence)
 
     present = (self, present_info):
-        present_info["sType"] = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR
         return vk.queuePresentKHR(self, present_info)
 
     waitIdle = (self):

@@ -135,7 +135,7 @@ main = ():
                     stencilLoadOp = "DONT_CARE"
                     stencilStoreOp = "DONT_CARE"
                     initialLayout = 0 #UNDEFINED
-                    finalLayout = warpgpu.VK_IMAGE_LAYOUT_PRESENT_SRC_KHR #"COLOR_ATTACHMENT_OPTIMAL"
+                    finalLayout = "PRESENT_SRC_KHR" #"COLOR_ATTACHMENT_OPTIMAL"
                 }
             ]
             subpasses = [
