@@ -39,8 +39,12 @@ class Slice(Object):
             else:
                 a = low
         else:
-            a = space.to_int(self.start)
-            a = max(low, min(high, a))
+            if step < 0:
+                a = space.to_int(self.start)
+                a = max(low-1, min(high, a))
+            else:
+                a = space.to_int(self.start)
+                a = max(low, min(high+1, a))
         if self.stop is null:
             if step < 0:
                 b = low - 1
