@@ -1,6 +1,6 @@
 import fs
 # https://cheery.github.io/texopic/
-
+# This project still may need some work.
 
 # All macros are marked with arity.
 #
@@ -33,10 +33,7 @@ main = (args):
         }
     document = []
     for arg in args[1.:]
-        fd = fs.open(arg, fs.RDONLY)
-        stream = Stream(read_file(fd))
-        document ++= parse_structure(stream, test_macros)
-        fd.close()
+        document ++= read_file(arg, test_macros)
     # A writeout demo to accompany the earlier one.
     document ++= [
         Segment(null, [
@@ -63,6 +60,18 @@ main = (args):
         ])
     ]
     print(stringify(document))
+
+read_file = (path, macros):
+    fd = fs.open(path, fs.RDONLY)
+    stream = Stream(read_fd(fd))
+    output = parse_structure(stream, macros)
+    fd.close()
+    return output
+
+write_file = (path, document):
+    fd = fs.open(path, fs.WRONLY | fs.TRUNC | fs.CREAT)
+    fd.write(stringify(document).utf8)
+    fd.close()
 
 parse_structure = (stream, macros, implicit_ending="auto"):
     output = []
@@ -320,7 +329,7 @@ class Stream
 # TODO: Consider flushing this one somewhere else?
 #       Think about generators and resource handling here.
 #       There were some ideas in the treatment of this thing as an async queue.
-read_file = (fd):
+read_fd = (fd):
     inbuf = Uint8Array(64*1024)
     dec = Utf8Decoder()
     index = 0
