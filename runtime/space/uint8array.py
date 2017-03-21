@@ -166,6 +166,8 @@ def utf8_decoder_operate(decoder, newdata, final):
             data, len(data), '', final=final)
     except UnicodeDecodeError as error:
         raise space.unwind(space.LError(u"unicode decode failed"))
+    assert 0 <= pos <= len(data) # Added to satisfy PyPy 5.7
+                                 # The implementation of str_decode_utf_8 perhaps changed?
     decoder.buffer = data[pos:]
     return string
 
