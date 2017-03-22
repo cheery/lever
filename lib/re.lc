@@ -5,7 +5,7 @@ doc = path("doc:/re")
 #a{n,m} == aaaaaa?a?a?a?a?
 
 main = ():
-    acc = :exnihilo()
+    acc = :object()
         type = "accept"
 
     s0 = group(
@@ -48,14 +48,14 @@ next_state = (states, node, char):
 
 match = (char):
     return (next):
-        return :exnihilo()
+        return :object()
             type = "match"
             char = char
             next = next
 
 star = (group):
     return (next):
-        s0 = exnihilo()
+        s0 = object()
         return :s0
             type = "split"
             nexts = [group(s0), next]
@@ -65,13 +65,13 @@ alt = (groups...):
         nexts = []
         for group in groups
             nexts.append(group(next))
-        return :exnihilo()
+        return :object()
             type = "split"
             nexts = nexts
 
 opt = (group):
     return (next):
-        return :exnihilo()
+        return :object()
             type = "split"
             nexts = [group(next), next]
 

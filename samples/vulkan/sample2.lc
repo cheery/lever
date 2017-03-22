@@ -16,7 +16,7 @@ main = ():
         enabledExtensionNames = enabledExtensionNames
     })
 
-    screen = :exnihilo()
+    screen = :object()
         width = 1024
         height = 1024
         offset = {x = 0, y = 0}
@@ -80,7 +80,7 @@ main = ():
     image_acquired = vulkan.Semaphore(device)
     rendering_done = vulkan.Semaphore(device)
 
-    depth_stencil = :exnihilo()
+    depth_stencil = :object()
         format = find_depth_format(gpu)
         print("selected format", format)
         subresource_range = {
@@ -167,7 +167,7 @@ main = ():
         pushConstantRanges = []
     })
 
-    vbo = :exnihilo()
+    vbo = :object()
         size = orchid_model.vbo.length #8 * 1024
         buffer = vulkan.Buffer(device, {size = size, usage = "VERTEX_BUFFER_BIT"})
         memreq = buffer.getMemoryRequirements()
@@ -194,7 +194,7 @@ main = ():
         ffi.memcpy(data, orchid_model.vbo, orchid_model.vbo.length)
         mem.unmap()
 
-    ubo = :exnihilo()
+    ubo = :object()
         size = 2 * 4 * 4 * ffi.sizeof(ffi.float)
         buffer = vulkan.Buffer(device, {size = size, usage = "UNIFORM_BUFFER_BIT"})
         memreq = buffer.getMemoryRequirements()
@@ -555,7 +555,7 @@ load_model = (pathname):
     else
         header_path = path(pathname)
         header_path.basename = header_path.basename ++ ".json"
-    return :exnihilo()
+    return :object()
         header = json.read_file(header_path)
         header_dir = header_path ++ ".."
         vbo = fs.read_file(header_dir ++ header["vbo"], "b")

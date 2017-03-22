@@ -26,7 +26,6 @@ module = Module(u'base', {
     u'dict': Dict.interface,
     u'Module': Module.interface,
     u'module': Module.interface,     # TODO: deprecate and then remove
-    u'exnihilo': Exnihilo.interface, # TODO: deprecate and then remove
     u'object': Object.interface,
     u'list': List.interface,
     u'multimethod': Multimethod.interface,

@@ -196,13 +196,13 @@ Line to line distance is quite simple thing to calculate, but it should give a g
 
         div = a*c - b*b
         if div == 0.0 # lines are parallel or either one is degenerate
-            return :exnihilo()
+            return object();
                 s = 0.0
                 if b > c
                     t = d/b
                 else
                     t = e/c
-        return :exnihilo()
+        return object();
             s = (b*e - c*d) / div
             t = (a*e - b*d) / div
 

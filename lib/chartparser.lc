@@ -233,7 +233,7 @@ prediction = (current, nodes, grammar, location, postdot):
 cache_transitions = (transitions, eim, cc):
     if not eim.is_completed()
         postdot = eim.postdot()
-        trans = :exnihilo()
+        trans = :object()
             eim = eim
             cc = cc
         try
@@ -272,7 +272,7 @@ traverse_sppf = (stack, postorder_callback, blank_callback, resolve_ambiguity):
                 sstack.append(result.value)
                 rcount -= 1
             else
-                rstack.append(:exnihilo()
+                rstack.append(:object()
                     rcount = rcount - 1
                     rlen = result.length
                     sppf = sppf

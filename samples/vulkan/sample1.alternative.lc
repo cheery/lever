@@ -10,7 +10,7 @@ main = ():
         enabledExtensionNames = enabledExtensionNames
     })
 
-    screen = :exnihilo()
+    screen = :object()
         width = 512
         height = 512
         offset = {x = 0, y = 0}
@@ -113,7 +113,7 @@ main = ():
         if gpu_mem.memoryTypes[i].propertyFlags.HOST_CACHED_BIT
             hostMemoryIndex = i
 
-    vbo = :exnihilo()
+    vbo = :object()
         size = 8 * 1024
         buffer = vulkan.Buffer(device, {size = size, usage = "VERTEX_BUFFER_BIT"})
         memreq = buffer.getMemoryRequirements()
@@ -139,7 +139,7 @@ main = ():
             i += 1
         mem.unmap()
 
-    ubo = :exnihilo()
+    ubo = :object()
         size = 2 * 4 * 4 * ffi.sizeof(ffi.float)
         buffer = vulkan.Buffer(device, {size = size, usage = "UNIFORM_BUFFER_BIT"})
         memreq = buffer.getMemoryRequirements()

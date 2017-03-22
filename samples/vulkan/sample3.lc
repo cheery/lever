@@ -10,7 +10,7 @@ main = ():
         enabledExtensionNames = enabledExtensionNames
     })
 
-    screen = :exnihilo()
+    screen = :object()
         width = 1024
         height = 1024
         offset = {x = 0, y = 0}
@@ -116,7 +116,7 @@ main = ():
             hostMemoryIndex = i
 
     particle_count = 100000
-    vbo = :exnihilo()
+    vbo = :object()
         size = 6*4*particle_count
         buffer = vulkan.Buffer(device, {
             size = size
@@ -142,7 +142,7 @@ main = ():
             i += 1
         mem.unmap()
 
-    ubo = :exnihilo()
+    ubo = :object()
         size = 2 * 4 * 4 * ffi.sizeof(ffi.float)
         buffer = vulkan.Buffer(device, {size = size, usage = "UNIFORM_BUFFER_BIT"})
         memreq = buffer.getMemoryRequirements()

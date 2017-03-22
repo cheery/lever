@@ -109,7 +109,7 @@ read_tokens = (tokens, source=null):
     grammar_language.invoker(actions)
     blank_lhs = (x): # Not used often in this grammar.
         return null
-    rootdef = :exnihilo()
+    rootdef = :object()
         body = parser.traverse(post, blank_lhs)
         scope = Scope(null, 0, 0, 0, [])
         origin = null

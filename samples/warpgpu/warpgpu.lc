@@ -6,7 +6,7 @@ class GPU
         self.instance = vulkan.Instance({
             enabledExtensionNames = window.wsi.required_extensions(
                 vulkan.listInstanceExtensions())})
-        self.screen = exnihilo();
+        self.screen = object();
             width = window.width
             height = window.height
             offset = {x = 0, y = 0}

@@ -1,4 +1,6 @@
 import fs
+
+doc = path("doc:/texopic")
 # https://cheery.github.io/texopic/
 # This project still may need some work.
 
@@ -20,17 +22,15 @@ import fs
 # Groups form nested vertical lists.
 # Separators separate content in blocks.
 main = (args):
-    test_macros = object();
+    test_macros = {
         segments = {
-            ["title", 0]: object();
-                capture = false
+            "title/0": {capture = false}
         }
         groups = {
-            ["itemize", 0]: object();
-                separators = set([ ["item", 0] ])
-            ["enumerate", 0]: object();
-                separators = set([ ["item", 0] ])
+            "itemize/0": {separators = ["item/0"]},
+            "enumerate/0": {separators = ["item/0"]}
         }
+    }
     document = []
     for arg in args[1.:]
         document ++= read_file(arg, test_macros)
@@ -112,15 +112,15 @@ parse_structure = (stream, macros, implicit_ending="auto"):
             if token.name == "begin"
                 if token.args.length > 0
                     name = verbatim(token.args[0])
-                    key = [name, token.args.length - 1]
-                    info = macros.groups.get(key)
+                    key = name ++ (token.args.length - 1).to_string()
+                    info = macros["groups"].get(key)
                     if info
                         stack = object();
                             parent = stack
                             name = name
                             head = Macro(name, token.args[1.:], token.lno)
                             separator = null
-                            separators = info.separators
+                            separators = set(info.separators)
                             output = output
                             data = []
                         output = []
@@ -136,8 +136,8 @@ parse_structure = (stream, macros, implicit_ending="auto"):
                 if token.args.length == 0 and stack
                     stack_pop("implicit")
                     continue
-            key = [token.name, token.args.length]
-            info = macros.segments.get(key)
+            key = token.name ++ token.args.length.to_string()
+            info = macros["segments"].get(key)
             if info
                 flush()
                 seg.head = token

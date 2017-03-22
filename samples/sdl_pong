@@ -9,25 +9,25 @@ main := ():
         print("error")
         exit()
 
-    game = exnihilo()
+    game = object()
     game.active = false
     game.speed = 1
     game.score = 0
     game.running = true
     game.reset_round = false
 
-    ball = exnihilo()
+    ball = object()
     ball.x = 50
     ball.y = 50
     ball.xv = game.speed
     ball.yv = game.speed
 
-    left_paddle = exnihilo()
+    left_paddle = object()
     left_paddle.y = 0
     left_paddle.up = false
     left_paddle.down = false
 
-    right_paddle = exnihilo()
+    right_paddle = object()
     right_paddle.y = 190
     right_paddle.up = false
     right_paddle.down = false

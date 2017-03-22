@@ -24,6 +24,8 @@ get_scope_index = (scope, recursive=true):
     else
         index = {}
     for module in import_all_modules(scope)
+        if not module.doc # not sure what else to do for undocumented modules.
+            continue
         key = module.doc.to_string()
         index[key] =
             get_module_index(module, index.get(key))
@@ -47,10 +49,11 @@ scan = (members, this, link, base):
             block = get_block(members, doc)
             if isinstance(val, interface)
                 block["type"] = "interface"
+                block["extends"] = get_link(super(val))
                 if "fields" not in block
                     block["fields"] = {}
                 scan(members, block["fields"], link, val)
-            if isinstance(val, multimethod)
+            elif isinstance(val, multimethod)
                 block["type"] = "multimethod"
                 block["methods"] = table = []
                 for argtypes in val.keys()
@@ -68,13 +71,26 @@ scan = (members, this, link, base):
                         argtypes = arglinks
                         function = desc
                     })
-            if is_function(val)
+            elif is_function(val)
                 scan_function(block, val)
+            else
+                block["type"] = "object"
+                block["interface"] = get_link(interface(val))
         else
-            this[name] = {
-                type = "object"
-                interface = get_link(interface(val))
-            }
+            this[name] = block = {}
+            if isinstance(val, [int, str, float, bool, null])
+                block["type"] = "object"
+                block["interface"] = get_link(interface(val))
+                block["value"] = val
+            elif isinstance(doc, DocRef)
+                null # One approach would be to document these
+                     # implicit links, but it encourages importing
+                     # and using functions implicitly.
+            else
+                block["type"] = "object"
+                block["interface"] = get_link(interface(val))
+#                if isinstance(doc, DocRef)
+#                    block["link"] = get_link(val)
 
 is_function = (val):
     spec = try_getattr(val, "spec")

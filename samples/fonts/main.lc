@@ -1,0 +1,37 @@
+from ffi import automem
+import api, ffi, platform
+
+if platform.name == "win32"
+    sdl2_libname = "SDL2.dll"
+else
+    sdl2_libname = "libSDL2.so"
+sdl = ffi.library(sdl2_libname, api.read_file("libSDL2", {}))
+
+main = ():
+    assert sdl.Init(sdl.INIT_VIDEO) == 0
+        "SDL Init failed"
+    win = null
+    ren = null
+    try
+        win = sdl.CreateWindow("Hello", 0, 0, 640, 480, sdl.WINDOW_SHOWN)
+        assert win
+            "SDL CreateWindow failed"
+
+        ren = sdl.CreateRenderer(win, -1,
+            sdl.RENDERER_ACCELERATED | sdl.RENDERER_PRESENTVSYNC)
+        assert ren
+            "SDL CreateRenderer failed"
+
+        event = automem(sdl.Event)
+        
+        running = true
+        while running
+            while sdl.PollEvent(event) != 0
+                if event.type == sdl.QUIT
+                    running = false
+    finally
+        if ren
+            sdl.DestroyRenderer(ren)
+        if win
+            sdl.DestroyWindow(win)
+        sdl.Quit()

@@ -74,7 +74,7 @@ vkdecorator = (api, name, desc):
 
 lib = api.read_file("libvulkan.json", null, vkdecorator)
 
-checker = exnihilo()
+checker = object()
 checker.shadow = lib.lookup_type("Result")
 checker.load = (result):
     if result.value < 0

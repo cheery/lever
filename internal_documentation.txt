@@ -34,7 +34,6 @@ The following is being inserted into base in base.py:
 
     dict
     module
-    exnihilo
     object
     list
     multimethod(arity:int)
@@ -50,7 +49,7 @@ The following is being inserted into base in base.py:
     Uint8Array
     set
     load(program:dict, path=null)(module)
-    class(methods:exnihilo, parent:interface, name:str)
+    class(methods:object, parent:interface, name:str)
     interface(object)
     iter(object)
     hash(object)
@@ -733,6 +732,9 @@ values.
 Therefore you got exnihilo(). For now you can't fill it from an iterable. But
 it's some object you can fill with values of your choice. It's very good when a
 custom class and additional new type isn't required.
+
+The exnihilo is replaced by 'object'. It is essentially the same thing but
+pretends to be of type 'object'.
 
 
 

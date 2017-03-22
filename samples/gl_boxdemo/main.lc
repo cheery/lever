@@ -201,7 +201,7 @@ main = ():
         for eye in hmd.eyes
             eye.invprojection = eye.projection.invert()
     else
-        hmd = exnihilo()
+        hmd = object()
         hmd.on = false
         hmd.begin = ():
             return null
@@ -209,7 +209,7 @@ main = ():
             return null
 
     fovy = 60 / 180 * pi
-    cam = exnihilo()
+    cam = object()
     cam.projection = projection_matrix(fovy, width / height, 0.1, 100)
     cam.invprojection = cam.projection.invert()
     cam.pos = vec3()
@@ -218,7 +218,7 @@ main = ():
     boxes = []
     i = 0
     while i < 100
-        box = exnihilo()
+        box = object()
         circle = random_circle()
         box.base = vec3(circle.x, 0.0, circle.y) * 20.0 + up * (random() * 40.0 - 20.0)
         box.axis = random_sphere()

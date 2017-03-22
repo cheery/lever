@@ -76,7 +76,7 @@ refresh_loop = ():
         # You'd be probably best off by faking the stdout with
         # a fake buffered stream-pair, which gets the buffer size
         # from the stdout and avoids being congested.
-        stdout.write("".join(stream_block))
+        stdout.write("".join(stream_block).utf8)
         stream_block := []
 
         line0 = "this toy console does not do anything\n>> " ++ "".join(edit_line)
@@ -85,9 +85,9 @@ refresh_loop = ():
         # State of the art method for implementing a line editor in
         # an ANSI-compliant terminal. We measure where the text
         # lands to stay on the track.
-        width = stdout.get_winsize()[0]
-        a = calculate_offset(line0, width)
-        b = calculate_offset(line1, width)
+        winsize = stdout.get_winsize()
+        a = calculate_offset(line0, winsize.width)
+        b = calculate_offset(line1, winsize.width)
         stdout.write(line1)
         stdout.write("".join(cursor_motion(a.x-b.x, a.y-b.y)))
 
@@ -121,6 +121,6 @@ calculate_offset = (line, width):
             x = 0
         else
             x += 1
-    return :exnihilo()
+    return :object()
         x = x
         y = y

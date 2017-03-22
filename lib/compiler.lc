@@ -65,7 +65,7 @@ read_tokens = (tokens, source=null):
     grammar_language.invoker(actions)
     blank_lhs = (x): # Not used often in this grammar.
         return null
-    rootdef = :exnihilo()
+    rootdef = :object()
         body = parser.traverse(post, blank_lhs)
         scope = Scope(null, 0, 0, 0, [])
         origin = null
@@ -93,7 +93,7 @@ read_tokens = (tokens, source=null):
     }
     return code
 
-actions = :exnihilo()
+actions = :object()
     lookup = (symbol):
         return Getvar(symbol.string)
     int = (token):
@@ -174,13 +174,13 @@ actions = :exnihilo()
             Getvar(op.string), slot.getslot(), statement))
 
     lookup_slot = (name):
-        return :exnihilo()
+        return :object()
             getslot = ():
                 return Getvar(name.string)
             setslot = (expr):
                 return Setvar("auto", name.string, expr)
     attr_slot = (base, name):
-        return :exnihilo()
+        return :object()
             getslot = ():
                 return Code("getattr", base, name.string)
             setslot = (expr):
@@ -188,7 +188,7 @@ actions = :exnihilo()
                     [base, name.string, expr],
                     [2, 0, 1])
     item_slot = (base, indexer):
-        return :exnihilo()
+        return :object()
             getslot = ():
                 return Code("getitem", base, indexer)
             setslot = (expr):
@@ -240,11 +240,11 @@ actions = :exnihilo()
         otherwise.conds.insert(0, [cond, body])
         return otherwise
     %"else" = (body=[]):
-        return :exnihilo()
+        return :object()
             conds = []
             body = body
     %"done" = ():
-        return :exnihilo()
+        return :object()
             conds = []
             body = null
 
@@ -283,14 +283,14 @@ actions = :exnihilo()
             Code("constant", module_name.string)))
 
     %"class" = (header, block=[]):
-        grabber = Code("call", Getvar("exnihilo"))
+        grabber = Code("call", Getvar("object"))
         return Setvar("local", header.name,
             Code("call", Getvar("class"),
                 ScopeGrab(grabber, block),
                 header.base,
                 Code("constant", header.name)))
     class_header = (name, base = Getvar("object")):
-        return :exnihilo()
+        return :object()
             name = name.string
             base = base
 
@@ -300,26 +300,26 @@ actions = :exnihilo()
         bindings.variadic = vararg
         return bindings
     only_variadic = (vararg):
-        return :exnihilo()
+        return :object()
             variadic = vararg
             args = []
             opts = []
     blank_bindings = ():
-        return :exnihilo()
+        return :object()
             variadic = null
             args = []
             opts = []
     optional = (var, expr):
-        return :exnihilo()
+        return :object()
             var = var
             expr = expr
     mandatory = (var):
-        return :exnihilo()
+        return :object()
             variadic = null
             args = [var]
             opts = []
     first_optional = (opt):
-        return :exnihilo()
+        return :object()
             variadic = null
             args = []
             opts = [opt]
@@ -355,14 +355,14 @@ class Context
         self.finally_exc = null
 
     push_finally = (self, body):
-        self.loop = :exnihilo()
+        self.loop = :object()
             type = "finally"
             parent = self.loop
             body = body
 
     push_loop = (self, cont, brk):
         self.loop_stack.append(self.loop)
-        self.loop = :exnihilo()
+        self.loop = :object()
             type = "loop"
             parent = self.loop
             cont = cont
@@ -510,7 +510,7 @@ class Closure extends Cell
             localv.append(self.bindings.variadic.string)
             flags |= 1
         handle = Function(context.closures.length)
-        context.closures.append(:exnihilo()
+        context.closures.append(:object()
             origin = context.origin
             body = header ++ self.body
             scope = Scope(context.scope, flags, argc, topc, localv)
@@ -710,7 +710,7 @@ class Cond extends Cell
             if val and val.has_result
                 context.op("move", result, val)
             context.op("jump", exit)
-            branch = :exnihilo()
+            branch = :object()
                 blabel = label
                 bcond = cond
                 byes = byes

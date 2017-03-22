@@ -167,13 +167,13 @@ class Scope
             return false
 
     declare = (self, name, type, declarator):
-        self.variables[name] = decl = :exnihilo()
+        self.variables[name] = decl = :object()
             type = type
             declarator = declarator
         self.decls.append(decl)
 
     declare_enum = (self, name, enum):
-        self.variables[name] = decl = :exnihilo()
+        self.variables[name] = decl = :object()
             type = "enum"
             enum = enum
 
@@ -189,7 +189,7 @@ post = (rule, args, start, stop):
             return res
     return res
 
-actions = :exnihilo()
+actions = :object()
     function = (specifier, declarator, functypes, body):
         return (scope):
             spec = specifier(scope)
@@ -240,7 +240,7 @@ actions = :exnihilo()
             return Declarator(identifier)
     bitfield = (declarator, constant):
         return (scope):
-            return :exnihilo()
+            return :object()
                 type = "bitfield"
                 declarator = declarator(scope)
                 count = constant(scope)
@@ -248,7 +248,7 @@ actions = :exnihilo()
     pointer_declarator = (ptr, base):
         return (scope):
             declarator = base(scope)
-            declarator.stack = :exnihilo()
+            declarator.stack = :object()
                 next = declarator.stack
                 type = "pointer"
                 ptr = ptr
@@ -256,7 +256,7 @@ actions = :exnihilo()
     array_declarator = (base, const):
         return (scope):
             declarator = base(scope)
-            declarator.stack = :exnihilo()
+            declarator.stack = :object()
                 next = declarator.stack
                 type = "array"
                 if const
@@ -271,7 +271,7 @@ actions = :exnihilo()
             args = []
             for arg in arglist
                 args.append(arg(scope)) # and spiders want out.
-            declarator.stack = :exnihilo()
+            declarator.stack = :object()
                 next = declarator.stack
                 type = "function"
                 args = args 
@@ -727,7 +727,7 @@ std_macro_env = ():
     # _Pragma(args) should apparently have same behavior as #pragma.. implementing this later if it appears?
 
 macrodef_string = (string):
-    return :exnihilo()
+    return :object()
         origin = null
         parameters = null
         replacement = [ Token(path(""), 0, "string", string) ]
@@ -735,7 +735,7 @@ macrodef_string = (string):
 macrodef_number = (number):
     if isinstance(number, int)
         number = number.to_string()
-    return :exnihilo()
+    return :object()
         origin = null
         parameters = null
         replacement = [ Token(path(""), 0, "number", number) ]
@@ -1072,7 +1072,7 @@ class Preprocessor
                     print("new", identifier, parameters, replacement)
                     format_source(macro) ++ "redefined macro not identical with already defined macro"
             else
-                self.macro_replacements[identifier.value] = :exnihilo()
+                self.macro_replacements[identifier.value] = :object()
                     origin = identifier
                     parameters = parameters
                     replacement = replacement
@@ -1108,7 +1108,7 @@ class Preprocessor
                 local = true
             self.macro_end(macro)
 
-            entry = :exnihilo()
+            entry = :object()
                 stream = self.stream
                 search_paths = self.search_paths
                 filename = self.filename
@@ -1234,7 +1234,7 @@ class Preprocessor
             # same here
             #raise chartparser.SyntaxErrorExpected(parser.expect, token.stop, source, true)
         # TODO: parse and evaluate the macro sequence.
-        actions = :exnihilo()
+        actions = :object()
             identifier = (token):
                 return 0
             number = (token):

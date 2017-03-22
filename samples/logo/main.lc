@@ -31,7 +31,7 @@ plotter = (clean, plot):
     sleepdur = 0.1
 
     clean()
-    turtle = :exnihilo()
+    turtle = :object()
         is_down = true
         pos = vec3(0, 0)
         dir = vec3(0, 1)

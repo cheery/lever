@@ -15,7 +15,7 @@ main = ():
     # You can prefix a string to use it as a symbol.
     # Therefore using scoped objects to build action table
     # will not require workarounds in notating the grammar.
-    actions = :exnihilo()
+    actions = :object()
         %"return" = 123
 
 read_file = (filename, source=filename):
@@ -49,7 +49,7 @@ read_tokens = (tokens, source=null):
     post = invoker(actions, table)
     blank_lhs = (x): # Not used in this grammar.
         return null
-    return :exnihilo()
+    return :object()
         table = table
         grammar = parser.traverse(post, blank_lhs)
 
@@ -154,14 +154,14 @@ build_language = ():
         Rule(term, [symbol, lc, production, rc],
             Command("command", [Grab(0), Grab(2)])),
     ]
-    return :exnihilo()
+    return :object()
         grammar = grammar
         table = table
         new_parser = chartparser.preprocess(grammar, file)
 
-actions = :exnihilo()
+actions = :object()
     command = (table, symbol, arg=[]):
-        return :exnihilo()
+        return :object()
             name = "command"
             command = symbol.string
             arg = arg
@@ -176,11 +176,11 @@ actions = :exnihilo()
         items.extend(item)
         return items
     skip = (table, arg):
-        return :exnihilo()
+        return :object()
             name = "skip"
             arg = arg
     grab = (table, arg):
-        return :exnihilo()
+        return :object()
             name = "grab"
             arg = arg
     terminal = (table, token):

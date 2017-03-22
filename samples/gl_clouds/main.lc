@@ -132,14 +132,14 @@ main = ():
         for eye in hmd.eyes
             eye.invprojection = eye.projection.invert()
     else
-        hmd = exnihilo()
+        hmd = object()
         hmd.on = false
         hmd.begin = ():
             return null
         hmd.submit = ():
             return null
 
-    cam = exnihilo()
+    cam = object()
     cam.projection = projection_matrix(fovy, width / height, 0.1, 100)
     cam.invprojection = cam.projection.invert()
     cam.pos = vec3()

@@ -29,10 +29,11 @@ def hash_fn(this):
 
 class Multimethod(Object):
     _immutable_fields_ = ['arity', 'multimethod_table']
-    def __init__(self, arity, default=null):
+    def __init__(self, arity, default=null, doc=null):
         self.arity = arity
         self.multimethod_table = r_dict(eq_fn, hash_fn, force_non_null=True)
         self.default = default
+        self.doc = doc
 
     def call(self, argv):
         return self.invoke_method(argv, suppress_default=False)
@@ -116,11 +117,16 @@ class Multimethod(Object):
     def getattr(self, index):
         if index == u"default":
             return self.default
+        if index == u"doc":
+            return self.doc
         return Object.getattr(self, index)
 
     def setattr(self, index, value):
         if index == u"default":
             self.default = value
+            return value
+        if index == u"doc":
+            self.doc = value
             return value
         return Object.setattr(self, index, value)
 

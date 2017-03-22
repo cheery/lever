@@ -37,7 +37,7 @@ main = ():
     cube_vao = new_vao(program, cube)
 
     fovy = 60 * (pi / 180)
-    cam = exnihilo()
+    cam = object()
     cam.projection = projection_matrix(fovy, width / height, 0.1, 100)
     cam.invprojection = cam.projection.invert()
 
@@ -122,7 +122,7 @@ simple_program = (vsource, fsource):
         print("shader link failed")
         print(get_info_log(id))
         exit(1)
-    program = exnihilo()
+    program = object()
     program.id = id
     program.vso = vso
     program.fso = fso
@@ -208,7 +208,7 @@ cube_model = ():
     vbo = ids.to
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
     gl.bufferData(gl.ARRAY_BUFFER, data_size, data, gl.STATIC_DRAW)
-    model = exnihilo()
+    model = object()
     model.mode = gl.TRIANGLES
     model.vertex_count = vertex_count
     model.vbo = vbo
@@ -238,7 +238,7 @@ new_vao = (program, model):
             gl.enableVertexAttribArray(attr)
             gl.vertexAttribPointer(attr, field["size"], gltypes[field["type"]],
                 field["normalized"], model.stride, ffi.cast(field["offset"], ffi.voidp))
-    obj = exnihilo()
+    obj = object()
     obj.id = vao
     obj.bind = ():
         gl.bindVertexArray(obj.id)
@@ -275,7 +275,7 @@ init_hmd = ():
         for eye in hmd.eyes
             eye.invprojection = eye.projection.invert()
     else
-        hmd = exnihilo()
+        hmd = object()
         hmd.on = false
         hmd.begin = ():
             return null
@@ -302,7 +302,7 @@ load_model = (pathname):
     vbo = ids.to
     gl.bindBuffer(gl.ARRAY_BUFFER, vbo)
     gl.bufferData(gl.ARRAY_BUFFER, bin.length, data, gl.STATIC_DRAW)
-    model = exnihilo()
+    model = object()
     model.mode = gl.TRIANGLES
     model.stride = header["stride"]
     model.vertex_count = int(bin.length / model.stride)
