@@ -27,8 +27,10 @@ get_scope_index = (scope, recursive=true):
         if not module.doc # not sure what else to do for undocumented modules.
             continue
         key = module.doc.to_string()
-        index[key] =
-            get_module_index(module, index.get(key))
+        index[key] = {
+            type = "module"
+            fields = get_module_index(module, index.get(key))
+        }
     return index
 
 # Stuff below this are safe, unless you imported
@@ -77,8 +79,8 @@ scan = (members, this, link, base):
                 block["type"] = "object"
                 block["interface"] = get_link(interface(val))
         else
-            this[name] = block = {}
             if isinstance(val, [int, str, float, bool, null])
+                this[name] = block = {}
                 block["type"] = "object"
                 block["interface"] = get_link(interface(val))
                 block["value"] = val
@@ -87,6 +89,7 @@ scan = (members, this, link, base):
                      # implicit links, but it encourages importing
                      # and using functions implicitly.
             else
+                this[name] = block = {}
                 block["type"] = "object"
                 block["interface"] = get_link(interface(val))
 #                if isinstance(doc, DocRef)
