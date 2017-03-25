@@ -2,6 +2,47 @@ import fs
 
 doc = path("doc:/doctools")
 
+# Syntax of a doc file.
+doc_macros = {
+    segments = {
+        "title/0": {capture = false}
+    }
+    groups = {
+        "interface/1": {separators = [
+            "extends/0",
+            "summary/0",
+            "description/0",
+            "status/0",
+            "members/0"
+        ]},
+        "function/1": {separators = [
+            "arg/1",
+            "arg/2",
+            "optional/2",
+            "optional/3",
+            "is_variadic/0",
+            "returns/0",
+            "returns/1",
+            "summary/0",
+            "description/0",
+            "status/0"
+        ]},
+        "multimethod/1": {separators = [
+            "summary/0",
+            "description/0",
+            "status/0"
+        ]},
+        "object/1": {separators = [
+            "value/0",
+            "interface/0",
+            "summary/0",
+            "description/0",
+            "status/0"
+        ]}
+    }
+}
+
+
 # Never run this on a scope you do not trust.
 import_all_modules = (scope):
     if path("builtin:/") <= scope.local
@@ -30,6 +71,8 @@ get_scope_index = (scope, recursive=true):
         index[key] = {
             type = "module"
             fields = get_module_index(module, index.get(key))
+            name = path(key).relpath(path("doc:/").dirname).to_string()
+            # TODO: fix after you've fixed pathobj.
         }
     return index
 
@@ -83,7 +126,7 @@ scan = (members, this, link, base):
                 this[name] = block = {}
                 block["type"] = "object"
                 block["interface"] = get_link(interface(val))
-                block["value"] = val
+                block["value"] = repr(val)
             elif isinstance(doc, DocRef)
                 null # One approach would be to document these
                      # implicit links, but it encourages importing
@@ -105,26 +148,36 @@ scan_function = (block, func):
     loc = func.loc
     if spec and loc
         block["type"] = "function"
-        if not isinstance(loc.start, int)
+        if isinstance(loc.start, int)             #TODO: move this to runtime?
+            loc.start = {lno=loc.start, col=null} #      also the function args
+        else                                      #      could be moved.
             loc.start = dict(loc.start)
-        if not isinstance(loc.stop, int)
+        if isinstance(loc.stop, int)
+            loc.stop = {lno=loc.stop, col=null}
+        else
             loc.stop = dict(loc.stop)
         block["loc"] = dict(loc)
 
-        arglist = null
         argtypes = try_getattr(spec, "argtypes")
-        if argtypes
-            arglist = []
-            for argt in argtypes
-                arglist.append(get_link(argt))
-            
-        block["spec"] = {
-            argc        = spec.argc
-            is_variadic = spec.is_variadic
-            optional = spec.optional
-            varnames = spec.varnames
-            argtypes = arglist
-        }
+        arglist = []
+        for i in range(spec.argc + spec.optional + spec.is_variadic)
+            arg = {}
+            if spec.varnames and i < spec.varnames.length
+                name = spec.varnames[i]
+            else
+                name = chr(0x61+i%25)
+                k = int(i / 25)
+                while k > 0
+                    name = chr(0x65+i%25) ++ name
+                    k = int(k / 25)
+            arg["name"] = name
+            if argtypes and i < argtypes.length
+                arg["type"] = get_link(argtypes[i])
+            if spec.argc <= i and i < spec.argc+spec.optional
+                arg["default"] = "null"
+            arglist.append(arg)
+        block["args"] = arglist
+        block["is_variadic"] = spec.is_variadic
         
 get_block = (members, ref):
     if ref.parent

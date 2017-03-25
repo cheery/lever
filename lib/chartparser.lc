@@ -553,7 +553,7 @@ class SyntaxError extends Exception
         self.at_eof = at_eof
 
     +repr = (self):
-        return self.message
+        return format_origin(self.source, self.location, self.message)
 
 class SyntaxErrorExpected extends SyntaxError
     +init = (self, expect, location, source, at_eof=false):
