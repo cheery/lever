@@ -46,7 +46,8 @@ def configured_stringify(obj, config):
         ub = UnicodeBuilder()
         quick_stringify(ub, obj)
         return ub.build()
-    scan = Scanner()
+    margin = space.to_int(get_config(config, u"margin", space.Integer(80)))
+    scan = Scanner(Printer(margin))
     scan.indent = space.to_int(get_config(config, u"indent", space.Integer(2)))
     scan.sort_keys = space.is_true(get_config(config, u"sort_keys", space.false))
     stringify(scan, obj)
@@ -189,8 +190,8 @@ character_escapes = {8: u'b', 9: u't', 10: u'n', 12: u'f', 13: u'r'}
 # spaces the blanks and groups take. This allows the printer determine
 # whether the line or grouping should be broken into multiple lines.
 class Scanner(object):
-    def __init__(self):
-        self.printer = Printer()
+    def __init__(self, printer):
+        self.printer = printer
         self.stream = []
         self.stack = []
         self.lastblank = None
@@ -241,11 +242,11 @@ class Scanner(object):
 
 # Printer keeps the track of layout during printing.
 class Printer:
-    def __init__(self):
-        self.margin = 80
-        self.layout = Layout(None, 80, False)
-        self.spaceleft = 80
-        self.spaces = 80
+    def __init__(self, margin):
+        self.margin = margin
+        self.layout = Layout(None, margin, False)
+        self.spaceleft = margin
+        self.spaces = margin
         self.result = UnicodeBuilder()
 
     def scan(self, x):
