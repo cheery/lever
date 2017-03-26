@@ -170,28 +170,33 @@ actions = :object()
     upvalue_assign = (name, statement):
         return Setvar("upvalue", name.string, statement)
     op_assign = (slot, op, statement):
-        return slot.setslot(Code("call",
-            Getvar(op.string), slot.getslot(), statement))
+        bind = Let(slot.base)
+        return bind(
+            slot.setslot(bind, Code("call",
+                Getvar(op.string), slot.getslot(bind), statement)))
 
     lookup_slot = (name):
         return :object()
-            getslot = ():
+            base = null
+            getslot = (base):
                 return Getvar(name.string)
-            setslot = (expr):
+            setslot = (base, expr):
                 return Setvar("auto", name.string, expr)
     attr_slot = (base, name):
         return :object()
-            getslot = ():
+            base = base
+            getslot = (base):
                 return Code("getattr", base, name.string)
-            setslot = (expr):
+            setslot = (base, expr):
                 return CodeM("setattr",
                     [base, name.string, expr],
                     [2, 0, 1])
     item_slot = (base, indexer):
         return :object()
-            getslot = ():
+            base = base
+            getslot = (base):
                 return Code("getitem", base, indexer)
-            setslot = (expr):
+            setslot = (base, expr):
                 return CodeM("setitem",
                     [base, indexer, expr],
                     [2, 0, 1])
@@ -810,6 +815,34 @@ class Setvar extends Cell
     visit = (self, context, noret=false):
         value = self.value.visit(context)
         return setvar(context, self.flavor, self.name, value)
+
+class Let extends Cell
+    +init = (self, value):
+        self.value = value
+        self.reg = null
+
+    +call = (self, body):
+        return LetBody(self, body)
+
+    visit = (self, context, noret=false):
+        assert self.reg
+            if self.value
+                "Let.value == null"
+            else
+                "Let not bound"
+        return self.reg
+
+class LetBody extends Cell
+    +init = (self, binding, body):
+        self.binding = binding
+        self.body = body
+
+    visit = (self, context, noret=false):
+        if self.binding.value
+            self.binding.reg = self.binding.value.visit(context)
+        result = self.body.visit(context, noret)
+        self.binding.reg = null # avoid reuse.
+        return result
 
 setvar = (context, flavor, name, value):
     slot = scope_lookup(context.scope, flavor, name)

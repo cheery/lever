@@ -497,30 +497,31 @@ def post_str_join(env, loc, *names):
 def post_upvalue_assign(env, loc, name, statement):
     return Setvar(loc, "upvalue", name.value, statement)
  
-def post_op_assign(env, loc, (getslot, setslot), op, statement):
-    return setslot(Code(loc, 'call',
-        Getvar(loc, op.value), getslot(), statement))
+def post_op_assign(env, loc, (base, getslot, setslot), op, statement):
+    bind = Let(base)
+    return bind(setslot(bind, Code(loc, 'call',
+        Getvar(loc, op.value), getslot(bind), statement)))
 
 def post_lookup_slot(env, loc, name):
-    def getslot():
+    def getslot(base):
         return Getvar(loc, name.value)
-    def setslot(value):
+    def setslot(base, value):
         return Setvar(loc, "auto", name.value, value)
-    return getslot, setslot
+    return None, getslot, setslot
 
 def post_attr_slot(env, loc, base, name):
-    def getslot():
+    def getslot(base):
         return Code(loc, 'getattr', base, name.value)
-    def setslot(stmt):
+    def setslot(base, stmt):
         return CodeM(loc, 'setattr', [base, name.value, stmt], [2, 0, 1])
-    return getslot, setslot
+    return base, getslot, setslot
 
 def post_item_slot(env, loc, base, indexer):
-    def getslot():
+    def getslot(base):
         return Code(loc, 'getitem', base, indexer)
-    def setslot(value):
+    def setslot(base, value):
         return CodeM(loc, 'setitem', [base, indexer, value], [2, 0, 1])
-    return getslot, setslot
+    return base, getslot, setslot
  
 def post_in(env, loc, lhs, rhs):
     return CodeM(loc, 'contains', [rhs, lhs], [1, 0])
@@ -713,6 +714,30 @@ def setvar(context, loc, flavor, name, value):
             depth += scope.depthc
             scope = scope.parent
     return context.block.op(loc, "setglob", [name, value])
+
+class Let(Cell):
+    def __init__(self, value):
+        self.value = value
+        self.reg = None
+    
+    def __call__(self, body):
+        return LetBody(self, body)
+
+    def visit(self, context):
+        assert self.reg is not None
+        return self.reg
+    
+class LetBody(Cell):
+    def __init__(self, binding, body):
+        self.binding = binding
+        self.body = body
+
+    def visit(self, context):
+        if self.binding.value is not None:
+            self.binding.reg = self.binding.value.visit(context)
+        result = self.body.visit(context)
+        self.binding.reg = None
+        return result
 
 # Thanks to this, python-based-compiler doesn't need to have anything to
 # do with the remaining runtime of lever.
