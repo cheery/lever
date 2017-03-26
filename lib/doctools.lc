@@ -3,7 +3,7 @@ import fs
 doc = path("doc:/doctools")
 
 # Syntax of a doc file.
-doc_macros = {
+macros = {
     segments = {
         "title/0": {capture = false}
     }
@@ -116,6 +116,12 @@ scan = (members, this, link, base):
                         argtypes = arglinks
                         function = desc
                     })
+                if val.default
+                    default = {}
+                    scan_function(default, val.default)
+                else
+                    default = null
+                block["default"] = default
             elif is_function(val)
                 scan_function(block, val)
             else
