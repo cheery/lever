@@ -89,8 +89,8 @@ translate_meta = (obj, macro_args...):
                     arglinks.append(" ")
                 arglinks.append(link_reference(argtype))
             methods.append(translate_meta(method["function"], arglinks))
-        if "default" in obj
-            methods.append(obj["default"], ["default"])
+        if "default" in obj and obj["default"]
+            methods.append(translate_meta(obj["default"], ["default"]))
         return Group(
             Macro("multimethod", macro_args),
             [

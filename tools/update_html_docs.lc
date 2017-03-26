@@ -1,2 +1,242 @@
+import doctools, texopic, html, fs
+
 main = (args):
+    src = path(args[1])
+    dst = path(args[2])
     print("html doc generator", args)
+    print(src)
+    print(dst)
+    print(path("www/stylesheet.css").relpath(dst))
+
+    docs = []
+    for name in fs.scandir(src)
+        if name.type == "file" and name.path.endswith(".text")
+            res = texopic.read_file(src ++ name.path, doctools.macros)
+            docs.append(object();
+                body=res
+                name=name.path[.:name.path.length-5])
+
+    object_index = html.Node('ul', [], {"class":"list"})
+
+    for page in docs
+        page.link = dst ++ (page.name ++ ".html")
+
+        root = page_root()
+        root.head.append(
+            html.Node("title", ["Lever manual: " ++ page.name]))
+        root.body.append(html.Node("h1", [
+            "Lever manual: " ++ page.name], {"class":"embed-header"}))
+
+        page.summary = []
+
+        for node in page.body
+            if node.head and node.head.name == "document"
+                page.summary = inline = to_html(node.data)
+                if node.data.length > 0
+                    root.body.append(html.Node("p", inline))
+            else
+                item_name = null
+                if isinstance(node, texopic.Group) and node.head.name == "function"
+                    item_name = texopic.verbatim(node.head.args[0])
+                    object_index.append(html.Node("li", [
+                        html.Node("a", [
+                            page.name ++ "." ++ item_name
+                        ], {"class": "name", "href":page.name ++ ".html#" ++ item_name}),
+                        get_summary(node)
+                    ]))
+                if isinstance(node, texopic.Group) and node.head.name == "interface"
+                    item_name = texopic.verbatim(node.head.args[0])
+                    object_index.append(html.Node("li", [
+                        html.Node("a", [
+                            page.name ++ "." ++ item_name
+                        ], {"class": "name", "href":page.name ++ ".html#" ++ item_name}),
+                        get_summary(node)
+                    ]))
+                if isinstance(node, texopic.Group) and node.head.name == "multimethod"
+                    item_name = texopic.verbatim(node.head.args[0])
+                    object_index.append(html.Node("li", [
+                        html.Node("a", [
+                            page.name ++ "." ++ item_name
+                        ], {"class": "name", "href":page.name ++ ".html#" ++ item_name}),
+                        get_summary(node)
+                    ]))
+                if isinstance(node, texopic.Group) and node.head.name == "object"
+                    item_name = texopic.verbatim(node.head.args[0])
+                    object_index.append(html.Node("li", [
+                        html.Node("a", [
+                            page.name ++ "." ++ item_name
+                        ], {"class": "name", "href":page.name ++ ".html#" ++ item_name}),
+                        get_summary(node)
+                    ]))
+                attr = {}
+                if item_name
+                    attr["id"] = item_name
+                root.body.append(html.Node("pre", [
+                    texopic.stringify([node])
+                    ], attr))
+
+        page_finalize(root, src ++ page.name ++ ".text")
+
+        print(page.link)
+        markup = html.stringify(root)
+        fd = fs.WriteStream(fs.open(page.link, fs.CREAT | fs.WRONLY | fs.TRUNC))
+        fd.write(markup.utf8)
+        fd.close()
+
+    index_link = dst ++ "index.html"
+    root = page_root()
+    root.head.append(
+        html.Node("title", [
+            "Lever documentation index"
+        ]))
+    root.head.append(html.Node("script", [], {src="../../list.min.js"}))
+
+    root.body.append(html.Node("h1", [
+        "Lever documentation index"], {"class":"embed-header"}))
+
+    pages = html.Node('ul', [])
+    for page in docs
+        pages.append(html.Node('li', [
+            html.Node('a', [page.name],
+                {
+                    href = page.name ++ ".html"
+                #href=page.link.relpath(index_link).to_string()
+                })
+            ]))
+
+    root.body.append(html.Node('div', [
+        html.Raw('
+            <input id="tab-module" type="radio" name="tab-group" checked="checked"/>
+            <label for="tab-module">Manual</label>
+            <input id="tab-search" type="radio" name="tab-group"/>
+            <label for="tab-search">Reference</label>
+        '),
+        html.Node("div", [
+            html.Node('h2', ["Modules"]),
+            html.Node('p', ["The docs for the language can be found from the repository (they are the '.text' files). They will be moved here once someone gets to do it."]),
+            html.Node('p', ["Please note that the latest documentation is the latest documentation. This is what you get if you compile from the repository. The 0.8.0 is really old release by now, and it didn't have online documentation."]),
+            pages,
+        ], {id="module-tab-content"}),
+        html.Node('div', [ 
+            html.Node('input', null, {"class":"search", "placeholder":"Search"}),
+            object_index,
+            ], {id="search-tab-content"}),
+        html.Raw("<script>new List('search-tab-content', {valueNames: ['name']});</script>")
+    ], {id="tabbed-content"}))
+
+    page_finalize(root, src)
+
+    markup = html.stringify(root)
+    fd = fs.WriteStream(fs.open(index_link, fs.CREAT | fs.WRONLY | fs.TRUNC))
+    fd.write(markup.utf8)
+    fd.close()
+
+
+get_summary = (group):
+    data = [html.Node("p", ["not documented"])]
+    for cell in group.data
+        if cell.head and cell.head.name == "summary"
+            if cell.data.length == 1 and texopic.verbatim(cell.data[0].data) == "TODO"
+                continue
+            data = vertical_html(cell.data)
+    return html.Node("div", data, {"class": "summary"})
+
+
+vertical_html = (data):
+    out = []
+    for seg in data
+        assert seg.head == null
+        out.append(html.Node("p", to_html(seg.data)))
+    return out
+
+to_html = (data):
+    out = []
+    for item in data
+        if isinstance(item, str)
+            out.append(item)
+        else
+            out.append(texopic.verbatim(item))
+    return out
+
+page_root = ():
+    head = html.Node("head", [
+        html.Node("meta", null, {charset="UTF-8"}, {slash=false}),
+        html.Node("meta", null, {
+            content="width=device-width, initial-scale=1"
+            name="viewport"}),
+    ])
+    body = html.Node("body", [
+    ])
+    root = html.Node("html", [head, body], {lang="en"})
+
+    body.append(html.Node("ul", [
+        # TODO: resolve these paths with relpath.
+        html.Node("li", [html.Node("a", [
+            html.Node("img", null,
+                {src="../../logo.png", alt="LEVER"}, {slash=false})
+        ], {href="../../"})]),
+        html.Node("li", [html.Node("a", [
+            "repository"
+        ], {"href":"https://github.com/cheery/lever/", "class":"nav_button"})]),
+        html.Node("li", [html.Node("a", [
+            "download"
+        ], {"href":"../../index.html#download", "class":"nav_button"})]),
+        html.Node("li", [html.Node("a", [
+            "documentation index"
+        ], {"href":"./", "class":"nav_button"})])
+    ], {"class":"nav"}))
+
+    root.head = head
+    root.body = body
+    return root
+
+page_finalize = (root, src):
+    root.head.append(
+        html.Node("link", null, {
+            rel="stylesheet"
+            href="../../stylesheet.css" # TODO: fix this one.
+            #href=path("www/stylesheet.css").relpath(dst).to_string()
+        }, {slash=false}))
+    root.head.append(
+        html.Raw("<!-- Generated from '" ++ src.to_string() ++
+            "' in github.com/cheery/lever -->"))
+
+    # If you ask me what these are, I answer they are colors.
+    spans = []
+    for color in colors
+        spans.append(html.Node("span", [], {
+            style = "background-color: " ++ color ++ "; width: 1em; height: 1em; display: inline-block"
+        }))
+
+    root.body.append(html.Node("div", spans,
+        {style="text-align: center"}))
+
+    root.body.append(html.Raw("
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script>"))
+
+colors = [
+    "#85818e",
+    "#df7120",
+    "#a7341c",
+    "#5c231c",
+    "#a39ea4",
+
+    "#312334",
+    "#44588e",
+    "#4679b8",
+    "#79bbe8",
+    "#d7d2d7",
+
+    "#785d9a",
+    "#949e85",
+    "#2e170e",
+    "#7b3c16",
+    "#c86f31"]

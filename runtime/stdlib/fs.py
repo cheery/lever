@@ -751,7 +751,7 @@ class ReadStream(FileStream):
 @ReadStream.instantiator2(signature(File, Integer, optional=1))
 def ReadStream_init(fileobj, offset):
     offset = 0 if offset is None else offset.value
-    return WriteStream(fileobj, offset)
+    return ReadStream(fileobj, offset)
 
 @ReadStream.method(u"read", signature(ReadStream))
 def ReadStream_read(self):

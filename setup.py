@@ -249,6 +249,7 @@ def update_html_docs(args):
     """
     check_call(["./lever", "tools/update_html_docs.lc",
         'doc', 'www/doc/' + args.tag ])
+    print '(as a reference for a maintainer) rsync -avz www/ name@dest:www'
 
 if __name__=='__main__':
     main()

@@ -112,7 +112,7 @@ parse_structure = (stream, macros, implicit_ending="auto"):
             if token.name == "begin"
                 if token.args.length > 0
                     name = verbatim(token.args[0])
-                    key = name ++ (token.args.length - 1).to_string()
+                    key = name ++ "/" ++ (token.args.length - 1).to_string()
                     info = macros["groups"].get(key)
                     if info
                         stack = object();
@@ -120,7 +120,7 @@ parse_structure = (stream, macros, implicit_ending="auto"):
                             name = name
                             head = Macro(name, token.args[1.:], token.lno)
                             separator = null
-                            separators = set(info.separators)
+                            separators = set(info["separators"])
                             output = output
                             data = []
                         output = []
@@ -136,12 +136,12 @@ parse_structure = (stream, macros, implicit_ending="auto"):
                 if token.args.length == 0 and stack
                     stack_pop("implicit")
                     continue
-            key = token.name ++ token.args.length.to_string()
+            key = token.name ++ "/" ++ token.args.length.to_string()
             info = macros["segments"].get(key)
             if info
                 flush()
                 seg.head = token
-                capture  = info.capture
+                capture  = info["capture"]
                 continue
             if stack and key in stack.separators
                 stack_flush(token)
@@ -232,6 +232,7 @@ parse_token = (stream):
                 arg.append(stream.putback)
                 stream.putback = null
             args.append(arg)
+        stream.sp = true
         return Macro(name, args, lno)
     elif nl and ch == "\n"
         return Par(stream.lno)
@@ -268,9 +269,12 @@ precapture = (stream):
                 line.append(stream.advance())
         if stream.indent <= indent
             break
-    if stream.current != "" # on mid-stream behavior the last line
-        lines.pop()         # ends up empty.
+
     lines.pop(0)            # the first line is always empty.
+    if stream.current != "" # on mid-stream behavior the last line
+        line = lines.pop()         # ends up empty.
+        if not line.is_space()
+            lines.append(line)
     # The precaptured block is left-stripped from space and
     # tab characters in equal amount per line.
     leftpad = null

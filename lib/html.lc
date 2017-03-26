@@ -1,0 +1,194 @@
+# Library for generating HTML output.
+import printer
+
+# This module does bit of html escaping and
+# provides a minimal way of validating URLs.
+
+# The intent of this module is to reduce surprises
+
+# We would like to make XSS harder,
+# unfortunately there are so many potential ways to
+# do XSS that a simple module such as this cannot
+# really ensure the produced markup is safe.
+
+stringify = (obj, margin=70):
+    scan = printer.Scanner(StringBuilder(), margin)
+    stringify_(scan, obj)
+    scan.finish()
+    return scan.printer.result.build()
+
+stringify_ = (scan, obj):
+    if obj == " "
+        scan.blank(' ', 0) #forceable=false)
+    elif isinstance(obj, str)
+        scan(body_escape(obj))
+    else
+        obj.stringify(scan)
+
+#verbatim_ = (obj):
+#    if isinstance(obj, str)
+#        return obj
+#    else
+#        return obj.verbatim()
+
+class Block
+    +init = (self, data):
+        self.data = data
+
+    stringify = (self, scan):
+        for x in self.data
+            stringify_(scan, x)
+ 
+#     def verbatim(self):
+#         return ''.join(map(verbatim_, self.data))
+ 
+    append = (self, node):
+        self.data.append(node)
+    
+    extend = (self, nodes):
+        self.data.extend(nodes)
+    
+    insert = (self, index, node):
+        self.data.insert(index, node)
+
+class URL
+    +init = (self, href):
+        self.href = href
+ 
+    stringify = (self, scan):
+        scan(body_escape(self.href))
+
+#     def verbatim(self):
+#         return self.href
+ 
+class Node
+    +init = (self, tag, data=null, attrs={}, options={}):
+        self.tag = tag
+        self.data = data
+        self.attrs = attrs
+        self.extra = options.get("extra", [])
+        self.space_sensitive = options.get("space_sensitive", self.tag == 'pre')
+        self.slash = options.get("slash", true)
+
+    stringify = (self, scan):
+        scan('<').left().left()
+        scan(self.tag)
+        for x in self.attrs.items()
+            name = x[0]
+            value = x[1]
+            scan.blank(' ', 2)
+            scan(name)
+            scan('="')
+            scan(attr_escape(value))
+            scan('"')
+        for item in self.extra
+            scan.blank(' ', 2)
+            scan(item)
+        scan.right()
+        if not self.data
+            if self.slash
+                scan('/>')
+            else
+                scan('>')
+            scan.blank('').right()
+        else
+            scan('>').left()
+            if not self.space_sensitive
+                scan.blank('')
+            for x in self.data
+                stringify_(scan, x)
+            if not self.space_sensitive
+                scan.blank('')
+            scan.right()('</')
+            scan(self.tag)
+            scan('>').right()
+
+    append = (self, node):
+        self.data.append(node)
+    
+    extend = (self, nodes):
+        self.data.extend(nodes)
+    
+    insert = (self, index, node):
+        self.data.insert(index, node)
+ 
+#     def verbatim(self):
+#         if self.data is None:
+#             return ''
+#         return ''.join(map(verbatim_, self.data))
+ 
+class Raw
+    +init = (self, string):
+        self.string = string
+
+    stringify = (self, scan):
+        scan(self.string)
+
+#    verbatim = (self):
+#        return self.string
+    
+# This attr_escape should work as long as attributes are correctly quoted.
+attr_escape = (attr):
+    if isinstance(attr, URL)
+        return attr_escape(attr.href)
+    sb = StringBuilder()
+    for c in attr
+        if c in attr_whitelist or ord(c) >= 256
+            sb.append(c)
+        else
+            sb.append("&#x")
+            x = ord(c).to_string(16).upper()
+            if x.length == 1
+                sb.append("0")
+            sb.append(x)
+            sb.append(";")
+    return sb.build()
+ 
+attr_whitelist = "".join([
+    "!*'();:@=+$,/?#[] ",
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZ",
+    "abcdefghijklmnopqrstuvwxyz",
+    "0123456789-_.~"])
+
+# This should be perfectly sufficient for escaping the body.
+body_escape = (text):
+    sb = StringBuilder()
+    for c in text
+        sb.append(escape_table.get(c, c))
+    return sb.build()
+
+escape_table = {
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#x27;",
+    "/": "&#x2F;"}
+ 
+ 
+# If you ever user this generator on user-generated content:
+# Validate URLs properly.
+# Do not let users insert custom attributes or tags.
+# Also be careful with Angular.js and such that re-interpret HTML. 
+
+# This thing doesn't handle URLs properly. It could, but there are few
+# questions about what to do about them.
+
+# The URLs scheme should be checked against a whitelist to check that an
+# URL is not used to attack the user.
+
+# Here was a tryout, but I'm thinking I'm overthinking it.
+#def validate_url(url, scheme_whitelist):
+#    if scheme_whitelist is None:
+#        scheme_whitelist = default_scheme_whitelist
+#    scheme = urlparse(url).scheme
+#    return scheme == '' or scheme in protocol_whitelist
+
+# Also this doesn't increase safety.
+# def validate_tag(x):
+#     return bool(re.match(r"^[0-9a-zA-Z\-_]+$", x))
+
+# Another alternative. possibly insufficient
+#    #def verify_url(self, url):
+#    #    return not url.lower().startswith('javascript:')
+
