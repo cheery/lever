@@ -38,6 +38,7 @@ module = Module(u'base', {
     u'false': false,
     u'path': pathobj.Path.interface,
     u'property': Property.interface,
+    u'Uint8Data': Uint8Data.interface,
     u'Uint8Array': Uint8Array.interface,
     u'Uint8Slice': Uint8Slice.interface,
     u'Uint8Builder': Uint8Builder.interface,

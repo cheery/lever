@@ -45,6 +45,13 @@ def main():
         description=win32_dist.__doc__)
     cmd.set_defaults(func=win32_dist)
 
+    cmd = subparsers.add_parser('update-html-docs',
+        help="Update HTML documentation",
+        description=update_html_docs.__doc__)
+    cmd.add_argument("--tag", type=str, default="latest",
+        help="Update doc/$tag instead of the doc/latest, should be done along new version releases.")
+    cmd.set_defaults(func=update_html_docs)
+
     args = parser.parse_args()
     return args.func(args)
 
@@ -234,6 +241,14 @@ def win32_dist(args):
 
     zf.close()
     print os.path.abspath(archive)
+
+
+def update_html_docs(args):
+    """
+        Updates the html docs at 'www/doc'. By default updates the 'latest'.
+    """
+    check_call(["./lever", "tools/update_html_docs.lc",
+        'doc', 'www/doc/' + args.tag ])
 
 if __name__=='__main__':
     main()
