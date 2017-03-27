@@ -73,6 +73,61 @@ write_file = (path, document):
     fd.write(stringify(document).utf8)
     fd.close()
 
+# These matching tools help when it's time to interpret
+# a texopic file.
+class Env
+    +init = (self, parent=null):
+        if parent
+            self.macros = Scope(parent.macros)
+            self.segments = Scope(parent.segments)
+            self.groups = Scope(parent.groups)
+            self.text = parent.text
+        else
+            self.macros = Scope()
+            self.segments = Scope()
+            self.groups = Scope()
+            self.text = null
+
+    +call = (self, obj, args...):
+        if isinstance(obj, Macro)
+            return self.macros(obj, args...)
+        elif isinstance(obj, str)
+            return self.text(obj, args...)
+        elif isinstance(obj, Segment)
+            return self.segments.invoke(obj.head, obj, args...)
+        elif isinstance(obj, Group)
+            return self.groups.invoke(obj.head, obj, args...)
+        else
+            assert false, repr(obj)
+
+class Scope
+    +init = (self, parent=null):
+        self.parent = parent
+        self.locals = {}
+
+    +call = (self, obj, args...):
+        return self.invoke(obj, obj, args...)
+
+    invoke = (self, obj, args...):
+        if obj
+            name = obj.name ++ "/" ++ obj.args.length.to_string()
+        else
+            name = null
+        try
+            func = self.locals[name]
+        except IndexError as e
+            if self.parent
+                return self.parent(args...)
+            raise e
+        return func(args...)
+
+    +getitem = (self, index, value):
+        return self.locals[index]
+
+    +setitem = (self, index, value):
+        self.locals[index] = value
+        return value
+
 parse_structure = (stream, macros, implicit_ending="auto"):
     output = []
     stack = null

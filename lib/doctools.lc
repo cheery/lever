@@ -7,6 +7,7 @@ macros = {
     segments = {
         "document/1": {capture = false},
         "title/0": {capture = false}
+        "source/0": {capture = true}
     }
     groups = {
         "interface/1": {separators = [

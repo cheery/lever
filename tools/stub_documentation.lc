@@ -19,8 +19,11 @@ main = (argv):
         for name in fields
             document.append( translate_meta( fields[name], [name] ) )
 
+        overwrite = fs.EXCL # aka. no
+        #overwrite = fs.TRUNC # aka. yes
+
         print("creating", doc_path)
-        fd = fs.open(doc_path, fs.EXCL | fs.CREAT | fs.WRONLY)
+        fd = fs.open(doc_path, overwrite | fs.CREAT | fs.WRONLY)
         fd.pwrite( texopic.stringify(document).utf8, 0 )
         fd.close()
 
@@ -38,10 +41,10 @@ translate_meta = (obj, macro_args...):
                     Segment(null, [link_reference(obj["extends"])])
                 ]),
                 GroupCell(Macro("summary", []), [
-                    Segment(null, ["TODO"])
+                    Segment(null, [not_documented])
                 ]),
                 GroupCell(Macro("description", []), [
-                    Segment(null, ["TODO"])
+                    Segment(null, [not_documented])
                 ]),
                 GroupCell(Macro("status", []), [
                     Segment(null, ["volatile"])
@@ -57,24 +60,24 @@ translate_meta = (obj, macro_args...):
             if "default" in arg
                 head.name = "optional"
                 head.args.append([arg["default"]])
-            args.append(GroupCell(head, [Segment(null, ["TODO"])]))
+            args.append(GroupCell(head, [Segment(null, [not_documented])]))
         if obj.get("is_variadic", false)
             args.append(GroupCell(Macro("is_variadic", []), []))
         return Group(
             Macro("function", macro_args),
             [
                 GroupCell(null, [
-                    Segment(null, [], Pre(json.write_string(obj["loc"])))
+                    Segment(Macro("source", []), [], Pre(json.write_string(obj["loc"])))
                 ])
             ] ++ args ++ [ 
                 GroupCell(Macro("returns", []), [
-                    Segment(null, ["TODO"])
+                    Segment(null, [not_documented])
                 ]),
                 GroupCell(Macro("summary", []), [
-                    Segment(null, ["TODO"])
+                    Segment(null, [not_documented])
                 ]),
                 GroupCell(Macro("description", []), [
-                    Segment(null, ["TODO"])
+                    Segment(null, [not_documented])
                 ]),
                 GroupCell(Macro("status", []), [
                     Segment(null, ["volatile"])
@@ -96,10 +99,10 @@ translate_meta = (obj, macro_args...):
             [
                 GroupCell(null, methods),
                 GroupCell(Macro("summary", []), [
-                    Segment(null, ["TODO"])
+                    Segment(null, [not_documented])
                 ]),
                 GroupCell(Macro("description", []), [
-                    Segment(null, ["TODO"])
+                    Segment(null, [not_documented])
                 ]),
                 GroupCell(Macro("status", []), [
                     Segment(null, ["volatile"])
@@ -112,17 +115,19 @@ translate_meta = (obj, macro_args...):
                 [
                     Segment(null, [obj["value"]])
                 ]))
+        else
+            data.append(GroupCell(Macro("interface", []),
+                [
+                    Segment(null, [link_reference(obj["interface"])])
+                ]))
         return Group(
             Macro("object", macro_args),
             data ++ [
-                GroupCell(Macro("interface", []), [
-                    Segment(null, [link_reference(obj["interface"])])
-                ]),
                 GroupCell(Macro("summary", []), [
-                    Segment(null, ["TODO"])
+                    Segment(null, [not_documented])
                 ]),
                 GroupCell(Macro("description", []), [
-                    Segment(null, ["TODO"])
+                    Segment(null, [not_documented])
                 ]),
                 GroupCell(Macro("status", []), [
                     Segment(null, ["volatile"])
@@ -130,6 +135,9 @@ translate_meta = (obj, macro_args...):
             ])
     else
         assert false, type
+
+not_documented = Macro("TODO", [])
+
 
 link_reference = (link):
     if not link[0]

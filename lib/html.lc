@@ -97,8 +97,8 @@ class Node
                 scan.blank('')
             for x in self.data
                 stringify_(scan, x)
-            if not self.space_sensitive
-                scan.blank('')
+            #if not self.space_sensitive
+            #    scan.blank('')
             scan.right()('</')
             scan(self.tag)
             scan('>').right()
