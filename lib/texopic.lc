@@ -115,7 +115,7 @@ class Scope
             name = null
         try
             func = self.locals[name]
-        except IndexError as e
+        except KeyError as e
             if self.parent
                 return self.parent(args...)
             raise e
