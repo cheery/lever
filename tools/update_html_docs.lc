@@ -18,62 +18,26 @@ main = (args):
 
     object_index = html.Node('ul', [], {"class":"list"})
 
+    index_page = null
+
     for page in docs
+        if page.name == "index"
+            index_page = page
+            page.summary = null
+            continue
+
         page.link = dst ++ (page.name ++ ".html")
+        page.index = object_index
 
         root = page_root()
         root.head.append(
             html.Node("title", ["Lever manual: " ++ page.name]))
         root.body.append(html.Node("h1", [
-            "Lever manual: " ++ page.name], {"class":"embed-header"}))
-
-        page.summary = []
+            "Manual: " ++ page.name], {"class":"embed-header"}))
+        page.summary = html.Node("p", ["not documented"])
 
         for node in page.body
-            if node.head and node.head.name == "document"
-                page.summary = inline = to_html(node.data)
-                if node.data.length > 0
-                    root.body.append(html.Node("p", inline))
-            else
-                item_name = null
-                if isinstance(node, texopic.Group) and node.head.name == "function"
-                    item_name = texopic.verbatim(node.head.args[0])
-                    object_index.append(html.Node("li", [
-                        html.Node("a", [
-                            page.name ++ "." ++ item_name
-                        ], {"class": "name", "href":page.name ++ ".html#" ++ item_name}),
-                        get_summary(node)
-                    ]))
-                if isinstance(node, texopic.Group) and node.head.name == "interface"
-                    item_name = texopic.verbatim(node.head.args[0])
-                    object_index.append(html.Node("li", [
-                        html.Node("a", [
-                            page.name ++ "." ++ item_name
-                        ], {"class": "name", "href":page.name ++ ".html#" ++ item_name}),
-                        get_summary(node)
-                    ]))
-                if isinstance(node, texopic.Group) and node.head.name == "multimethod"
-                    item_name = texopic.verbatim(node.head.args[0])
-                    object_index.append(html.Node("li", [
-                        html.Node("a", [
-                            page.name ++ "." ++ item_name
-                        ], {"class": "name", "href":page.name ++ ".html#" ++ item_name}),
-                        get_summary(node)
-                    ]))
-                if isinstance(node, texopic.Group) and node.head.name == "object"
-                    item_name = texopic.verbatim(node.head.args[0])
-                    object_index.append(html.Node("li", [
-                        html.Node("a", [
-                            page.name ++ "." ++ item_name
-                        ], {"class": "name", "href":page.name ++ ".html#" ++ item_name}),
-                        get_summary(node)
-                    ]))
-                attr = {}
-                if item_name
-                    attr["id"] = item_name
-                root.body.append(html.Node("pre", [
-                    texopic.stringify([node])
-                    ], attr))
+            html_gen(node, root, root.body, page)
 
         page_finalize(root, src ++ page.name ++ ".text")
 
@@ -92,17 +56,25 @@ main = (args):
     root.head.append(html.Node("script", [], {src="../../list.min.js"}))
 
     root.body.append(html.Node("h1", [
-        "Lever documentation index"], {"class":"embed-header"}))
+        "Documentation index"], {"class":"embed-header"}))
 
-    pages = html.Node('ul', [])
+    module_index = html.Node('table', [])
+
     for page in docs
-        pages.append(html.Node('li', [
-            html.Node('a', [page.name],
+        if not page.summary
+            continue
+        module_index.append(html.Node('tr', [
+            html.Node('td', [ html.Node('a', [page.name],
                 {
                     href = page.name ++ ".html"
                 #href=page.link.relpath(index_link).to_string()
-                })
+                })]),
+            html.Node('td', [page.summary])
             ]))
+
+    intro = []
+    for node in index_page.body
+        html_gen(node, root, intro, page)
 
     root.body.append(html.Node('div', [
         html.Raw('
@@ -111,11 +83,10 @@ main = (args):
             <input id="tab-search" type="radio" name="tab-group"/>
             <label for="tab-search">Reference</label>
         '),
-        html.Node("div", [
+        html.Node("div", intro ++ [
             html.Node('h2', ["Modules"]),
-            html.Node('p', ["The docs for the language can be found from the repository (they are the '.text' files). They will be moved here once someone gets to do it."]),
-            html.Node('p', ["Please note that the latest documentation is the latest documentation. This is what you get if you compile from the repository. The 0.8.0 is really old release by now, and it didn't have online documentation."]),
-            pages,
+            module_index,
+            html.Node('img', null, {src="lever-see-saw.png", style="margin: 0 auto; display: block"}),
         ], {id="module-tab-content"}),
         html.Node('div', [ 
             html.Node('input', null, {"class":"search", "placeholder":"Search"}),
@@ -131,16 +102,129 @@ main = (args):
     fd.write(markup.utf8)
     fd.close()
 
+html_gen = texopic.Env()
+
+html_gen.text = (text, root, out, page):
+    out.append(text)
+
+html_gen.segments[null] = (segment, root, out, page):
+    data = []
+    for node in segment.data
+        html_gen(node, root, data, page)
+    if data.length > 0
+        out.append(html.Node('p', data))
+    if segment.pre
+        out.append(html.Node('pre', [segment.pre.text]))
+
+html_gen.macros["i/1"] = (macro, root, out, page):
+    data = []
+    for node in macro.args[0]
+        html_gen(node, root, data, page)
+    out.append(html.Node('i', data))
+
+html_gen.segments["document/1"] = (seg, root, out, page):
+    if seg.data.length > 0
+        page.summary = inline = to_html(seg.data)
+        root.body.append(html.Node("p", inline))
+
+html_gen.groups["interface/1"] = (group, root, out, page):
+    name = texopic.verbatim(group.head.args[0])
+    page.index.append(html.Node("li", [
+        html.Node("a",
+            [page.name ++ "." ++ name],
+            {"class": "name", "href":page.name ++ ".html#" ++ name}),
+        get_summary(group)
+    ]))
+    out.append(html.Node("pre",
+        [texopic.stringify([group])],
+        {"id": name}))
+
+html_gen.groups["function/1"] = (group, root, out, page):
+    name = texopic.verbatim(group.head.args[0])
+    page.index.append(html.Node("li", [
+        html.Node("a", [
+            page.name ++ "." ++ name
+        ], {"class": "name", "href":page.name ++ ".html#" ++ name}),
+        get_summary(group)
+    ]))
+    out.append(html.Node("pre",
+        [texopic.stringify([group])],
+        {"id": name}))
+
+html_gen.groups["multimethod/1"] = (group, root, out, page):
+    name = texopic.verbatim(group.head.args[0])
+    page.index.append(html.Node("li", [
+        html.Node("a", [
+            page.name ++ "." ++ name
+        ], {"class": "name", "href":page.name ++ ".html#" ++ name}),
+        get_summary(group)
+    ]))
+    out.append(html.Node("pre",
+        [texopic.stringify([group])],
+        {"id": name}))
+
+html_gen.groups["object/1"] = (group, root, out, page):
+    name = texopic.verbatim(group.head.args[0])
+    value     = null
+    interface = null
+    summary   = null
+    status    = null
+    content = []
+    for cell in group.data
+        if cell.head
+            if cell.head.name == "value"
+                value = html.Node("span", to_html(force_horizontal(cell.data)))
+            elif cell.head.name == "interface"
+                interface = to_html(force_horizontal(cell.data))
+            elif cell.head.name == "summary"
+                summary = to_summary(cell.data)
+            elif cell.head.name == "description"
+                content.extend(vertical_html(cell.data))
+            elif cell.head.name == "status"
+                status = html.Node("div", to_html(force_horizontal(cell.data)), {"class":"status"})
+                content.append(status)
+                status = cell.data
+    out.append(html.Node("div", content, {"id": name, "class": "reference-box"}))
+
+    ref = [
+        html.Node("a", [page.name ++ "." ++ name],
+            {"class": "name reference", "href":page.name ++ ".html#" ++ name})]
+    if value
+        ref.extend([" = ", value])
+    elif interface
+        ref.extend([" : "] ++ interface)
+    if summary
+        ref.append(summary)
+    else
+        ref.append(to_summary(null))
+    page.index.append(html.Node("li", ref))
+
+    content.insert(0, html.Node("div", ref))
+
+
 
 get_summary = (group):
-    data = [html.Node("p", ["not documented"])]
     for cell in group.data
         if cell.head and cell.head.name == "summary"
-            if cell.data.length == 1 and texopic.verbatim(cell.data[0].data) == "TODO"
-                continue
-            data = vertical_html(cell.data)
-    return html.Node("div", data, {"class": "summary"})
+            return to_summary(cell.data)
+    return to_summary(null)
 
+to_summary = (summary):
+    if not summary
+        data = [html.Node("p", ["not documented"])]
+    elif summary.length == 1 and texopic.verbatim(summary[0].data) == "TODO"
+        data = [html.Node("p", ["not documented"])]
+    else
+        data = vertical_html(summary)
+    return html.Node("div", data, {"class": "summary"})    
+
+force_horizontal = (group_data):
+    result = []
+    for segment in group_data
+        if segment.head
+            result.append(segment.head)
+        result.extend(segment.data)
+    return result
 
 vertical_html = (data):
     out = []
@@ -154,9 +238,23 @@ to_html = (data):
     for item in data
         if isinstance(item, str)
             out.append(item)
+        elif item.name == "ref" and item.args.length == 1
+            name = texopic.verbatim(item.args[0])
+            out.append(html.Node("i", [name]))
+        elif item.name == "ref" and item.args.length == 2
+            page = texopic.verbatim(item.args[0])
+            name = texopic.verbatim(item.args[1])
+
+            out.append(html.Node("a", [name], {"href":link_to(page, name), "class":"reference"}))
         else
             out.append(texopic.verbatim(item))
     return out
+
+link_to = (page, name):
+    if page.startswith("doc:/")
+        return page[5 .:] ++ ".html#" ++ name
+    else
+        return page ++ ".html#" ++ name
 
 page_root = ():
     head = html.Node("head", [
