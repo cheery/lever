@@ -137,3 +137,56 @@ ul {
 pre {
     overflow-x: overlay;
 }
+
+/* The tab system in the module index */
+#tabbed-content > input {
+    visibility: hidden;
+    height: 2.5em;
+}
+
+#tabbed-content label {
+    display: block; float: left;
+    line-height: 2.5em;
+    background-color: #ccc;
+    padding: 0 1.5em;
+    margin-right: 0.25em;
+    margin-top: 1ex;
+}
+
+#tabbed-content input:hover + label {
+    background-color: #ddd;
+}
+
+#tabbed-content input:checked + label {
+    background-color: #aaa;
+}
+
+#tabbed-content > div {
+    display: none;
+}
+
+#tabbed-content input#tab-module:checked ~ #module-tab-content,
+#tabbed-content input#tab-search:checked ~ #search-tab-content {
+    clear: both;
+    display: block;
+}
+
+input.search {
+    margin-top: 1em;
+}
+
+/* Something to point out reference boxes apart. */
+div.reference-box {
+    margin: 1em 0;
+    padding: 1em;
+    border: 0.4mm solid #949e85;
+}
+
+a.reference {
+    text-decoration: none;
+}
+
+.status::before {
+    content: "status: ";
+    font-variant: small-caps;
+}
