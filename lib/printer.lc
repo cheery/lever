@@ -143,8 +143,8 @@ class Scanner
     right = (self):
         return self.scan(Right())
 
-    blank = (self, text, indent=0):
-        return self.scan(Blank(text, indent))
+    blank = (self, text, indent=0, forceable=true):
+        return self.scan(Blank(text, indent, forceable))
 
     +call = text = (self, text):
         return self.scan(Text(text))
@@ -205,9 +205,11 @@ class Printer
         elif isinstance(x, Right)
             if self.layout.parent
                 self.layout = self.layout.parent
-            return 0
+                self.spaces = self.layout.spaces # hmm.. this was missing and this
+                                                 # was a fix to it. I wonder if
+            return 0                             # it was correct fix.
         elif isinstance(x, Blank)
-            if x.size < 0 or self.spaceleft < x.size or self.layout.force_break
+            if x.size < 0 or self.spaceleft < x.size or (self.layout.force_break and x.forceable)
                 self.spaces = self.layout.spaces - x.indent
                 self.spaceleft = self.spaces
                 self.result.append("\n")
@@ -254,9 +256,10 @@ class Right
         null
 
 class Blank
-    +init = (self, text, indent):
+    +init = (self, text, indent, forceable):
         self.text = text
         self.indent = indent
+        self.forceable = forceable
         self.size = 0
         self.length = text.length
 

@@ -19,7 +19,7 @@ stringify = (obj, margin=70):
 
 stringify_ = (scan, obj):
     if obj == " "
-        scan.blank(' ', 0) #forceable=false)
+        scan.blank(' ', 0, false)
     elif isinstance(obj, str)
         scan(body_escape(obj))
     else
@@ -93,8 +93,8 @@ class Node
             scan.blank('').right()
         else
             scan('>').left()
-            if not self.space_sensitive
-                scan.blank('')
+            #if not self.space_sensitive
+            #    scan.blank('')
             for x in self.data
                 stringify_(scan, x)
             #if not self.space_sensitive

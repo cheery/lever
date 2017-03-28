@@ -1,4 +1,4 @@
-import doctools, texopic, html, fs
+import doctools, texopic, html, fs, json
 
 main = (args):
     src = path(args[1])
@@ -36,8 +36,13 @@ main = (args):
             "Manual: " ++ page.name], {"class":"embed-header"}))
         page.summary = html.Node("p", ["not documented"])
 
+        context = object();
+            name = page.name
+            type = "module"
+            prefix = ""
+
         for node in page.body
-            html_gen(node, root, root.body, page)
+            html_gen(node, root, root.body, page, context)
 
         page_finalize(root, src ++ page.name ++ ".text")
 
@@ -127,29 +132,178 @@ html_gen.segments["document/1"] = (seg, root, out, page):
         page.summary = inline = to_html(seg.data)
         root.body.append(html.Node("p", inline))
 
-html_gen.groups["interface/1"] = (group, root, out, page):
+html_gen.groups["interface/1"] = (group, root, out, page, context):
     name = texopic.verbatim(group.head.args[0])
-    page.index.append(html.Node("li", [
-        html.Node("a",
-            [page.name ++ "." ++ name],
-            {"class": "name", "href":page.name ++ ".html#" ++ name}),
-        get_summary(group)
-    ]))
-    out.append(html.Node("pre",
-        [texopic.stringify([group])],
-        {"id": name}))
+    context = object();
+        heading = html.Node("div", [
+            "class ",
+            html.Node("a", [name], {
+                "href": "#" ++ context.prefix ++ name,
+                "class": "name reference"})
+        ])
+        name = context.prefix ++ name
+        type = "interface"
+        prefix = name ++ "."
+    data = [context.heading]
+    index = html.Node("li", [])
+    page.index.append(index)
+    summary = []
 
-html_gen.groups["function/1"] = (group, root, out, page):
+    for cell in group.data
+        signature = texopic.signature(cell.head)
+        if signature == "extends/0"
+            context.heading.append(" extends ")
+            for node in force_horizontal(cell.data)
+                html_gen(node, root, context.heading, page, context)
+        elif signature == "summary/0"
+            summary = []
+            for node in cell.data
+                html_gen(node, root, summary, page, context)
+            data.extend(summary)
+        elif signature == "description/0"
+            for node in cell.data
+                html_gen(node, root, data, page, context)
+        elif signature == "members/0"
+            for node in cell.data
+                html_gen(node, root, data, page, context)
+        elif signature == "status/0"
+            status = html.Node("div", [], {"class":"status"})
+            for node in force_horizontal(cell.data)
+                html_gen(node, root, status, page, context)
+            data.append(status)
+        
+    out.append(html.Node("div", data, {
+        "id": context.name,
+        "class": "reference-box"})) #TODO: name it a reference-card ?
+
+    index.extend([
+        html.Node("a", [context.name], {
+            "class": "name reference",
+            "href":page.name ++ ".html#" ++ name}),
+        " ", html.Node("sub", ["class"]),
+        html.Node("div", summary, {"class": "summary"})    
+    ])
+
+html_gen.groups["function/1"] = (group, root, out, page, context):
     name = texopic.verbatim(group.head.args[0])
-    page.index.append(html.Node("li", [
-        html.Node("a", [
-            page.name ++ "." ++ name
-        ], {"class": "name", "href":page.name ++ ".html#" ++ name}),
-        get_summary(group)
-    ]))
-    out.append(html.Node("pre",
-        [texopic.stringify([group])],
-        {"id": name}))
+    context = object();
+        arglist = html.Node("span", [])
+        heading = html.Node("div", [
+            html.Node("a", [name], {
+                "href": "#" ++ context.prefix ++ name,
+                "class": "name reference"}),
+            "(", arglist, ")"
+        ])
+        arg_ref = html.Node("table", [], {"class": "arg-ref"})
+        name = context.prefix ++ name
+        type = "interface"
+        prefix = name ++ "."
+    data = [context.heading, context.arg_ref]
+    index = html.Node("li", [])
+    page.index.append(index)
+    summary = []
+
+    for cell in group.data
+        signature = texopic.signature(cell.head)
+        if not signature
+            for node in cell.data
+                html_gen(node, root, data, page, context)
+        elif signature == "summary/0"
+            summary = []
+            for node in cell.data
+                html_gen(node, root, summary, page, context)
+            data.extend(summary)
+        elif signature == "description/0"
+            for node in cell.data
+                html_gen(node, root, data, page, context)
+        elif signature == "arg/1" or signature == "optional/2"
+            argname = texopic.verbatim(cell.head.args[0])
+            if context.arglist.data.length > 0
+                context.arglist.append(", ")
+            context.arglist.extend([argname])
+            if signature == "optional/2"
+                argval = [" = "]
+                for node in cell.head.args[1]
+                    html_gen(node, root, argval, page, context)
+                context.arglist.extend(argval)
+            block = []
+            for node in cell.data
+                html_gen(node, root, block, page, context)
+            context.arg_ref.append(html.Node("tr", [
+                    html.Node("td", [argname, " "]),
+                    html.Node("td", block)
+            ]))
+        elif signature == "arg/2" or signature == "optional/3"
+            argname = texopic.verbatim(cell.head.args[0])
+            typename = []
+            for node in cell.head.args[1]
+                html_gen(node, root, typename, page, context)
+            if context.arglist.data.length > 0
+                context.arglist.append(", ")
+            context.arglist.extend([argname, " : "] ++ typename)
+            if signature == "optional/3"
+                argval = [" = "]
+                for node in cell.head.args[2]
+                    html_gen(node, root, argval, page, context)
+                context.arglist.extend(argval)
+            block = []
+            for node in cell.data
+                html_gen(node, root, block, page, context)
+            context.arg_ref.append(html.Node("tr", [
+                    html.Node("td", [argname, " "]),
+                    html.Node("td", block)
+            ]))
+        elif signature == "is_variadic/0"
+            context.arglist.append("...")
+        elif signature == "returns/0"
+            block = []
+            for node in cell.data
+                html_gen(node, root, block, page, context)
+            context.arg_ref.append(html.Node("tr", [
+                    html.Node("td", ["returns "]),
+                    html.Node("td", block)
+            ]))
+        elif signature == "status/0"
+            status = html.Node("div", [], {"class":"status"})
+            for node in force_horizontal(cell.data)
+                html_gen(node, root, status, page, context)
+            data.append(status)
+        else
+            assert false, signature
+        
+    out.append(html.Node("div", data, {
+        "id": context.name,
+        "class": "reference-box"})) #TODO: name it a reference-card ?
+
+    index.extend([
+        html.Node("a", [context.name], {
+            "class": "name reference",
+            "href":page.name ++ ".html#" ++ context.name}),
+        "(", context.arglist, ")",
+        html.Node("div", summary, {"class": "summary"})    
+    ])
+    index.append(html.Node("div", summary, {"class": "summary"}))
+
+html_gen.segments["source/0"] = (seg, root, out, page, context):
+    loc = json.read_string(seg.pre.text)
+    first_line = loc["start"]["lno"]
+    src = [loc["source"], ":", first_line.to_string()]
+
+    if loc["source"].startswith("builtin:/")
+        src_link = "https://github.com/cheery/lever/blob/master/runtime/"
+            ++ loc["source"][9 .:] ++ "#L" ++ first_line.to_string()
+    elif loc["source"].startswith("../") # TODO: fix this elsewhere.
+        src_link = "https://github.com/cheery/lever/blob/master/lib/"
+            ++ loc["source"][3 .:] ++ "#L" ++ first_line.to_string()
+        src = [loc["source"][3 .:], ":", first_line.to_string()]
+    else
+        src_link = "https://github.com/cheery/lever/blob/master/lib/"
+            ++ loc["source"] ++ "#L" ++ first_line.to_string()
+
+    context.heading.insert(0,
+        html.Node("div", [
+            html.Node("a", src, {"href": src_link})
+        ], {"class": "source-link"}))
 
 html_gen.groups["multimethod/1"] = (group, root, out, page):
     name = texopic.verbatim(group.head.args[0])
@@ -157,6 +311,7 @@ html_gen.groups["multimethod/1"] = (group, root, out, page):
         html.Node("a", [
             page.name ++ "." ++ name
         ], {"class": "name", "href":page.name ++ ".html#" ++ name}),
+        " ", html.Node("sub", ["multimethod"]),
         get_summary(group)
     ]))
     out.append(html.Node("pre",
@@ -202,6 +357,18 @@ html_gen.groups["object/1"] = (group, root, out, page):
     content.insert(0, html.Node("div", ref))
 
 
+html_gen.macros["ref/1"] = (macro, root, out, page):
+    name = texopic.verbatim(macro.args[0])
+    out.append(html.Node("i", [name]))
+
+html_gen.macros["ref/2"] = (macro, root, out, page):
+    page = texopic.verbatim(macro.args[0])
+    name = texopic.verbatim(macro.args[1])
+    out.append(html.Node("a", [name],
+        {"href":link_to(page, name), "class":"reference"}))
+
+html_gen.macros["TODO/0"] = (macro, root, out, page):
+    out.append("not documented")
 
 get_summary = (group):
     for cell in group.data
@@ -302,7 +469,7 @@ page_finalize = (root, src):
     # If you ask me what these are, I answer they are colors.
     spans = []
     for color in colors
-        spans.append(html.Node("span", [], {
+        spans.append(html.Node("span", [" "], {
             style = "background-color: " ++ color ++ "; width: 1em; height: 1em; display: inline-block"
         }))
 

@@ -190,3 +190,11 @@ a.reference {
     content: "status: ";
     font-variant: small-caps;
 }
+
+table.arg-ref td:first-child {
+    text-align: right;
+}
+
+.source-link {
+    float: right;
+}

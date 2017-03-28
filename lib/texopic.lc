@@ -109,10 +109,7 @@ class Scope
         return self.invoke(obj, obj, args...)
 
     invoke = (self, obj, args...):
-        if obj
-            name = obj.name ++ "/" ++ obj.args.length.to_string()
-        else
-            name = null
+        name = signature(obj)
         try
             func = self.locals[name]
         except KeyError as e
@@ -127,6 +124,12 @@ class Scope
     +setitem = (self, index, value):
         self.locals[index] = value
         return value
+
+signature = (macro):
+    if macro
+        return macro.name ++ "/" ++ macro.args.length.to_string()
+    else
+        return null
 
 parse_structure = (stream, macros, implicit_ending="auto"):
     output = []
