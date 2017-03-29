@@ -11,42 +11,103 @@ img {
     height: auto;
 }
 
-ul.nav {
-    margin: 0;
-    padding: 0;
-    font-variant: small-caps;
+@media (max-width: 80ex) {
+    ul.nav {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+    }
+    ul.nav li {
+        margin: 0;
+        padding: 0;
+    }
+    ul.nav li:first-child {
+        border-bottom: 0.2mm solid;
+        margin-bottom: 0.1em;
+    }
+    ul.nav li + li a {
+        display: block;
+        padding-top: 0.5em;
+        padding-bottom: 0.5em;
+        margin-bottom: 0.1em;
+        border-top: 0.2mm solid;
+        border-bottom: 0.2mm solid;
+        text-decoration: none;
+        font-variant: small-caps;
+    }
+    ul.nav {
+        margin-bottom: 0.5em;
+    }
+    .intro {
+        margin-top: 1em;
+    }
+
+    /* By the time I got the hamburger menu to work, I grew tired to it.
+    input#nav-trigger {
+        position: absolute;
+        clip: rect(0,0,0,0);
+    }
+    label[for="nav-trigger"] {
+        float: right;
+        margin-top: 0.5em;
+        margin-right: 0.5em;
+        width: 30px;
+        height: 30px;
+        cursor: pointer;
+        background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' version='1.1' x='0px' y='0px' width='30px' height='30px' viewBox='0 0 30 30' enable-background='new 0 0 30 30' xml:space='preserve'><rect width='30' height='6'/><rect y='24' width='30' height='6'/><rect y='12' width='30' height='6'/></svg>");
+        background-size: contain;
+    }
+    ul.nav li + li {
+        display: none;
+    }
+    input#nav-trigger:checked ~ ul.nav li + li {
+        display: block !important;
+    }*/
 }
 
-ul.nav > li {
-    display: inline;
-}
+@media (min-width: 80ex) {
+    ul.nav {
+        margin: 0;
+        padding: 0;
+        font-variant: small-caps;
+    }
 
-ul.nav > li + li {
-    margin-left: 10px;
-}
+    ul.nav > li {
+        display: inline;
+    }
 
-ul.nav > li > a {
-    display: inline-block;
-}
+    ul.nav > li + li {
+        margin-left: 10px;
+    }
 
-ul.nav > li > a > img {
-    vertical-align: middle;
-}
+    ul.nav > li > a {
+        display: inline-block;
+    }
 
-a.nav_button {
-    background: #fdfdfa;
-    color: #251115;
-    font-size: 100%;
-    padding: 2px 4px;
-    border-radius: 1px;
-    text-align: center;
-    border: solid 1px;
-    text-decoration: none;
-    cursor: pointer;
-}
+    ul.nav > li > a > img {
+        vertical-align: middle;
+    }
 
-a.nav_button:hover {
-    background: #F8D673;
+    a.nav_button {
+        background: #fdfdfa;
+        color: #251115;
+        font-size: 100%;
+        padding: 2px 4px;
+        border-radius: 1px;
+        text-align: center;
+        border: solid 1px;
+        text-decoration: none;
+        cursor: pointer;
+    }
+
+    a.nav_button:hover {
+        background: #F8D673;
+    }
+
+    input#nav-trigger,
+    label[for="nav-trigger"] {
+        display: none;
+    }
 }
 
 .intro {
