@@ -59,7 +59,8 @@ def Path_relpath(dst, rel):
                 C = i
                 break
         result = []
-        if rel.pathseq[C] != u"": # Avoids adding the ".." if the rel ended with a slash.
+        # Condition avoids adding the ".." if the rel ended with a slash.
+        if C < len(rel.pathseq) and rel.pathseq[C] != u"": 
             for n in range(C, len(rel.pathseq)):
                 result.append(u"..")
         for m in range(C, len(dst.pathseq)):
