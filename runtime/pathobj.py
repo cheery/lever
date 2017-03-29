@@ -135,6 +135,12 @@ def pathcmp(a, b):
     n = len(b.pathseq)
     l = min(m, n)
     for i in range(0, l):
+        if a.pathseq[i] == u"" and b.pathseq[i] == u"":
+            return 0
+        if a.pathseq[i] == u"":
+            return 1
+        if b.pathseq[i] == u"":
+            return 2
         if a.pathseq[i] != b.pathseq[i]:
             break
     else:
