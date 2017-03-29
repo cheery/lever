@@ -34,7 +34,7 @@ main = (args):
             html.Node("title", ["Lever manual: " ++ page.name]))
         root.body.append(html.Node("h1", [
             "Manual: " ++ page.name], {"class":"embed-header"}))
-        page.summary = html.Node("p", ["not documented"])
+        page.summary = [html.Node("p", ["not documented"])]
 
         context = object();
             name = page.name
@@ -63,18 +63,18 @@ main = (args):
     root.body.append(html.Node("h1", [
         "Documentation index"], {"class":"embed-header"}))
 
-    module_index = html.Node('table', [])
+    module_index = html.Node('table', [], {"class": "module-index"})
 
     for page in docs
         if not page.summary
             continue
         module_index.append(html.Node('tr', [
-            html.Node('td', [ html.Node('a', [page.name],
+            html.Node('td', [html.Node('a', [page.name],
                 {
                     href = page.name ++ ".html"
                 #href=page.link.relpath(index_link).to_string()
                 })]),
-            html.Node('td', [page.summary])
+            html.Node('td', page.summary)
             ]))
 
     intro = []
@@ -127,7 +127,10 @@ html_gen.macros["i/1"] = (macro, root, out, page):
         html_gen(node, root, data, page)
     out.append(html.Node('i', data))
 
-html_gen.segments["document/1"] = (seg, root, out, page):
+html_gen.macros["/0"] = (macro, root, out, page):
+    out.append("#")
+
+html_gen.segments["module/1"] = (seg, root, out, page):
     if seg.data.length > 0
         page.summary = inline = []
         for node in seg.data

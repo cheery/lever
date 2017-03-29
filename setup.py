@@ -233,6 +233,7 @@ def win32_dist(args):
     include("VERSION")
     include_dir("app")
     include_dir("lib")
+    include_dir("doc")
 
     include_dir("samples")
     include_dir("headers")

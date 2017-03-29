@@ -1,0 +1,186 @@
+#module{doc:/doctools}
+Describes how the documentation tools work in Lever. Not
+complete or comprehensive description.
+
+Lever's documentation tools supports an upwards workflow
+where the documentation follows the source code. This helps
+to ensure that the documentation is indeed accurate
+documentation and not merely good wishes.
+
+Comprehensive and good documentation is a very different thing
+than the source code, therefore the source code and
+documentation remain in different files. The documentation
+is contained in the 'doc' -directory that is copied along
+into the runtime distribution.
+
+The documentation is accessible to runtime, although the
+tools to retrieve and read documentation in REPL do not
+currently exist.
+
+Documentation is written in texopic -language. The language
+is remotely similar with XML or HTML but has an exception
+that it differentiates between vertical and horizontal
+elements in the text. The details about the language will
+appear in the texopic module docs.
+
+A single documentation file functions as both a manual and a
+reference. It is usable as both with searching, indexing and
+filtering tools.
+
+The appropriate reference cards are pointed out by groups
+within the text. The cards contain lot of information that
+is treated appropriately.
+
+The description of all fields is not completed.
+
+#begin{object}{macros}
+#interface #ref{doc:/base}{dict}
+
+#summary JSON-compatible structure that contains a listing
+about all the Texopic segments and groups recognized by doctools.
+
+#description Is not containing the recognized macros. This
+is useful in combination with the texopic.read_file.
+
+#status volatile
+#end{object}
+
+Since Lever is a very amenable language for change it is
+important to communicate when things may change. Sometimes
+it may even require that we know how and why things change.
+For this reason we have a 'status/0' group separator that is
+present in all reference card groups.
+
+If the status field is missing, it means that the details of
+the object described in the reference are highly stable. The
+changes of such function are only allowed after a major
+version change. Changes into such details may require a
+transition time to be scheduled.
+
+The documentation generator automatically adds #;status
+volatile into every reference card. This means that the
+author reserves the option to change the interface and that
+only the exact version or even an exact git commit is
+required for the program that uses this function.
+
+Volatile status is meant for the situation where the status
+of a specific interface is not determined. Another status,
+internal, can be used to point out that the documented item
+is an internal implementation detail not meant for external
+use. Relying on such features require same measurements as
+if the status was 'volatile'.
+
+
+#begin{function}{get_block}
+#source ##
+    {"source":"../doctools.lc","start":{"col":12,"lno":194},"stop":{"col":0,"lno":207}}
+#arg{a} #TODO
+#arg{b} #TODO
+#returns #TODO
+#summary #TODO
+#description #TODO
+#status volatile
+#end{function}
+
+#begin{function}{get_link}
+#source ##
+    {"source":"../doctools.lc","start":{"col":11,"lno":207},"stop":{"col":0,"lno":217}}
+#arg{a} #TODO
+#optional{b}{null} #TODO
+#returns #TODO
+#summary #TODO
+#description #TODO
+#status volatile
+#end{function}
+
+#begin{function}{get_module_index}
+#source ##
+    {"source":"../doctools.lc","start":{"col":19,"lno":87},"stop":{"col":0,"lno":91}}
+#arg{a} #TODO
+#optional{b}{null} #TODO
+#returns #TODO
+#summary #TODO
+#description #TODO
+#status volatile
+#end{function}
+
+#begin{function}{get_scope_index}
+#source ##
+    {"source":"../doctools.lc","start":{"col":18,"lno":64},"stop":{"col":0,"lno":87}}
+#arg{a} #TODO
+#optional{b}{null} #TODO
+#returns #TODO
+#summary #TODO
+#description #TODO
+#status volatile
+#end{function}
+
+#begin{object}{import}
+#interface #ref{doc:/base}{Import}
+#summary #TODO
+#description #TODO
+#status volatile
+#end{object}
+
+#begin{function}{import_all_modules}
+#source ##
+    {"source":"../doctools.lc","start":{"col":21,"lno":49},"stop":{"col":0,"lno":64}}
+#arg{a} #TODO
+#returns #TODO
+#summary #TODO
+#description #TODO
+#status volatile
+#end{function}
+
+#begin{function}{is_function}
+#source ##
+    {"source":"../doctools.lc","start":{"col":14,"lno":153},"stop":{"col":0,"lno":158}}
+#arg{a} #TODO
+#returns #TODO
+#summary #TODO
+#description #TODO
+#status volatile
+#end{function}
+
+#begin{object}{name}
+#value "doctools"
+#summary #TODO
+#description #TODO
+#status volatile
+#end{object}
+
+#begin{function}{scan}
+#source ##
+    {"source":"../doctools.lc","start":{"col":7,"lno":91},"stop":{"col":0,"lno":153}}
+#arg{a} #TODO
+#arg{b} #TODO
+#arg{c} #TODO
+#arg{d} #TODO
+#returns #TODO
+#summary #TODO
+#description #TODO
+#status volatile
+#end{function}
+
+#begin{function}{scan_function}
+#source ##
+    {"source":"../doctools.lc","start":{"col":16,"lno":158},"stop":{"col":0,"lno":194}}
+#arg{a} #TODO
+#arg{b} #TODO
+#returns #TODO
+#summary #TODO
+#description #TODO
+#status volatile
+#end{function}
+
+#begin{function}{try_getattr}
+#source ##
+    {"source":"../doctools.lc","start":{"col":14,"lno":217},"stop":{"col":22,"lno":221}}
+#arg{a} #TODO
+#arg{b} #TODO
+#optional{c}{null} #TODO
+#returns #TODO
+#summary #TODO
+#description #TODO
+#status volatile
+#end{function}

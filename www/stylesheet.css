@@ -198,3 +198,7 @@ table.arg-ref td:first-child {
 .source-link {
     float: right;
 }
+
+table.module-index tr {
+    vertical-align: top;
+}

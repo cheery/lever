@@ -5,7 +5,7 @@ doc = path("doc:/doctools")
 # Syntax of a doc file.
 macros = {
     segments = {
-        "document/1": {capture = false},
+        "module/1": {capture = false},
         "title/0": {capture = false}
         "source/0": {capture = true}
     }
