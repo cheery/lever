@@ -59,8 +59,9 @@ def Path_relpath(dst, rel):
                 C = i
                 break
         result = []
-        for n in range(C, len(rel.pathseq)):
-            result.append(u"..")
+        if rel.pathseq[C] != u"": # Avoids adding the ".." if the rel ended with a slash.
+            for n in range(C, len(rel.pathseq)):
+                result.append(u"..")
         for m in range(C, len(dst.pathseq)):
             result.append(dst.pathseq[m])
         return Path(PosixPrefix(u"", False), result[:])
@@ -351,45 +352,43 @@ def is_absolute(pathobj):
     return True
 
 def stringify(path, nt=False):
-    if isinstance(path, String):
-        path = parse(path.string)
-    if not isinstance(path, Path):
-        raise OldError(u"expected a path object")
+    path = to_path(path)
     prefix = path.prefix
+    pathseq = list(path.pathseq)
     if isinstance(prefix, URLPrefix):
         string = prefix.protocol
         if len(string) > 0:
             string += u":"
-        if nt and string == u"":
-            string += ur"\\" + prefix.domain + u"\\" 
+        if nt and string == u"":             # Turns //name/ to NT UNC path.
+            string += ur"\\" + prefix.domain # I am not sure if this is the
+            if len(pathseq) == 0:            # correct action.
+                pathseq.append(u"") # Adds a slash.
         else:
             string += ur"//" + prefix.domain
-            if len(path.pathseq) > 0:
-                string += u"/"
-        string += stringify_pathseq(path.pathseq, nt)
-        return rstring.assert_str0(string)
+        pathseq.insert(0, string)
     elif isinstance(prefix, PosixPrefix):
         if prefix.is_absolute:
-            string = stringify_pathseq([u""] + path.pathseq, nt)
-        elif len(path.pathseq) > 0 and path.pathseq[0].count(u":") > 0:
-            string = stringify_pathseq([u"."] + path.pathseq, nt)
-        else:
-            string = stringify_pathseq(path.pathseq, nt)
-        if string == u"":
-            string = u"."
+            if len(pathseq) == 0:   # Ensures a slash is produced
+                pathseq.append(u"")
+            pathseq.insert(0, u"")
+        elif len(pathseq) > 0 and pathseq[0].count(u":") > 0: # Makes sure the first
+            pathseq.insert(0, u".")                           # item not recognized as
+        elif len(pathseq) > 0 and len(pathseq[0]) == 0:       # posix label.
+            pathseq.insert(0, u".")                           # rest of this ensures
+        elif len(path.pathseq) == 0:                          # that we get "."
+            pathseq.insert(0, u".")                           # produced in any case.
+        # The above cases ensure that this way of adding the prefix
+        # can be actually correct.
         if prefix.label != u"":
-            string = prefix.label + u":" + string
-        return rstring.assert_str0(string)
+            pathseq[0] = prefix.label + u":" + pathseq[0]
     else:
         raise OldError(u"custom prefix passed to stringification [corruption]")
-
-def stringify_pathseq(pathseq, nt=False):
     if nt:
         for name in pathseq:
             if name.count(u"\\") > 0:
                 raise OldError(ur"nt_stringify cannot stringify file/directory names that contain '\\'")
-        return u"\\".join(pathseq)
-    return u"/".join(pathseq)
+    string = (u"\\" if nt else u"/").join(pathseq)
+    return rstring.assert_str0(string)
 
 def getcwd():
     return os_parse(os.getcwd().decode('utf-8'))
