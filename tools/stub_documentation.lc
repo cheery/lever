@@ -6,6 +6,7 @@ import json, fs, texopic
 from texopic import Group, GroupCell, Macro, Segment, Pre
 
 main = (argv):
+    force_stub = argv[2 .:]
     module_index_path = path(argv[1])
     module_index = json.read_file(module_index_path)
     doc_dir = module_index_path.dirname
@@ -20,12 +21,18 @@ main = (argv):
             document.append( translate_meta( fields[name], [name] ) )
 
         overwrite = fs.EXCL # aka. no
-        #overwrite = fs.TRUNC # aka. yes
+        if doc_path.to_string() in force_stub
+            overwrite = fs.TRUNC # aka. yes, mandatorily.
 
-        print("creating", doc_path)
-        fd = fs.open(doc_path, overwrite | fs.CREAT | fs.WRONLY)
-        fd.pwrite( texopic.stringify(document).utf8, 0 )
-        fd.close()
+        try
+            fd = fs.open(doc_path, overwrite | fs.CREAT | fs.WRONLY)
+            fd.pwrite( texopic.stringify(document).utf8, 0 )
+            fd.close()
+            print("created", doc_path)
+        except EEXIST as it_exists
+            print("exists", doc_path)
+            
+
 
 translate_meta = (obj, macro_args...):
     type = obj["type"]
