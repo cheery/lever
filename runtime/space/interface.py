@@ -268,23 +268,3 @@ def hate_them(argv):
 @Interface.instantiator2(builtin.signature(Object))
 def Interface_init_is_cast(obj):
     return space.get_interface(obj)
-
-
-# Id is for situations when you'd want to compare or
-# hash things by identity.
-
-class Id(Object):
-    def __init__(self, ref):
-        self.ref = ref
-
-    def getattr(self, name):
-        if name == u"ref":
-            return self.ref
-        return Object.getattr(self, name)
-
-    def hash(self):
-        return compute_hash(self.ref)
-
-@Id.instantiator2(builtin.signature(Object))
-def Id_init(ref):
-    return Id(ref)

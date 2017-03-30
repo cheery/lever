@@ -1,5 +1,5 @@
 from rpython.rlib.objectmodel import specialize, always_inline
-from interface import Object, Interface, null, cast, cast_n, cast_for, Id
+from interface import Object, Interface, null, cast, cast_n, cast_for
 from builtin import Builtin, signature
 from dictionary import Dict
 from listobject import List
@@ -9,7 +9,7 @@ from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_t
 from string import String, string_upper, string_lower, StringBuilder_
 from uint8array import Uint8Array, Uint8Data, Uint8Slice, to_uint8array, Utf8Decoder, Uint8Builder, alloc_uint8array
 from exnihilo import Exnihilo
-from customobject import CustomObject, Property
+from customobject import CustomObject, Property, Id
 from rpython.rlib import jit
 from setobject import Set
 from errors import *

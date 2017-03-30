@@ -1,10 +1,10 @@
 from builtin import signature
 import exnihilo
-import operators
 import space
 from interface import Object, BoundMethod, null
 from errors import OldError
 from rpython.rlib import jit
+from rpython.rlib.objectmodel import compute_hash, specialize, always_inline
 
 class CustomObject(Object):
     _immutable_fields_ = ['custom_interface', 'map', 'storage']
@@ -43,6 +43,13 @@ class CustomObject(Object):
             return method.call([self])
 
     def getattr(self, name):
+        method = self.custom_interface.lookup_method(u"+getattr")
+        if method is None:
+            return self.getattr_direct(name)
+        else:
+            return method.call([Id(self), space.String(name)])
+
+    def getattr_direct(self, name):
         map = jit.promote(self.map)
         index = map.getindex(name)
         if index != -1:
@@ -56,7 +63,14 @@ class CustomObject(Object):
             else:
                 return BoundMethod(self, name, method)
 
-    def setattr(self, name, value): # TODO: figure out something that makes sense here.
+    def setattr(self, name, value):
+        method = self.custom_interface.lookup_method(u"+setattr")
+        if method is None:
+            return self.setattr_direct(name, value)
+        else:
+            return method.call([Id(self), space.String(name), value])
+
+    def setattr_direct(self, name, value):
         method = self.custom_interface.lookup_method(name)
         if isinstance(method, Property):
             return method.setter.call([self, value])
@@ -82,8 +96,7 @@ class CustomObject(Object):
             return Object.repr(self)
         else:
             result = method.call([self])
-            assert isinstance(result, space.String)
-            return result.string
+            return space.cast(result, space.String, u"+repr cast").string
 
     # TODO: figure out whether this matters to performance.
     def hash(self):
@@ -92,10 +105,10 @@ class CustomObject(Object):
             return Object.hash(self)
         else:
             result = method.call([self])
-            assert isinstance(result, space.Integer)
-            return int(result.value)
+            return int(space.cast(result, space.Integer, u"+hash cast").value)
 
-    def eq(self, other): # TODO: improve this.
+    def eq(self, other): # TODO: improve this?
+        import operators
         return space.is_true(operators.eq.call([self, other]))
 
 def instantiate(interface, argv):
@@ -131,3 +144,59 @@ class Property(Object):
 @Property.instantiator2(signature())
 def Property_instantiate():
     return Property()
+
+# Id is for situations when you'd want to compare or
+# hash things by identity. Or when you want to access
+# a custom object directly.
+class Id(Object):
+    def __init__(self, ref):
+        self.ref = ref
+
+    def getattr(self, name):
+        if name == u"ref":
+            return self.ref
+        return Object.getattr(self, name)
+
+    def getitem(self, name):
+        ref = self.ref
+        if not isinstance(ref, CustomObject):
+            return Object.getitem(self, name)
+        name = space.cast(name, space.String, u"Id.+getitem name").string
+        try:
+            return ref.getattr_direct(name)
+        except space.Unwinder as unwind:
+            exc = unwind.exception
+            if isinstance(exc, space.LAttributeError):
+                exc = space.LKeyError(exc.obj, space.String(exc.name))
+                exc.traceback = unwind.traceback
+                raise space.Unwinder(exc, unwind.traceback)
+            else:
+                raise unwind
+
+    def setitem(self, name, value):
+        ref = self.ref
+        if not isinstance(ref, CustomObject):
+            return Object.setitem(self, name, value)
+        name = space.cast(name, space.String, u"Id.+setitem name").string
+        try:
+            return ref.setattr_direct(name, value)
+
+        except space.Unwinder as unwind:
+            exc = unwind.exception
+            if isinstance(exc, space.LAttributeError):
+                exc = space.LKeyError(exc.obj, space.String(exc.name))
+                exc.traceback = unwind.traceback
+                raise space.Unwinder(exc, unwind.traceback)
+            else:
+                raise unwind
+
+    def hash(self):
+        return compute_hash(self.ref)
+
+# TODO: add iteration through 'keys'
+# TODO: add conversion to dict.
+# TODO: add +contains -method.
+
+@Id.instantiator2(signature(Object))
+def Id_init(ref):
+    return Id(ref)
