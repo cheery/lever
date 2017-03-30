@@ -117,6 +117,14 @@ def dump(flags, argc, topc, localv, entry_block, consttab, location_id, origin, 
                 op.loc[1].col if op.loc else -1,
                 op.loc[1].lno if op.loc else -1)
     localc = len(localv)
+    varnames = []
+    for item in localv:
+        if isinstance(item, unicode):
+            varnames.append(item)
+        else:
+            assert not isinstance(item, str), "yet checking this one, for caution."
+            varnames.append(u"")
+
     return {
         u"flags": flags,
         u"regc": tmpc,
@@ -126,6 +134,7 @@ def dump(flags, argc, topc, localv, entry_block, consttab, location_id, origin, 
         u"code": ''.join(map(enc_u16, block)),
         u"sourcemap": sourcemap.get(),
         u"exceptions": exceptions,
+        u"varnames": varnames,
     }
 
 def find_exception_ranges(blocks, finish):

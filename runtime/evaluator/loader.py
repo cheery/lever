@@ -41,7 +41,9 @@ def from_object(obj, path):
         #excs = []
         #for n in exc_table:
         #    excs.append()
-        varnames = space.null # TODO: #function_list.getitem(space.String(u"varnames"))
+        varnames = space.null                                           # Backwards compatible approach.
+        if function_list.contains(space.String(u"varnames")):           # Consider improvements in the major release.
+            varnames = function_list.getitem(space.String(u"varnames"))
         functions.append(Function(flags, regc, argc, topc, localc, block, sourcemap, excs[:], varnames))
     return Program(Unit(constants[:], functions[:], sources[:], path))
 

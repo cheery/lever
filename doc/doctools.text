@@ -72,9 +72,9 @@ if the status was 'volatile'.
 
 #begin{function}{get_block}
 #source ##
-    {"source":"../doctools.lc","start":{"col":12,"lno":198},"stop":{"col":0,"lno":211}}
-#arg{a} #TODO
-#arg{b} #TODO
+    {"source":"doctools.lc","start":{"col":12,"lno":201},"stop":{"col":0,"lno":214}}
+#arg{members} #TODO
+#arg{ref} #TODO
 #returns #TODO
 #summary #TODO
 #description #TODO
@@ -83,9 +83,9 @@ if the status was 'volatile'.
 
 #begin{function}{get_link}
 #source ##
-    {"source":"../doctools.lc","start":{"col":11,"lno":211},"stop":{"col":0,"lno":221}}
-#arg{a} #TODO
-#optional{b}{null} #TODO
+    {"source":"doctools.lc","start":{"col":11,"lno":214},"stop":{"col":0,"lno":224}}
+#arg{obj} #TODO
+#optional{ref}{null} #TODO
 #returns #TODO
 #summary #TODO
 #description #TODO
@@ -94,9 +94,9 @@ if the status was 'volatile'.
 
 #begin{function}{get_module_index}
 #source ##
-    {"source":"../doctools.lc","start":{"col":19,"lno":91},"stop":{"col":0,"lno":95}}
-#arg{a} #TODO
-#optional{b}{null} #TODO
+    {"source":"doctools.lc","start":{"col":19,"lno":94},"stop":{"col":0,"lno":98}}
+#arg{module} #TODO
+#optional{block}{null} #TODO
 #returns #TODO
 #summary #TODO
 #description #TODO
@@ -105,9 +105,9 @@ if the status was 'volatile'.
 
 #begin{function}{get_scope_index}
 #source ##
-    {"source":"../doctools.lc","start":{"col":18,"lno":68},"stop":{"col":0,"lno":91}}
-#arg{a} #TODO
-#optional{b}{null} #TODO
+    {"source":"doctools.lc","start":{"col":18,"lno":68},"stop":{"col":0,"lno":94}}
+#arg{scope} #TODO
+#optional{recursive}{null} #TODO
 #returns #TODO
 #summary #TODO
 #description #TODO
@@ -123,8 +123,8 @@ if the status was 'volatile'.
 
 #begin{function}{import_all_modules}
 #source ##
-    {"source":"../doctools.lc","start":{"col":21,"lno":49},"stop":{"col":0,"lno":68}}
-#arg{a} #TODO
+    {"source":"doctools.lc","start":{"col":21,"lno":49},"stop":{"col":0,"lno":68}}
+#arg{scope} #TODO
 #returns #TODO
 #summary #TODO
 #description #TODO
@@ -133,8 +133,8 @@ if the status was 'volatile'.
 
 #begin{function}{is_function}
 #source ##
-    {"source":"../doctools.lc","start":{"col":14,"lno":157},"stop":{"col":0,"lno":162}}
-#arg{a} #TODO
+    {"source":"doctools.lc","start":{"col":14,"lno":160},"stop":{"col":0,"lno":165}}
+#arg{val} #TODO
 #returns #TODO
 #summary #TODO
 #description #TODO
@@ -150,11 +150,11 @@ if the status was 'volatile'.
 
 #begin{function}{scan}
 #source ##
-    {"source":"../doctools.lc","start":{"col":7,"lno":95},"stop":{"col":0,"lno":157}}
-#arg{a} #TODO
-#arg{b} #TODO
-#arg{c} #TODO
-#arg{d} #TODO
+    {"source":"doctools.lc","start":{"col":7,"lno":98},"stop":{"col":0,"lno":160}}
+#arg{members} #TODO
+#arg{this} #TODO
+#arg{link} #TODO
+#arg{base} #TODO
 #returns #TODO
 #summary #TODO
 #description #TODO
@@ -163,9 +163,9 @@ if the status was 'volatile'.
 
 #begin{function}{scan_function}
 #source ##
-    {"source":"../doctools.lc","start":{"col":16,"lno":162},"stop":{"col":0,"lno":198}}
-#arg{a} #TODO
-#arg{b} #TODO
+    {"source":"doctools.lc","start":{"col":16,"lno":165},"stop":{"col":0,"lno":201}}
+#arg{block} #TODO
+#arg{func} #TODO
 #returns #TODO
 #summary #TODO
 #description #TODO
@@ -174,10 +174,10 @@ if the status was 'volatile'.
 
 #begin{function}{try_getattr}
 #source ##
-    {"source":"../doctools.lc","start":{"col":14,"lno":221},"stop":{"col":22,"lno":225}}
-#arg{a} #TODO
-#arg{b} #TODO
-#optional{c}{null} #TODO
+    {"source":"doctools.lc","start":{"col":14,"lno":224},"stop":{"col":22,"lno":228}}
+#arg{obj} #TODO
+#arg{name} #TODO
+#optional{default}{null} #TODO
 #returns #TODO
 #summary #TODO
 #description #TODO

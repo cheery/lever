@@ -78,11 +78,14 @@ get_scope_index = (scope, recursive=true):
             info(module.doc.name, 'error')
             info(module.doc.link, 'error')
             "doctools doesn't handle submodules right yet, so we appear to have an unmarked library module."
-        key = module.doc.to_string()
-        index[key] = {
+        path = module.doc.to_string()
+        index[entry.name] = {
             type = "module"
-            fields = get_module_index(module, index.get(key))
-            name = entry.name
+            fields = get_module_index(module, index.get(entry.name))
+            path = path
+            # The ideas here was still a bit quite cloudy.
+            # I thought that keying the dictionary by module name
+            # would allow multiple modules refer to same document.
         }
     return index
 

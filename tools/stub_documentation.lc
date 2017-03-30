@@ -11,10 +11,11 @@ main = (argv):
     doc_dir = module_index_path.dirname
 
     for key in module_index
-        doc_path = doc_dir ++ path(key).relpath(path("doc:/"))
+        doc_path = path(module_index[key]["path"])
+        doc_path = doc_dir ++ doc_path.relpath(path("doc:/"))
         doc_path = doc_path.dirname ++ (doc_path.basename ++ ".text")
         fields = module_index[key]["fields"]
-        document = [Segment(Macro("module", [[module_index[key]["name"]]]), [])]
+        document = [Segment(Macro("module", [[key]]), [])]
         for name in fields
             document.append( translate_meta( fields[name], [name] ) )
 

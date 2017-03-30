@@ -888,6 +888,15 @@ dump = (flags, argc, topc, localv, entry_block, consttab, origin):
     code = []
     for value in block
         code.extend([value >> 8, value & 255])
+
+    varnames = []
+    for item in localv
+        if isinstance(item, ObjectScope)
+            varnames.append("{object scope}")
+        elif isinstance(item, str)
+            varnames.append(item)
+        else
+            assert false, "What is this localv?"
     return {
         "flags": flags,
         "regc": tmpc,
@@ -896,7 +905,8 @@ dump = (flags, argc, topc, localv, entry_block, consttab, origin):
         "localc": localc,
         "code": Uint8Array(code),
         "sourcemap": Uint8Array(sourcemap.get()),
-        "exceptions": exceptions
+        "exceptions": exceptions,
+        "varnames": varnames
     }
 
 # Blocks are ordered into reverse postorder because
