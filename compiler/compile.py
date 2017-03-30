@@ -18,8 +18,8 @@ def compile_file(cb_path, src_path):
     functions = []
 
     root_scope = Scope(None, 0, 0, 0, [])
-    ctx = Context(closures = [[root, root_scope]])
-    for body, scope in ctx.closures:
+    ctx = Context(closures = [[root, root_scope, None]])
+    for body, scope, origin in ctx.closures:
         ctx.scope = scope
         ctx.block = entry = ctx.new_block()
         for cell in body:
@@ -31,7 +31,7 @@ def compile_file(cb_path, src_path):
         localv = scope.localv
         functions.append(
             backend.dump(flags, argc, topc, localv, entry,
-                consttab, location_id, debug))
+                consttab, location_id, origin, debug))
     with open(cb_path, 'wb') as fd:
         bon.dump(fd, {
             u'functions': functions,
@@ -148,8 +148,14 @@ class Closure(Cell):
             localv.append(vararg.value)
             flags |= 1
         handle = backend.Function(len(context.closures))
+
+        if self.loc:
+            origin = (0, self.loc[0].col, self.loc[0].lno,
+                         self.loc[1].col, self.loc[1].col)
+        else:
+            origin = None
         context.closures.append([header + self.body,
-            Scope(context.scope, flags, argc, topc, localv)])
+            Scope(context.scope, flags, argc, topc, localv), origin])
         variables, optionals, vararg = self.bindings
         return context.block.op(self.loc, 'func', [handle])
 

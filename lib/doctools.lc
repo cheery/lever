@@ -49,7 +49,9 @@ macros = {
 import_all_modules = (scope):
     if path("builtin:/") <= scope.local
         for name in scope
-            yield scope[name].module
+            yield object();
+                module = scope[name].module
+                name = path(name).relpath(scope.local).to_string()
     else
         imp = Import(scope.local, scope)
         for entry in fs.scandir(scope.local)
@@ -58,7 +60,9 @@ import_all_modules = (scope):
             assert entry.type == "file"
                 "TODO: entry type: " ++ entry.type
             name = entry.path[.:entry.path.length-3]
-            yield imp(name)
+            yield object();
+                module = imp(name)
+                name = name
 
 # Same goes for this.
 get_scope_index = (scope, recursive=true):
@@ -66,7 +70,8 @@ get_scope_index = (scope, recursive=true):
         index = get_scope_index(scope.parent)
     else
         index = {}
-    for module in import_all_modules(scope)
+    for entry in import_all_modules(scope)
+        module = entry.module
         if not module.doc # not sure what else to do for undocumented modules.
             continue
         assert not isinstance(module.doc, DocRef)
@@ -77,8 +82,7 @@ get_scope_index = (scope, recursive=true):
         index[key] = {
             type = "module"
             fields = get_module_index(module, index.get(key))
-            name = path(key).relpath(path("doc:/").dirname).to_string()
-            # TODO: fix after you've fixed pathobj.
+            name = entry.name
         }
     return index
 

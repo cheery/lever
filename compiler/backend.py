@@ -84,7 +84,7 @@ class Op(object):
     def __iter__(self):
         return iter(self.args)
 
-def dump(flags, argc, topc, localv, entry_block, consttab, location_id, debug):
+def dump(flags, argc, topc, localv, entry_block, consttab, location_id, origin, debug):
     blocks = reverse_postorder(entry_block)
     tmpc = allocate_tmp(blocks, debug)
     block = []
@@ -96,7 +96,7 @@ def dump(flags, argc, topc, localv, entry_block, consttab, location_id, debug):
             block.extend(encode_op(op, consttab))
     exceptions = find_exception_ranges(blocks, len(block))
     block = []
-    sourcemap = SourcemapBuilder()
+    sourcemap = SourcemapBuilder(origin)
     for bb in blocks:
         if debug:
             print "block {}".format(bb.index)
@@ -335,10 +335,13 @@ class ConstantTable(object):
 
 # If this was where it is used, it'd look complicated.
 class SourcemapBuilder(object):
-    def __init__(self):
+    def __init__(self, origin):
         self.buf = ''
         self.count = 0
         self.entry = ''
+        if origin is not None:
+            self.add(0, *origin)
+            self.buf = self.get(True)
 
     def add(self, count, location_id, col0, lno0, col1, lno1):
         entry = ''.join((
@@ -354,8 +357,8 @@ class SourcemapBuilder(object):
         else:
             self.count += count
 
-    def get(self):
-        if self.count > 0:
+    def get(self, force=False):
+        if self.count > 0 or force:
             return self.buf + enc_vlq(self.count) + self.entry
         return self.buf
 

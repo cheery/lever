@@ -11,12 +11,10 @@ main = (argv):
     doc_dir = module_index_path.dirname
 
     for key in module_index
-        # TODO: remove .dirname after you've fixed the pathobj.
-        # TODO: figure out how you fill up the 'key'
-        doc_path = doc_dir ++ path(key).relpath(path("doc:/").dirname)
+        doc_path = doc_dir ++ path(key).relpath(path("doc:/"))
         doc_path = doc_path.dirname ++ (doc_path.basename ++ ".text")
         fields = module_index[key]["fields"]
-        document = [Segment(Macro("module", [[key]]), [])]
+        document = [Segment(Macro("module", [[module_index[key]["name"]]]), [])]
         for name in fields
             document.append( translate_meta( fields[name], [name] ) )
 

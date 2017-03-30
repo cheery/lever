@@ -24,7 +24,7 @@ main = ():
     compile_file("sample.lc.cb", "sample.lc")
 
 compile_file = (cb_path, lc_path):
-    code = read_file(lc_path, path(lc_path).relpath(cb_path).to_string())
+    code = read_file(lc_path, path(lc_path).relpath(cb_path.dirname).to_string())
     binon.write_file(cb_path, code)
 
 read_file = (path, source=null):
