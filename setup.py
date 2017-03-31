@@ -45,6 +45,19 @@ def main():
         description=win32_dist.__doc__)
     cmd.set_defaults(func=win32_dist)
 
+    cmd = subparsers.add_parser('refresh-docs',
+        help="Refresh the source index and then update all documentation")
+    cmd.add_argument("--tag", type=str, default="latest",
+        help="Update doc/$tag instead of the doc/latest, should be done along new version releases.")
+    cmd.set_defaults(func=refresh_docs)
+
+    cmd = subparsers.add_parser('stub',
+        help="Produce documentation stub for an item in the source index")
+    cmd.add_argument("name", type=str)
+    cmd.add_argument("--src", action="store_true",
+        help="Produce just the source link tag")
+    cmd.set_defaults(func=documentation_stub)
+
     cmd = subparsers.add_parser('update-html-docs',
         help="Update HTML documentation",
         description=update_html_docs.__doc__)
@@ -243,6 +256,21 @@ def win32_dist(args):
     zf.close()
     print os.path.abspath(archive)
 
+
+def refresh_docs(args):
+    assert check_call(["./lever", "tools/print_module_index.lc",
+        'doc/source_index.json' ]) == 0
+    update_html_docs(args)
+
+def documentation_stub(args):
+    if args.src:
+        check_call(["./lever", "tools/print_stub.lc",
+            "doc/source_index.json",
+            "source", args.name])
+    else:
+        check_call(["./lever", "tools/print_stub.lc",
+            "doc/source_index.json",
+            "group", args.name])
 
 def update_html_docs(args):
     """

@@ -3,7 +3,7 @@ from interface import Object
 from rpython.rlib import rstring
 from rpython.rlib.objectmodel import compute_hash
 from rpython.rlib.unicodedata import unicodedb_6_2_0 as unicodedb
-from rpython.rlib.rstring import UnicodeBuilder
+from rpython.rlib.rstring import UnicodeBuilder, split, rsplit
 from numbers import Integer
 import space
 
@@ -197,6 +197,56 @@ def escape_string(string):
 
 character_escapes = {8: u'b', 9: u't', 10: u'n', 12: u'f', 13: u'r'}
 
+@String.method(u"split", signature(String, String, Integer, optional=1))
+def String_split(self, sep, maxsplit):
+    out = []
+    m = maxsplit.value if maxsplit else -1
+    for s in split(self.string, sep.string, m):
+        out.append(String(s))
+    return space.List(out)
+
+@String.method(u"rsplit", signature(String, String, Integer, optional=1))
+def String_rsplit(self, sep, maxsplit):
+    out = []
+    m = maxsplit.value if maxsplit else -1
+    for s in rsplit(self.string, sep.string, m):
+        out.append(String(s))
+    return space.List(out)
+
+@String.method(u"ljust", signature(String, Integer, String, optional=1))
+def String_ljust(self, width, fillchar):
+    if fillchar:
+        fill = fillchar.string
+        if len(fill) != 1:
+            raise space.OldError(u"fill character must be exactly one character long")
+    else:
+        fill = u" "
+    c = max(0, width.value - len(self.string))
+    return String(self.string + fill*c)
+
+@String.method(u"rjust", signature(String, Integer, String, optional=1))
+def String_rjust(self, width, fillchar):
+    if fillchar:
+        fill = fillchar.string
+        if len(fill) != 1:
+            raise space.OldError(u"fill character must be exactly one character long")
+    else:
+        fill = u" "
+    c = max(0, width.value - len(self.string))
+    return String(fill*c + self.string)
+
+@String.method(u"center", signature(String, Integer, String, optional=1))
+def String_center(self, width, fillchar):
+    if fillchar:
+        fill = fillchar.string
+        if len(fill) != 1:
+            raise space.OldError(u"fill character must be exactly one character long")
+    else:
+        fill = u" "
+    c = max(0, width.value - len(self.string))
+    lhs = (c&1)+c/2
+    rhs = c/2
+    return String(fill*lhs + self.string + fill*rhs)
 
 class StringBuilder_(Object):
     def __init__(self):
