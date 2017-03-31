@@ -43,16 +43,31 @@ class Path(Object):
     def repr(self):
         return u"path(" + String(stringify(self)).repr() + u")"
 
-@Path.method(u"relpath", signature(Path, Object, optional=1))
-def Path_relpath(dst, rel):
-    if rel:
-        rel = abspath(to_path(rel))
+# TODO: Looking at all this code (and concat), we may be manhandling
+#       the relative paths that have a label in them.
+#       We may want to think harder about the maths and formal
+#       aspects of these functions and objects.
+@Path.method(u"relpath", signature(Path, Object, Object, optional=2))
+def Path_relpath(dst, rel, cwd):
+    if rel is None:              # This ensures that we do not
+        if cwd is None:          # use 'cwd' if it is not
+            cwd = getcwd()       # necessary to do so.
+        else:
+            cwd = to_path(cwd)
+        rel = cwd
+        dst = concat(cwd, dst)
     else:
-        rel = getcwd()
+        rel = to_path(rel)
+        if is_absolute(rel) ^ is_absolute(dst):
+            if cwd is None:
+                cwd = getcwd()
+            else:
+                cwd = to_path(cwd)
+            rel = concat(cwd, rel)
+            dst = concat(cwd, dst)
     if isinstance(rel.prefix, PosixPrefix) and isinstance(dst.prefix, PosixPrefix):
         if dst.prefix.label != rel.prefix.label and dst.prefix.label != u"":
             return dst
-        dst = concat(rel, dst)
         C = min(len(dst.pathseq), len(rel.pathseq))
         for i in range(C):
             if dst.pathseq[i] != rel.pathseq[i]:
