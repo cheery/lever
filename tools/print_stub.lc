@@ -1,0 +1,20 @@
+import json
+import stub_documentation
+import texopic
+from texopic import Group, GroupCell, Macro, Segment, Pre
+
+main = (argv):
+    source_index = json.read_file(argv[1])
+    which = argv[2]
+    what = argv[3]
+
+    x = {fields = source_index}
+    for name in what.split(".")
+        x = x["fields"][name]
+    if which == "group"
+        node = stub_documentation.translate_meta(x, [name])
+    elif which == "source"
+        node = Segment(Macro("source", []), [], Pre(json.write_string(x["loc"])))
+    else
+        assert false, which
+    print(texopic.stringify([node]))

@@ -5,42 +5,42 @@ doc = path("doc:/doctools")
 # Syntax of a doc file.
 macros = {
     segments = {
-        "module/1": {capture = false},
+        "module/1": {capture = false}
         "title/0": {capture = false}
         "source/0": {capture = true}
+        "section/0": {capture = false}
+        "section/1": {capture = false}
+        "subsection/0": {capture = false}
+        "subsection/1": {capture = false}
+        #"reference/1": {capture = false}
+        "image/1": {capture = false}
+        "extends/0": {capture = false}
+        "summary/0": {capture = false}
+        "status/0": {capture = false}
+        "arg/1": {capture = false}
+        "arg/2": {capture = false}
+        "optional/2": {capture = false}
+        "optional/3": {capture = false}
+        "is_variadic/0": {capture = false}
+        "returns/0": {capture = false}
+        "returns/1": {capture = false}
+        "value/0": {capture = false}
+        "interface/0": {capture = false}
     }
     groups = {
-        "interface/1": {separators = [
-            "extends/0",
-            "summary/0",
-            "description/0",
-            "status/0",
-            "members/0"
-        ]},
-        "function/1": {separators = [
-            "arg/1",
-            "arg/2",
-            "optional/2",
-            "optional/3",
-            "is_variadic/0",
-            "returns/0",
-            "returns/1",
-            "summary/0",
-            "description/0",
-            "status/0"
-        ]},
-        "multimethod/1": {separators = [
-            "summary/0",
-            "description/0",
-            "status/0"
-        ]},
-        "object/1": {separators = [
-            "value/0",
-            "interface/0",
-            "summary/0",
-            "description/0",
-            "status/0"
-        ]}
+        "interface/1": {separators = []},
+        # TODO: later add method/2 for externally marked multimethods.
+        #       maybe... put the multimethod fill the .doc, so you can
+        #       then use this mode of documentation... concat_int_int
+        # Add method/1 and default-method/0 groups that behave like function/1
+        "function/1": {separators = []},
+        "method/0": {separators = []},
+        "default/0": {separators = []},
+        "multimethod/2": {separators = []},
+        "object/1": {separators = []},
+        "itemize/0": {separators = ["item/0"]},
+        "enumerate/0": {separators = ["item/0"]},
+        "table/0": {separators = ["tr/0", "td/0"]},
     }
 }
 
@@ -114,6 +114,7 @@ scan = (members, this, link, base):
             elif isinstance(val, multimethod)
                 block["type"] = "multimethod"
                 block["methods"] = table = []
+                block["arity"] = val.arity
                 for argtypes in val.keys()
                     func = val[argtypes]
                     desc = {}

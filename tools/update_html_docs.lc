@@ -223,59 +223,37 @@ html_env.groups["interface/1"] = (group, context, out):
     create_ref_card(group, context, out)
 
 html_env.groups["function/1"] = (group, context, out):
-    in_multimethod = context.card.type == "multimethod"
-    if in_multimethod
-        context = context.push(object();
-            type = "function"
-            name = context.card.name
-            sub = context.card.sub
-            anchor = context.card.anchor
-            prefix = null
-            arglist = html.Node("span", [])
-            argref  = html.Node("table", [], {"class": "arg-ref"})
-            postfix = html.Node("span", ["(", arglist, ")"])
-            heading = html.Node("details", [
-                html.Node("summary", [
-                    "[",
-                    html.Node("span", horizontal_html(group.head.args[0], context)),
-                    "] = ",
-                    postfix]),
-                argref
-            ])
-            summary = null, false)
-        fill_card(group, context, context.card.heading.data)
-        out.append(context.card.heading)
-    else
-        name = texopic.verbatim(group.head.args[0])
-        context = context.push(object();
-            type = "function"
-            name = name
-            sub = context.card.sub ++ name ++ "."
-            anchor = context.card.sub ++ name
-            prefix = null
-            arglist = html.Node("span", [])
-            argref  = html.Node("table", [], {"class": "arg-ref"})
-            postfix = html.Node("span", ["(", arglist, ")"])
-            heading = html.Node("div", [
-                html.Node("a", [name], {
-                    "href": "#" ++ anchor
-                    "class": "name reference"}),
-                postfix,
-                argref
-            ])
-            summary = null
-        )
-        create_ref_card(group, context, out)
-
-html_env.groups["multimethod/1"] = (group, context, out):
     name = texopic.verbatim(group.head.args[0])
+    context = context.push(object();
+        type = "function"
+        name = name
+        sub = context.card.sub ++ name ++ "."
+        anchor = context.card.sub ++ name
+        prefix = null
+        arglist = html.Node("span", [])
+        argref  = html.Node("table", [], {"class": "arg-ref"})
+        postfix = html.Node("span", ["(", arglist, ")"])
+        heading = html.Node("div", [
+            html.Node("a", [name], {
+                "href": "#" ++ anchor
+                "class": "name reference"}),
+            postfix,
+            argref
+        ])
+        summary = null
+    )
+    create_ref_card(group, context, out)
+
+html_env.groups["multimethod/2"] = (group, context, out):
+    name = texopic.verbatim(group.head.args[0])
+    arity = texopic.verbatim(group.head.args[1])
     context = context.push(object();
         type = "multimethod"
         name = name
         sub = context.card.sub ++ name ++ " "
         anchor = context.card.sub ++ name
-        prefix = html.Node("span", ["multimethod "])
-        postfix = null
+        prefix = null
+        postfix = html.Node("span", ["= multimethod(", arity, ")"])
         heading = html.Node("div", [
             html.Node("a", [name], {
                 "href": "#" ++ anchor
@@ -284,6 +262,46 @@ html_env.groups["multimethod/1"] = (group, context, out):
         summary = null
     )
     create_ref_card(group, context, out)
+
+html_env.groups["method/0"] = (group, context, out):
+    context = context.push(object();
+        type = "function"
+        name = context.card.name
+        sub = context.card.sub
+        anchor = context.card.anchor
+        prefix = null
+        arglist = html.Node("span", [])
+        argref  = html.Node("table", [], {"class": "arg-ref"})
+        postfix = html.Node("span", ["(", arglist, ")"])
+        heading = html.Node("details", [
+            html.Node("summary", [postfix]),
+            argref
+        ])
+        summary = null, false)
+    fill_card(group, context, context.card.heading.data)
+    out.append(context.card.heading)
+
+html_env.groups["default/0"] = (group, context, out):
+    context = context.push(object();
+        type = "function"
+        name = context.card.name
+        sub = context.card.sub
+        anchor = context.card.anchor
+        prefix = null
+        arglist = html.Node("span", [])
+        argref  = html.Node("table", [], {"class": "arg-ref"})
+        postfix = html.Node("span", ["(", arglist, ")"])
+        heading = html.Node("details", [
+            html.Node("summary", [
+                "default", postfix]),
+            argref
+        ])
+        summary = null, false)
+    fill_card(group, context, context.card.heading.data)
+    out.append(context.card.heading)
+
+html_env.groups["ignore/1"] = (group, context, out):
+    null # TODO: ignore a missing variable.
 
 create_ref_card = (group, context, out):
     ref_card = html.Node("div", [context.card.heading], {
@@ -306,38 +324,32 @@ fill_card = (group, context, out):
 
 object_env = texopic.Scope()
 
-object_env["interface/0"] = (head, data, context, out):
-    context.card.postfix.append(" : ")
-    context.card.postfix.extend(
-        horizontal_html(flatten(data), context))
-
-object_env["value/0"] = (head, data, context, out):
-    context.card.postfix.append(" = ")
-    context.card.postfix.extend(
-        horizontal_html(flatten(data), context))
-
-object_env["extends/0"] = (head, data, context, out):
-    context.card.postfix.append(" extends ")
-    context.card.postfix.extend(
-        horizontal_html(flatten(data), context))
-
-object_env["summary/0"] = (head, data, context, out):
-    context.card.summary = vertical_html(data, context)
-    out.extend(context.card.summary)
-
-object_env["description/0"] = (head, data, context, out):
-    out.extend(vertical_html(data, context))
-
-object_env["status/0"] = (head, data, context, out):
-    status = html.Node("div", [], {"class": "status"})
-    status.extend(horizontal_html(flatten(data), context))
-    out.append(status)
-
 object_env[null] = (head, data, context, out):
     out.extend(vertical_html(data, context))
 
-object_env["members/0"] = (head, data, context, out):
-    out.extend(vertical_html(data, context))
+html_env.segments["interface/0"] = (segment, context, out):
+    context.card.postfix.append(" : ")
+    context.card.postfix.extend(
+        horizontal_html(segment.data, context))
+
+html_env.segments["value/0"] = (segment, context, out):
+    context.card.postfix.append(" = ")
+    context.card.postfix.extend(
+        horizontal_html(segment.data, context))
+
+html_env.segments["extends/0"] = (segment, context, out):
+    context.card.postfix.append(" extends ")
+    context.card.postfix.extend(
+        horizontal_html(segment.data, context))
+
+html_env.segments["summary/0"] = (segment, context, out):
+    context.card.summary = horizontal_html(segment.data, context)
+    out.extend(context.card.summary)
+
+html_env.segments["status/0"] = (segment, context, out):
+    status = html.Node("div", [], {"class": "status"})
+    status.extend(horizontal_html(segment.data, context))
+    out.append(status)
 
 html_env.segments["source/0"] = (segment, context, out):
     loc = json.read_string(segment.pre.text)
@@ -354,7 +366,9 @@ html_env.segments["source/0"] = (segment, context, out):
             })
         ], {"class": "source-link"}))
 
-object_env["optional/2"] = object_env["arg/1"] = (head, data, context, out):
+html_env.segments["optional/2"] =
+html_env.segments["arg/1"] = (segment, context, out):
+    head = segment.head
     argname = texopic.verbatim(head.args[0])
     card = context.card
     if card.arglist.data.length > 0
@@ -366,10 +380,12 @@ object_env["optional/2"] = object_env["arg/1"] = (head, data, context, out):
         card.arglist.extend(argval)
     card.argref.append(html.Node("tr", [
         html.Node("td", [argname, " "]),
-        html.Node("td", horizontal_html(flatten(data), context))
+        html.Node("td", horizontal_html(segment.data, context))
     ]))
 
-object_env["arg/2"] = object_env["optional/3"] = (head, data, context, out):
+html_env.segments["arg/2"] =
+html_env.segments["optional/3"] = (segment, context, out):
+    head = segment.head
     argname = texopic.verbatim(head.args[0])
     card = context.card
     if card.arglist.data.length > 0
@@ -385,18 +401,17 @@ object_env["arg/2"] = object_env["optional/3"] = (head, data, context, out):
         card.arglist.extend(argval)
     card.argref.append(html.Node("tr", [
         html.Node("td", [argname, " "]),
-        html.Node("td", horizontal_html(flatten(data), context))
+        html.Node("td", horizontal_html(segment.data, context))
     ]))
 
-object_env["is_variadic/0"] = (head, data, context, out):
+html_env.segments["is_variadic/0"] = (segment, context, out):
     context.card.arglist.append("...")
 
-object_env["returns/0"] = (head, data, context, out):
+html_env.segments["returns/0"] = (segment, context, out):
     context.card.argref.append(html.Node("tr", [
             html.Node("td", ["returns "]),
-            html.Node("td", horizontal_html(flatten(data), context))
+            html.Node("td", horizontal_html(segment.data, context))
     ]))
-
 
 html_env.macros["ref/1"] = (macro, context, out):
     name = texopic.verbatim(macro.args[0])
@@ -525,3 +540,42 @@ colors = [
     "#2e170e",
     "#7b3c16",
     "#c86f31"]
+
+# Helper to generate table of contents
+class Toc
+    +init = (self, separator='.', labeling=default_labeling):
+        self.separator = separator
+        self.labeling = labeling
+        self.prefix = []
+        self.stack  = []
+        self.data = []
+
+    entry = (self, depth, text, link=null):
+        while depth > len(self.stack)
+            labelgen = self.labeling()
+            self.stack.append(labelgen)
+            self.prefix.append(labelgen.next())
+        if depth == len(self.stack)
+            labelgen = self.labeling()
+            self.stack.append(labelgen)
+            self.prefix.append(labelgen.next())
+        else
+            while depth + 1 < len(self.stack)
+                self.stack.pop()
+                self.prefix.pop()
+            self.prefix[-1] = self.stack[-1].next()
+        label = self.separator.join(self.prefix)
+        if not link
+            link = label
+        entry = object();
+            label = label
+            link = link
+            text = text
+        self.data.append(entry)
+        return entry
+
+default_labeling = ():
+    index = 1
+    while true
+        yield index.to_string()
+        index += 1

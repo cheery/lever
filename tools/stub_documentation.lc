@@ -32,8 +32,6 @@ main = (argv):
         except EEXIST as it_exists
             print("exists", doc_path)
             
-
-
 translate_meta = (obj, macro_args...):
     type = obj["type"]
     if type == "interface"
@@ -44,107 +42,81 @@ translate_meta = (obj, macro_args...):
         return Group(
             Macro("interface", macro_args),
             [
-                GroupCell(Macro("extends", []), [
-                    Segment(null, [link_reference(obj["extends"])])
-                ]),
-                GroupCell(Macro("summary", []), [
-                    Segment(null, [not_documented])
-                ]),
-                GroupCell(Macro("description", []), [
-                    Segment(null, [not_documented])
-                ]),
-                GroupCell(Macro("status", []), [
-                    Segment(null, ["volatile"])
-                ]),
-                GroupCell(Macro("members", []), fields)
+                GroupCell(null, [
+                    Segment(Macro("extends", []), [
+                        link_reference(obj["extends"])
+                    ]),
+                    Segment(Macro("summary", []), [not_documented]),
+                    Segment(Macro("status", []), ["volatile"]),
+                ] ++ fields)
             ])
     elif type == "function"
-        args = []
-        for arg in obj["args"]
-            head = Macro("arg", [[arg["name"]]])
-            if "type" in arg
-                head.args.append([link_reference(arg["type"])])
-            if "default" in arg
-                head.name = "optional"
-                head.args.append([arg["default"]])
-            args.append(GroupCell(head, [Segment(null, [not_documented])]))
-        if obj.get("is_variadic", false)
-            args.append(GroupCell(Macro("is_variadic", []), []))
-        return Group(
-            Macro("function", macro_args),
-            [
-                GroupCell(null, [
-                    Segment(Macro("source", []), [], Pre(json.write_string(obj["loc"])))
-                ])
-            ] ++ args ++ [ 
-                GroupCell(Macro("returns", []), [
-                    Segment(null, [not_documented])
-                ]),
-                GroupCell(Macro("summary", []), [
-                    Segment(null, [not_documented])
-                ]),
-                GroupCell(Macro("description", []), [
-                    Segment(null, [not_documented])
-                ]),
-                GroupCell(Macro("status", []), [
-                    Segment(null, ["volatile"])
-                ])
-            ])
+        return translate_function(Macro("function", macro_args), obj)
     elif type == "multimethod"
         methods = []
         for method in obj["methods"]
-            arglinks = []
-            for argtype in method["argtypes"]
-                if arglinks.length > 0
-                    arglinks.append(" ")
-                arglinks.append(link_reference(argtype))
-            methods.append(translate_meta(method["function"], arglinks))
+            methods.append(translate_function(
+                Macro("method", []),
+                method["function"], method["argtypes"]))
         if "default" in obj and obj["default"]
-            methods.append(translate_meta(obj["default"], ["default"]))
+            methods.append(translate_function(
+                Macro("default", []),
+                obj["default"]))
         return Group(
-            Macro("multimethod", macro_args),
+            Macro("multimethod", macro_args ++ [obj["arity"].to_string()]),
             [
-                GroupCell(null, methods),
-                GroupCell(Macro("summary", []), [
-                    Segment(null, [not_documented])
-                ]),
-                GroupCell(Macro("description", []), [
-                    Segment(null, [not_documented])
-                ]),
-                GroupCell(Macro("status", []), [
-                    Segment(null, ["volatile"])
+                GroupCell(null, methods ++ [
+                    Segment(Macro("summary", []), [not_documented]),
+                    Segment(Macro("status", []), ["volatile"]),
                 ])
             ])
     elif type == "object"
         data = []
         if "value" in obj
-            data.append(GroupCell(Macro("value", []),
-                [
-                    Segment(null, [obj["value"]])
-                ]))
+            data.append(Segment(Macro("value", []), [obj["value"]]))
         else
-            data.append(GroupCell(Macro("interface", []),
-                [
-                    Segment(null, [link_reference(obj["interface"])])
-                ]))
+            data.append(Segment(Macro("interface", []),
+                    [link_reference(obj["interface"])]))
         return Group(
             Macro("object", macro_args),
-            data ++ [
-                GroupCell(Macro("summary", []), [
-                    Segment(null, [not_documented])
-                ]),
-                GroupCell(Macro("description", []), [
-                    Segment(null, [not_documented])
-                ]),
-                GroupCell(Macro("status", []), [
-                    Segment(null, ["volatile"])
+            [
+                GroupCell(null, data ++ [
+                    Segment(Macro("summary", []), [not_documented]),
+                    Segment(Macro("status", []), ["volatile"]),
                 ])
             ])
     else
         assert false, type
 
-not_documented = Macro("TODO", [])
+translate_function = (macro, obj, argtypes=[]):
+    assert obj["type"] == "function", "not a function"
+    args = []
+    i = 0
+    for arg in obj["args"]
+        head = Macro("arg", [[arg["name"]]])
+        if i < argtypes.length
+            head.args.append([link_reference(argtypes[i])])
+        elif "type" in arg
+            head.args.append([link_reference(arg["type"])])
+        if "default" in arg
+            head.name = "optional"
+            head.args.append([arg["default"]])
+        args.append(Segment(head, [not_documented]))
+        i += 1
+    if obj.get("is_variadic", false)
+        args.append(Segment(Macro("is_variadic", []), []))
+    return Group(macro,
+        [
+            GroupCell(null, [
+                Segment(Macro("source", []), [], Pre(json.write_string(obj["loc"]))),
+            ] ++ args ++ [
+                Segment(Macro("returns", []), [not_documented]),
+                Segment(Macro("summary", []), [not_documented]),
+                Segment(Macro("status", []), ["volatile"]),
+            ])
+        ])
 
+not_documented = Macro("TODO", [])
 
 link_reference = (link):
     if not link[0]

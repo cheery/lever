@@ -115,6 +115,8 @@ class Multimethod(Object):
         return value
 
     def getattr(self, index):
+        if index == u"arity":
+            return space.Integer(self.arity)
         if index == u"default":
             return self.default
         if index == u"doc":

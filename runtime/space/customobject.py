@@ -3,6 +3,7 @@ import exnihilo
 import space
 from interface import Object, BoundMethod, null
 from errors import OldError
+from string import String
 from rpython.rlib import jit
 from rpython.rlib.objectmodel import compute_hash, specialize, always_inline
 
@@ -200,3 +201,14 @@ class Id(Object):
 @Id.instantiator2(signature(Object))
 def Id_init(ref):
     return Id(ref)
+
+@Id.method(u"get", signature(Id, String, Object, optional=1))
+def Id_get(self, name, default):
+    ref = self.ref
+    if not isinstance(ref, CustomObject):
+        raise OldError(u"Id.get not supported for other than user objects")
+    index = ref.map.getindex(name.string)
+    if index != -1:
+        return ref.storage[index]
+    else:
+        return space.null if default is None else default
