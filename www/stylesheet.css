@@ -263,3 +263,29 @@ table.arg-ref td:first-child {
 table.module-index tr {
     vertical-align: top;
 }
+
+/* Table of contents styling */
+fieldset.toc div {
+    margin-top: 0.5em;
+    margin-bottom: 0.5em;
+}
+
+#toc-link {
+    display: block;
+    position: fixed;
+    padding: 0.5em;
+    top: -1px;
+    left: 0;
+    right: 0;
+    overflow: hidden;
+    background-color: white;
+    border-bottom: 1px solid gray;
+    text-decoration: none;
+    transition: all .75s ease;
+    transform: translateY(-100%);
+    color: blue;
+}
+
+#toc-link.visible {
+    transform: translateY(0%);
+}

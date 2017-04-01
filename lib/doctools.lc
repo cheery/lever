@@ -8,6 +8,7 @@ macros = {
         "module/1": {capture = false}
         "title/0": {capture = false}
         "source/0": {capture = true}
+        "toc/0": {capture = false}
         "section/0": {capture = false}
         "section/1": {capture = false}
         "subsection/0": {capture = false}
@@ -26,6 +27,7 @@ macros = {
         "returns/1": {capture = false}
         "value/0": {capture = false}
         "interface/0": {capture = false}
+        "ignore/1": {capture = false}
     }
     groups = {
         "interface/1": {separators = []},

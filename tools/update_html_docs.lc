@@ -35,6 +35,8 @@ main = (args):
         page.summary = ["not documented"]
 
         context = object();
+            toc = Toc()
+            html_toc = html.Node("fieldset", [html.Node("legend", ["Table of contents"])], {"class":"toc", "id":"-toc"})
             page = page
             index = index
             card = null # reference card.
@@ -47,6 +49,8 @@ main = (args):
                         module = card
                         card   = object_card)
                 return object();         
+                    toc     = toc
+                    html_toc = html_toc
                     page    = page
                     index   = index
                     card    = object_card
@@ -104,6 +108,8 @@ main = (args):
             objects.append(li)
 
         context = object();
+            toc = Toc()
+            html_toc = html.Node("fieldset", [html.Node("legend", ["Table of contents"])], {"class":"toc", "id":"-toc"})
             page = page
             index = index
             module_card = null
@@ -180,6 +186,10 @@ html_env.segments[null] = (segment, context, out):
  
 html_env.macros["i/1"] = (macro, context, out):
     out.append(html.Node('i',
+        horizontal_html(macro.args[0], context)))
+
+html_env.macros["b/1"] = (macro, context, out):
+    out.append(html.Node('b',
         horizontal_html(macro.args[0], context)))
 
 html_env.groups["object/1"] = (group, context, out):
@@ -300,7 +310,7 @@ html_env.groups["default/0"] = (group, context, out):
     fill_card(group, context, context.card.heading.data)
     out.append(context.card.heading)
 
-html_env.groups["ignore/1"] = (group, context, out):
+html_env.segments["ignore/1"] = (group, context, out):
     null # TODO: ignore a missing variable.
 
 create_ref_card = (group, context, out):
@@ -378,10 +388,11 @@ html_env.segments["arg/1"] = (segment, context, out):
         argval = [" = "]
         argval.extend(horizontal_html(head.args[1], context))
         card.arglist.extend(argval)
-    card.argref.append(html.Node("tr", [
-        html.Node("td", [argname, " "]),
-        html.Node("td", horizontal_html(segment.data, context))
-    ]))
+    if segment.data.length > 0
+        card.argref.append(html.Node("tr", [
+            html.Node("td", [argname, " "]),
+            html.Node("td", horizontal_html(segment.data, context))
+        ]))
 
 html_env.segments["arg/2"] =
 html_env.segments["optional/3"] = (segment, context, out):
@@ -399,10 +410,11 @@ html_env.segments["optional/3"] = (segment, context, out):
         argval = [" = "]
         argval.extend(horizontal_html(head.args[2], context))
         card.arglist.extend(argval)
-    card.argref.append(html.Node("tr", [
-        html.Node("td", [argname, " "]),
-        html.Node("td", horizontal_html(segment.data, context))
-    ]))
+    if segment.data.length > 0
+        card.argref.append(html.Node("tr", [
+            html.Node("td", [argname, " "]),
+            html.Node("td", horizontal_html(segment.data, context))
+        ]))
 
 html_env.segments["is_variadic/0"] = (segment, context, out):
     context.card.arglist.append("...")
@@ -422,6 +434,65 @@ html_env.macros["ref/2"] = (macro, context, out):
     name = texopic.verbatim(macro.args[1])
     out.append(html.Node("a", [name],
         {"href":link_to(page, name), "class":"reference"}))
+
+html_env.macros["url/1"] = (macro, context, out):
+    link = texopic.verbatim(macro.args[0])
+    out.append(html.Node("a", [link], {"href": link}))
+
+html_env.macros["href/2"] = (macro, context, out):
+    link = texopic.verbatim(macro.args[0])
+    desc = horizontal_html(macro.args[1], context)
+    out.append(html.Node("a", desc, {"href": link}))
+
+html_env.segments["image/1"] = (segment, context, out):
+    link = texopic.verbatim(segment.head.args[0])
+    alt = texopic.verbatim(segment.data)
+    out.append(html.Node("img", null,
+        {alt=alt, src=link}, {slash:false}))
+
+html_env.segments["toc/0"] = (segment, context, out):
+    out.append(html.Node("a", ["Table of contents ", chr(0x2191)], {id="toc-link", href="#-toc"}))
+    out.append(context.html_toc)
+    out.append(html.Node("script", [], {
+        src=path("www/toc-helper.js").relpath(context.page.dir).to_string()
+    }))
+    #out.append(html.Node("a", ["table of contents"], {id="toc-link", href="#toc"}))
+
+html_env.segments["section/0"] = (segment, context, out):
+    text = horizontal_html(segment.data, context)
+    entry = context.toc.entry(0, text)
+    data = [entry.label, ". "]
+    context.html_toc.append(html.Node("div", data ++ [
+        html.Node("a", entry.text, {href="#" ++ entry.link})]))
+    out.append(html.Node("h2", data ++ entry.text, {id=entry.link}))
+
+html_env.segments["section/1"] = (segment, context, out):
+    link = texopic.verbatim(segment.head.args[0])
+    text = horizontal_html(segment.data, context)
+    entry = context.toc.entry(0, text, link)
+    data = [entry.label, ". "]
+    context.html_toc.append(html.Node("div", data ++ [
+        html.Node("a", entry.text, {href="#" ++ entry.link})]))
+    out.append(html.Node("h2", data ++ entry.text, {id=entry.link}))
+
+html_env.segments["subsection/0"] = (segment, context, out):
+    text = horizontal_html(segment.data, context)
+    entry = context.toc.entry(1, text)
+    data = [entry.label, ". "]
+    context.html_toc.append(html.Node("div", data ++ [
+        html.Node("a", entry.text, {href="#" ++ entry.link})]))
+    out.append(html.Node("h3", data ++ entry.text, {id=entry.link}))
+
+html_env.segments["subsection/1"] = (segment, context, out):
+    link = texopic.verbatim(segment.head.args[0])
+    text = horizontal_html(segment.data, context)
+    entry = context.toc.entry(1, text, link)
+    data = [entry.label, ". "]
+    context.html_toc.append(html.Node("div", data ++ [
+        html.Node("a", entry.text, {href="#" ++ entry.link})]))
+    out.append(html.Node("h3", data ++ entry.text, {id=entry.link}))
+
+
 
 html_env.macros["TODO/0"] = (macro, context, out):
     out.append("not documented")
@@ -552,18 +623,18 @@ class Toc
 
     entry = (self, depth, text, link=null):
         while depth > len(self.stack)
-            labelgen = self.labeling()
+            labelgen = self.labeling(depth)
             self.stack.append(labelgen)
             self.prefix.append(labelgen.next())
         if depth == len(self.stack)
-            labelgen = self.labeling()
+            labelgen = self.labeling(depth)
             self.stack.append(labelgen)
             self.prefix.append(labelgen.next())
         else
             while depth + 1 < len(self.stack)
                 self.stack.pop()
                 self.prefix.pop()
-            self.prefix[-1] = self.stack[-1].next()
+            self.prefix[self.prefix.length-1] = self.stack[self.stack.length-1].next()
         label = self.separator.join(self.prefix)
         if not link
             link = label
@@ -574,8 +645,11 @@ class Toc
         self.data.append(entry)
         return entry
 
-default_labeling = ():
+default_labeling = (depth):
     index = 1
     while true
-        yield index.to_string()
+        if depth == 0
+            yield index.to_string().rjust(2, '0')
+        else
+            yield index.to_string()
         index += 1
