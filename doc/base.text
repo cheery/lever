@@ -146,6 +146,18 @@ consistency.
 
 #section Objects & Interfaces
 
+Python calls 'interfaces' types and likewise has a 'type'
+where Lever has an interface.
+
+The decision to use the name 'interface' here originates
+from the fact that you do not often touch these parts. Also
+the term 'type' is used usually to denote what kind of
+object you have stored into a json file.
+
+Also we have a concept of a C type. The first-class C type
+system in Lever runtime is somewhat crucial element, and
+there will be more more of that as time goes on.
+
 #begin{interface}{object}
 #extends #ref{doc:/base}{null}
 #summary Base interface for everything
