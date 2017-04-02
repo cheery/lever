@@ -2,9 +2,7 @@
 *.pyc
 __pycache__
 pypy*
-doc/_build
-doc/_static
-doc/_templates
+doc/source_index.json
 *.cb
 *~
 .idea/
