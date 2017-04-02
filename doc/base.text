@@ -2,6 +2,12 @@
 A base module that is extended into a main module by
 default. Not completely documented.
 
+The contents of this base module are available immediately
+when a Lever runtime starts.
+
+Most of the functions in the base module are built into the
+language runtime.
+
 
 
 #toc
@@ -2526,6 +2532,10 @@ the object, super(object) is null.
 
 
 #section Modules
+
+Modules are hierarchical now, but I'm wondering whether the
+hierarchical idea of modules should be moved into the
+evaluation environment or program objects instead.
 
 #begin{interface}{Module}
 #extends #ref{doc:/base}{object}
