@@ -491,6 +491,25 @@ html_env.segments["subsection/1"] = (segment, context, out):
         html.Node("a", entry.text, {href="#" ++ entry.link})]))
     out.append(html.Node("h3", data ++ entry.text, {id=entry.link}))
 
+html_env.groups["itemize/0"] = (group, context, out):
+    out.append(html.Node('ul', listify_html(group.data, context)))
+
+html_env.groups["enumerate/0"] = (group, context, out):
+    out.append(html.Node('ol', listify_html(group.data, context)))
+
+listify_html = (data, context):
+    out = []
+    for cell in data
+        if cell.data.length == 0
+            out.append(html.Node('li', []))
+        elif cell.data.length == 1 and not cell.data[0].head
+            out.append(html.Node('li',
+                horizontal_html(cell.data[0].data, context)))
+        else
+            out.append(html.Node('li',
+                vertical_html(cell.data)))
+    return out
+
 
 
 html_env.macros["TODO/0"] = (macro, context, out):

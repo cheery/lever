@@ -262,7 +262,7 @@ objects with attributes.
 The shape and structure of all of these fields is very likely
 going to change, but for now we got something like this:
 
-#begin{enumerate}
+#begin{itemize}
 #item spec.varnames : #ref{doc:/base}{list}
 #item spec.is_variadic : #ref{doc:/base}{bool}
 #item spec.optional : #ref{doc:/base}{int}
@@ -271,7 +271,7 @@ going to change, but for now we got something like this:
 #item loc.source - source path
 #item loc.start - source location start (inclusive)
 #item loc.stop - source location stop (exclusive)
-#end{enumerate}
+#end{itemize}
 
 The introspection features will eventually improve until we
 can run abstract interpretation on the user-defined functions.

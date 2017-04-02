@@ -28,13 +28,13 @@ macros = {
         "value/0": {capture = false}
         "interface/0": {capture = false}
         "ignore/1": {capture = false}
+        "code/0": {capture = true}
     }
     groups = {
         "interface/1": {separators = []},
         # TODO: later add method/2 for externally marked multimethods.
         #       maybe... put the multimethod fill the .doc, so you can
         #       then use this mode of documentation... concat_int_int
-        # Add method/1 and default-method/0 groups that behave like function/1
         "function/1": {separators = []},
         "method/0": {separators = []},
         "default/0": {separators = []},
@@ -43,6 +43,7 @@ macros = {
         "itemize/0": {separators = ["item/0"]},
         "enumerate/0": {separators = ["item/0"]},
         "table/0": {separators = ["tr/0", "td/0"]},
+        "examples/0": {separators = []},
     }
 }
 
