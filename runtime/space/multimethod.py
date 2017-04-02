@@ -28,7 +28,7 @@ def hash_fn(this):
     return intmask(x)
 
 class Multimethod(Object):
-    _immutable_fields_ = ['arity', 'multimethod_table']
+    _immutable_fields_ = ['arity', 'multimethod_table', 'default?']
     def __init__(self, arity, default=null, doc=null):
         self.arity = arity
         self.multimethod_table = r_dict(eq_fn, hash_fn, force_non_null=True)
@@ -111,6 +111,8 @@ class Multimethod(Object):
                 space.Interface,
                 u"Multimethod expects interface list")
             for item in index.contents]
+        if vec in self.multimethod_table:
+            raise space.unwind(space.LError(u"Multimethod table is not overwritable."))
         self.multimethod_table[vec] = value
         return value
 

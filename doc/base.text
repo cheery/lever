@@ -95,6 +95,7 @@ isn't. Returns 'false' iff value is absent. Otherwise
 
 
 
+
 #begin{function}{and}
 #source ##
     {"source":"builtin:/base.py","start":{"col":null,"lno":201},"stop":{"col":null,"lno":205}}
@@ -246,50 +247,176 @@ the object, super(object) is null.
 
 
 
-#section Primitives
-
-#begin{interface}{property}
-#extends #ref{doc:/base}{object}
-
-#summary #TODO
-
-#status volatile
-
-#begin{function}{+init}
-#source ##
-    {"source":"builtin:/space/customobject.py","start":{"col":null,"lno":145},"stop":{"col":null,"lno":148}}
-
-#returns #TODO
-
-#summary #TODO
-
-#status volatile
-#end{function}
-#end{interface}
-
+#section Functions & Multimethods
 
 #begin{interface}{builtin}
 #extends #ref{doc:/base}{object}
+#summary Type for builtin functions.
+#status volatile
+#end{interface}
 
-#summary #TODO
+Every function, builtin or not has .spec and .loc
+attributes for introspection. They are both freely formed
+objects with attributes.
+
+The shape and structure of all of these fields is very likely
+going to change, but for now we got something like this:
+
+#begin{enumerate}
+#item spec.varnames : #ref{doc:/base}{list}
+#item spec.is_variadic : #ref{doc:/base}{bool}
+#item spec.optional : #ref{doc:/base}{int}
+#item spec.argc : #ref{doc:/base}{int}
+#item spec.argtypes : #ref{doc:/base}{list} or null
+#item loc.source - source path
+#item loc.start - source location start (inclusive)
+#item loc.stop - source location stop (exclusive)
+#end{enumerate}
+
+The introspection features will eventually improve until we
+can run abstract interpretation on the user-defined functions.
+
+
+
+#begin{interface}{multimethod}
+#extends #ref{doc:/base}{object}
+#summary Establishes a dispatch table that can be used to
+customize this method.
+
+Multimethods represent bundles of functions of fixed arity. Programmer can insert
+more of functions into a multimethod at any time.
+
+During invocation multimethods calls interface() for every argument they get. The
+result is used to determine the function to call. If the value is missing in the
+table, the default -method is called. If there's no default method, then an error
+is raised.
+
+It is expected that multimethods have a clear semantic and
+modes of failures that are obeyed by the functions put into
+the table.
+
+#begin{function}{+init}
+#arg{arity} 
+#returns a new multimethod that dispatches on the arity
+count of arguments.
+#summary A multimethod is partially mutable, but you are not
+expected to overwrite functions in a method table.
+#status volatile
+#end{function}
+
+#begin{function}{+setitem}
+#arg{self} 
+#arg{key} 
+#arg{function} 
+#summary Adds a method into the dispatch table. The key
+must be a list containing interfaces, having a length
+matching the arity.
+
+Fails if the key is already in the table.
+#status volatile
+#end{function}
+
+#begin{function}{+getitem}
+#arg{self} 
+#arg{key} 
+#returns The function associated to a key.
+#status volatile
+#end{function}
+
+#begin{function}{+call}
+#arg{args}
+#is_variadic
+#summary Gathers the key from the arguments and
+attempts to call a function in the dispatch table. If the
+key isn't in the table, it will then call the
+.default(args...) to provide a default resolution.
+#status volatile
+#end{function}
+
+#begin{function}{call_suppressed}
+#arg{args}
+#is_variadic
+#summary Dispatches on the multimethod table but returns an
+error instead of calling the .default(args...) if the
+dispatch fails.
+#status volatile
+#end{function}
+
+#begin{function}{keys}
+#returns The list of keys in the dispatch table.
+#summary Dispatches on the multimethod 
+#status volatile
+#end{function}
+
+Multimethods have an .arity field that tells their arity and
+a .default field that can be set. The .default field should
+be set only once.
 
 #status volatile
 #end{interface}
+
+
+
+
+
+
+
+
+
+#section Custom classes & objects
+
+The class definitions are part of a language, but it can be
+interesting to know how they construct underneath.
 
 #begin{function}{class}
 #source ##
     {"source":"builtin:/base.py","start":{"col":null,"lno":92},"stop":{"col":null,"lno":111}}
 
-#arg{argv} #TODO
+#arg{freeform}
+Freeform object holding the new fields for the new interface
+#optional{super}{#ref{doc:/base}{interface}}{#ref{doc:/base}{object}}
+The interface that this interface extends from
+#optional{name}{#ref{doc:/base}{str}}{"customobject"}
+#returns a new interface
+#summary Called by the 'class' syntax.
 
-#is_variadic
+Interfaces are immutable to favor the JIT compiler. This can
+be changed, but so far I haven't found a real need to change
+an interface after it has been created. It's usually just as
+simple to create a new interface.
+#status volatile
+#end{function}
 
-#returns #TODO
+#begin{interface}{property}
+#extends #ref{doc:/base}{object}
+#summary Provides getters/setters via the class interface.
+#status volatile
 
-#summary #TODO
+#begin{function}{+init}
+#source ##
+    {"source":"builtin:/space/customobject.py","start":{"col":null,"lno":145},"stop":{"col":null,"lno":148}}
+#returns a new property object.
+#summary The getters and setters are put into .get and .set
+    attributes of this object.
 
 #status volatile
 #end{function}
+
+#end{interface}
+
+
+
+
+
+
+
+
+
+
+
+#section Primitives
+
+
 
 #begin{interface}{dict}
 #extends #ref{doc:/base}{object}
@@ -776,14 +903,6 @@ the object, super(object) is null.
 
 #status volatile
 #end{function}
-#end{interface}
-
-#begin{interface}{multimethod}
-#extends #ref{doc:/base}{object}
-
-#summary #TODO
-
-#status volatile
 #end{interface}
 
 #begin{interface}{set}
@@ -1509,7 +1628,8 @@ the object, super(object) is null.
 
 #returns #TODO
 
-#summary #TODO
+#summary
+   Returns a character that corresponds to the integer.
 
 #status volatile
 #end{function}
@@ -1522,7 +1642,8 @@ the object, super(object) is null.
 
 #returns #TODO
 
-#summary #TODO
+#summary
+   Returns integer representing the unicode point of the character.
 
 #status volatile
 #end{function}
@@ -1570,7 +1691,16 @@ the object, super(object) is null.
 #begin{interface}{path}
 #extends #ref{doc:/base}{object}
 
-#summary #TODO
+#summary
+   Represents file paths. Note that irrespective of the OS, lever expects you
+   to provide POSIX compatible paths.
+
+   Paths have mutable attributes "is_absolute", "basename", "label". There is also
+   .push(path) -method to help in-place modify the path.
+
+   To pass path to FFI, the path object has "get_os_path" -method to convert
+   the path into system path.
+
 
 #status volatile
 
@@ -1876,7 +2006,8 @@ the object, super(object) is null.
 
 #returns #TODO
 
-#summary #TODO
+#summary
+   Prints the given values, with space between them.
 
 #status volatile
 #end{function}
@@ -2263,7 +2394,12 @@ the object, super(object) is null.
 
 #returns #TODO
 
-#summary #TODO
+#summary
+   The sleep performs two functions. It can be used to suspend the current greenlet,
+   queue it after duration of seconds pass.
+
+   If you pass it a function or greenlet, it will convert it into a greenlet and
+   adds it to the event queue after the duration passes.
 
 #status volatile
 #end{function}
@@ -2271,15 +2407,13 @@ the object, super(object) is null.
 #begin{function}{schedule}
 #source ##
     {"source":"builtin:/core.py","start":{"col":null,"lno":102},"stop":{"col":null,"lno":106}}
-
 #arg{argv} #TODO
-
 #is_variadic
-
-#returns #TODO
-
-#summary #TODO
-
+#returns newly created greenlet
+#summary
+   Schedule is similar to the greenlet -command, except that it queues the greenlet
+   and sets it to return into the eventloop when it finishes. It returns the
+   newly created greenlet.
 #status volatile
 #end{function}
 
@@ -2288,7 +2422,7 @@ the object, super(object) is null.
 #source ##
     {"source":"builtin:/base.py","start":{"col":null,"lno":365},"stop":{"col":null,"lno":369}}
 
-#returns #TODO
+#returns The currently running greenlet.
 
 #summary #TODO
 
@@ -2298,7 +2432,22 @@ the object, super(object) is null.
 #begin{interface}{greenlet}
 #extends #ref{doc:/base}{object}
 
-#summary #TODO
+#summary A stack branch point, or something like that
+
+Conceptually greenlets represent a body of work you can stop for a moment while
+you do a different task. Note that you are always in a greenlet. You can always
+put the current task to sleep, or switch to the eventloop to run a different task.
+
+Greenlet represents a call frame that can be suspended. The arguments describe a
+function to call and it can be left blank. In that case the switching has to pass
+a function that is called inside the greenlet.
+
+The greenlet.parent describes where the call returns once it finishes.
+
+greenlet.switch(arguments...) suspends the current greenlet and switches to the
+targeted greenlet. If the greenlet hasn't started yet, the given arguments are
+concatenated to the initial arguments. If the greenlet is suspended, the arguments
+are compacted into a value and returned in the target greenlet.
 
 #status volatile
 
@@ -2367,7 +2516,8 @@ the object, super(object) is null.
 
 #returns #TODO
 
-#summary #TODO
+#summary
+   Retrieves attribute from an object.
 
 #status volatile
 #end{function}
@@ -2382,7 +2532,9 @@ the object, super(object) is null.
 
 #returns #TODO
 
-#summary #TODO
+#summary
+   Equivalent to object[index]. Presented as a convenience. Invokes the +getitem from
+   the interface table.
 
 #status volatile
 #end{function}
@@ -2408,7 +2560,8 @@ the object, super(object) is null.
 
 #returns #TODO
 
-#summary #TODO
+#summary
+   Retrieve an iterator. Invokes the +iter from the interface table.
 
 #status volatile
 #end{function}
@@ -2509,7 +2662,8 @@ the object, super(object) is null.
 
 #returns #TODO
 
-#summary #TODO
+#summary
+   Sets an attribute to an object.
 
 #status volatile
 #end{function}
@@ -2526,7 +2680,10 @@ the object, super(object) is null.
 
 #returns #TODO
 
-#summary #TODO
+#summary
+   Equivalent to object[index] = value. Presented as a convenience. Invokes the +setitem
+   from the interface table.
+
 
 #status volatile
 #end{function}
@@ -2548,6 +2705,10 @@ the object, super(object) is null.
 Modules are hierarchical now, but I'm wondering whether the
 hierarchical idea of modules should be moved into the
 evaluation environment or program objects instead.
+
+There is a function "import" that imports a module and is
+used behind the import syntax. Every module has an import
+function and it is always an instance of a Import.
 
 #begin{interface}{Module}
 #extends #ref{doc:/base}{object}
@@ -4648,6 +4809,10 @@ inheritance.
 #begin{multimethod}{coerce}{2}
 #summary Arithmetic coercion.
 
+A Base multimethod for converting two value into values that pair arithmetically.
+Coercion is used when the values cannot be found from the usual multimethod table
+and when the exact pairing cannot be found. 
+
 Sometimes we expect that two types are arithmetically
 interchangeable although they would be technically
 different. Therefore many arithmetic operations in Lever
@@ -6672,7 +6837,10 @@ new concatenated byte sequence.
 
 #returns #TODO
 
-#summary #TODO
+#summary
+   Changes the current directory.
+
+   Note that both getcwd() and chdir(path) may eventually move into fs -module.
 
 #status volatile
 #end{function}
@@ -6794,7 +6962,12 @@ new concatenated byte sequence.
 
 #returns #TODO
 
-#summary #TODO
+#summary
+   Returns a path object denoting the current path. Note that this object is
+   converted once, so if you have unusual path that doesn't follow posix
+   conventions, the lever getcwd may give a incorrect path.
+
+   Note that both getcwd() and chdir(path) may eventually move into fs -module.
 
 #status volatile
 #end{function}

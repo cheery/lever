@@ -1,0 +1,805 @@
+#module{ffi}
+
+#begin{interface}{array}
+#extends #ref{type}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":621},"stop":{"col":null,"lno":626}}
+
+#arg{ctype}{#ref{doc:/base}{object}} #TODO
+
+#optional{n}{#ref{doc:/base}{int}}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":618},"stop":{"col":null,"lno":620}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{function}{automem}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":154},"stop":{"col":null,"lno":168}}
+
+#arg{ctype}{#ref{doc:/base}{object}} #TODO
+
+#optional{count}{#ref{doc:/base}{int}}{null} #TODO
+
+#optional{clear}{#ref{doc:/base}{bool}}{null} #TODO
+
+#returns #TODO
+
+#summary
+   Allocates a chunk of memory that is automatically
+   deallocated when the object is being lost. Be aware that
+   this method can be used to create flanging pointers.
+   
+   Please keep the object around as long as the memory is
+   used.
+#status volatile
+#end{function}
+
+#begin{interface}{bitmask}
+#extends #ref{type}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+call}
+#source ##
+    {"source":"builtin:/stdlib/ffi/bitmask.py","start":{"col":null,"lno":20},"stop":{"col":null,"lno":22}}
+
+#arg{argv} #TODO
+
+#is_variadic
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{object}{byte}
+#interface #ref{doc:/ffi}{unsigned}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{interface}{callback}
+#extends #ref{doc:/ffi}{mem}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+call}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":98},"stop":{"col":null,"lno":102}}
+
+#arg{argv} #TODO
+
+#is_variadic
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+getitem}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":63},"stop":{"col":null,"lno":81}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+init}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":246},"stop":{"col":null,"lno":253}}
+
+#arg{cfunc}{#ref{type}} #TODO
+
+#arg{callback}{#ref{doc:/base}{object}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+iter}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":109},"stop":{"col":null,"lno":111}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":103},"stop":{"col":null,"lno":108}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+setitem}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":82},"stop":{"col":null,"lno":97}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{function}{cast}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":115},"stop":{"col":null,"lno":128}}
+#arg{obj}{#ref{doc:/base}{object}} C object
+#arg{ctype}{#ref{doc:/base}{object}} Type to cast into
+#returns Converted object.
+#summary Casts the c-type of a c-object.
+#status volatile
+#end{function}
+
+#begin{interface}{cfunc}
+#extends #ref{type}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":349},"stop":{"col":null,"lno":356}}
+
+#arg{restype}{#ref{doc:/base}{object}} #TODO
+
+#arg{argtypes_list}{#ref{doc:/base}{list}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":343},"stop":{"col":null,"lno":348}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{object}{char}
+#interface #ref{doc:/ffi}{unsigned}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{double}
+#interface #ref{floating}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{float}
+#interface #ref{floating}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{free}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":169},"stop":{"col":null,"lno":176}}
+
+#arg{mem}{#ref{doc:/ffi}{mem}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{interface}{handle}
+#extends #ref{doc:/ffi}{mem}
+
+#summary
+   Cannot be instantiated yourself. Represents a handle
+   into a C symbol.
+
+#status volatile
+
+#begin{function}{+repr}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":88},"stop":{"col":null,"lno":90}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{object}{i16}
+#interface #ref{doc:/ffi}{signed}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{i32}
+#interface #ref{doc:/ffi}{signed}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{i64}
+#interface #ref{doc:/ffi}{signed}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{i8}
+#interface #ref{doc:/ffi}{signed}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{int}
+#interface #ref{doc:/ffi}{signed}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{interface}{library}
+#extends #ref{doc:/base}{object}
+
+#summary Opens a shared C library
+
+The path must be a string denoting the location of the
+library in the system. The apispec may be a function
+that is called with the name whenever getattr(name) is
+called. It returns a ctype or wrap -object to indicate
+what the library should do.
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":52},"stop":{"col":null,"lno":65}}
+
+#arg{name}{#ref{doc:/base}{str}} #TODO
+
+#optional{apispec}{#ref{doc:/base}{object}}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{object}{llong}
+#interface #ref{doc:/ffi}{signed}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{long}
+#interface #ref{doc:/ffi}{signed}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{malloc}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":139},"stop":{"col":null,"lno":153}}
+
+#arg{ctype}{#ref{doc:/base}{object}} #TODO
+
+#optional{count}{#ref{doc:/base}{int}}{null} #TODO
+
+#optional{clear}{#ref{doc:/base}{bool}}{null} #TODO
+
+#returns #TODO
+
+#summary
+   Where the sizeof returns the size of the type, this thing
+   returns a c-object of that size.
+
+   The c-object created with this method must be deallocated.
+#status volatile
+#end{function}
+
+#begin{interface}{mem}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+#end{interface}
+
+#begin{function}{memcpy}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":183},"stop":{"col":null,"lno":194}}
+
+#arg{dst}{#ref{doc:/ffi}{mem}} #TODO
+
+#arg{src}{#ref{doc:/base}{object}} #TODO
+
+#arg{count}{#ref{doc:/base}{int}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{memset}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":177},"stop":{"col":null,"lno":182}}
+
+#arg{mem}{#ref{doc:/ffi}{mem}} #TODO
+
+#arg{num}{#ref{doc:/base}{int}} #TODO
+
+#arg{count}{#ref{doc:/base}{int}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{interface}{pointer}
+#extends #ref{type}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":230},"stop":{"col":null,"lno":234}}
+
+#arg{ctype}{#ref{type}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":227},"stop":{"col":null,"lno":229}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{pool}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":665},"stop":{"col":null,"lno":668}}
+
+#optional{autoclear}{#ref{doc:/base}{bool}}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{alloc}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":669},"stop":{"col":null,"lno":682}}
+
+#arg{pool}{#ref{doc:/ffi}{pool}} #TODO
+
+#arg{ctype}{#ref{type}} #TODO
+
+#optional{count}{#ref{doc:/base}{int}}{null} #TODO
+
+#optional{clear}{#ref{doc:/base}{bool}}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{free}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":688},"stop":{"col":null,"lno":692}}
+
+#arg{pool}{#ref{doc:/ffi}{pool}} #TODO
+
+#returns #TODO
+
+#summary
+   Deallocates the memory of mallocated c-object.
+
+#status volatile
+#end{function}
+
+#begin{function}{mark}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":683},"stop":{"col":null,"lno":687}}
+
+#arg{pool}{#ref{doc:/ffi}{pool}} #TODO
+
+#arg{obj}{#ref{doc:/base}{object}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{function}{ref}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":197},"stop":{"col":null,"lno":213}}
+
+#arg{mem}{#ref{doc:/base}{object}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{object}{sbyte}
+#interface #ref{doc:/ffi}{signed}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{short}
+#interface #ref{doc:/ffi}{signed}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{interface}{signed}
+#extends #ref{type}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+repr}
+#source ##
+    {"source":"builtin:/stdlib/ffi/simple.py","start":{"col":null,"lno":101},"stop":{"col":null,"lno":103}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{object}{size_t}
+#interface #ref{doc:/ffi}{unsigned}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{sizeof}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":129},"stop":{"col":null,"lno":138}}
+
+#arg{ctype}{#ref{doc:/base}{object}} #TODO
+
+#optional{count}{#ref{doc:/base}{int}}{null} #TODO
+
+#returns #TODO
+
+#summary
+   Returns the size of the ctype. If the ctype is parametric
+   it returns the size of ctype[a], otherwise it returns
+   the size of array of ctype of that size.
+
+#status volatile
+#end{function}
+
+#begin{interface}{struct}
+#extends #ref{type}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":458},"stop":{"col":null,"lno":469}}
+
+#arg{fields_list}{#ref{doc:/base}{list}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":450},"stop":{"col":null,"lno":457}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{object}{u16}
+#interface #ref{doc:/ffi}{unsigned}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{u32}
+#interface #ref{doc:/ffi}{unsigned}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{u64}
+#interface #ref{doc:/ffi}{unsigned}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{u8}
+#interface #ref{doc:/ffi}{unsigned}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{ubyte}
+#interface #ref{doc:/ffi}{unsigned}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{uint}
+#interface #ref{doc:/ffi}{unsigned}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{ullong}
+#interface #ref{doc:/ffi}{unsigned}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{ulong}
+#interface #ref{doc:/ffi}{unsigned}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{interface}{union}
+#extends #ref{type}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":548},"stop":{"col":null,"lno":561}}
+
+#arg{fields_list}{#ref{doc:/base}{list}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"builtin:/stdlib/ffi/systemv.py","start":{"col":null,"lno":542},"stop":{"col":null,"lno":547}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{unsigned}
+#extends #ref{type}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"builtin:/space/exnihilo.py","start":{"col":null,"lno":50},"stop":{"col":null,"lno":59}}
+
+#optional{obj}{#ref{doc:/base}{object}}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"builtin:/stdlib/ffi/simple.py","start":{"col":null,"lno":134},"stop":{"col":null,"lno":136}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{object}{ushort}
+#interface #ref{doc:/ffi}{unsigned}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{voidp}
+#interface #ref{doc:/ffi}{pointer}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{interface}{wrap}
+#extends #ref{doc:/base}{object}
+#summary
+Associates a c-type with a name. It is used to denote
+whether a differently named symbol should be fetched, in
+the library -interface.
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":21},"stop":{"col":null,"lno":25}}
+
+#arg{cname}{#ref{doc:/base}{str}} #TODO
+
+#arg{ctype}{#ref{doc:/base}{object}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"builtin:/stdlib/ffi/__init__.py","start":{"col":null,"lno":18},"stop":{"col":null,"lno":20}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
