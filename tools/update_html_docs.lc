@@ -50,7 +50,7 @@ main = (args):
                         page = page
                         module = card
                         card   = object_card)
-                return object();         
+                return object();
                     toc     = toc
                     html_toc = html_toc
                     page    = page
@@ -63,6 +63,8 @@ main = (args):
         # vertical html adds the 'out'
 
         page_finalize(page)
+        check_ignored(context)
+
 
     if indice
         page = indice
@@ -116,6 +118,7 @@ main = (args):
             index = index
             module_card = null
             card = null # reference card.
+            source = null
 
         body.append(html.Node('div', [
             html.Raw('
@@ -168,14 +171,23 @@ html_env.segments["module/1"] = (segment, context, out):
     if segment.data.length > 0
         context.page.summary = horizontal_html(segment.data, context)
         out.append(html.Node("p", context.page.summary))
+    entry = context.source_index.get(context.page.name, {})
     context.card = object();
         type = "module"
         name = context.page.name
         sub = ""
         # This is used for checking whether the documentation includes
         # everything.
-        source_index = context.source_index.get(context.page.name, {})
-        source_ignore = set()
+        source = object();
+            loc = entry.get("loc", {})
+            loc_ref = null
+            index = entry.get("fields", {})
+            ignore = set()
+            argtypes = []
+            default = null
+            arity = 0
+            methods = {}
+        anchor = null
     context.index.modules.append(context.page)
     context.page.root.head.append(
         html.Node("title", ["Lever manual: ", context.page.name]))
@@ -246,8 +258,10 @@ html_env.groups["object/1"] = (group, context, out):
             postfix
         ])
         summary = null
+        source = source_check(context, anchor, name)
     )
     create_ref_card(group, context, out)
+    check_ignored(context)
 
 html_env.groups["interface/1"] = (group, context, out):
     name = texopic.verbatim(group.head.args[0])
@@ -266,8 +280,10 @@ html_env.groups["interface/1"] = (group, context, out):
             postfix
         ])
         summary = null
+        source = source_check(context, anchor, name)
     )
     create_ref_card(group, context, out)
+    check_ignored(context)
 
 html_env.groups["function/1"] = (group, context, out):
     name = texopic.verbatim(group.head.args[0])
@@ -288,8 +304,10 @@ html_env.groups["function/1"] = (group, context, out):
             argref
         ])
         summary = null
+        source = source_check(context, anchor, name)
     )
     create_ref_card(group, context, out)
+    check_ignored(context)
 
 html_env.groups["multimethod/2"] = (group, context, out):
     name = texopic.verbatim(group.head.args[0])
@@ -307,15 +325,17 @@ html_env.groups["multimethod/2"] = (group, context, out):
                 "class": "name reference"}),
         ])
         summary = null
+        source = source_check(context, anchor, name)
     )
     create_ref_card(group, context, out)
+    check_ignored(context, true)
 
-html_env.groups["method/0"] = (group, context, out):
-    context = context.push(object();
+html_env.groups["method/0"] = (group, p_context, out):
+    context = p_context.push(object();
         type = "function"
-        name = context.card.name
-        sub = context.card.sub
-        anchor = context.card.anchor
+        name = p_context.card.name
+        sub = p_context.card.sub
+        anchor = p_context.card.anchor
         prefix = null
         arglist = html.Node("span", [])
         argref  = html.Node("table", [], {"class": "arg-ref"})
@@ -324,16 +344,32 @@ html_env.groups["method/0"] = (group, context, out):
             html.Node("summary", [postfix]),
             argref
         ])
+        source = source_method_check()
         summary = null, false)
     fill_card(group, context, context.card.heading.data)
     out.append(context.card.heading)
 
-html_env.groups["default/0"] = (group, context, out):
-    context = context.push(object();
+    if p_context.card.source
+        this = context.card.source
+        source = p_context.card.source
+        tt = this.argtypes[.:source.arity]
+        if tt in source.methods
+            method = source.methods.pop(tt)
+            loc = method.get("loc")
+            if this.loc_ref and loc
+                check_source_conflict(
+                    this.loc_ref, loc,
+                    p_context.card.anchor ++ " ".join(tt))
+        else
+            print("method", context.page.name ++ "." ++ 
+                p_context.card.anchor ++ " ".join(tt), "missing")
+
+html_env.groups["default/0"] = (group, p_context, out):
+    context = p_context.push(object();
         type = "function"
-        name = context.card.name
-        sub = context.card.sub
-        anchor = context.card.anchor
+        name = p_context.card.name
+        sub = p_context.card.sub
+        anchor = p_context.card.anchor
         prefix = null
         arglist = html.Node("span", [])
         argref  = html.Node("table", [], {"class": "arg-ref"})
@@ -343,13 +379,39 @@ html_env.groups["default/0"] = (group, context, out):
                 "default", postfix]),
             argref
         ])
+        source = source_method_check()
         summary = null, false)
     fill_card(group, context, context.card.heading.data)
     out.append(context.card.heading)
 
+    if p_context.card.source
+        this = context.card.source
+        source = p_context.card.source
+        if source.default
+            loc = source.default.get("loc")
+            if this.loc_ref and loc
+                check_source_conflict(
+                    this.loc_ref, loc,
+                    p_context.card.anchor ++ ".default")
+            source.default = null
+        else
+            print("default method missing at",
+                context.page.name ++ "." ++ source.anchor)
+
+source_method_check = ():
+    source = object();
+        loc = null
+        loc_ref = null
+        index = {}
+        ignore = set()
+        argtypes = []
+        arity = 0
+        methods = {}
+    return source
+
 # Ignore can be used to ignore warnings about absence or presence.
 html_env.segments["ignore/1"] = (group, context, out):
-    context.card.source_ignore.add(
+    context.card.source.ignore.add(
         texopic.verbatim(group.head.args[0]))
 
 create_ref_card = (group, context, out):
@@ -415,6 +477,9 @@ html_env.segments["source/0"] = (segment, context, out):
             })
         ], {"class": "source-link"}))
 
+    if context.card.source
+        context.card.source.loc_ref = loc
+
 html_env.segments["optional/2"] =
 html_env.segments["arg/1"] = (segment, context, out):
     head = segment.head
@@ -454,6 +519,8 @@ html_env.segments["optional/3"] = (segment, context, out):
             html.Node("td", [argname, " "]),
             html.Node("td", horizontal_html(segment.data, context))
         ]))
+    if context.card.source
+        context.card.source.argtypes.append( texopic.verbatim(head.args[1]) )
 
 html_env.segments["is_variadic/0"] = (segment, context, out):
     context.card.arglist.append("...")
@@ -569,6 +636,76 @@ flatten = (group_data):
             result.append(segment.head)
         result.extend(segment.data)
     return result
+
+source_check = (context, anchor, name):
+    if context.card.source and name in context.card.source.index
+        obj = context.card.source.index.pop(name)
+        source = object()
+        source.loc = obj.get("loc")
+        source.loc_ref = null
+        source.index = obj.get("fields", {})
+        source.ignore = set()
+        source.argtypes = []
+        source.default = obj.get("default", null)
+        source.arity = obj.get("arity", 0)
+        source.methods = {}
+        for item in obj.get("methods", [])
+            t = []
+            for tt in item["argtypes"]
+                t.append(texopic.verbatim([link_reference(tt)]))
+            source.methods[t] = item["function"]
+        return source
+    else
+        print("warning:", context.page.name ++ "." ++ anchor, "not in source index")
+        return null
+
+link_reference = (link):
+    if not link[0]
+        return texopic.Macro("ref", [[".".join(link[1.:])]])
+    return texopic.Macro("ref", [[link[0]], [".".join(link[1.:])]])
+
+check_ignored = (context, is_multimethod=false):
+    if context.card and context.card.source
+        if is_multimethod
+            null
+        else
+            for name in context.card.source.index
+                if name not in context.card.source.ignore
+                    if context.card.anchor
+                        print("warning, missing:",
+                            context.page.name ++ "." ++
+                            context.card.anchor ++ "." ++ name)
+                    else
+                        print("warning, missing:",
+                            context.page.name ++ "." ++
+                            "." ++ name)
+
+        for item in context.card.source.methods
+            print("warning, missing:",
+                context.page.name ++ "." ++
+                context.card.anchor, item)
+
+        if context.card.source.default
+            print("warning, missing:",
+                context.page.name ++ "." ++
+                context.card.anchor ++
+                ".default")
+
+        if context.card.source.loc and context.card.source.loc_ref
+            check_source_conflict(
+                context.card.source.loc_ref,
+                context.card.source.loc,
+                context.page.name ++ "." ++ context.card.anchor)
+
+check_source_conflict = (loc_ref, loc, name):
+            a = json.write_string(loc_ref)
+            b = json.write_string(loc)
+            if a != b
+                print("conflict in", name)
+                print("wrong loc:")
+                print("    " ++ a)
+                print("index loc:")
+                print("    " ++ b)
 
 page_root = (page):
     doctype = html.Raw("<!DOCTYPE html>")
