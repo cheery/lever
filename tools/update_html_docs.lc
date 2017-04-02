@@ -22,6 +22,7 @@ main = (args):
                      # producing the index.
         modules = [] # Also, the layout of it all is better resolved
                      # in post-order.
+        manuals = {}
 
     # We use this to provide an inconsistency checking that
     # allows the updater to warn about changed documentation early on
@@ -181,6 +182,38 @@ html_env.segments["module/1"] = (segment, context, out):
     context.article.insert(0,
         html.Node("h1", ["Manual: ", context.page.name], {"class": "embed-header"})) 
 
+# Group name and index..
+html_env.segments["manual/3"] = (segment, context, out):
+    context.page.group_name = texopic.verbatim(segment.head.args[0])
+    context.page.group_index = texopic.verbatim(segment.head.args[1])
+    context.page.name = texopic.verbatim(segment.head.args[2])
+    if segment.data.length > 0
+        context.page.summary = horizontal_html(segment.data, context)
+        out.append(html.Node("p", context.page.summary))
+    context.page.root.head.append(
+        html.Node("title", ["Lever manual: ", context.page.name]))
+    context.article.insert(0,
+        html.Node("h1", ["Manual: ", context.page.name], {"class": "embed-header"})) 
+    L = context.index.manuals.get(context.page.group_name, [])
+    context.index.manuals[context.page.group_name] = L
+    L.append(context.page)
+
+html_env.segments["index-toc/1"] = (segment, context, out):
+    group_name = texopic.verbatim(segment.head.args[0])
+    manuals = html.Node('table', [], {"class": "index-toc"})
+    manual_group = context.index.manuals.get(group_name, [])
+    manual_group.sort((a, b):
+        return a.group_index < b.group_index)
+    for manual in manual_group
+        manuals.append(html.Node('tr', [
+            html.Node('td', [manual.group_index, ". ",
+                html.Node('a', [manual.name],
+                    {
+                        href=manual.link.relpath(context.page.dir).to_string()
+                    })]),
+            html.Node('td', manual.summary)
+        ]))
+    out.append(manuals)
 
 html_env.segments[null] = (segment, context, out):
     out.append(html.Node('p',
@@ -516,7 +549,9 @@ listify_html = (data, context):
                 vertical_html(cell.data)))
     return out
 
-
+# when they are needed...
+# TODO: Implement table/0 and tr/0 td/0
+# TODO: Implement reference/1 segment and to/1 to/2
 
 html_env.macros["TODO/0"] = (macro, context, out):
     out.append("not documented")

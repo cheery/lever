@@ -29,6 +29,8 @@ macros = {
         "interface/0": {capture = false}
         "ignore/1": {capture = false}
         "code/0": {capture = true}
+        "manual/3": {capture = false}
+        "index-toc/1": {capture = false}
     }
     groups = {
         "interface/1": {separators = []},
