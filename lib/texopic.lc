@@ -173,6 +173,7 @@ parse_structure = (stream, macros, implicit_ending="auto"):
                     key = name ++ "/" ++ (token.args.length - 1).to_string()
                     info = macros["groups"].get(key)
                     if info
+                        flush()
                         stack = object();
                             parent = stack
                             name = name

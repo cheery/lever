@@ -39,6 +39,7 @@ main = (args):
             html_toc = html.Node("fieldset", [html.Node("legend", ["Table of contents"])], {"class":"toc", "id":"-toc"})
             page = page
             index = index
+            source_index = source_index
             card = null # reference card.
             article = html.Node('article', [])
             page.root.body.append(article)
@@ -170,8 +171,11 @@ html_env.segments["module/1"] = (segment, context, out):
         type = "module"
         name = context.page.name
         sub = ""
+        # This is used for checking whether the documentation includes
+        # everything.
+        source_index = context.source_index.get(context.page.name, {})
+        source_ignore = set()
     context.index.modules.append(context.page)
-    # 
     context.page.root.head.append(
         html.Node("title", ["Lever manual: ", context.page.name]))
     context.article.insert(0,
@@ -310,8 +314,10 @@ html_env.groups["default/0"] = (group, context, out):
     fill_card(group, context, context.card.heading.data)
     out.append(context.card.heading)
 
+# Ignore can be used to ignore warnings about absence or presence.
 html_env.segments["ignore/1"] = (group, context, out):
-    null # TODO: ignore a missing variable.
+    context.card.source_ignore.add(
+        texopic.verbatim(group.head.args[0]))
 
 create_ref_card = (group, context, out):
     ref_card = html.Node("div", [context.card.heading], {
