@@ -187,6 +187,14 @@ def _(a, b):
 def _(a, b):
     return boolean(a.number == b.number)
 
+@eq.multimethod_s(Integer, Float) # Added so they won't bite into back soon.
+def _(a, b):
+    return boolean(a.value == b.number)
+
+@eq.multimethod_s(Float, Integer)
+def _(a, b):
+    return boolean(a.number == b.value)
+
 @eq.multimethod_s(String, String)
 def _(a, b):
     return boolean(a.string == b.string)
