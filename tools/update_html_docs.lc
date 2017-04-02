@@ -263,7 +263,7 @@ html_env.groups["multimethod/2"] = (group, context, out):
         sub = context.card.sub ++ name ++ " "
         anchor = context.card.sub ++ name
         prefix = null
-        postfix = html.Node("span", ["= multimethod(", arity, ")"])
+        postfix = html.Node("span", [" = multimethod(", arity, ")"])
         heading = html.Node("div", [
             html.Node("a", [name], {
                 "href": "#" ++ anchor
@@ -456,7 +456,6 @@ html_env.segments["toc/0"] = (segment, context, out):
     out.append(html.Node("script", [], {
         src=path("www/toc-helper.js").relpath(context.page.dir).to_string()
     }))
-    #out.append(html.Node("a", ["table of contents"], {id="toc-link", href="#toc"}))
 
 html_env.segments["section/0"] = (segment, context, out):
     text = horizontal_html(segment.data, context)
