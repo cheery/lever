@@ -1,4 +1,7 @@
 import vulkan, ffi, api
+from warpgpu2 import *
+# TODO: once the library is ready, remove this file
+#       and rename the library.
 
 class GPU
     +init = (self, window):

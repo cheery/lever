@@ -1,5 +1,6 @@
 import sdl
 import vulkan, ffi, api, fs
+
 from warpgpu import *
 
 main = ():
@@ -73,6 +74,23 @@ main = ():
 
     cbuf = gpu.queue.pool.allocate({level = "PRIMARY", commandBufferCount = 1})[0]
 
+    DSC0 = DescriptorSetLayout(device, {
+        "testbuffer": {
+            binding=0,
+            descriptorType = "UNIFORM_BUFFER",
+            stageFlags="VERTEX_BIT"
+            # Deliver 'count' here and it is treated as an array.
+            # also immutableSamplers can be passed.
+        }
+    })
+    dsc0 = DSC0()
+    dsc0.testbuffer = {
+        buffer = ubo.buffer
+        offset = 0
+        range  = ubo.buffer.size
+    }
+    updateDescriptorSets(dsc0)
+
     Desc0 = DescriptorSet(device, [
         {
             binding = 0
@@ -105,13 +123,45 @@ main = ():
     }], [])
     # DEP: cbuf
 
+    #pb = RenderPassBuilder()
+    #pb.color0.attachment(swapchain.layout, {
+    #    loadOp = "CLEAR"
+    #    storeOp = "STORE"
+    #    initialLayout = 0 #UNDEFINED
+    #    finalLayout   = "PRESENT_SRC_KHR"
+    #})
+
+    #pb.p0.subpass("GRAPHICS", {
+    #    colorAttachments = [
+    #        pb.color0("COLOR_ATTACHMENT_OPTIMAL")
+    #    ]
+    #})
+    #pb.p1.subpass("GRAPHICS", {
+    #    colorAttachments = [
+    #        pb.color0("COLOR_ATTACHMENT_OPTIMAL")
+    #    ]
+    #})
+    #pb.dependency(p0, p1, {
+    #    srcStageMask = ...
+    #    dstStageMask = ...
+    #    srcAccessMask = ...
+    #    dstAccessMask = ...
+    #    dependencyFlags = ...
+    #})
+    #pass = pb.build(device)
+
+
+    # get viewport state & multisampleState from the rendering target.
+    # include rasterizationState in the vertex_layout
+    # include colorBlendState in pipeline as default
+    # include dynamicState    in pipeline
     pass = gpu.default_pass();
         renderPass = vulkan.RenderPass(device, {
             attachments = [
                 {
                     # These values will likely require adjustment.
                     format = gpu.swapchain.format
-                    samples = "1_BIT"
+                    samples = gpu.swapchain.samples
                     loadOp = "CLEAR"
                     storeOp = "STORE"
                     stencilLoadOp = "DONT_CARE"
@@ -150,6 +200,9 @@ main = ():
         fence = vulkan.Fence(device, {flags = "SIGNALED_BIT"})
         swapchain.fences.append(fence)
 
+        #framebuffer = pass.Framebuffer({
+        #    color0 = view
+        #})
         framebuffer = vulkan.Framebuffer(device, {
             renderPass = pass.renderPass
             attachments = [view]
@@ -160,28 +213,22 @@ main = ():
         swapchain.framebuffers.append(framebuffer)
         # DEP: cbuf, begin of renderpass
 
-    vertex_shader = createShader(device,
-        fs.read_file(dir ++ "vertex_shader.spv", "b"))
-    fragment_shader = createShader(device,
-        fs.read_file(dir ++ "fragment_shader.spv", "b"))
+
+    shaders = ShaderLoader(device, dir)
+
     # DEP: pipeline
+
+    # pib = pass.p0(stages, vertex_layout, pipeline_layout, extra={})
+    # gpu.createPipeline(pib) # or pipelines.
 
     pipeline_config = {}
     pipeline_config.update(pass.pipeline)
     pipeline_config.update({
         flags = 0
-        stages = [
-            {
-                stage = "VERTEX_BIT"
-                module = vertex_shader
-                name = "main"
-            },
-            {
-                stage = "FRAGMENT_BIT"
-                module = fragment_shader
-                name = "main"
-            }
-        ]
+        stages = shaders.fetch({
+            vertex = "vertex_shader.spv:main"
+            fragment = "fragment_shader.spv:main"
+        })
         vertexInputState = vertex_layout.input
         inputAssemblyState = vertex_layout.assembly
         layout = pipeline_layout
@@ -194,6 +241,8 @@ main = ():
     frame_statistics = []
     last_image = 0
     render = ():
+        # TODO: Could use the libuv threadpools to wait for a fence.
+
         # This is lazy. It means we can't continue before the previous frame has been submitted.
         # Need to check with performance counter later, whether this is sufficient
         for i in range(10) # 10ms
@@ -275,7 +324,6 @@ main = ():
     vbo.buffer.mem.free()
     ubo.buffer.destroy()
     ubo.buffer.mem.free()
-    vertex_shader.destroy()
-    fragment_shader.destroy()
+    shaders.destroy()
     pass.renderPass.destroy()
     gpu.destroy()
