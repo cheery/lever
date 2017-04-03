@@ -158,39 +158,6 @@ class Id(Object):
             return self.ref
         return Object.getattr(self, name)
 
-    def getitem(self, name):
-        ref = self.ref
-        if not isinstance(ref, CustomObject):
-            return Object.getitem(self, name)
-        name = space.cast(name, space.String, u"Id.+getitem name").string
-        try:
-            return ref.getattr_direct(name)
-        except space.Unwinder as unwind:
-            exc = unwind.exception
-            if isinstance(exc, space.LAttributeError):
-                exc = space.LKeyError(exc.obj, space.String(exc.name))
-                exc.traceback = unwind.traceback
-                raise space.Unwinder(exc, unwind.traceback)
-            else:
-                raise unwind
-
-    def setitem(self, name, value):
-        ref = self.ref
-        if not isinstance(ref, CustomObject):
-            return Object.setitem(self, name, value)
-        name = space.cast(name, space.String, u"Id.+setitem name").string
-        try:
-            return ref.setattr_direct(name, value)
-
-        except space.Unwinder as unwind:
-            exc = unwind.exception
-            if isinstance(exc, space.LAttributeError):
-                exc = space.LKeyError(exc.obj, space.String(exc.name))
-                exc.traceback = unwind.traceback
-                raise space.Unwinder(exc, unwind.traceback)
-            else:
-                raise unwind
-
     def hash(self):
         return compute_hash(self.ref)
 
@@ -212,3 +179,39 @@ def Id_get(self, name, default):
         return ref.storage[index]
     else:
         return space.null if default is None else default
+
+# Moving into methods because the getitem/setitem would propose
+# that the exception type changes too, which would be inconvenient.
+@Id.method(u"getattr", signature(Id, String))
+def getattr(self, name):
+    ref = self.ref
+    if not isinstance(ref, CustomObject):
+        return Object.getattr(ref, name.string)
+    #name = space.cast(name, space.String, u"Id.getattr name").string
+    try:
+        return ref.getattr_direct(name.string)
+    except space.Unwinder as unwind:
+        exc = unwind.exception
+        if isinstance(exc, space.LAttributeError):
+            exc = space.LKeyError(exc.obj, space.String(exc.name))
+            exc.traceback = unwind.traceback
+            raise space.Unwinder(exc, unwind.traceback)
+        else:
+            raise unwind
+
+@Id.method(u"setattr", signature(Id, String, Object))
+def setattr(self, name, value):
+    ref = self.ref
+    if not isinstance(ref, CustomObject):
+        return Object.setattr(ref, name.string, value)
+    #name = space.cast(name, space.String, u"Id.setattr name").string
+    try:
+        return ref.setattr_direct(name.string, value)
+    except space.Unwinder as unwind:
+        exc = unwind.exception
+        if isinstance(exc, space.LAttributeError):
+            exc = space.LKeyError(exc.obj, space.String(exc.name))
+            exc.traceback = unwind.traceback
+            raise space.Unwinder(exc, unwind.traceback)
+        else:
+            raise unwind

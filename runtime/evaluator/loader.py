@@ -437,6 +437,8 @@ def interpret(pc, block, frame):
                     src_module = regv.load(block[ix+0])
                     assert isinstance(src_module, space.Module)
                     for name in src_module.list_locals():
+                        if name in [u"dir", u"name", u"import"]: # TODO: Do something else that
+                            continue                             #       makes sense
                         module.setattr(name, src_module.getattr(name))
                 elif opcode == opcode_of('not'):
                     if space.is_false(regv.load(block[ix+1])):
