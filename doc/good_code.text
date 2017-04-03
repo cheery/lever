@@ -1,0 +1,56 @@
+#manual{_}{999}{good code}
+Good coding practices and tips that apply on Lever. Short
+page but extended over time.
+
+#section Reliability through crashing
+
+When a program encounters a condition it has not been
+designed to handle, it should crash. A good crash is always
+the better option when the another option is a good state
+corruption.
+
+The origin of this concept traces back to Erlang where
+programs have been isolated from each other and monitored by
+other programs that restart them if they happen to go down.
+
+With dynamic typing you are very likely to compose complex
+objects from simpler ones and then there comes a time to
+take them apart. You will likely end up with the following
+code:
+
+#code ##
+    if isinstance(a, str)
+        str things
+    elif isinstance(a, int)
+        int things
+    else
+        assert false, repr(a)
+
+The 'else' with an assert clause such as described here
+should be very common occurrence in code that branches by
+type.
+
+It is likely that the language will get some syntax for
+dispatching from types and patterns, for now such trivial
+improvements have to wait.
+
+#subsection Multiple-dispatch errors
+
+The Texopic HTML generator had this kind of code:
+
+#code ##
+    try
+        html_env(node, context, out)
+    except KeyError as ke
+        out.append(html.Node("pre", [texopic.stringify([node])]))
+
+The html_env dispatched code depending on which node type is
+being used. Probably needless to say, this code also catched
+every single key set/get error in the generator and suspended them.
+
+The solution in this case was to add a default dispatch into texopic
+Scope objects and use them instead. Catching errors
+originating from such dispatch situations are problematic
+because they can very well cause surprising situations during recursion.
+
+

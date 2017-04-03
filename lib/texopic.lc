@@ -104,6 +104,7 @@ class Scope
     +init = (self, parent=null):
         self.parent = parent
         self.locals = {}
+        self.default = null
 
     +call = (self, obj, args...):
         return self.invoke(obj, obj, args...)
@@ -115,7 +116,7 @@ class Scope
         except KeyError as e
             if self.parent
                 return self.parent(args...)
-            raise e
+            func = self.default
         return func(args...)
 
     +getitem = (self, index, value):

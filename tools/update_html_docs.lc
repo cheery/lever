@@ -146,22 +146,25 @@ main = (args):
 vertical_html = (data, context):
     out = []
     for node in data
-        try
-            html_env(node, context, out)
-        except KeyError as ke
-            out.append(html.Node("pre", [texopic.stringify([node])]))
+        html_env(node, context, out)
     return out
 
 horizontal_html = (data, context):
     out = []
     for node in data
-        try
-            html_env(node, context, out)
-        except KeyError as ke
-            out.extend(texopic.verbatim([node]))
+        html_env(node, context, out)
     return out
 
 html_env = texopic.Env()
+
+html_env.macros.default = (macro, context, out):
+    out.append(texopic.verbatim([macro]))
+
+html_env.segments.default = (segment, context, out):
+    out.append(html.Node("pre", [texopic.stringify([segment])]))
+
+html_env.groups.default = (segment, context, out):
+    out.append(html.Node("pre", [texopic.stringify([segment])]))
 
 html_env.text = (text, context, out):
     out.append(text)
@@ -423,17 +426,16 @@ create_ref_card = (group, context, out):
 
 fill_card = (group, context, out):
     for cell in group.data
-        try
-            object_env(cell.head, cell.data, context, out)
-        except KeyError as ke
-            pre = html.Node('pre', [])
-            out.append(pre)
-            if cell.head
-                pre.append(texopic.verbatim([cell.head]))
-                pre.append(" ")
-            pre.append(texopic.stringify(cell.data))
+        object_env(cell.head, cell.data, context, out)
 
 object_env = texopic.Scope()
+object_env.default = (head, data, context, out):
+    pre = html.Node('pre', [])
+    out.append(pre)
+    if head
+        pre.append(texopic.verbatim([head]))
+        pre.append(" ")
+    pre.append(texopic.stringify(data))
 
 object_env[null] = (head, data, context, out):
     out.extend(vertical_html(data, context))
@@ -602,6 +604,10 @@ html_env.groups["itemize/0"] = (group, context, out):
 
 html_env.groups["enumerate/0"] = (group, context, out):
     out.append(html.Node('ol', listify_html(group.data, context)))
+
+html_env.groups["code/0"] = (group, context, out):
+    out.append(html.Node('pre',
+        [group.pre.text]))
 
 listify_html = (data, context):
     out = []

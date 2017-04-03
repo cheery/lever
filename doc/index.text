@@ -24,3 +24,7 @@ Please note that the latest documentation is the latest
 documentation. This is what you get if you compile from the
 repository. The 0.8.0 is really old release by now, and it
 didn't have online documentation.
+
+#section Manual pages
+
+#index-toc{_}
