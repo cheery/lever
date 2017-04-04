@@ -1,6 +1,9 @@
 #manual{_}{999}{good code}
 Good coding practices and tips that apply on Lever. Short
-page but extended over time.
+page but extended over time. Learn to write dynamically
+typed code that is safer, more maintainable and more
+reliable than most statically typed code.
+
 
 #section The semantic meaning of code
 
@@ -89,8 +92,8 @@ terms of type systems.
 Often type systems resort to overconstraining the programs.
 For example you can guarantee that the sequence is not
 infinite and that the values can be added together if you
-force the sequence to be an array that contains integers. It
-doesn't come for free.
+force the sequence to be an array that contains integers.
+Forced correctness like this doesn't come for free.
 
 If you later decide that instead of arrays or integers you
 need lists and floats, you really have to work through every
