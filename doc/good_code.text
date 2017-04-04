@@ -262,3 +262,87 @@ originating from such dispatch situations are problematic
 because they can very well cause surprising situations during recursion.
 
 
+
+
+
+
+
+
+
+
+
+#section Premature everything
+
+Some people like to watch the world burn. Then there are
+people who like to create a new class, new file and a new
+function every time they spot a task that might be separate
+or reusable.
+
+Seemingly it's harmless to divide something into its own
+function. Especially when you saw something similar earlier
+on this very same page. Above the reason for additional
+functions was that we needed functions to illustrate
+hierarchy and I didn't pick up a real example because I
+might not find something that would exactly illustrate the
+point as well as an invented example.
+
+The problem in building up a new function when you see an
+opportunity is that in any program there can be only that
+many indirections before it becomes garbled for the person
+reading the code. If you are eager to abstract things it
+means you're almost always losing the opportunity for the
+best abstraction you can make.
+
+#subsection Premature generalization
+
+Lever has 2-4 implementations of the same pretty printing
+algorithm. It is not an ideal situation. Usually you'd want
+just one implementation. There is a reason they haven't been
+unified yet. They are all slightly different and I haven't
+come up with the best design.
+
+Only lately I've come up to understand the problem and
+aspects of it better to consider that I would be confident
+to design something that works for all the cases I have had.
+But I'm still postponing it until I need to pretty print
+things again and observe how the various printers behave.
+
+#subsection Premature perfection
+
+Everybody approves finished designs. Many would prefer to
+have a full design up-front before they get to create
+anything at all.
+
+I used to erase my drawing if it doesn't turn out right. If
+the stroke wouldn't come out right I would press CTRL+Z and
+erase the stroke. Later I got some help by a stranger. He
+taught me to leave the flawed stroke there. He told me
+that's how they used to do it when drawing on the paper. By
+leaving the flawed stroke in you could draw more and then
+you would see where the right stroke should go to.
+
+Also I vividly remember the lesson about "drawing the space
+around the subject" rather than the subject itself, that was
+fairly helpful advice too.
+
+Achieving one failure can take a weekend, yet you can learn
+from it more than from two months of up-front design work.
+Also, they tend to say that couple of months in the
+laboratory can frequently save a couple of hours in the
+library. So there is a sort of hierarchy there.
+
+So it's great if you can learn from your failures, even
+greater if you can learn from the failure of others.
+
+It's weird that I had to be taught that thing during
+drawing, because by then I was already using dynamically
+typed languages all the time. These tools are designed for
+getting the first stroke on the paper as quickly as it is
+possible. The obvious end result is that at the first time
+you get something quickly that fails to attain all or some
+of your objectives. Then you figure out what went wrong and
+refine the solution until the problem gets solved.
+
+Mastering this aspect in your workflow makes the dynamic
+programming languages a powerful tool in your repertuare.
+
