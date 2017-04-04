@@ -4,6 +4,97 @@ page but extended over time. Learn to write dynamically
 typed code that is safer, more maintainable and more
 reliable than most statically typed code.
 
+#toc
+
+
+#section Top-down, Most relevant/Most interesting first
+
+I used to explain context-free grammars to my dad.  started
+by showing something like this:
+
+#code text ##
+    expr_bot -> term
+              | '(' expr_top ')'
+    addition -> addition '+' expr_bot
+    expr_top -> addition
+    statement -> expr_top ';'
+    file -> statement
+          | file statement 
+
+He explained it was hard to understand because it was
+written all upside down. The highest thing in the hierarcy,
+largest piece forming up from the other pieces was on the
+bottom.
+
+He proposed the following would be much cleaner:
+
+#code text ##
+    file -> statement
+          | file statement 
+    statement -> expr_top ';'
+    expr_top -> addition
+    addition -> addition '+' expr_bot
+    expr_bot -> term
+              | '(' expr_top ')'
+
+I had written the earlier program as I had because the
+evaluation flow often forces you to put things that come
+first on the top because you have to instantiate something
+before you have a reference to it, like below:
+
+#code ##
+    pack1 = Packet("1")
+    pack2 = Packet("2")
+    platform1 = Platform(pack1, pack2)
+    platform2 = Platform(platform1)
+
+I kind of understood that this was an important point and
+tried out writing some programs top-down, such that the
+entry point would end up first. This is how I write code
+today:
+
+#code ##
+    main = ():
+        window = open_window()
+        rc = load_resources(resources)
+        init(window)
+        render(window, rc)
+
+    resources = {
+        a = "a.jpg"
+        b = "b.jpg"
+    }
+
+    init = (window):
+        ... # not revelant on illustration
+
+    render = (window, rc):
+        blit_texture(window, rc.a)
+        blit_texture(window, rc.b)
+
+    blit_texture = (window, texture):
+        ... # omitted
+
+I realised this way of ordering the hierarchy in a program
+this way was immensely valuable. If you scroll into the text
+you would find out immediately the overall idea of what the
+program is doing and have a context to understand what comes
+next.
+
+Sometimes I would even do this on constants, that is
+position the constant lower into a file and use it first.
+The reason being that the value of the constant isn't often
+interesting before it is used.
+
+
+
+
+
+
+
+
+
+
 
 #section The semantic meaning of code
 
@@ -19,7 +110,6 @@ program in Lever would be:
     total = 0
     for value in sequence
         total += value
-        count += 1
     return total / sequence.length
 
 The above program relies on lot of facts:
@@ -109,6 +199,13 @@ The efforts for perfection and ultimate correctness in
 statically typed languages is left as an exercise for
 academics who do not care about delivering or maintaining
 software.
+
+
+
+
+
+
+
 
 
 

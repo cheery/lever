@@ -289,3 +289,12 @@ fieldset.toc div {
 #toc-link.visible {
     transform: translateY(0%);
 }
+
+table.index-toc tr > td:first-child {
+    vertical-align: top;
+    white-space: nowrap;
+}
+
+table.index-toc tr > td + td{
+    padding-left: 1ex;
+}
