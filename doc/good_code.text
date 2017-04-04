@@ -2,6 +2,114 @@
 Good coding practices and tips that apply on Lever. Short
 page but extended over time.
 
+#section The semantic meaning of code
+
+When writing code that is correct, the data types aren't
+important. What is important is the semantic meaning of the
+code.
+
+For example lets consider that we want to know an arithmetic
+mean value for a set of values. A simple implementation of such
+program in Lever would be:
+
+#code ##
+    total = 0
+    for value in sequence
+        total += value
+        count += 1
+    return total / sequence.length
+
+The above program relies on lot of facts:
+
+#begin{enumerate}
+#item The sequence is iterable
+#item The values returned by iterating a sequence can be
+added to '0'
+#item The subsequent values can be divided with their count
+#item The sequence has a length and it reports it correctly
+#end{enumerate}
+
+The elements the program has been made of preserve
+their semantic meaning, eg. The addition doesn't become
+exponentiation
+
+The program could be written like this as well:
+
+#code ##
+    it = iter(sequence)
+    count = 1
+    total = it.next()
+    for value in it
+        total += value
+        count += 1
+    return total / count
+
+This program relies on different set of facts to be
+'correct':
+
+#begin{enumerate}
+#item The sequence is iterable and not empty
+#item The values returned by sequence can be added with each
+other
+#item The sum of values can be divided by their count
+#end{enumerate}
+
+Both programs are incorrect if you pass in an infinite
+sequence. If you do so, they also do attempt to calculate
+the value and never recover from it on their own.
+
+Both programs are incorrect if you give them values that
+do not correctly add up.
+
+Also the correctness of the output is bound to the
+correctness of the input. The program turns into giving
+approximate values if you give them floating point values
+that are approximate by their nature.
+
+Since Lever doesn't have full numeric stack right yet, if
+you give the above program too big integers, the integers
+will overflow and the program gives the wrong result.
+
+But for surprisingly many inputs, the both above programs
+are perfectly valid.
+
+You could try to argue the below program is less correct
+because it fails on empty sequences. It really depends on
+the context though. If the input sequence is not supposed to
+be empty, the lower program would enforce the rule and
+therefore be much more desirable to use.
+
+The important thing to notice is that static type systems,
+often advertised with safety, fail to represent all the
+invariants of the above programs. Even if you did
+dependent typing, there would be problems to represent
+everything that the above program relies on to function in
+terms of type systems.
+
+Often type systems resort to overconstraining the programs.
+For example you can guarantee that the sequence is not
+infinite and that the values can be added together if you
+force the sequence to be an array that contains integers. It
+doesn't come for free.
+
+If you later decide that instead of arrays or integers you
+need lists and floats, you really have to work through every
+definition that treats with the data before the program can
+be compiled and tested again. A hefty price to pay for
+local correctness. If you use automatic refactoring
+techniques, the refactoring program isn't aware about the
+constraints subjected to the type anyway, so you may
+introduce an error unknowingly even if everything was fully
+typed.
+
+The efforts for perfection and ultimate correctness in
+statically typed languages is left as an exercise for
+academics who do not care about delivering or maintaining
+software.
+
+
+
+
 #section Reliability through crashing
 
 When a program encounters a condition it has not been

@@ -605,7 +605,7 @@ html_env.groups["itemize/0"] = (group, context, out):
 html_env.groups["enumerate/0"] = (group, context, out):
     out.append(html.Node('ol', listify_html(group.data, context)))
 
-html_env.groups["code/0"] = (group, context, out):
+html_env.segments["code/0"] = (group, context, out):
     out.append(html.Node('pre',
         [group.pre.text]))
 
@@ -613,7 +613,8 @@ listify_html = (data, context):
     out = []
     for cell in data
         if cell.data.length == 0
-            out.append(html.Node('li', []))
+            if cell.head
+                out.append(html.Node('li', []))
         elif cell.data.length == 1 and not cell.data[0].head
             out.append(html.Node('li',
                 horizontal_html(cell.data[0].data, context)))
