@@ -9,7 +9,7 @@ main = :
     window = sdl.Window(name, {
         width = 1024
         height = 1024
-        flags = sdl.sdl.WINDOW_SHOWN | sdl.sdl.WINDOW_FULLSCREEN_DESKTOP
+        flags = sdl.sdl.WINDOW_SHOWN # | sdl.sdl.WINDOW_FULLSCREEN_DESKTOP
                                      # Add if you want fullscreen
     })
     gpu = GPU(window)
@@ -53,41 +53,19 @@ main = :
     # NO UNIFORM DATA, therefore no descriptors.
 
     # RENDER PASS
-    layout = vulkan.PipelineLayout(gpu.device, {
-        flags = 0
-        setLayouts = []
-        pushConstantRanges = [{
-            stageFlags = "FRAGMENT_BIT"
-            offset = 0
-            size = constants_size
-        }]
+    pb = RenderPassBuilder()
+    pb.color.attachment(gpu.swapchain.config, {
+        loadOp = "CLEAR"
+        storeOp = "STORE"
+        initialLayout = 0
+        finalLayout = "PRESENT_SRC_KHR"
     })
-    
-    pass = gpu.default_pass();
-        renderPass = vulkan.RenderPass(gpu.device, {
-            attachments = [
-                {
-                    format = gpu.swapchain.format
-                    samples = gpu.swapchain.samples
-                    loadOp = "CLEAR"
-                    storeOp = "STORE"
-                    stencilLoadOp = "DONT_CARE"
-                    stencilStoreOp = "DONT_CARE"
-                    initialLayout = 0 #UNDEFINED
-                    finalLayout = "PRESENT_SRC_KHR" #"COLOR_ATTACHMENT_OPTIMAL"
-                }
-            ]
-            subpasses = [
-                {
-                    pipelineBindPoint = "GRAPHICS"
-                    inputAttachments = []
-                    colorAttachments = [
-                        {attachment = 0, layout = "COLOR_ATTACHMENT_OPTIMAL"}
-                    ]
-                }
-            ]
-            # dependencies = []
-        })
+    pb.p0.subpass("GRAPHICS", {
+        colorAttachments = [
+            pb.color("COLOR_ATTACHMENT_OPTIMAL")
+        ]
+    })
+    renderPass = pb.build(gpu, gpu.screen)
 
     # RENDER TARGET
     swapchain = gpu.swapchain
@@ -108,44 +86,30 @@ main = :
         fence = vulkan.Fence(gpu.device, {flags = "SIGNALED_BIT"})
         swapchain.fences.append(fence)
 
-        framebuffer = vulkan.Framebuffer(gpu.device, {
-            renderPass = pass.renderPass
-            attachments = [view]
-            width = gpu.screen.width
-            height = gpu.screen.height
-            layers = 1
+        framebuffer = renderPass.Framebuffer({
+            color = view
         })
         swapchain.framebuffers.append(framebuffer)
         # DEP: cbuf, begin of renderpass
 
-    # PIPELINE
-    vertex_shader = createShader(gpu.device,
-        fs.read_file(dir ++ "glsl/ocean_waves_vert.spv", "b"))
-    fragment_shader = createShader(gpu.device,
-        fs.read_file(dir ++ "glsl/ocean_waves_frag.spv", "b"))
+    shaders = ShaderLoader(gpu, dir)
 
-    pipeline_config = {}
-    pipeline_config.update(pass.pipeline)
-    pipeline_config.update(quad_mesh.pipeline)
-    pipeline_config.update({
+    layout = vulkan.PipelineLayout(gpu.device, {
         flags = 0
-        stages = [
-            {
-                stage = "VERTEX_BIT"
-                module = vertex_shader
-                name = "main"
-            },
-            {
-                stage = "FRAGMENT_BIT"
-                module = fragment_shader
-                name = "main"
-            }
-        ]
-        layout = layout
-        renderPass = pass.renderPass
-        subpass = 0
+        setLayouts = []
+        pushConstantRanges = [{
+            stageFlags = "FRAGMENT_BIT"
+            offset = 0
+            size = constants_size
+        }]
     })
-    pipeline = gpu.createGraphicsPipeline(pipeline_config)
+    
+    # PIPELINE
+    pipeline = renderPass.p0(shaders.fetch({
+        vertex = "glsl/ocean_waves_vert.spv:main"
+        fragment = "glsl/ocean_waves_frag.spv:main"
+    }), layout, quad_mesh.pipeline) # extra={}...
+    gpu.createPipeline(pipeline)
 
     # COMMAND BUFFER
     cbuf = gpu.queue.pool.allocate(
@@ -154,14 +118,9 @@ main = :
     start_time = time()
     last_image = 0
     render = ():
-        # TODO: abstract this out so you can fix it later.
-        for i in range(10) # 10ms
-            if swapchain.fences[last_image].getStatus().NOT_READY
-                sleep(0.001)
-            else
-                break
-        if swapchain.fences[last_image].getStatus().NOT_READY
-            return null
+        s = gpu.device.waitForFences([swapchain.fences[last_image]], true, 20000000)
+        if not s.SUCCESS
+            return
 
         current_image = gpu.device.acquireNextImage(swapchain,
             0xFFFFFFFFFFFFFFFF, swapchain.image_acquired)
@@ -171,7 +130,7 @@ main = :
 
         cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
         cbuf.beginRenderPass({
-            renderPass = pass.renderPass
+            renderPass = renderPass
             framebuffer = swapchain.framebuffers[current_image]
             renderArea = gpu.screen.area
             clearValues = [
@@ -220,5 +179,5 @@ main = :
     quad_mesh.buffer.mem.free()
     vertex_shader.destroy()
     fragment_shader.destroy()
-    pass.renderPass.destroy()
+    renderPass.destroy()
     gpu.destroy()

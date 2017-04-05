@@ -51,7 +51,7 @@ class ExecutionContext(object):
         self.uv__fs = {}
         self.uv__fs_event = {}
         #self.uv__work = {}
-        #self.uv__after_work = {}
+        self.uv__after_work = {}
         self.uv__getaddrinfo = {}
         self.uv__getnameinfo = {}
         #self.debug_hook = None
@@ -74,6 +74,8 @@ def run_queued_tasks(handle):
 class GlobalState(object):
     ec = ThreadLocalReference(ExecutionContext, loop_invariant=True)
     log = None
+    work_pool = None # Creates work pool on demand.
+                     # It's in base.py
 
 def init_executioncontext(*args):
     ec = ExecutionContext(*args)

@@ -272,13 +272,13 @@ class Device extends Handle
         vk.invalidateMappedMemoryRanges(self.id, ranges.length, ranges)
 
     resetFences = (self, fences):
-        vk.resetFences(self, fences.length, fences)
+        return vk.resetFences(self, fences.length, fences)
 
     waitForFences = (self, fences, waitAll, timeout):
-        vk.waitForFences(self, fences.length, fences, waitAll, timeout)
+        return vk.waitForFences(self, fences.length, fences, waitAll, timeout)
 
     waitIdle = (self):
-        vk.deviceWaitIdle(self)
+        return vk.deviceWaitIdle(self)
 
     createComputePipeline = (self, cache, create_info):
         return self.createComputePipelines(cache, [create_info])[0]

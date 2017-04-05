@@ -418,3 +418,73 @@ def format_traceback_raw(exception):
     out += u":\033[0m"
     return out + u" " + exception.repr()
 
+from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
+from rpython.rlib import rgil
+import rlibuv as uv
+import uv_callback
+
+@builtin
+@signature(Object, variadic=True)
+def work(func, args):
+    if not core.g.work_pool:
+        # The function will be called in separate thread,
+        # so allocate GIL here
+        rgil.allocate()
+        core.g.work_pool = WorkPool()
+
+    req = lltype.malloc(uv.work_ptr.TO, flavor='raw', zero=True)
+    work = Work(func, args)
+    core.g.work_pool.push(req, work)
+    try:
+        response = uv_callback.after_work(req)
+        response.wait(uv.queue_work(response.ec.uv_loop, req,
+            work_cb, uv_callback.after_work.cb))
+        if work.unwinder:
+            raise work.unwinder
+        return work.retval
+    finally:
+        core.g.work_pool.pop(req)
+        lltype.free(req, flavor='raw')
+
+def work_cb(handle):
+    work = core.g.work_pool.peek(handle)
+    #must_leave = False
+        # must_leave = space.threadlocals.try_enter_thread(space)
+        # Should check for separate threads here and crash
+        # if the callback comes from a thread that has no execution context.
+    try:
+        work.retval = work.func.call(work.args)
+    except Unwinder as unwinder:
+        work.unwinder = unwinder
+    except Exception as e:
+        try:
+            os.write(2, "SystemError: callback raised ")
+            os.write(2, str(e))
+            os.write(2, "\n")
+        except:
+            pass
+#        if must_leave:
+#            space.threadlocals.leave_thread(space)
+
+class WorkPool:
+    def __init__(self):
+        self.table = {}
+
+    @jit.dont_look_inside
+    def peek(self, handle):
+        return self.table[rffi.cast_ptr_to_adr(handle)]
+
+    @jit.dont_look_inside
+    def push(self, handle, value):
+        self.table[rffi.cast_ptr_to_adr(handle)] = value
+
+    @jit.dont_look_inside
+    def pop(self, handle):
+        return self.table.pop(rffi.cast_ptr_to_adr(handle))
+
+class Work:
+    def __init__(self, func, args):
+        self.func = func
+        self.args = args
+        self.retval = null
+        self.unwinder = None

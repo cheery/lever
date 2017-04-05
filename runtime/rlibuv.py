@@ -733,7 +733,7 @@ stdio_container = rffi.CStruct("uv_stdio_container_t",
 #spawn = llexternal("uv_spawn", [loop_ptr, process_ptr, process_options_ptr], rffi.INT)
 #process_kill = llexternal("uv_process_kill", [process_ptr, rffi.INT], rffi.INT)
 #kill = llexternal("uv_kill", [rffi.INT, rffi.INT], rffi.INT)
-#queue_work = llexternal("uv_queue_work", [loop_ptr, work_ptr, work_cb, after_work_cb], rffi.INT)
+queue_work = llexternal("uv_queue_work", [loop_ptr, work_ptr, work_cb, after_work_cb], rffi.INT)
 #cancel = llexternal("uv_cancel", [req_ptr], rffi.INT)
 # 
 # struct uv_cpu_info_s {

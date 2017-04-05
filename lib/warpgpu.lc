@@ -1,5 +1,208 @@
 import fs
 import vulkan
+
+class GPU extends vulkan.Handle
+    +init = (self, window):
+        self.window = window
+        self.instance = vulkan.Instance({
+            enabledExtensionNames = window.wsi.required_extensions(
+                vulkan.listInstanceExtensions())})
+        self.screen = Rect(0, 0, window.width, window.height)
+        self.surface = window.wsi.create_surface(vulkan, self.instance)
+        init_device(self, self.instance, self.surface)
+        self.swapchain = get_swapchain(self.device, self.surface, self.screen)
+        self.mem = GPUMemory(self.device)
+        # needed for pipeline creation
+        self.pipeline_cache = vulkan.PipelineCache(self.device, {})
+
+    createPipeline = (self, pipeline):
+        assert isinstance(pipeline, GraphicsPipeline), "TODO: other pipeline objects"
+        pipeline.pipeline = self.device.createGraphicsPipeline(
+            self.pipeline_cache, pipeline.config)
+        pipeline.id = pipeline.pipeline.id
+
+    update = (self, changes):
+        if not isinstance(changes, list)
+            changes = [changes]
+
+        writes = []
+        copies = []
+        for descset in changes
+            proxy = Id(descset)
+            writes.extend(proxy.getattr("pending_writes"))
+            proxy.setattr("pending_writes", [])
+
+        self.device.updateDescriptorSets(writes, copies)
+
+
+    destroy = (self):
+        self.pipeline_cache.destroy()
+        self.queue.pool.destroy()
+        self.swapchain.image_acquired.destroy()
+        self.swapchain.rendering_done.destroy()
+        self.swapchain.destroy()
+        self.device.destroy()
+        self.surface.destroy()
+        self.instance.destroy()
+        self.id = null
+
+init_device = (self, instance, surface):
+    gpu = null
+    queueFamilyIndex = null
+    for device in instance.listPhysicalDevices()
+        prop = device.getProperties()
+        i = 0
+        for x in device.listQueueFamilyProperties()
+            if not device.getSurfaceSupport(i, surface)
+                continue
+            if x.queueFlags.GRAPHICS_BIT
+                #print("Device name:", prop.deviceName.str)
+                #print("            ", prop.deviceType)
+                queueFamilyIndex = i
+                gpu = device
+            i += 1
+    assert gpu, "Did not find a suitable GPU"
+
+    self.device = vulkan.Device(gpu, {
+        enabledExtensionNames = ["VK_KHR_swapchain"]
+        queueCreateInfos = [{
+            queueFamilyIndex = queueFamilyIndex
+            queuePriorities = [1.0]
+        }]
+        enabledFeatures = {
+            shaderClipDistance = true
+            shaderCullDistance = true
+        }
+    })
+    self.id = self.device.id
+    queue = self.device.getQueue(queueFamilyIndex, 0)
+    queue.index = queueFamilyIndex # allow later command pool allocations.
+    queue.pool = vulkan.CommandPool(self.device, {
+        flags = "RESET_COMMAND_BUFFER_BIT" # allow reset on cbuf.
+        queueFamilyIndex = queue.index
+    })
+    self.queue = queue
+ 
+
+get_swapchain = (device, surface, screen):
+    imageUsage = "COLOR_ATTACHMENT_BIT"
+    gpu = device.physicalDevice
+
+    cap = gpu.getSurfaceCapabilities(surface)
+    # uint32_t                         minImageCount;
+    # uint32_t                         maxImageCount;
+    # VkExtent2D                       currentExtent;
+    # VkExtent2D                       minImageExtent;
+    # VkExtent2D                       maxImageExtent;
+    # uint32_t                         maxImageArrayLayers;
+    # VkSurfaceTransformFlagsKHR       supportedTransforms;
+    # VkSurfaceTransformFlagBitsKHR    currentTransform;
+    # VkCompositeAlphaFlagsKHR         supportedCompositeAlpha;
+    if not cap.currentTransform.IDENTITY_BIT_KHR
+        print("Surface transform not desired")
+        exit(1)
+    if not cap.supportedUsageFlags.COLOR_ATTACHMENT_BIT
+        print("Surface does not support the desired usage")
+        exit(1)
+
+    imageFormat = null
+    colorSpace = null
+    for prop in gpu.listSurfaceFormats(surface)
+        imageFormat = prop.format
+        colorSpace = prop.colorSpace
+        break
+
+    presentMode = "FIFO_KHR"
+    for mode in gpu.listSurfacePresentModes(surface)
+        continue
+
+    format = "B8G8R8A8_UNORM" # hack, should enumerate the damn surface caps already.
+    # Fourth temporary measure, no idea where this works.
+    swapchain = vulkan.Swapchain(device, {
+        surface = surface
+        minImageCount = 2
+        imageFormat = imageFormat
+        imageColorSpace = colorSpace
+        imageExtent = screen.extent
+        imageUsage = imageUsage
+        preTransform = "IDENTITY_BIT_KHR" # ?
+        compositeAlpha = "OPAQUE_BIT_KHR"
+        imageArrayLayers = 1
+        imageSharingMode = "EXCLUSIVE"
+        #queueFamilyIndexCount = 0
+        #pQueueFamilyIndices = null
+        presentMode = presentMode
+        #oldSwapchain = null
+        clipped = true
+    })
+
+    return swapchain;
+        screen = screen
+        config = object({format = format, samples = "1_BIT"})
+        images = swapchain.getImages()
+        format = format
+        surface = surface
+        subresource_range = {
+            aspectMask = "COLOR_BIT"
+            baseMipLevel = 0
+            levelCount = 1
+            baseArrayLayer = 0
+            layerCount = 1
+        }
+        image_acquired = vulkan.Semaphore(device)
+        rendering_done = vulkan.Semaphore(device)
+        samples = "1_BIT"
+
+class GPUMemory
+    +init = (self, gpu):
+        self.gpu = gpu
+
+    createBuffer = (self, size, usage):
+        buffer = vulkan.Buffer(self.gpu, {size = size, usage = usage})
+        buffer.mem = self.associate(buffer)
+        return buffer
+
+    # replace this with proper allocator when it starts to matter.
+    associate = (self, obj):
+        req = obj.getMemoryRequirements()
+
+        memoryIndex = null
+        for memtype in memory_report(self.gpu.physicalDevice).types
+            if (memtype.flags.HOST_VISIBLE_BIT and
+                1 & (req.memoryTypeBits >> memtype.index) != 0)
+                memoryIndex = memtype.index
+        assert memoryIndex, "No gpu-visible memory available for this resource"
+
+        #print(req.size, req.alignment, req.memoryTypeBits)
+        mem = self.gpu.allocateMemory({
+            allocationSize = req.size
+            memoryTypeIndex = memoryIndex
+        })
+        obj.bindMemory(mem, 0)
+        obj.offset = 0
+        obj.size = req.size
+        return mem
+
+memory_report = (gpu): 
+    properties = gpu.getMemoryProperties()
+    heaps = []
+    for i in range(properties.memoryHeapCount)
+        memheap = properties.memoryHeaps[i]
+        heaps.append(object();
+            index = i
+            size = memheap.size
+            flags = memheap.flags)
+    types = []
+    for i in range(properties.memoryTypeCount)
+        memtype = properties.memoryTypes[i]
+        types.append(object();
+            index = i
+            flags = memtype.propertyFlags
+            heap = heaps[memtype.heapIndex])
+    return object();
+        heaps = heaps
+        types = types
+
 class DescriptorSetLayout extends vulkan.Handle
     +init = (self, device, declaration):
         self.device = device
@@ -103,19 +306,6 @@ class DescriptorAttribute
         self.name = name
         self.options = options
 
-updateDescriptorSets = (device, changes):
-    if not isinstance(changes, list)
-        changes = [changes]
-
-    writes = []
-    copies = []
-    for descset in changes
-        proxy = Id(descset)
-        writes.extend(proxy.getattr("pending_writes"))
-        proxy.setattr("pending_writes", [])
-
-    device.updateDescriptorSets(writes, copies)
-
 # TODO: Implement array descriptors.
 # TODO: Implement descriptor copy as well.
 #       Very simple and similar model appears to be.
@@ -132,6 +322,7 @@ class RenderPassBuilder
         self.attachments = []
         self.subpasses = []
         self.dependencies = []
+        self.clearValueCount = 0
 
     +getattr = (self, name):
         try
@@ -204,6 +395,16 @@ class AttachmentDescription
         self.attachment = attachment
         self.config = config
         self.description = description
+# To allow precise mapping, you would also need to determine
+# clearValueCount for every subpass.
+#        self.clearColor = false
+#        if "loadOp" in description and description["loadOp"] == "CLEAR"
+#            builder.setattr("clearValueCount", attachment + 1)
+#            self.clearColor = true
+#        self.clearStencil = false
+#        if "loadStencilOp" in description and description["loadStencilOp"] == "CLEAR"
+#            builder.setattr("clearValueCount", attachment + 1)
+#            self.clearStencil = true
 
     +call = (self, layout):
         return {
@@ -306,11 +507,6 @@ class GraphicsPipeline extends vulkan.Handle
         self.pipeline = null
         self.id = null
 
-createPipeline = (gpu, pipeline):
-    assert isinstance(pipeline, GraphicsPipeline), "TODO: other pipeline objects"
-    pipeline.pipeline = gpu.createGraphicsPipeline(pipeline.config)
-    pipeline.id = pipeline.pipeline.id
-
 class RenderPass extends vulkan.Handle
     +init = (self, config, renderPass, screen, samples):
         self.config = config
@@ -337,6 +533,16 @@ class RenderPass extends vulkan.Handle
             layers = screen.layers
         }
         return vulkan.Framebuffer(device, config)
+
+# The clear value mapping was more clutter than it was worth.
+#    map_clear_values = (self, values):
+#        if self.config.clearValueCount == 0
+#            return []
+#        clearValues = []
+#        blank = {}
+#        for a in self.config.attachments[0 .: self.config.clearValueCount]
+#            clearValues.append(values.get(a.name, blank))
+#        return clearValues
 
 map_by_name = (fields, mapping):
     out = []

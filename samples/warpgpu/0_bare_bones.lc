@@ -9,7 +9,6 @@ main = ():
     })
 
     gpu = GPU(window)
-    device = gpu.device
 
     vertex_layout = object();
         vertexInputState = {
@@ -72,7 +71,7 @@ main = ():
 
     cbuf = gpu.queue.pool.allocate({level = "PRIMARY", commandBufferCount = 1})[0]
 
-    DSC0 = DescriptorSetLayout(device, {
+    DSC0 = DescriptorSetLayout(gpu.device, {
         "testbuffer": {
             binding=0,
             descriptorType = "UNIFORM_BUFFER",
@@ -87,10 +86,10 @@ main = ():
         offset = 0
         range  = ubo.buffer.size
     }
-    updateDescriptorSets(device, dsc0)
+    gpu.update(dsc0)
     # DEP: cbuf
 
-    pipeline_layout = vulkan.PipelineLayout(device, {
+    pipeline_layout = vulkan.PipelineLayout(gpu.device, {
         flags = 0
         setLayouts = [DSC0]
         pushConstantRanges = []
@@ -110,7 +109,7 @@ main = ():
         ]
     })
 
-    pass = pb.build(device, gpu.screen)
+    pass = pb.build(gpu.device, gpu.screen)
     # DEP: framebuffer, pipeline, cbuf
 
     swapchain = gpu.swapchain
@@ -118,7 +117,7 @@ main = ():
     swapchain.fences = []
     swapchain.framebuffers = []
     for image in swapchain.images
-        view = vulkan.ImageView(device, {
+        view = vulkan.ImageView(gpu.device, {
             image = image
             viewType = "2D"
             format = swapchain.format
@@ -128,7 +127,7 @@ main = ():
         swapchain.views.append(view)
         # DEP: framebuffer
 
-        fence = vulkan.Fence(device, {flags = "SIGNALED_BIT"})
+        fence = vulkan.Fence(gpu.device, {flags = "SIGNALED_BIT"})
         swapchain.fences.append(fence)
 
         framebuffer = pass.Framebuffer({
@@ -137,33 +136,34 @@ main = ():
         swapchain.framebuffers.append(framebuffer)
         # DEP: cbuf, begin of renderpass
 
-    shaders = ShaderLoader(device, dir)
+    shaders = ShaderLoader(gpu.device, dir)
     # DEP: pipeline
 
     pipeline = pass.p0(shaders.fetch({
         vertex = "vertex_shader.spv:main"
         fragment = "fragment_shader.spv:main"
     }), pipeline_layout, vertex_layout) # extra={}...
-    createPipeline(gpu, pipeline) # or pipelines.
+    gpu.createPipeline(pipeline) # or pipelines.
     # DEP: cbuf
 
     frame_statistics = []
     last_image = 0
+    frame_was = time()
     render = ():
         # TODO: Could use the libuv threadpools to wait for a fence.
 
         # This is lazy. It means we can't continue before the previous frame has been submitted.
         # Need to check with performance counter later, whether this is sufficient
-        for i in range(10) # 10ms
-            if swapchain.fences[last_image].getStatus().NOT_READY
-                sleep(0.001)
-            else
-                break
-        if swapchain.fences[last_image].getStatus().NOT_READY
-            return null
-        current_image = device.acquireNextImage(swapchain, 0xFFFFFFFFFFFFFFFF, swapchain.image_acquired)
-        frame_begin = time()
-        device.resetFences([swapchain.fences[current_image]])
+        s = gpu.device.waitForFences([swapchain.fences[last_image]], true, 20000000)
+        if not s.SUCCESS
+            return
+
+        frame_now = time()
+        frame_statistics.append(frame_now - frame_was)
+        frame_was := frame_now
+
+        current_image = gpu.device.acquireNextImage(swapchain, 0xFFFFFFFFFFFFFFFF, swapchain.image_acquired)
+        gpu.device.resetFences([swapchain.fences[current_image]])
 
         cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
         cbuf.beginRenderPass({
@@ -176,8 +176,7 @@ main = ():
                     sin(time() + 2*pi * 1 / 3) * 0.5 + 0.5,
                     sin(time() + 2*pi * 2 / 3) * 0.5 + 0.5,
                     1.0
-                ]}}
-            ]
+                ]}}]
         }, "INLINE")
         cbuf.bindPipeline("GRAPHICS", pipeline)
         cbuf.bindDescriptorSets("GRAPHICS", pipeline_layout, 0, [dsc0], [])
@@ -187,11 +186,10 @@ main = ():
         cbuf.end()
         gpu.queue.submit([{
             waitSemaphores = [swapchain.image_acquired]
+            waitDstStageMask = ["TOP_OF_PIPE_BIT"]
             commandBuffers = [cbuf]
             signalSemaphores = [swapchain.rendering_done]
         }], swapchain.fences[current_image])
-        frame_end = time()
-        frame_statistics.append(frame_end - frame_begin)
 
         gpu.queue.present({
             waitSemaphores = [swapchain.rendering_done]
