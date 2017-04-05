@@ -1,6 +1,5 @@
 import sdl
 import vulkan, ffi, api, fs
-
 from warpgpu import *
 
 main = ():
@@ -10,7 +9,6 @@ main = ():
     })
 
     gpu = GPU(window)
-
     device = gpu.device
 
     vertex_layout = object();
@@ -37,13 +35,6 @@ main = ():
             ]
         }
         inputAssemblyState = {topology = "TRIANGLE_LIST"}
-        # Or move this into the graphics pipeline defaults?
-        # rasterizationState = {
-        #     polygonMode = "FILL"
-        #     cullMode = 0
-        #     frontFace = "COUNTER_CLOCKWISE"
-        #     lineWidth = 1.0
-        # }
 
     vbo = object();
         size = 8 * 1024
@@ -86,8 +77,6 @@ main = ():
             binding=0,
             descriptorType = "UNIFORM_BUFFER",
             stageFlags="VERTEX_BIT"
-            # Deliver 'count' here and it is treated as an array.
-            # also immutableSamplers can be passed.
         }
     })
     # DEP: pipeline_layout, descset
@@ -108,63 +97,20 @@ main = ():
     })
     # # DEP: cbuf, pipeline
 
-    #pb = RenderPassBuilder()
-    #pb.color0.attachment(swapchain.format, {
-    #    loadOp = "CLEAR"
-    #    storeOp = "STORE"
-    #    initialLayout = 0 #UNDEFINED
-    #    finalLayout   = "PRESENT_SRC_KHR"
-    #})
+    pb = RenderPassBuilder()
+    pb.color0.attachment(gpu.swapchain.config, {
+        loadOp = "CLEAR"
+        storeOp = "STORE"
+        initialLayout = 0 #UNDEFINED
+        finalLayout   = "PRESENT_SRC_KHR"
+    })
+    pb.p0.subpass("GRAPHICS", {
+        colorAttachments = [
+            pb.color0("COLOR_ATTACHMENT_OPTIMAL")
+        ]
+    })
 
-    #pb.p0.subpass("GRAPHICS", {
-    #    colorAttachments = [
-    #        pb.color0("COLOR_ATTACHMENT_OPTIMAL")
-    #    ]
-    #})
-    #pb.p1.subpass("GRAPHICS", {
-    #    colorAttachments = [
-    #        pb.color0("COLOR_ATTACHMENT_OPTIMAL")
-    #    ]
-    #})
-    #pb.dependency(p0, p1, {
-    #    srcStageMask = ...
-    #    dstStageMask = ...
-    #    srcAccessMask = ...
-    #    dstAccessMask = ...
-    #    dependencyFlags = ...
-    #})
-    #pass = pb.build(device)
-
-
-    # get viewport state & multisampleState from the rendering target.
-    # include rasterizationState in the vertex_layout
-    # include colorBlendState in pipeline as default
-    # include dynamicState    in pipeline
-    pass = gpu.default_pass();
-        renderPass = vulkan.RenderPass(device, {
-            attachments = [
-                {
-                    # These values will likely require adjustment.
-                    format = gpu.swapchain.format
-                    samples = gpu.swapchain.samples
-                    loadOp = "CLEAR"
-                    storeOp = "STORE"
-                    stencilLoadOp = "DONT_CARE"
-                    stencilStoreOp = "DONT_CARE"
-                    initialLayout = 0 #UNDEFINED
-                    finalLayout = "PRESENT_SRC_KHR" #"COLOR_ATTACHMENT_OPTIMAL"
-                }
-            ]
-            subpasses = [
-                {
-                    pipelineBindPoint = "GRAPHICS"
-                    inputAttachments = []
-                    colorAttachments = [
-                        {attachment = 0, layout = "COLOR_ATTACHMENT_OPTIMAL"}
-                    ]
-                }
-            ]
-        })
+    pass = pb.build(device, gpu.screen)
     # DEP: framebuffer, pipeline, cbuf
 
     swapchain = gpu.swapchain
@@ -185,41 +131,20 @@ main = ():
         fence = vulkan.Fence(device, {flags = "SIGNALED_BIT"})
         swapchain.fences.append(fence)
 
-        #framebuffer = pass.Framebuffer({
-        #    color0 = view
-        #})
-        framebuffer = vulkan.Framebuffer(device, {
-            renderPass = pass.renderPass
-            attachments = [view]
-            width = gpu.screen.width
-            height = gpu.screen.height
-            layers = 1
+        framebuffer = pass.Framebuffer({
+            color0 = view
         })
         swapchain.framebuffers.append(framebuffer)
         # DEP: cbuf, begin of renderpass
 
-
     shaders = ShaderLoader(device, dir)
     # DEP: pipeline
 
-    # pib = pass.p0(stages, vertex_layout, pipeline_layout, extra={})
-    # gpu.createPipeline(pib) # or pipelines.
-
-    pipeline_config = {}
-    pipeline_config.update(pass.pipeline)
-    pipeline_config.update({
-        flags = 0
-        stages = shaders.fetch({
-            vertex = "vertex_shader.spv:main"
-            fragment = "fragment_shader.spv:main"
-        })
-        vertexInputState = vertex_layout.vertexInputState
-        inputAssemblyState = vertex_layout.inputAssemblyState
-        layout = pipeline_layout
-        renderPass = pass.renderPass
-        subpass = 0
-    })
-    pipeline = gpu.createGraphicsPipeline(pipeline_config)
+    pipeline = pass.p0(shaders.fetch({
+        vertex = "vertex_shader.spv:main"
+        fragment = "fragment_shader.spv:main"
+    }), pipeline_layout, vertex_layout) # extra={}...
+    createPipeline(gpu, pipeline) # or pipelines.
     # DEP: cbuf
 
     frame_statistics = []
@@ -242,7 +167,7 @@ main = ():
 
         cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
         cbuf.beginRenderPass({
-            renderPass = pass.renderPass
+            renderPass = pass
             framebuffer = swapchain.framebuffers[current_image]
             renderArea = gpu.screen.area
             clearValues = [
@@ -270,7 +195,7 @@ main = ():
 
         gpu.queue.present({
             waitSemaphores = [swapchain.rendering_done]
-            swapchains = [swapchain.id]
+            swapchains = [swapchain]
             imageIndices = [current_image]
         })
         last_image := current_image
@@ -309,5 +234,5 @@ main = ():
     ubo.buffer.destroy()
     ubo.buffer.mem.free()
     shaders.destroy()
-    pass.renderPass.destroy()
+    pass.destroy()
     gpu.destroy()

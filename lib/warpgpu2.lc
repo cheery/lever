@@ -1,16 +1,5 @@
 import fs
 import vulkan
-
-#    Desc0 = DescriptorSetLayout(device, bindings = [
-#        {
-#            binding = 0
-#            descriptorType = "UNIFORM_BUFFER"
-#            descriptorCount = 1
-#            stageFlags = "VERTEX_BIT"
-#        }
-#    ])
-#    descset = Desc0()
-
 class DescriptorSetLayout extends vulkan.Handle
     +init = (self, device, declaration):
         self.device = device
@@ -18,7 +7,9 @@ class DescriptorSetLayout extends vulkan.Handle
         self.bindings = []
         for name in declaration
             decl = dict(declaration[name])
-            if "descriptorCount" in decl
+            # Deliver 'count' here and it is treated as an array.
+            # also immutableSamplers can be passed.
+            if "count" in decl
                 assert false, "not implemented yet"
             else
                 decl["descriptorCount"] = 1
@@ -135,6 +126,268 @@ updateDescriptorSets = (device, changes):
 #          dstBinding
 #          dstArrayElement
 #          descriptorCount
+
+class RenderPassBuilder
+    +init = (self):
+        self.attachments = []
+        self.subpasses = []
+        self.dependencies = []
+
+    +getattr = (self, name):
+        try
+            return self.getattr(name)
+        except AttributeError as ae
+            return BuilderAttribute(self, name)
+
+    dependency = (self, src, dst, dependency):
+        descr = {
+            srcSubpass = src.subpass
+            dstSubpass = dst.subpass
+        }
+        descr.update(dependency)
+        self.dependencies.append(descr)
+
+    # Technically building the pass will not require the screen, and 
+    # it can be left out from here.
+    # The screen dimensions are attached to the pass because
+    # they are easy to drive into the pipeline and framebuffer from here.
+    build = (self, device, screen=null, samples=null):
+        attachments = []
+        for a in self.attachments
+            attachments.append(a.form())
+            if not samples
+                samples = a.config.samples
+        subpasses = []
+        for p in self.subpasses
+            subpasses.append(p.form())
+        pass = vulkan.RenderPass(device, {
+            attachments = attachments,
+            subpasses = subpasses,
+            dependencies = self.dependencies})
+        rp = RenderPass(self, pass, screen, samples)
+        for subpass in self.subpasses
+            setattr(rp, subpass.name,
+                SubpassPipelineBuilder(rp, subpass))
+        return rp
+
+class BuilderAttribute
+    +init = (self, builder, name):
+        self.builder = builder
+        self.name = name
+
+    attachment = (self, config, description):
+        attachments = self.builder.getattr("attachments")
+        attachment = AttachmentDescription(
+            self.name, self.builder,
+            attachments.length,
+            config, description)
+        attachments.append(attachment)
+        self.builder.setattr(self.name, attachment)
+        return attachment
+
+    subpass = (self, pipelineBindPoint, description):
+        subpasses = self.builder.getattr("subpasses")
+        subpass = SubpassDescription(
+            self.name, self.builder,
+            subpasses.length,
+            pipelineBindPoint,
+            description
+        )
+        subpasses.append(subpass)
+        self.builder.setattr(self.name, subpass)
+        return subpass
+
+class AttachmentDescription
+    +init = (self, name, builder, attachment, config, description):
+        self.name = name
+        self.builder = builder
+        self.attachment = attachment
+        self.config = config
+        self.description = description
+
+    +call = (self, layout):
+        return {
+            attachment = self.attachment,
+            layout = layout}
+
+    form = (self):
+        descr = {
+            format = self.config.format
+            samples = self.config.samples
+            loadOp = "DONT_CARE"
+            storeOp = "DONT_CARE"
+            stencilLoadOp = "DONT_CARE"
+            stencilStoreOp = "DONT_CARE"
+            initialLayout = 0
+            finalLayout = 0
+        }
+        descr.update(self.description)
+        return descr
+
+class SubpassDescription
+    +init = (self, name, builder, subpass, pipelineBindPoint, description):
+        self.name = name
+        self.builder = builder
+        self.subpass = subpass
+        self.pipelineBindPoint = pipelineBindPoint
+        self.description = description
+
+    form = (self):
+        descr = {
+            pipelineBindPoint = self.pipelineBindPoint
+        }
+        descr.update(self.description)
+        return descr
+
+    default_blend_attachments = (self):
+        attachments = []
+        for a in self.description.get("colorAttachments", [])
+            attachments.append({
+                blendEnable = false
+                colorWriteMask = 0xf
+                srcColorBlendFactor = "ZERO"
+                dstColorBlendFactor = "ZERO"
+                colorBlendOp = "ADD"
+                srcAlphaBlendFactor = "ZERO"
+                dstAlphaBlendFactor = "ZERO"
+                alphaBlendOp = "ADD"
+            })
+        return attachments
+
+class SubpassPipelineBuilder
+    +init = (self, renderPass, config):
+        self.renderPass = renderPass
+        self.config = config
+
+    +call = (self, stages, pipelineLayout, extra...):
+        assert self.config.pipelineBindPoint == "GRAPHICS", "TODO"
+        return GraphicsPipeline(self, stages, pipelineLayout, extra)
+
+class GraphicsPipeline extends vulkan.Handle
+    +init = (self, builder, stages, layout, extra):
+        self.config = config = {
+            flags = 0
+            stages = stages
+            layout = layout
+            renderPass = builder.renderPass
+            subpass = builder.config.subpass
+            dynamicState = null # TODO: some support for dynamicState?
+        }
+        for a in extra
+            config.update(a)
+        # getting viewport state & multisampleState from the rendering target.
+        if "viewportState" not in config
+            config["viewportState"] = builder.renderPass.screen.viewportState
+        if "multisampleState" not in config
+            config["multisampleState"] = {
+                rasterizationSamples = builder.renderPass.samples
+            }
+        # if rasterizationState is not in the vertex_layout, it is here.
+        if "rasterizationState" not in config
+            config["rasterizationState"] = {
+                polygonMode = "FILL"
+                cullMode = 0
+                frontFace = "COUNTER_CLOCKWISE"
+                lineWidth = 1.0
+            }
+        # finally the default color blend state.
+        if "colorBlendState" not in config
+            config["colorBlendState"] = {
+                logicOpEnable = false
+                logicOp = "CLEAR"
+                attachments = builder.config.default_blend_attachments()
+                blendConstants = [0.0, 0.0, 0.0, 0.0]
+            }
+        # Dynamic state can perhaps use some additional support.
+        # include dynamicState    in pipeline
+
+    destroy = (self):
+        self.pipeline.destroy()
+        self.pipeline = null
+        self.id = null
+
+createPipeline = (gpu, pipeline):
+    assert isinstance(pipeline, GraphicsPipeline), "TODO: other pipeline objects"
+    pipeline.pipeline = gpu.createGraphicsPipeline(pipeline.config)
+    pipeline.id = pipeline.pipeline.id
+
+class RenderPass extends vulkan.Handle
+    +init = (self, config, renderPass, screen, samples):
+        self.config = config
+        self.renderPass = renderPass
+        self.id = renderPass.id
+        self.screen = screen
+        self.samples = samples
+
+    destroy = (self):
+        self.renderPass.destroy()
+        self.renderPass = null
+        self.id = null
+
+    # TODO: Consider whether this setting is appropriate.
+    Framebuffer = (self, namedAttachments, screen=self.screen):
+        device = self.renderPass.device
+        config = {
+            renderPass = self
+            attachments = map_by_name(
+                self.config.attachments,
+                namedAttachments)
+            width = screen.width
+            height = screen.height
+            layers = screen.layers
+        }
+        return vulkan.Framebuffer(device, config)
+
+map_by_name = (fields, mapping):
+    out = []
+    for field in fields
+        out.append(mapping[field.name])
+    return out
+
+class Rect
+    +init = (self, x, y, width, height, layers=1, minDepth=0.0, maxDepth=1.0):
+        self.x = x
+        self.y = y
+        self.width = width
+        self.height = height
+        self.layers = layers
+        self.minDepth = minDepth
+        self.maxDepth = maxDepth
+
+    offset = property();
+        get = (self):
+            return {x = self.x, y = self.y}
+
+    extent = property();
+        get = (self):
+            return {
+                width = self.width,
+                height = self.height}
+
+    area = property();
+        get = (self):
+            return {
+                offset = self.offset,
+                extent = self.extent}
+
+    viewport = property();
+        get = (self):
+            return {
+                x = self.x,
+                y = self.y,
+                width = self.width,
+                height = self.height,
+                minDepth = self.minDepth,
+                maxDepth = self.maxDepth
+            }
+
+    viewportState = property();
+        get = (self):
+            return {
+                viewports = [self.viewport]
+                scissors = [self.area]
+            }
+
 
 class ShaderLoader
     +init = (self, device, local):

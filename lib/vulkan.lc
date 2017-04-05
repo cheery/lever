@@ -1,4 +1,4 @@
-import api, ffi
+import api, ffi, platform
 
 doc = path("doc:/vulkan")
 
@@ -87,7 +87,10 @@ checker.load = (result):
 checker.store = (value):
     return value
 
-vk = ffi.library("libvulkan.so.1", lib)
+if platform.name == "win32"
+    vk = ffi.library("libvulkan-1.dll", lib)
+else
+    vk = ffi.library("libvulkan.so.1", lib)
 
 
 listInstanceExtensions = (name=null):

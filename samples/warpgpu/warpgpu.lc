@@ -9,15 +9,16 @@ class GPU
         self.instance = vulkan.Instance({
             enabledExtensionNames = window.wsi.required_extensions(
                 vulkan.listInstanceExtensions())})
-        self.screen = object();
-            width = window.width
-            height = window.height
-            offset = {x = 0, y = 0}
-            extent = {width = width, height = height}
-            area = {offset=offset, extent=extent}
-            viewport = {x = 0, y = 0,
-                width = width, height = height,
-                minDepth = 0.0, maxDepth = 1.0}
+        self.screen = Rect(0, 0, window.width, window.height)
+        #self.screen = object();
+        #    width = window.width
+        #    height = window.height
+        #    offset = {x = 0, y = 0}
+        #    extent = {width = width, height = height}
+        #    area = {offset=offset, extent=extent}
+        #    viewport = {x = 0, y = 0,
+        #        width = width, height = height,
+        #        minDepth = 0.0, maxDepth = 1.0}
         self.surface = window.wsi.create_surface(vulkan, self.instance)
         init_device(self, self.instance, self.surface)
         self.swapchain = get_swapchain(self.device, self.surface, self.screen)
@@ -44,10 +45,7 @@ class GPU
 make_default_pass = (swapchain):
     return object();
         pipeline = {
-            viewportState = {
-                viewports = [swapchain.screen.viewport]
-                scissors = [swapchain.screen.area]
-            }
+            viewportState = swapchain.screen.viewportState
             rasterizationState = {
                 polygonMode = "FILL"
                 cullMode = 0
@@ -163,6 +161,7 @@ get_swapchain = (device, surface, screen):
 
     return swapchain;
         screen = screen
+        config = object({format = format, samples = "1_BIT"})
         images = swapchain.getImages()
         format = format
         surface = surface

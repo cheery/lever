@@ -188,16 +188,15 @@ def getattr(self, name):
     if not isinstance(ref, CustomObject):
         return Object.getattr(ref, name.string)
     #name = space.cast(name, space.String, u"Id.getattr name").string
-    try:
-        return ref.getattr_direct(name.string)
-    except space.Unwinder as unwind:
-        exc = unwind.exception
-        if isinstance(exc, space.LAttributeError):
-            exc = space.LKeyError(exc.obj, space.String(exc.name))
-            exc.traceback = unwind.traceback
-            raise space.Unwinder(exc, unwind.traceback)
-        else:
-            raise unwind
+    return ref.getattr_direct(name.string)
+    #except space.Unwinder as unwind:
+    #    exc = unwind.exception
+    #    if isinstance(exc, space.LAttributeError):
+    #        exc = space.LKeyError(exc.obj, space.String(exc.name))
+    #        exc.traceback = unwind.traceback
+    #        raise space.Unwinder(exc, unwind.traceback)
+    #    else:
+    #        raise unwind
 
 @Id.method(u"setattr", signature(Id, String, Object))
 def setattr(self, name, value):
@@ -205,13 +204,13 @@ def setattr(self, name, value):
     if not isinstance(ref, CustomObject):
         return Object.setattr(ref, name.string, value)
     #name = space.cast(name, space.String, u"Id.setattr name").string
-    try:
-        return ref.setattr_direct(name.string, value)
-    except space.Unwinder as unwind:
-        exc = unwind.exception
-        if isinstance(exc, space.LAttributeError):
-            exc = space.LKeyError(exc.obj, space.String(exc.name))
-            exc.traceback = unwind.traceback
-            raise space.Unwinder(exc, unwind.traceback)
-        else:
-            raise unwind
+    return ref.setattr_direct(name.string, value)
+    #try:
+    #except space.Unwinder as unwind:
+    #    exc = unwind.exception
+    #    if isinstance(exc, space.LAttributeError):
+    #        exc = space.LKeyError(exc.obj, space.String(exc.name))
+    #        exc.traceback = unwind.traceback
+    #        raise space.Unwinder(exc, unwind.traceback)
+    #    else:
+    #        raise unwind
