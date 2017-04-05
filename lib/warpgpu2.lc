@@ -11,90 +11,121 @@ import vulkan
 #    ])
 #    descset = Desc0()
 
-class DescriptorSetLayout
+class DescriptorSetLayout extends vulkan.Handle
     +init = (self, device, declaration):
         self.device = device
         self.declaration = declaration
-        print("creating descriptor set layout")
-#        self.device = device
-#        self.bindings = bindings
-#        self.layout = vulkan.DescriptorSetLayout(device,
-#            {bindings = bindings})
+        self.bindings = []
+        for name in declaration
+            decl = dict(declaration[name])
+            if "descriptorCount" in decl
+                assert false, "not implemented yet"
+            else
+                decl["descriptorCount"] = 1
+            self.bindings.append(decl)
+        self.layout = vulkan.DescriptorSetLayout(device,
+            {bindings = self.bindings})
+        self.id = self.layout.id
 
     +call = (self):
-        print("instantiating a set")
-        return DescriptorSet(self)
-#        pool = vulkan.DescriptorPool(self.device,
-#            desc_pool_config(self.bindings, 1))
-#        descset = self.device.allocateDescriptorSets({
-#            descriptorPool = pool
-#            setLayouts = [self.layout]
-#        })[0]
-#        descset.pool = pool
-#        return descset
-#    destroy = (self):
-#        self.layout.destroy()
+        pool = vulkan.DescriptorPool(self.device,
+            desc_pool_config(self.bindings, 1))
+        descset = self.device.allocateDescriptorSets({
+            descriptorPool = pool
+            setLayouts = [self]
+        })[0]
+        return DescriptorSet(self, pool, descset)
 
-#desc_pool_config = (config, maxSets):
-#    poolSizes = {}
-#    for desc in config
-#        type = desc["descriptorType"]
-#        count = desc["descriptorCount"]
-#        if type not in poolSizes
-#            poolSizes[type] = { type = type, descriptorCount = count }
-#        else
-#            poolSizes[type]["descriptorCount"] += count
-#    return {maxSets = maxSets, poolSizes = list(poolSizes.values())}
+    destroy = (self):
+        self.layout.destroy()
+        self.layout = null
+        self.id = null
 
-class DescriptorSet
-    +init = (self, layout):
+desc_pool_config = (config, maxSets):
+    poolSizes = {}
+    for desc in config
+        type = desc["descriptorType"]
+        count = desc["descriptorCount"]
+        if type not in poolSizes
+            poolSizes[type] = { type = type, descriptorCount = count }
+        else
+            poolSizes[type]["descriptorCount"] += count
+    return {maxSets = maxSets, poolSizes = list(poolSizes.values())}
+
+class DescriptorSet extends vulkan.Handle
+    +init = (self, layout, pool, descset):
         self = Id(self)
+        self.setattr("id", descset.id)
+        self.setattr("descset", descset)
+        self.setattr("pool", pool)
         self.setattr("layout", layout)
-        self.setattr("pending", [])
+        self.setattr("pending_writes", [])
 
     +getattr = (self, name):
-        if name in self.getattr("layout").declaration
-            return DescriptorAttribute(self, name)
+        layout = self.getattr("layout")
+        if name in layout.declaration
+            return DescriptorAttribute(self, name, layout.declaration[name])
         return self.getattr(name)
 
     +setattr = (self, name, value):
-        if name in self.getattr("layout").declaration
-            self.getattr("pending").append([name, value])
+        layout = self.getattr("layout")
+        pending_writes = self.getattr("pending_writes")
+        if name in layout.declaration
+            decl = layout.declaration[name]
+            pending_writes.append({
+                "dstSet": self.getattr("descset"),
+                "dstBinding": decl["binding"],
+                "dstArrayElement": 0,
+                "descriptorType": decl["descriptorType"],
+                write_field[decl["descriptorType"]]: [value]
+            })
         else
             self.setattr(name, value)
 
+    destroy = (self):
+        self.pool.destroy()
+        self.descset = null
+        self.pool = null
+        self.id = null
+
 # https://www.khronos.org/registry/vulkan/specs/1.0/html/vkspec.html#VkDescriptorType
 # The descriptorType reveals which Info -field should be used.
+write_field = {
+    "UNIFORM_BUFFER": "bufferInfo",
+    "STORAGE_BUFFER": "bufferInfo",
+    "UNIFORM_BUFFER_DYNAMIC": "bufferInfo",
+    "STORAGE_BUFFER_DYNAMIC": "bufferInfo",
+    "UNIFORM_TEXEL_BUFFER": "texelBufferView",
+    "STORAGE_TEXEL_BUFFER": "texelBufferView",
+    "SAMPLER": "imageInfo",
+    "COMBINED_IMAGE_SAMPLER": "imageInfo",
+    "SAMPLED_IMAGE": "imageInfo",
+    "STORAGE_IMAGE": "imageInfo",
+    "INPUT_ATTACHMENT": "imageInfo",
+}
+
 # dstArrayElement & *Info array count matters on arrays.
 
-
 class DescriptorAttribute
-    +init = (self, descset, name):
+    +init = (self, descset, name, options):
         self.descset = descset
         self.name = name
+        self.options = options
 
-updateDescriptorSets = (changes):
+updateDescriptorSets = (device, changes):
     if not isinstance(changes, list)
         changes = [changes]
 
+    writes = []
+    copies = []
     for descset in changes
         proxy = Id(descset)
-        for item in proxy.getattr("pending")
-            print(descset, item, "changed")
-        proxy.setattr("pending", [])
+        writes.extend(proxy.getattr("pending_writes"))
+        proxy.setattr("pending_writes", [])
 
-    #    device.updateDescriptorSets([{
-    #        dstSet = descset
-    #        dstBinding = 0
-    #        dstArrayElement = 0
-    #        descriptorType = "UNIFORM_BUFFER"
-    #        bufferInfo = [{
-    #            buffer = ubo.buffer
-    #            offset = 0
-    #            range  = ubo.buffer.size
-    #        }]
-    #    }], [])
+    device.updateDescriptorSets(writes, copies)
 
+# TODO: Implement array descriptors.
 # TODO: Implement descriptor copy as well.
 #       Very simple and similar model appears to be.
 #          srcSet
@@ -104,9 +135,6 @@ updateDescriptorSets = (changes):
 #          dstBinding
 #          dstArrayElement
 #          descriptorCount
-
-
-
 
 class ShaderLoader
     +init = (self, device, local):

@@ -14,7 +14,7 @@ main = ():
     device = gpu.device
 
     vertex_layout = object();
-        input = {
+        vertexInputState = {
             flags = 0
             vertexBindingDescriptions = [{
                 binding = 0
@@ -36,7 +36,14 @@ main = ():
                 }
             ]
         }
-        assembly = {topology = "TRIANGLE_LIST"}
+        inputAssemblyState = {topology = "TRIANGLE_LIST"}
+        # Or move this into the graphics pipeline defaults?
+        # rasterizationState = {
+        #     polygonMode = "FILL"
+        #     cullMode = 0
+        #     frontFace = "COUNTER_CLOCKWISE"
+        #     lineWidth = 1.0
+        # }
 
     vbo = object();
         size = 8 * 1024
@@ -83,48 +90,26 @@ main = ():
             # also immutableSamplers can be passed.
         }
     })
+    # DEP: pipeline_layout, descset
+
     dsc0 = DSC0()
     dsc0.testbuffer = {
         buffer = ubo.buffer
         offset = 0
         range  = ubo.buffer.size
     }
-    updateDescriptorSets(dsc0)
-
-    Desc0 = DescriptorSet(device, [
-        {
-            binding = 0
-            descriptorType = "UNIFORM_BUFFER"
-            descriptorCount = 1
-            stageFlags = "VERTEX_BIT"
-        }
-    ])
-    descset = Desc0()
-
-    # DEP: pipeline_layout, descset
+    updateDescriptorSets(device, dsc0)
+    # DEP: cbuf
 
     pipeline_layout = vulkan.PipelineLayout(device, {
         flags = 0
-        setLayouts = [Desc0.layout]
+        setLayouts = [DSC0]
         pushConstantRanges = []
     })
-    # DEP: cbuf, pipeline
-
-    device.updateDescriptorSets([{
-        dstSet = descset
-        dstBinding = 0
-        dstArrayElement = 0
-        descriptorType = "UNIFORM_BUFFER"
-        bufferInfo = [{
-            buffer = ubo.buffer
-            offset = 0
-            range  = ubo.buffer.size
-        }]
-    }], [])
-    # DEP: cbuf
+    # # DEP: cbuf, pipeline
 
     #pb = RenderPassBuilder()
-    #pb.color0.attachment(swapchain.layout, {
+    #pb.color0.attachment(swapchain.format, {
     #    loadOp = "CLEAR"
     #    storeOp = "STORE"
     #    initialLayout = 0 #UNDEFINED
@@ -215,7 +200,6 @@ main = ():
 
 
     shaders = ShaderLoader(device, dir)
-
     # DEP: pipeline
 
     # pib = pass.p0(stages, vertex_layout, pipeline_layout, extra={})
@@ -229,8 +213,8 @@ main = ():
             vertex = "vertex_shader.spv:main"
             fragment = "fragment_shader.spv:main"
         })
-        vertexInputState = vertex_layout.input
-        inputAssemblyState = vertex_layout.assembly
+        vertexInputState = vertex_layout.vertexInputState
+        inputAssemblyState = vertex_layout.inputAssemblyState
         layout = pipeline_layout
         renderPass = pass.renderPass
         subpass = 0
@@ -271,7 +255,7 @@ main = ():
             ]
         }, "INLINE")
         cbuf.bindPipeline("GRAPHICS", pipeline)
-        cbuf.bindDescriptorSets("GRAPHICS", pipeline_layout, 0, [descset], [])
+        cbuf.bindDescriptorSets("GRAPHICS", pipeline_layout, 0, [dsc0], [])
         cbuf.bindVertexBuffers(0, [vbo.buffer], [0])
         cbuf.draw(6, 1, 0, 0)
         cbuf.endRenderPass()
@@ -316,8 +300,8 @@ main = ():
 
     for obj in swapchain.fences ++ swapchain.framebuffers ++ swapchain.views
         obj.destroy()
-    descset.pool.destroy()
-    Desc0.destroy()
+    dsc0.destroy()
+    DSC0.destroy()
     pipeline.destroy()
     pipeline_layout.destroy()
     vbo.buffer.destroy()
