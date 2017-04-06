@@ -1,0 +1,580 @@
+#manual{_}{100}{quick intro}
+Introduction to the ideas behind Lever. With examples and illustrations.
+
+The aim of this page is to show the essentials of Lever
+programming language, without all the details or exceptions.
+The intent is to get you quickly started with writing useful
+programs so that you can learn the language by doing.
+
+#toc
+
+#section Getting started
+
+The first program to write in any language is the legendary
+#i{"hello, world"}:
+
+##
+    Print the words
+    hello, world
+
+Lever program to print the #i{"hello, world"} is:
+
+#code ##
+    print("hello, world")
+
+To get the above program to display anything, you need to
+setup yourself a programming environment and install Lever's
+runtime somewhere.
+
+If you wanted to be fancy, you would enclose this program
+inside a function and write:
+
+#code ##
+    main = (args):
+        print("hello, world")
+
+The parentheses '()' containing the function arguments, and
+the colon ':' at the end of a line, forms a function. The
+function contains the lines that are indented after it
+higher than where the beginning of a line starts.
+
+Lever adheres to the off-side rule because it's clean.
+Spaces vs. tabs are solved by banning tab character in
+source files. Getting your indentation right under these
+conditions requires either lot of labor or good tools to
+work with. So it is very likely you won't at least use a
+wordpad or notepad for coding. That is in its own, a small
+victory.
+
+Functions are values you can set into variables or pass as
+arguments. While most of the code runs a one line at a time
+until the last line, the lines inside a function are not
+evaluated immediately. The function stores a program that
+can be then called afterwards by anything else.
+
+For various reasons, if the entry module has a variable 'main',
+the runtime will call the 'main' with the argument list.
+
+One reason is that it helps at structuring the program, but
+it also means that the entry program is not run implicitly
+when the module is imported. 
+
+#subsection Control flow & Fizz Buzz
+
+Most of the control flow in Lever is quite ordinary and
+similar to Python except that the colon only exist in the
+function definitions. Equipped with this knowledge you could
+already write the fizz buzz program. Here's the description
+of the Fizz Buzz:
+
+##
+    Fizz buzz is a group word game for children.
+    The first kid designated to go first says the number
+    '1', and each children counts up one number in turn.
+    However, any number divisible by three is replaced by
+    the word 'fizz', any divisible by five is replaced by
+    the world 'buzz', numbers divisible by both become 'fizz
+    buzz'.
+    A player who hesitates or makes a mistake is eliminated
+    from the game.
+
+A popular interview screening question reduces above
+description into a program that prints out the correct
+sequence of the first 100 Fizz buzz numbers. 
+
+##
+    1, 2, Fizz, 4, Buzz, Fizz, 7, 8, Fizz, Buzz, 11, Fizz,
+    13, 14, Fizz Buzz, 16, 17, Fizz, 19, Buzz, Fizz, 22, 23,
+    Fizz, Buzz, 26, Fizz, 28, 29, Fizz Buzz, 31, 32, Fizz,
+    34, Buzz, Fizz, ...
+
+It bores out the heck out of you. Here's the program in the
+Lever:
+
+#code ##
+    for i in range(1, 101)
+        if (i % 3) == 0 and (i % 5) == 0
+            print("Fizz Buzz")
+        elif (i % 3) == 0
+            print("Fizz")
+        elif (i % 5) == 0
+            print("Buzz")
+        else
+            print(i)
+
+This is exactly how you would do it in python, except that
+there are no colons in the control flow expressions.
+
+The 'range(1, 101)' is an iterator that produces a sequence
+starting with 1 and ending to 100. The 'for' takes and pulls
+values one at a time from the iterator until it is emptied.
+
+The 'if'-'elif'-'else' chain should be familiar for any
+Pythonista, there is a small pitfall where you may stumble
+here though.
+
+The following program would always print 'Fizz' no
+matter of what number you give for 'i':
+
+#code ##
+    if not i % 3
+        print("Fizz")
+
+Lever has an identity rule that if something has to be
+treated as a boolean, it will always be treated as 'true',
+except if it is 'false' or 'null'.
+
+This means that 'bool(0)' is true. It can be a bit of a
+gotcha for new programmers, but it means that you can check
+for an absence or existence of a value with bare condition
+like this:
+
+#code ##
+    if theme_park
+        visit(theme_park)
+
+This works most of the time because most of the time you
+don't expect the theme_park to be 'false', if there's a
+possibility that it is 'null'.
+
+For booleans and null, the '==' is used as an identity
+equality, so if you have to differentiate between null and
+false, you can use equality for that.
+
+Overall there's a thumb of rule that Lever generally doesn't
+diverge from the other languages unless there is some reason
+to diverge.
+
+Before we proceed to explore Lever further, it is a good
+time to review how Lever became to be, to whom it is made,
+and what it will become.
+
+
+
+
+
+
+
+
+
+
+
+#section Focus audience
+
+The core audience of Lever are programmers doing realtime
+graphics or audio, interactive applications, GPU computing,
+simulation, game development, virtual reality.
+
+The choice of audience is fairly arbitrary. The main reason
+for this is that there are plenty of good languages for web
+development. Also the author is personally interested about
+the aforementioned subjects.
+
+It is really common response from people to wonder why would
+anyone want to write something like a rendering engine or a
+FEM solver in a dynamically typed programming language? Why
+create a language into the second slowest class of
+programming languages and sign it for this purpose of
+writing high performance software?
+
+The reason is to bring down the time to market in order to
+produce extremely advanced and profoundly complex software.
+It initiates the space race of the programming world.
+
+The fact is that only 1% of your software need to run really
+fast. Only the 1% of the program is the FEM part, or
+simulation, or anything else that really has to run as fast
+as what the hardware can support. It's not true for all
+software, but for most software there is very small portion
+of code where it has to perform.
+
+The earlier dynamic programming languages lacked in
+utilities to support this case. There is a certain top
+performance where Javascript goes with its JIT. To go beyond
+that you have to jump off into C/C++ language.
+
+With Lever we intend to break this barrier with partial
+evaluation and program translation techniques.
+
+#subsection Past and future
+
+I think of Lever as a some sort of a next-generation LISP
+language.
+
+Lever is capable of growing and changing in ways that aren't
+unusual for the languages from the LISP family. The LISPs
+have been capable of changing because of two reasons:
+
+#begin{enumerate}
+#item LISP program structure is similar to its syntax.
+#item The programs are data in the language, and vice versa,
+the data can be translated into programs.
+#end{enumerate}
+
+To achieve this, LISP family of languages make the
+consistent tradeoff from the syntax, giving them the
+sobriquet of "lots of superfluous parentheses", as seen from
+#href{http://rosettacode.org/wiki/FizzBuzz#Scheme}{this
+scheme sample at rosettacode.org}
+
+##
+    (do ((i 1 (+ i 1)))
+        ((> i 100))
+        (display
+          (cond ((= 0 (modulo i 15)) "FizzBuzz")
+                ((= 0 (modulo i 3))  "Fizz")
+                ((= 0 (modulo i 5))  "Buzz")
+                (else                i)))
+        (newline))
+
+Although LISP languages have their own fans and disciples,
+they have hard time competing with modern languages that
+have syntax built on context-free grammars.
+
+Some say that the qualities of the LISP languages are lost
+if you change away from the syntax. That is true to an
+extent. For example, the syntax in Python is difficult to
+change or improve.
+
+Giving Lever a complete syntax-makeover is a matter of
+providing it a different grammar file. To give it new
+semantics you will edit a table inside a compiler.
+
+To store information we use JSON whenever possible. To store
+bytecode we use a custom binary format that surpasses JSON
+only in its ability to contain type-annotated buffers.
+
+The full parsing and compiling infrastructure of Lever is
+accessible from the Lever language itself.
+
+The interpreter and the runtime of the language is written
+in Python and it is translated into machine code from there.
+A JIT compiler is generated along the way.
+
+Lever started as a LISP-variant and when it still was a Lisp
+I called it 'pyllisp'. As in 'python-inspired lisp'.
+
+Lever's capability to change the syntax comes from the use
+of the #href{https://jeffreykegler.github.io/Marpa-web-site/}{marpa
+parsing algorithm}. It is a parsing algorithm made by
+Jeffrey Keggler and it is based on Earley parsing algorithm.
+Thanks to this algorithm there is no a language with "more
+beautiful syntax" than Lever. If there is.. ;-) Well. You
+will know what happens.
+
+Actually once I have used Lever I have lost most of my
+excitement over syntax. When a language can look like
+anything I want, it can as well be what it is.
+
+As of writing this, Lever implementation consists of total
+11849 lines of Python and 15173 lines of Lever code. It is
+maturing enough to receive its first draft of a translation
+framework soon.
+
+#subsection Iterative development
+
+Malleability of Lever is a result of its design philosophy.
+The philosophy boils down to the idea that a live cow is
+a better study subject than a dead cow if you intend to make
+a better cow.
+
+Lever is a quickly built language that works as a study tool
+to build a better language. The discoveries are distilled
+into improvements and built into Lever's design.
+
+Since Lever is a tool for designing itself as much as it is
+a programming language, it has the according upsides and downsides.
+
+The biggest downside for a potential user is that the
+Language is changing all the time and there's not any signs
+that this would change anytime soon.
+
+The second biggest downside is that there are things that
+are undone intentionally. When the author has solved the
+certain problem, he has proceeded to solve a more pressing
+problem instead of wasting effort to finish the work. 
+
+Also there are some other downsides such as:
+
+#begin{enumerate}
+#item The documentation is designed to lag behind because
+the documentation flows upwards from the code.
+#item The author prioritizes his problems first, so it may
+take a while for your problem to be fixed.
+#item Many python concepts have been ditched and at some
+places there's an inferior concept present.
+#item The "easy" or trivial improvements of the language
+haven't been done because there has been harder things to
+fix.
+#item Many bugs remain unfixed until they become relevant to the author.
+#end{enumerate}
+
+One upside is that the language is simple to improve,
+perhaps even if you weren't the author. Especially it is
+easy if your runtime-sided code can be first tested in a
+Python for bugs before being compiled in time-consuming
+manner into machine code.
+
+Another upside is that Lever stays updated, competitive and
+fresh as the time passes. 
+
+If you're still interested about the language, keep reading.
+
+
+
+
+
+
+
+
+
+
+
+#section Variables
+
+Lever has a lexical variable scoping. It is not very
+different from other imperative languages, such as C,
+Python, BASIC in that sense. To illustrate the scope, we can
+find a practical and a fun example in the Lever's C parsing library:
+
+#code ##
+    trigraph_getch = (getch):
+        ch0 = getch()
+        ch1 = getch()
+        return ():
+            ch2 = getch()
+            if ch0 == '?' and ch1 == '?' # This is equivalent to how big compilers
+                try                      # are doing it.
+                    ch = trigraphs[ch2]  # Three-character window and checking if
+                    ch0 := getch()       # There's a trigraph on it.
+                    ch1 := getch()
+                    return ch
+                except KeyError as _
+                    null
+            ch = ch0
+            ch0 := ch1
+            ch1 := ch2
+            return ch
+
+    trigraphs = {
+        "=": "#",
+        "/": "\\",
+        "(": "[",
+        ")": "]",
+        "!": "|",
+        "<": "{",
+        ">": "}",
+        "-": "~",
+    }
+
+This thing is an optional filter into getch
+-function. It parses trigraphs if it is inserted. Trigraphs
+are an old and obsolete method to insert characters that are
+missing on your keyboard. In practice it would mean that if
+you didn't have a way to type '#', you could use the '??='
+instead and the compiler would interpret it the same way.
+
+The trigraph_getch gets the 'getch' as an argument that
+would be otherwise used to fetch characters. In return it
+provides its own function that will be used as a
+replacement, right after it has grabbed two characters as a
+"lookahead".
+
+The inner function starting at the 'return ():' has access
+to the scope that contains the 'ch0' and 'ch1' variables.
+If it is used as a 'getch' instead of the original one, like
+how this is intended to be used, then each call grabs a new
+character, but instead of returning it immediately it will
+consume it and return something else.
+
+First the inner function checks whether the ch0 and ch1
+lookahead contains ??. If it does it will try to check the
+trigraph dictionary, that's provided after the
+trigraph_getch function, for a match. If it finds a match it
+will fill the ch0 and ch1 variables with new characters and
+return a replacement. Otherwise it lets the program flow
+pass downwards. We use 'null' in the exception handle to
+indicate that the exception handling is absent.
+
+The current syntax is designed such that the changes to the
+upscope must be explicit. The assignment with '=' always
+sets a local variable. To set an upscope variable you have
+to do ':='. I'm not sure whether the benefit is big enough
+to keep it this way, but I think it is very clean and the
+lexical scope doesn't cause any big surprises this way.
+
+Also the operations such as '+=' look up an existing
+variable and have an effect on the upscope. It is kind of
+logical behavior from them.
+
+If the program doesn't face a trigraph, it fills the return
+ch with the first character in the lookahead buffer and
+shifts the values in the lookahead buffer to fit in the
+newly fetched character.
+
+
+
+
+
+
+
+
+
+
+
+#section Arithmetic
+
+Lever has built-in support for vector arithmetic. The
+intention is to extend it until it's as wide as in the GLSL
+and as wide as what SPIR-V acknowledges. Smarter people can
+guess why and get distracted, but what I want to point out
+here is how the arithmetic in Lever can be extended.
+
+Here is a sphere-ray intersection code written in Lever:
+
+#code ##
+    sphere_ray_intersect = (sphere, ray):
+        radius2 = sphere.radius*sphere.radius
+        d = sphere.center - ray.orig
+        tca = dot(d, ray.dir)
+        d2 = dot(d, d) - tca * tca
+        if d2 > radius2
+            return null
+        thc = sqrt(radius2 - d2)
+        return object();
+            t0 = tca - thc
+            t1 = tca + thc
+
+You may likely guess which things here calculate a dot
+product and so on. If I'm crazy enough I may consider to
+provide sphere.radius² and sphere.radius³ someday, but not today.
+
+Note that the code returns 'null' if the value is absent. If
+it is present, then we return an object(). The semicolon in
+the end ';' is grabbing the variables from the indented
+block and assigning them to the object(). Therefore you get
+an object with .t0 and .t1 attributes in it.
+
+The object() serves as a custom record you can use whenever
+an object defined by a full class isn't reasonable. It has
+an advantage over a class-defined object that it can
+implicitly convert into a dictionary.
+
+But enough about the intersection code. You'll want to know
+how the vector subtraction is implemented.
+
+#subsection Multimethods
+
+Because Lever used to be a Lisp-variant, it retrieves the
+operators such as '-' from the module scope. If you are
+passive-aggressive, you could rewrite the '-' into a print
+method by a very simple command:
+
+#code ##
+    %"-" = print # What the?
+    1-2          # Now it prints "1 2"!
+
+The %"" syntax treats a string as a name of a variable slot.
+The following code reveals what the "-" command is:
+
+#code ##
+    print(%"-")
+
+It prints out <multimethod>. Note that the prefix plus and
+minus signs refer to the %"+expr" and %"-expr" respectively.
+That is the negation and subtraction are clearly different
+things.
+
+There is a way to look at what the %"+" has eaten.
+Multimethods have .arity, .keys() and .default
+
+#code ##
+    print(%"+".arity)
+    print(%"+".keys()...)
+    print(%"+".default)
+
+This prints out:
+
+##
+    2
+    [vec3, vec3] [int, int] [float, float]
+    <builtin default>
+
+It looks very simple, considering that Lever can calculate
+'false - true' and return '-1'. It is disturbingly simple.
+
+The %"-" multimethod requires at least two arguments. If it
+gets 2 or more arguments, it retrieves the interface of
+those two arguments and goes to check into a lookup table.
+
+If there's a method in the lookup table, the multimethod
+will let the method take over. This only happens if the two
+arguments are common combination and present in the table.
+Otherwise the multimethod will transfer to the .default if
+it exists.
+
+The .default can do anything in a multimethod. The builtin
+arithmetic default is equivalent to the:
+
+#code ##
+    %"+".default = (args):
+        return %"+".call_suppressed(coerce(args...)...)
+
+Coerce attempts to implicitly convert the values such that
+they go into the usual forms. For example. The coerce(false,
+true) converts the values to 0 and 1. So the false - true is
+equivalent to calling the int(false) - int(true), or 0 - 1.
+
+The default method on the .coerce is null, so if the method
+isn't in the coerce table, then the multimethod fails with
+'no method' -error followed by the type combination.
+
+The .call_suppressed calls the multimethod again, with the
+exception that this time the .default won't be visited if it
+fails again. This limits the coercion into a single cycle.
+
+This is not a perfect solution to this problem and it is
+especially problematic with the comparison operators, but it
+is far much preferred to the Gang-of-four pattern present in
+Python. The reason is that we can actually reason about the
+behavior of this function by checking only into two tables
+while the program is running.
+
+It will help with JIT and with abstract interpretation of
+programs in overall.
+
+
+
+
+
+
+
+
+
+
+
+#section Not yet covered in here
+
+#begin{enumerate}
+#item C foreign function interface that fetches the header
+definitions from a json file.
+#item A documentation system that can check its
+documentation against the runtime, and the runtime can fetch
+the reference documentation from the same place as where the
+online documentation fetches it from.
+#item Source links from the online documentation directly
+into the relevant github page.
+#item Specifics of the parsing engine.
+#item The Vulkan support.
+#item Most of the parts of the libuv, basic I/O it provides
+and greenlet concurrency model provided by RPython.
+#item Utilities for handling binary data.
+#item Half-made C parser in a library, with C ffi generator.
+#item (Upcoming) general purpose pretty printer utilized by the runtime itself to display data.
+#item (Upcoming) webassembly and SPIR-V libraries.
+#item (Upcoming) builtin font rendering
+#item (Likely Upcoming) software audio synth stuff in standard library.
+#item (Perhaps not so far in the future) Compiler / type
+inferencing / partial evaluation framework and integrated
+computer algebra system & autodifferentiator matching in the colors.
+#end{enumerate}
