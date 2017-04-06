@@ -115,23 +115,18 @@ main = :
     cbuf = gpu.queue.pool.allocate(
         {level = "PRIMARY", commandBufferCount = 1})[0]
 
+    target = Target(gpu, swapchain)
     start_time = time()
-    last_image = 0
     render = ():
-        s = gpu.device.waitForFences([swapchain.fences[last_image]], true, 20000000)
-        if not s.SUCCESS
+        if not target.acquire().SUCCESS
             return
-
-        current_image = gpu.device.acquireNextImage(swapchain,
-            0xFFFFFFFFFFFFFFFF, swapchain.image_acquired)
-        gpu.device.resetFences([swapchain.fences[current_image]])
 
         constants[0] = time() - start_time
 
         cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
         cbuf.beginRenderPass({
             renderPass = renderPass
-            framebuffer = swapchain.framebuffers[current_image]
+            framebuffer = target.framebuffer
             renderArea = gpu.screen.area
             clearValues = [
                 {color = {float32 = [0, 0, 0, 1]}}
@@ -144,19 +139,7 @@ main = :
         cbuf.draw(6, 1, 0, 0) # 6 vertices, one instance.
         cbuf.endRenderPass()
         cbuf.end()
-        gpu.queue.submit([{
-            waitSemaphores = [swapchain.image_acquired]
-            waitDstStageMask = ["TOP_OF_PIPE_BIT"]
-            commandBuffers = [cbuf]
-            signalSemaphores = [swapchain.rendering_done]
-        }], swapchain.fences[current_image])
-
-        gpu.queue.present({
-            waitSemaphores = [swapchain.rendering_done]
-            swapchains = [swapchain.id]
-            imageIndices = [current_image]
-        })
-        last_image := current_image
+        target.present([cbuf])
 
     event = ffi.automem(sdl.sdl.Event)
     running = true
@@ -168,16 +151,13 @@ main = :
             if event.type == sdl.sdl.KEYDOWN
                 running = false
 
-    gpu.queue.waitIdle()
     gpu.device.waitIdle()
-
     for obj in swapchain.fences ++ swapchain.framebuffers ++ swapchain.views
         obj.destroy()
     pipeline.destroy()
     layout.destroy()
     quad_mesh.buffer.destroy()
     quad_mesh.buffer.mem.free()
-    vertex_shader.destroy()
-    fragment_shader.destroy()
+    shaders.destroy()
     renderPass.destroy()
     gpu.destroy()

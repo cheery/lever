@@ -627,3 +627,41 @@ class ShaderLoader
         for module in self.cache.values()
             module.destroy()
         self.cache = {}
+
+# TODO: Could use the libuv threadpools to wait for a fence?
+class Target
+    +init = (self, gpu, swapchain):
+        self.gpu = gpu
+        self.swapchain = swapchain
+        self.current_image = 0
+        self.framebuffer = null
+
+    acquire = (self):
+        gpu = self.gpu
+        swapchain = self.swapchain
+        current_image = self.current_image
+        # This is lazy. It means we can't continue before the previous frame has been submitted.
+        # Need to check with performance counter later, whether this is sufficient
+        status = gpu.device.waitForFences([swapchain.fences[current_image]],
+            true, 20000000)
+        if status.SUCCESS
+            self.current_image = gpu.device.acquireNextImage(swapchain,
+                0xFFFFFFFFFFFFFFFF, swapchain.image_acquired)
+            self.framebuffer = swapchain.framebuffers[self.current_image]
+            gpu.device.resetFences([swapchain.fences[self.current_image]])
+        return status
+
+    present = (self, cbufs):
+        gpu = self.gpu
+        gpu.queue.submit([{
+            waitSemaphores = [self.swapchain.image_acquired]
+            waitDstStageMask = ["TOP_OF_PIPE_BIT"]
+            commandBuffers = cbufs
+            signalSemaphores = [self.swapchain.rendering_done]
+        }], self.swapchain.fences[self.current_image])
+
+        gpu.queue.present({
+            waitSemaphores = [self.swapchain.rendering_done]
+            swapchains = [self.swapchain]
+            imageIndices = [self.current_image]
+        })

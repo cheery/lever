@@ -84,7 +84,7 @@ main = ():
     dsc0.testbuffer = {
         buffer = ubo.buffer
         offset = 0
-        range  = ubo.buffer.size
+        range  = -1#ubo.buffer.size
     }
     gpu.update(dsc0)
     # DEP: cbuf
@@ -146,29 +146,22 @@ main = ():
     gpu.createPipeline(pipeline) # or pipelines.
     # DEP: cbuf
 
+    target = Target(gpu, swapchain)
+
     frame_statistics = []
-    last_image = 0
     frame_was = time()
     render = ():
-        # TODO: Could use the libuv threadpools to wait for a fence.
-
-        # This is lazy. It means we can't continue before the previous frame has been submitted.
-        # Need to check with performance counter later, whether this is sufficient
-        s = gpu.device.waitForFences([swapchain.fences[last_image]], true, 20000000)
-        if not s.SUCCESS
+        if not target.acquire().SUCCESS
             return
 
         frame_now = time()
         frame_statistics.append(frame_now - frame_was)
         frame_was := frame_now
 
-        current_image = gpu.device.acquireNextImage(swapchain, 0xFFFFFFFFFFFFFFFF, swapchain.image_acquired)
-        gpu.device.resetFences([swapchain.fences[current_image]])
-
         cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
         cbuf.beginRenderPass({
             renderPass = pass
-            framebuffer = swapchain.framebuffers[current_image]
+            framebuffer = target.framebuffer
             renderArea = gpu.screen.area
             clearValues = [
                 {color = {float32 = [
@@ -184,19 +177,7 @@ main = ():
         cbuf.draw(6, 1, 0, 0)
         cbuf.endRenderPass()
         cbuf.end()
-        gpu.queue.submit([{
-            waitSemaphores = [swapchain.image_acquired]
-            waitDstStageMask = ["TOP_OF_PIPE_BIT"]
-            commandBuffers = [cbuf]
-            signalSemaphores = [swapchain.rendering_done]
-        }], swapchain.fences[current_image])
-
-        gpu.queue.present({
-            waitSemaphores = [swapchain.rendering_done]
-            swapchains = [swapchain]
-            imageIndices = [current_image]
-        })
-        last_image := current_image
+        target.present([cbuf])
 
         if frame_statistics.length >= 1000
             best  = 1.0
@@ -218,9 +199,7 @@ main = ():
             if event.type == sdl.sdl.QUIT
                 running = false
 
-    gpu.queue.waitIdle()
     gpu.device.waitIdle()
-
     for obj in swapchain.fences ++ swapchain.framebuffers ++ swapchain.views
         obj.destroy()
     dsc0.destroy()
