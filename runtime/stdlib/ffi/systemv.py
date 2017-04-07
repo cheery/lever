@@ -436,6 +436,11 @@ class Struct(Type):
                 rffi.c_memcpy(offset, value.pointer, sizeof(self))
                 return value
         if isinstance(value, Dict):
+            # If we set using this technique, we expect that the memory is clean
+            # for fields that we didn't set.
+            # This causes us to clean a field twice in some situations,
+            # So it is not the perfect solution. # TODO: figure out something better.
+            rffi.c_memset(offset, 0, sizeof(self))
             for key, obj in value.data.iteritems():
                 if not isinstance(key, String):
                     raise unwind(LTypeError(u"dictionary fields must be string fields for struct.store to work"))
