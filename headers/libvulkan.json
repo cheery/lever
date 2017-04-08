@@ -23,6 +23,30 @@
         "UUID_SIZE": 16, 
         "VK_AMD_DRAW_INDIRECT_COUNT_EXTENSION_NAME": "VK_AMD_draw_indirect_count", 
         "VK_AMD_DRAW_INDIRECT_COUNT_SPEC_VERSION": 1, 
+        "VK_AMD_EXTENSION_133_EXTENSION_NAME": "VK_AMD_extension_133", 
+        "VK_AMD_EXTENSION_133_SPEC_VERSION": 0, 
+        "VK_AMD_EXTENSION_134_EXTENSION_NAME": "VK_AMD_extension_134", 
+        "VK_AMD_EXTENSION_134_SPEC_VERSION": 0, 
+        "VK_AMD_EXTENSION_135_EXTENSION_NAME": "VK_AMD_extension_135", 
+        "VK_AMD_EXTENSION_135_SPEC_VERSION": 0, 
+        "VK_AMD_EXTENSION_136_EXTENSION_NAME": "VK_AMD_extension_136", 
+        "VK_AMD_EXTENSION_136_SPEC_VERSION": 0, 
+        "VK_AMD_EXTENSION_137_EXTENSION_NAME": "VK_AMD_extension_137", 
+        "VK_AMD_EXTENSION_137_SPEC_VERSION": 0, 
+        "VK_AMD_EXTENSION_138_EXTENSION_NAME": "VK_AMD_extension_138", 
+        "VK_AMD_EXTENSION_138_SPEC_VERSION": 0, 
+        "VK_AMD_EXTENSION_139_EXTENSION_NAME": "VK_AMD_extension_139", 
+        "VK_AMD_EXTENSION_139_SPEC_VERSION": 0, 
+        "VK_AMD_EXTENSION_140_EXTENSION_NAME": "VK_AMD_extension_140", 
+        "VK_AMD_EXTENSION_140_SPEC_VERSION": 0, 
+        "VK_AMD_EXTENSION_141_EXTENSION_NAME": "VK_AMD_extension_141", 
+        "VK_AMD_EXTENSION_141_SPEC_VERSION": 0, 
+        "VK_AMD_EXTENSION_142_EXTENSION_NAME": "VK_AMD_extension_142", 
+        "VK_AMD_EXTENSION_142_SPEC_VERSION": 0, 
+        "VK_AMD_EXTENSION_143_EXTENSION_NAME": "VK_AMD_extension_143", 
+        "VK_AMD_EXTENSION_143_SPEC_VERSION": 0, 
+        "VK_AMD_EXTENSION_144_EXTENSION_NAME": "VK_AMD_extension_144", 
+        "VK_AMD_EXTENSION_144_SPEC_VERSION": 0, 
         "VK_AMD_EXTENSION_17_EXTENSION_NAME": "VK_AMD_extension_17", 
         "VK_AMD_EXTENSION_17_SPEC_VERSION": 0, 
         "VK_AMD_EXTENSION_18_EXTENSION_NAME": "VK_AMD_extension_18", 
@@ -84,7 +108,7 @@
         "VK_EXT_DEBUG_MARKER_EXTENSION_NAME": "VK_EXT_debug_marker", 
         "VK_EXT_DEBUG_MARKER_SPEC_VERSION": 4, 
         "VK_EXT_DEBUG_REPORT_EXTENSION_NAME": "VK_EXT_debug_report", 
-        "VK_EXT_DEBUG_REPORT_SPEC_VERSION": 5, 
+        "VK_EXT_DEBUG_REPORT_SPEC_VERSION": 6, 
         "VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME": "VK_EXT_direct_mode_display", 
         "VK_EXT_DIRECT_MODE_DISPLAY_SPEC_VERSION": 1, 
         "VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME": "VK_EXT_discard_rectangles", 
@@ -96,13 +120,13 @@
         "VK_EXT_EXTENSION_28_EXTENSION_NAME": "VK_NV_extension_28", 
         "VK_EXT_EXTENSION_28_SPEC_VERSION": 0, 
         "VK_EXT_HDR_METADATA_EXTENSION_NAME": "VK_EXT_hdr_metadata", 
-        "VK_EXT_HDR_METADATA_SPEC_VERSION": 0, 
+        "VK_EXT_HDR_METADATA_SPEC_VERSION": 1, 
         "VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME": "VK_EXT_shader_subgroup_ballot", 
         "VK_EXT_SHADER_SUBGROUP_BALLOT_SPEC_VERSION": 1, 
         "VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME": "VK_EXT_shader_subgroup_vote", 
         "VK_EXT_SHADER_SUBGROUP_VOTE_SPEC_VERSION": 1, 
         "VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME": "VK_EXT_swapchain_colorspace", 
-        "VK_EXT_SWAPCHAIN_COLOR_SPACE_SPEC_VERSION": 1, 
+        "VK_EXT_SWAPCHAIN_COLOR_SPACE_SPEC_VERSION": 2, 
         "VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME": "VK_EXT_validation_flags", 
         "VK_EXT_VALIDATION_FLAGS_SPEC_VERSION": 1, 
         "VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME": "VK_GOOGLE_display_timing", 
@@ -161,18 +185,24 @@
         "VK_KHR_EXTENSION_129_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_130_EXTENSION_NAME": "VK_KHR_extension_130", 
         "VK_KHR_EXTENSION_130_SPEC_VERSION": 0, 
+        "VK_KHR_EXTENSION_131_EXTENSION_NAME": "VK_KHR_extension_131", 
+        "VK_KHR_EXTENSION_131_SPEC_VERSION": 0, 
+        "VK_KHR_EXTENSION_132_EXTENSION_NAME": "VK_KHR_extension_132", 
+        "VK_KHR_EXTENSION_132_SPEC_VERSION": 0, 
+        "VK_KHR_EXTENSION_148_EXTENSION_NAME": "VK_EXT_extension_148", 
+        "VK_KHR_EXTENSION_148_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_82_EXTENSION_NAME": "VK_KHR_extension_82", 
         "VK_KHR_EXTENSION_82_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_83_EXTENSION_NAME": "VK_KHR_extension_83", 
         "VK_KHR_EXTENSION_83_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_84_EXTENSION_NAME": "VK_KHR_extension_84", 
         "VK_KHR_EXTENSION_84_SPEC_VERSION": 0, 
-        "VK_KHR_EXTENSION_85_EXTENSION_NAME": "VK_KHR_extension_85", 
-        "VK_KHR_EXTENSION_85_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_94_EXTENSION_NAME": "VK_KHR_extension_94", 
         "VK_KHR_EXTENSION_94_SPEC_VERSION": 0, 
         "VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME": "VK_KHR_get_physical_device_properties2", 
         "VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_SPEC_VERSION": 1, 
+        "VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME": "VK_KHR_incremental_present", 
+        "VK_KHR_INCREMENTAL_PRESENT_SPEC_VERSION": 1, 
         "VK_KHR_MAINTENANCE1_EXTENSION_NAME": "VK_KHR_maintenance1", 
         "VK_KHR_MAINTENANCE1_SPEC_VERSION": 1, 
         "VK_KHR_MIR_SURFACE_EXTENSION_NAME": "VK_KHR_mir_surface", 
@@ -195,6 +225,12 @@
         "VK_KHR_XCB_SURFACE_SPEC_VERSION": 6, 
         "VK_KHR_XLIB_SURFACE_EXTENSION_NAME": "VK_KHR_xlib_surface", 
         "VK_KHR_XLIB_SURFACE_SPEC_VERSION": 6, 
+        "VK_KHR_extension_146_EXTENSION_NAME": "VK_KHR_extension_146", 
+        "VK_KHR_extension_146_SPEC_VERSION": 0, 
+        "VK_KHR_extension_147_EXTENSION_NAME": "VK_KHR_extension_147", 
+        "VK_KHR_extension_147_SPEC_VERSION": 0, 
+        "VK_KHR_relaxed_block_layout_EXTENSION_NAME": "VK_KHR_relaxed_block_layout", 
+        "VK_KHR_relaxed_block_layout_SPEC_VERSION": 0, 
         "VK_KHR_variable_pointers_EXTENSION_NAME": "VK_KHR_variable_pointers", 
         "VK_KHR_variable_pointers_SPEC_VERSION": 0, 
         "VK_KHX_DEVICE_GROUP_CREATION_EXTENSION_NAME": "VK_KHX_device_group_creation", 
@@ -261,6 +297,16 @@
         "VK_NV_EXTENSION_103_SPEC_VERSION": 0, 
         "VK_NV_EXTENSION_104_EXTENSION_NAME": "VK_NV_extension_104", 
         "VK_NV_EXTENSION_104_SPEC_VERSION": 0, 
+        "VK_NV_EXTENSION_149_EXTENSION_NAME": "VK_NV_extension_149", 
+        "VK_NV_EXTENSION_149_SPEC_VERSION": 0, 
+        "VK_NV_EXTENSION_150_EXTENSION_NAME": "VK_NV_extension_150", 
+        "VK_NV_EXTENSION_150_SPEC_VERSION": 0, 
+        "VK_NV_EXTENSION_151_EXTENSION_NAME": "VK_NV_extension_151", 
+        "VK_NV_EXTENSION_151_SPEC_VERSION": 0, 
+        "VK_NV_EXTENSION_152_EXTENSION_NAME": "VK_NV_extension_152", 
+        "VK_NV_EXTENSION_152_SPEC_VERSION": 0, 
+        "VK_NV_EXTENSION_153_EXTENSION_NAME": "VK_NV_extension_153", 
+        "VK_NV_EXTENSION_153_SPEC_VERSION": 0, 
         "VK_NV_EXTENSION_1_EXTENSION_NAME": "VK_NV_extension_1", 
         "VK_NV_EXTENSION_1_SPEC_VERSION": 0, 
         "VK_NV_EXTENSION_53_EXTENSION_NAME": "VK_NV_extension_53", 
@@ -1293,16 +1339,17 @@
             "constants": {
                 "ADOBERGB_LINEAR_EXT": 1000104011, 
                 "ADOBERGB_NONLINEAR_EXT": 1000104012, 
-                "BT2020_LINEAR_EXT": 1000104009, 
-                "BT2020_NONLINEAR_EXT": 1000104010, 
-                "BT709_LINEAR_EXT": 1000104007, 
-                "BT709_NONLINEAR_EXT": 1000104008, 
-                "DCI_P3_LINEAR_EXT": 1000104005, 
-                "DCI_P3_NONLINEAR_EXT": 1000104006, 
-                "DISPLAY_P3_LINEAR_EXT": 1000104001, 
-                "DISPLAY_P3_NONLINEAR_EXT": 1000104002, 
-                "SCRGB_LINEAR_EXT": 1000104003, 
-                "SCRGB_NONLINEAR_EXT": 1000104004, 
+                "BT2020_LINEAR_EXT": 1000104007, 
+                "BT709_LINEAR_EXT": 1000104005, 
+                "BT709_NONLINEAR_EXT": 1000104006, 
+                "DCI_P3_LINEAR_EXT": 1000104003, 
+                "DCI_P3_NONLINEAR_EXT": 1000104004, 
+                "DISPLAY_P3_NONLINEAR_EXT": 1000104001, 
+                "DOLBYVISION_EXT": 1000104009, 
+                "EXTENDED_SRGB_LINEAR_EXT": 1000104002, 
+                "HDR10_HLG_EXT": 1000104010, 
+                "HDR10_ST2084_EXT": 1000104008, 
+                "PASS_THROUGH_EXT": 1000104013, 
                 "SRGB_NONLINEAR_KHR": 0
             }, 
             "ctype": "i32", 
@@ -1915,6 +1962,7 @@
                 "DESCRIPTOR_POOL_EXT": 22, 
                 "DESCRIPTOR_SET_EXT": 23, 
                 "DESCRIPTOR_SET_LAYOUT_EXT": 20, 
+                "DESCRIPTOR_UPDATE_TEMPLATE_KHR_EXT": 1000085000, 
                 "DEVICE_EXT": 3, 
                 "DEVICE_MEMORY_EXT": 8, 
                 "DISPLAY_KHR_EXT": 29, 
@@ -3490,7 +3538,7 @@
             }, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "EXPORT_MEMORY_WIN_32_HANDLE_INFO_KHX"
+                "sType": "EXPORT_MEMORY_WIN32_HANDLE_INFO_KHX"
             }, 
             "fields": [
                 [
@@ -3528,7 +3576,7 @@
             }, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "EXPORT_MEMORY_WIN_32_HANDLE_INFO_NV"
+                "sType": "EXPORT_MEMORY_WIN32_HANDLE_INFO_NV"
             }, 
             "fields": [
                 [
@@ -3587,7 +3635,7 @@
             }, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "EXPORT_SEMAPHORE_WIN_32_HANDLE_INFO_KHX"
+                "sType": "EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHX"
             }, 
             "fields": [
                 [
@@ -4230,7 +4278,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "FORMAT_PROPERTIES_2KHR"
+                "sType": "FORMAT_PROPERTIES_2_KHR"
             }, 
             "fields": [
                 [
@@ -4518,7 +4566,7 @@
             }, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "IOSSURFACE_CREATE_INFO_MVK"
+                "sType": "IOS_SURFACE_CREATE_INFO_MVK"
             }, 
             "fields": [
                 [
@@ -4749,7 +4797,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "IMAGE_FORMAT_PROPERTIES_2KHR"
+                "sType": "IMAGE_FORMAT_PROPERTIES_2_KHR"
             }, 
             "fields": [
                 [
@@ -5094,7 +5142,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "IMPORT_MEMORY_WIN_32_HANDLE_INFO_KHX"
+                "sType": "IMPORT_MEMORY_WIN32_HANDLE_INFO_KHX"
             }, 
             "fields": [
                 [
@@ -5123,7 +5171,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "IMPORT_MEMORY_WIN_32_HANDLE_INFO_NV"
+                "sType": "IMPORT_MEMORY_WIN32_HANDLE_INFO_NV"
             }, 
             "fields": [
                 [
@@ -5185,7 +5233,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "IMPORT_SEMAPHORE_WIN_32_HANDLE_INFO_KHX"
+                "sType": "IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHX"
             }, 
             "fields": [
                 [
@@ -5489,7 +5537,7 @@
             }, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "MAC_OSSURFACE_CREATE_INFO_MVK"
+                "sType": "MACOS_SURFACE_CREATE_INFO_MVK"
             }, 
             "fields": [
                 [
@@ -5745,7 +5793,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "MEMORY_WIN_32_HANDLE_PROPERTIES_KHX"
+                "sType": "MEMORY_WIN32_HANDLE_PROPERTIES_KHX"
             }, 
             "fields": [
                 [
@@ -6561,7 +6609,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "PHYSICAL_DEVICE_FEATURES_2KHR"
+                "sType": "PHYSICAL_DEVICE_FEATURES_2_KHR"
             }, 
             "fields": [
                 [
@@ -6623,7 +6671,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "PHYSICAL_DEVICE_IDPROPERTIES_KHX"
+                "sType": "PHYSICAL_DEVICE_ID_PROPERTIES_KHX"
             }, 
             "fields": [
                 [
@@ -6672,7 +6720,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2KHR"
+                "sType": "PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2_KHR"
             }, 
             "fields": [
                 [
@@ -7201,7 +7249,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "PHYSICAL_DEVICE_MEMORY_PROPERTIES_2KHR"
+                "sType": "PHYSICAL_DEVICE_MEMORY_PROPERTIES_2_KHR"
             }, 
             "fields": [
                 [
@@ -7365,7 +7413,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "PHYSICAL_DEVICE_PROPERTIES_2KHR"
+                "sType": "PHYSICAL_DEVICE_PROPERTIES_2_KHR"
             }, 
             "fields": [
                 [
@@ -7415,7 +7463,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2KHR"
+                "sType": "PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2_KHR"
             }, 
             "fields": [
                 [
@@ -8335,7 +8383,7 @@
                 ]
             }, 
             "defaults": {
-                "sType": "PIPELINE_VIEWPORT_WSCALING_STATE_CREATE_INFO_NV"
+                "sType": "PIPELINE_VIEWPORT_W_SCALING_STATE_CREATE_INFO_NV"
             }, 
             "fields": [
                 [
@@ -8459,6 +8507,67 @@
             }, 
             "ctype": "i32", 
             "type": "enum"
+        }, 
+        "PresentRegionKHR": {
+            "aliases": {}, 
+            "autoarrays": {
+                "rectangles": [
+                    "rectangleCount", 
+                    "pRectangles"
+                ]
+            }, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "rectangleCount", 
+                    "u32"
+                ], 
+                [
+                    "pRectangles", 
+                    {
+                        "to": "RectLayerKHR", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PresentRegionsKHR": {
+            "aliases": {}, 
+            "autoarrays": {
+                "regions": [
+                    "swapchainCount", 
+                    "pRegions"
+                ]
+            }, 
+            "defaults": {
+                "sType": "PRESENT_REGIONS_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "swapchainCount", 
+                    "u32"
+                ], 
+                [
+                    "pRegions", 
+                    {
+                        "to": "PresentRegionKHR", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
         }, 
         "PresentTimeGOOGLE": {
             "aliases": {}, 
@@ -8673,7 +8782,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "QUEUE_FAMILY_PROPERTIES_2KHR"
+                "sType": "QUEUE_FAMILY_PROPERTIES_2_KHR"
             }, 
             "fields": [
                 [
@@ -8740,6 +8849,26 @@
                 [
                     "extent", 
                     "Extent3D"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "RectLayerKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {}, 
+            "fields": [
+                [
+                    "offset", 
+                    "Offset2D"
+                ], 
+                [
+                    "extent", 
+                    "Extent2D"
+                ], 
+                [
+                    "layer", 
+                    "u32"
                 ]
             ], 
             "type": "struct"
@@ -9271,7 +9400,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "SPARSE_IMAGE_FORMAT_PROPERTIES_2KHR"
+                "sType": "SPARSE_IMAGE_FORMAT_PROPERTIES_2_KHR"
             }, 
             "fields": [
                 [
@@ -9631,7 +9760,6 @@
                 "HDR_METADATA_EXT": 1000105000, 
                 "IMAGE_CREATE_INFO": 14, 
                 "IMAGE_FORMAT_PROPERTIES_2_KHR": 1000059003, 
-                "IMAGE_FORMAT_PROPERTIES_2_KHX": 1000071006, 
                 "IMAGE_MEMORY_BARRIER": 45, 
                 "IMAGE_SWAPCHAIN_CREATE_INFO_KHX": 1000060008, 
                 "IMAGE_VIEW_CREATE_INFO": 15, 
@@ -9662,13 +9790,11 @@
                 "PHYSICAL_DEVICE_GROUP_PROPERTIES_KHX": 1000070000, 
                 "PHYSICAL_DEVICE_ID_PROPERTIES_KHX": 1000071004, 
                 "PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2_KHR": 1000059004, 
-                "PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2_KHX": 1000071007, 
                 "PHYSICAL_DEVICE_MEMORY_PROPERTIES_2_KHR": 1000059006, 
                 "PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHX": 1000053001, 
                 "PHYSICAL_DEVICE_MULTIVIEW_PER_VIEW_ATTRIBUTES_PROPERTIES_NVX": 1000097000, 
                 "PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHX": 1000053002, 
                 "PHYSICAL_DEVICE_PROPERTIES_2_KHR": 1000059001, 
-                "PHYSICAL_DEVICE_PROPERTIES_2_KHX": 1000071005, 
                 "PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR": 1000080000, 
                 "PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2_KHR": 1000059008, 
                 "PIPELINE_CACHE_CREATE_INFO": 17, 
@@ -9688,6 +9814,7 @@
                 "PIPELINE_VIEWPORT_SWIZZLE_STATE_CREATE_INFO_NV": 1000098000, 
                 "PIPELINE_VIEWPORT_W_SCALING_STATE_CREATE_INFO_NV": 1000087000, 
                 "PRESENT_INFO_KHR": 1000001001, 
+                "PRESENT_REGIONS_KHR": 1000084000, 
                 "PRESENT_TIMES_INFO_GOOGLE": 1000092000, 
                 "QUERY_POOL_CREATE_INFO": 11, 
                 "QUEUE_FAMILY_PROPERTIES_2_KHR": 1000059005, 
@@ -9959,7 +10086,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "SURFACE_CAPABILITIES_2EXT"
+                "sType": "SURFACE_CAPABILITIES2_EXT"
             }, 
             "fields": [
                 [
@@ -10536,7 +10663,7 @@
                 ]
             }, 
             "defaults": {
-                "sType": "WIN_32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHX"
+                "sType": "WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHX"
             }, 
             "fields": [
                 [
@@ -10621,7 +10748,7 @@
                 ]
             }, 
             "defaults": {
-                "sType": "WIN_32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV"
+                "sType": "WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV"
             }, 
             "fields": [
                 [
@@ -10686,7 +10813,7 @@
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "WIN_32_SURFACE_CREATE_INFO_KHR"
+                "sType": "WIN32_SURFACE_CREATE_INFO_KHR"
             }, 
             "fields": [
                 [
