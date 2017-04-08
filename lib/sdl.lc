@@ -27,6 +27,7 @@ class Window
         self.wsi = WSI(self.handle)
 
     close = (self):
+        self.wsi.destroy()
         sdl.DestroyWindow(self.handle)
         self.handle = null
         sdl.Quit()
@@ -34,29 +35,51 @@ class Window
 class WSI
     +init = (self, window):
         self.window = window
+        self.surface = null
+        self.vk = null
+        self.instance = null
 
-    required_extensions = (self, extensions):
-        enabledExtensionNames = ["VK_KHR_surface"]
+    instance_support = (self, vk, extensions):
+        enable = ["VK_KHR_surface"]
         if "VK_KHR_xcb_surface" in extensions
-            enabledExtensionNames.append("VK_KHR_xcb_surface")
+            enable.append("VK_KHR_xcb_surface")
         else
             raise Exception("The app lacks swapchain instantiator for your platform.")
-        return enabledExtensionNames
+        return enable
 
-    create_surface = (self, vulkan, instance):
-        surface = ffi.automem(vulkan.vk.SurfaceKHR)
+    setup = (self, vk, instance):
+        self.vk = vk
+        self.instance = instance
+        p_surface = ffi.automem(vk.SurfaceKHR)
         info = ffi.automem(sdl.SysWMinfo)
         info.version = {major=2, minor=0, patch=2}
         if sdl.GetWindowWMInfo(self.window, info) == 0
             raise Exception("GetWindowWMInfo failed")
 
         if info.subsystem == sdl.SYSWM_X11
-            VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR = 1000005000
-            vulkan.vk.createXcbSurfaceKHR(instance, {
-                sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR
+            #VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR = 1000005000
+            vk.createXcbSurfaceKHR(instance, {
+                #sType = VK_STRUCTURE_TYPE_XCB_SURFACE_CREATE_INFO_KHR
                 connection = info.info.x11.display
                 window = ffi.cast(info.info.x11.window, ffi.voidp)
-            }, null, surface)
+            }, null, p_surface)
         else
             raise Exception("The app lacks swapchain instantiator for your platform.")
-        return vulkan.Surface(instance, surface.to)
+        self.surface = p_surface.to
+        
+    device_support = (self, vk, dev, extensions):
+        if "VK_KHR_swapchain" not in extensions
+            return null
+        return ["VK_KHR_swapchain"]
+
+    queue_support = (self, vk, dev, queueFamilyIndex):
+        p_supported = ffi.automem(ffi.u32)
+        vk.getPhysicalDeviceSurfaceSupportKHR(dev,
+            queueFamilyIndex, self.surface, p_supported)
+        return p_supported.to == vk.TRUE
+
+    destroy = (self):
+        if self.surface
+            self.vk.destroySurfaceKHR(self.instance,
+                self.surface, null)
+            self.surface = null

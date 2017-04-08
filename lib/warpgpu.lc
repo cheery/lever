@@ -1,19 +1,36 @@
-import fs
+import fs, api
 import vulkan
 
 class GPU extends vulkan.Handle
-    +init = (self, window):
-        self.window = window
-        self.instance = vulkan.Instance({
-            enabledExtensionNames = window.wsi.required_extensions(
-                vulkan.listInstanceExtensions())})
-        self.screen = Rect(0, 0, window.width, window.height)
-        self.surface = window.wsi.create_surface(vulkan, self.instance)
-        init_device(self, self.instance, self.surface)
-        self.swapchain = get_swapchain(self.device, self.surface, self.screen)
+    +init = (self, sidekicks...):
+        self.instance = init_instance(sidekicks)
+        self.vk = api.funclibrary(vulkan.lib,
+            self.instance.getProcAddr)
+        for sidekick in sidekicks
+            sidekick.setup(self.vk, self.instance)
+        config = find_suitable_device(self.vk,
+            self.instance, sidekicks)
+        self.config = config
+        self.device = vulkan.Device(config.dev, {
+            enabledExtensionNames = config.enable,
+            queueCreateInfos = [{
+                queueFamilyIndex = config.queueFamilyIndex
+                queuePriorities = [1.0]
+            }]
+            enabledFeatures = {
+                shaderClipDistance = true
+                shaderCullDistance = true
+            }
+        })
+        self.id = self.device.id
         self.mem = GPUMemory(self.device)
-        # needed for pipeline creation
         self.pipeline_cache = vulkan.PipelineCache(self.device, {})
+        queue = self.device.getQueue(config.queueFamilyIndex, 0)
+        queue.pool = vulkan.CommandPool(self.device, {
+            flags = "RESET_COMMAND_BUFFER_BIT" # allow reset on cbuf.
+            queueFamilyIndex = config.queueFamilyIndex
+        })
+        self.queue = queue
 
     createPipeline = (self, pipeline):
         assert isinstance(pipeline, GraphicsPipeline), "TODO: other pipeline objects"
@@ -34,55 +51,54 @@ class GPU extends vulkan.Handle
 
         self.device.updateDescriptorSets(writes, copies)
 
-
     destroy = (self):
         self.pipeline_cache.destroy()
         self.queue.pool.destroy()
-        self.swapchain.image_acquired.destroy()
-        self.swapchain.rendering_done.destroy()
-        self.swapchain.destroy()
         self.device.destroy()
-        self.surface.destroy()
         self.instance.destroy()
         self.id = null
 
-init_device = (self, instance, surface):
-    gpu = null
-    queueFamilyIndex = null
-    for device in instance.listPhysicalDevices()
-        prop = device.getProperties()
-        i = 0
-        for x in device.listQueueFamilyProperties()
-            if not device.getSurfaceSupport(i, surface)
-                continue
-            if x.queueFlags.GRAPHICS_BIT
-                #print("Device name:", prop.deviceName.str)
-                #print("            ", prop.deviceType)
-                queueFamilyIndex = i
-                gpu = device
-            i += 1
-    assert gpu, "Did not find a suitable GPU"
+init_instance = (sidekicks):
+    extensions = vulkan.listInstanceExtensions()
+    enable = set()
+    for sidekick in sidekicks
+        enable.update(sidekick.instance_support(
+            vulkan.vk, extensions))
+    return vulkan.Instance({
+        enabledExtensionNames = list(enable)
+    })
 
-    self.device = vulkan.Device(gpu, {
-        enabledExtensionNames = ["VK_KHR_swapchain"]
-        queueCreateInfos = [{
-            queueFamilyIndex = queueFamilyIndex
-            queuePriorities = [1.0]
-        }]
-        enabledFeatures = {
-            shaderClipDistance = true
-            shaderCullDistance = true
-        }
-    })
-    self.id = self.device.id
-    queue = self.device.getQueue(queueFamilyIndex, 0)
-    queue.index = queueFamilyIndex # allow later command pool allocations.
-    queue.pool = vulkan.CommandPool(self.device, {
-        flags = "RESET_COMMAND_BUFFER_BIT" # allow reset on cbuf.
-        queueFamilyIndex = queue.index
-    })
-    self.queue = queue
- 
+find_suitable_device = (vk, instance, sidekicks):
+    for dev in instance.listPhysicalDevices()
+        extensions = set(dev.listExtensions())
+        enable = set()
+        not_suitable = false
+        for sidekick in sidekicks
+            res = sidekick.device_support(vk, dev, extensions)
+            if res
+                enable.update(res)
+            else
+                not_suitable = true
+        if not_suitable
+            continue
+        i = -1
+        for x in dev.listQueueFamilyProperties()
+            i += 1
+            suitable = true
+            for sidekick in sidekicks
+                suitable = suitable and
+                    sidekick.queue_support(vk, dev, i, x)
+            if not suitable
+                continue
+            if not x.queueFlags.GRAPHICS_BIT
+                continue
+            if not x.queueFlags.COMPUTE_BIT
+                continue
+            return object();
+                dev = dev
+                queueFamilyIndex = i
+                enable = list(enable)
+    assert false, "Did not find a suitable GPU"
 
 get_swapchain = (device, surface, screen):
     imageUsage = "COLOR_ATTACHMENT_BIT"
@@ -149,8 +165,6 @@ get_swapchain = (device, surface, screen):
             baseArrayLayer = 0
             layerCount = 1
         }
-        image_acquired = vulkan.Semaphore(device)
-        rendering_done = vulkan.Semaphore(device)
         samples = "1_BIT"
 
 class GPUMemory
@@ -202,6 +216,17 @@ memory_report = (gpu):
     return object();
         heaps = heaps
         types = types
+
+find_properties = (req, properties, report):
+    for memtype in report.types
+        if req.memoryTypeBits & (1 << memtype.index) == 0
+            continue
+        for prop in properties # TODO: improve bitmask
+            if not getattr(memtype.flags, prop)
+                continue
+        return memtype.index
+    assert false, "No memory available for this resource"
+
 
 class DescriptorSetLayout extends vulkan.Handle
     +init = (self, device, declaration):
@@ -594,7 +619,6 @@ class Rect
                 scissors = [self.area]
             }
 
-
 class ShaderLoader
     +init = (self, device, local):
         self.device = device
@@ -629,12 +653,16 @@ class ShaderLoader
         self.cache = {}
 
 # TODO: Could use the libuv threadpools to wait for a fence?
-class Target
+class Portal
     +init = (self, gpu, swapchain):
         self.gpu = gpu
         self.swapchain = swapchain
         self.current_image = 0
         self.framebuffer = null
+        self.fence = vulkan.Fence(gpu.device,
+            {flags = "SIGNALED_BIT"})
+        self.image_acquired = vulkan.Semaphore(gpu.device)
+        self.rendering_done = vulkan.Semaphore(gpu.device)
 
     acquire = (self):
         gpu = self.gpu
@@ -642,26 +670,31 @@ class Target
         current_image = self.current_image
         # This is lazy. It means we can't continue before the previous frame has been submitted.
         # Need to check with performance counter later, whether this is sufficient
-        status = gpu.device.waitForFences([swapchain.fences[current_image]],
+        status = gpu.device.waitForFences([self.fence],
             true, 20000000)
         if status.SUCCESS
-            self.current_image = gpu.device.acquireNextImage(swapchain,
-                0xFFFFFFFFFFFFFFFF, swapchain.image_acquired)
+            self.current_image = gpu.device.acquireNextImage(
+                swapchain, 0xFFFFFFFFFFFFFFFF, self.image_acquired)
             self.framebuffer = swapchain.framebuffers[self.current_image]
-            gpu.device.resetFences([swapchain.fences[self.current_image]])
+            gpu.device.resetFences([self.fence])
         return status
 
     present = (self, cbufs):
         gpu = self.gpu
         gpu.queue.submit([{
-            waitSemaphores = [self.swapchain.image_acquired]
+            waitSemaphores = [self.image_acquired]
             waitDstStageMask = ["TOP_OF_PIPE_BIT"]
             commandBuffers = cbufs
-            signalSemaphores = [self.swapchain.rendering_done]
-        }], self.swapchain.fences[self.current_image])
+            signalSemaphores = [self.rendering_done]
+        }], self.fence)
 
         gpu.queue.present({
-            waitSemaphores = [self.swapchain.rendering_done]
+            waitSemaphores = [self.rendering_done]
             swapchains = [self.swapchain]
             imageIndices = [self.current_image]
         })
+
+    destroy = (self):
+        self.fence.destroy()
+        self.image_acquired.destroy()
+        self.rendering_done.destroy()

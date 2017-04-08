@@ -127,7 +127,7 @@ class Instance extends Handle
             result.append(PhysicalDevice(device))
         return result
 
-    getProcAddr = (name):
+    getProcAddr = (self, name):
         return vk.getInstanceProcAddr(self, name)
 
 class PhysicalDevice extends Handle
@@ -221,10 +221,10 @@ class PhysicalDevice extends Handle
         return queues
 
 class Device extends Handle
-    +init = (self, device, create_info):
+    +init = (self, device, create_info, vki=vk):
         self.physicalDevice = device
-        p_id = ffi.automem(vk.Device, 1, true)
-        vk.createDevice(device, create_info, null, p_id)
+        p_id = ffi.automem(vki.Device, 1, true)
+        vki.createDevice(device, create_info, null, p_id)
         self.id = p_id.to
 
     destroy = (self):
@@ -235,7 +235,7 @@ class Device extends Handle
         vk.getDeviceQueue(self, family, index, queue)
         return Queue(queue.to)
 
-    getProcAddr = (name):
+    getProcAddr = (self, name):
         return vk.getDeviceProcAddr(self, name)
 
     allocateCommandBuffers = (self, create_info):

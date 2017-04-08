@@ -7,8 +7,9 @@ main = ():
         width = 512
         height = 512
     })
-
-    gpu = GPU(window)
+    gpu = GPU(window.wsi)
+    screen = Rect(0, 0, window.width, window.height)
+    swapchain = get_swapchain(gpu.device, window.wsi.surface, screen)
 
     vertex_layout = object();
         vertexInputState = {
@@ -97,7 +98,7 @@ main = ():
     # # DEP: cbuf, pipeline
 
     pb = RenderPassBuilder()
-    pb.color0.attachment(gpu.swapchain.config, {
+    pb.color0.attachment(swapchain.config, {
         loadOp = "CLEAR"
         storeOp = "STORE"
         initialLayout = 0 #UNDEFINED
@@ -109,12 +110,10 @@ main = ():
         ]
     })
 
-    pass = pb.build(gpu.device, gpu.screen)
+    pass = pb.build(gpu.device, screen)
     # DEP: framebuffer, pipeline, cbuf
 
-    swapchain = gpu.swapchain
     swapchain.views = []
-    swapchain.fences = []
     swapchain.framebuffers = []
     for image in swapchain.images
         view = vulkan.ImageView(gpu.device, {
@@ -126,9 +125,6 @@ main = ():
         })
         swapchain.views.append(view)
         # DEP: framebuffer
-
-        fence = vulkan.Fence(gpu.device, {flags = "SIGNALED_BIT"})
-        swapchain.fences.append(fence)
 
         framebuffer = pass.Framebuffer({
             color0 = view
@@ -146,12 +142,12 @@ main = ():
     gpu.createPipeline(pipeline) # or pipelines.
     # DEP: cbuf
 
-    target = Target(gpu, swapchain)
+    portal = Portal(gpu, swapchain)
 
     frame_statistics = []
     frame_was = time()
     render = ():
-        if not target.acquire().SUCCESS
+        if not portal.acquire().SUCCESS
             return
 
         frame_now = time()
@@ -161,8 +157,8 @@ main = ():
         cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
         cbuf.beginRenderPass({
             renderPass = pass
-            framebuffer = target.framebuffer
-            renderArea = gpu.screen.area
+            framebuffer = portal.framebuffer
+            renderArea = screen.area
             clearValues = [
                 {color = {float32 = [
                     sin(time()) * 0.5 + 0.5,
@@ -177,7 +173,7 @@ main = ():
         cbuf.draw(6, 1, 0, 0)
         cbuf.endRenderPass()
         cbuf.end()
-        target.present([cbuf])
+        portal.present([cbuf])
 
         if frame_statistics.length >= 1000
             best  = 1.0
@@ -200,7 +196,7 @@ main = ():
                 running = false
 
     gpu.device.waitIdle()
-    for obj in swapchain.fences ++ swapchain.framebuffers ++ swapchain.views
+    for obj in swapchain.framebuffers ++ swapchain.views
         obj.destroy()
     dsc0.destroy()
     DSC0.destroy()
@@ -212,4 +208,7 @@ main = ():
     ubo.buffer.mem.free()
     shaders.destroy()
     pass.destroy()
+    portal.destroy()
+    swapchain.destroy()
+    window.wsi.destroy()
     gpu.destroy()

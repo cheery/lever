@@ -12,7 +12,9 @@ main = :
         flags = sdl.sdl.WINDOW_SHOWN # | sdl.sdl.WINDOW_FULLSCREEN_DESKTOP
                                      # Add if you want fullscreen
     })
-    gpu = GPU(window)
+    gpu = GPU(window.wsi)
+    screen = Rect(0, 0, window.width, window.height)
+    swapchain = get_swapchain(gpu.device, window.wsi.surface, screen)
 
     # DATA: PUSH CONSTANTS
     constants = ffi.automem(ffi.float, 1)
@@ -54,7 +56,7 @@ main = :
 
     # RENDER PASS
     pb = RenderPassBuilder()
-    pb.color.attachment(gpu.swapchain.config, {
+    pb.color.attachment(swapchain.config, {
         loadOp = "CLEAR"
         storeOp = "STORE"
         initialLayout = 0
@@ -65,10 +67,10 @@ main = :
             pb.color("COLOR_ATTACHMENT_OPTIMAL")
         ]
     })
-    renderPass = pb.build(gpu, gpu.screen)
+    renderPass = pb.build(gpu, screen)
 
     # RENDER TARGET
-    swapchain = gpu.swapchain
+    swapchain = swapchain
     swapchain.views = []
     swapchain.fences = []
     swapchain.framebuffers = []
@@ -115,10 +117,10 @@ main = :
     cbuf = gpu.queue.pool.allocate(
         {level = "PRIMARY", commandBufferCount = 1})[0]
 
-    target = Target(gpu, swapchain)
+    portal = Portal(gpu, swapchain)
     start_time = time()
     render = ():
-        if not target.acquire().SUCCESS
+        if not portal.acquire().SUCCESS
             return
 
         constants[0] = time() - start_time
@@ -126,8 +128,8 @@ main = :
         cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
         cbuf.beginRenderPass({
             renderPass = renderPass
-            framebuffer = target.framebuffer
-            renderArea = gpu.screen.area
+            framebuffer = portal.framebuffer
+            renderArea = screen.area
             clearValues = [
                 {color = {float32 = [0, 0, 0, 1]}}
             ]
@@ -139,7 +141,7 @@ main = :
         cbuf.draw(6, 1, 0, 0) # 6 vertices, one instance.
         cbuf.endRenderPass()
         cbuf.end()
-        target.present([cbuf])
+        portal.present([cbuf])
 
     event = ffi.automem(sdl.sdl.Event)
     running = true
@@ -160,4 +162,7 @@ main = :
     quad_mesh.buffer.mem.free()
     shaders.destroy()
     renderPass.destroy()
+    swapchain.destroy()
+    window.wsi.destroy()
+    portal.destroy()
     gpu.destroy()
