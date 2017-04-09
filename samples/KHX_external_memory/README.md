@@ -20,3 +20,5 @@ The server.lc is started first, it starts the client.lc as a
 subprocess, giving it a pipe as fourth stream above the
 standard stdin/stdout/stderr streams. The client initiates
 and sends an image to draw for the server.
+
+![Screenshot](screenshot.png)
