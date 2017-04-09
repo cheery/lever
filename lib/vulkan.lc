@@ -81,8 +81,8 @@ checker.load = (result):
         # TODO: add VulkanError that inherits from Error here.
         # I could throw exception if I had setup initializers
         # for exception classes.. ohwell.
-        print("error: result=", result)
-        exit(1)
+        raise Error("error: result=" ++
+            repr(result))
     return result
 checker.store = (value):
     return value
@@ -761,7 +761,7 @@ class Sampler extends Handle
         self.device = device
         p_id = ffi.automem(vk.Sampler)
         vk.createSampler(device, create_info, null, p_id)
-        self.id = p_id
+        self.id = p_id.to
 
     destroy = (self):
         vk.destroySampler(self.device, self, null)

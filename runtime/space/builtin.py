@@ -27,11 +27,17 @@ class Builtin(Object):
         if name == u"doc":
             return self.doc
         elif name == u"loc":
-            source, start, stop = self.source_location
+            source, start_lno, stop_lno = self.source_location
             obj = space.Exnihilo()
             obj.setattr(u"source", space.String(source))
-            obj.setattr(u"start",  space.Integer(start))
-            obj.setattr(u"stop",   space.Integer(stop))
+            start = space.Exnihilo()
+            start.setattr(u"col", null)
+            start.setattr(u"lno", space.Integer(start_lno))
+            obj.setattr(u"start",  start)
+            stop = space.Exnihilo()
+            stop.setattr(u"col", null)
+            stop.setattr(u"lno", space.Integer(stop_lno))
+            obj.setattr(u"stop", stop)
             return obj
         elif name == u"spec":
             argc, optional, variadic, varnames, argtypes = self.spec

@@ -22,6 +22,7 @@ class GPU extends vulkan.Handle
                 shaderCullDistance = true
             }
         })
+        self.physicalDevice = config.dev
         self.id = self.device.id
         self.mem = GPUMemory(self.device)
         self.pipeline_cache = vulkan.PipelineCache(self.device, {})

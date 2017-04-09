@@ -97,20 +97,7 @@ class Closure(space.Object):
         if name == u"doc":
             return self.doc
         elif name == u"loc":
-            unit = self.function.unit
-            trace = TraceEntry(0, unit.sources, self.function.sourcemap, unit.path)
-            name, col0, lno0, col1, lno1 = trace.pc_location()
-            start = space.Exnihilo()
-            start.setattr(u"col", space.Integer(col0))
-            start.setattr(u"lno", space.Integer(lno0))
-            stop = space.Exnihilo()
-            stop.setattr(u"col", space.Integer(col1))
-            stop.setattr(u"lno", space.Integer(lno1))
-            obj = space.Exnihilo()
-            obj.setattr(u"source", name)
-            obj.setattr(u"start", start)
-            obj.setattr(u"stop", stop)
-            return obj
+            return sourceloc_introspection(0, self.function)
         elif name == u"spec":
             spec = space.Exnihilo()
             spec.setattr(u'argc', space.Integer(rffi.r_long(self.function.argc)))
@@ -118,6 +105,8 @@ class Closure(space.Object):
             spec.setattr(u'is_variadic', space.boolean(self.function.flags & 1 == 1))
             spec.setattr(u'varnames', self.function.varnames)
             return spec
+        elif name == u"code":
+            return Introspection(self)
         else:
             return space.Object.getattr(self, name)
 
@@ -133,6 +122,7 @@ class Closure(space.Object):
         listing.append(space.String(u"doc"))
         listing.append(space.String(u"source_location"))
         listing.append(space.String(u"spec"))
+        listing.append(space.String(u"code"))
         return listing
 
 @jit.unroll_safe
@@ -544,3 +534,93 @@ def get_string(unit, block, i):
 #        space.Integer(col0), space.Integer(lno0),
 #        space.Integer(col1), space.Integer(lno1)
 #    ])
+
+# The idea of introspection object is to support abstract interpretation of code.
+class Introspection(space.Object):
+    def __init__(self, closure):
+        self.closure = closure
+        self.excs = excs_introspection(closure.function.excs)
+
+    def getattr(self, name):
+        if name == u"closure":
+            return self.closure
+        if name == u"is_generator":
+            return space.boolean(self.closure.function.flags & 2 != 0)
+        if name == u"excs":
+            return self.excs
+        if name == u"regc":
+            return space.Integer(
+                rffi.r_long(self.closure.function.regc))
+        if name == u"localc":
+            return space.Integer(
+                rffi.r_long(self.closure.function.localc))
+        if name == u"length":
+            return space.Integer(len(self.closure.function.block))
+        if name == u"module":
+            return self.closure.frame.module
+
+    def getitem(self, index):
+        pc = space.cast(index, space.Integer, u"[index]").value
+        if pc < len(self.closure.function.block):
+            return space.Integer(
+                rffi.r_long(self.closure.function.block[pc]))
+        return space.OldError(u"pc out of range")
+
+@Introspection.method(u"get_sourceloc", space.signature(Introspection, space.Integer))
+def Introspection_get_source_location(self, pc):
+    return sourceloc_introspection(
+        int(pc.value), self.closure.function)
+
+@Introspection.method(u"constant", space.signature(Introspection, space.Integer))
+def Introspection_constant(self, ix1):
+    unit = self.closure.function.unit
+    if ix1.value < len(unit.constants):
+        return unit.constants[ix1.value]
+    raise space.OldError(u"Introspection.constant cannot succeed (opcode messup/corruption?)")
+
+@Introspection.method(u"getupv", space.signature(Introspection, space.Integer, space.Integer))
+def Introspection_getupv(self, ix1, ix2):
+    frame = self.closure.frame # already the parent of 'current' function.
+    for i in range(ix1.value):
+        if frame:
+            frame = frame.parent
+    if frame and ix2.value < len(frame.local):
+        return frame.local[rffi.r_ushort(ix2.value)]
+    raise space.OldError(u"Introspection.getupv cannot succeed (opcode messup/corruption?)")
+
+# The setupv and other intrusive actions are not provided here,
+# because we are supposed to use this for analysis and abstract
+# interpretation. Not for interpretation.
+        
+def excs_introspection(excs):
+    out = []
+    for exc in excs:
+        o = space.Exnihilo()
+        o.setattr(u"start",
+            space.Integer(rffi.r_long(exc.start)))
+        o.setattr(u"stop",
+            space.Integer(rffi.r_long(exc.stop)))
+        o.setattr(u"label",
+            space.Integer(rffi.r_long(exc.label)))
+        o.setattr(u"reg",
+            space.Integer(rffi.r_long(exc.reg)))
+        out.append(o)
+    return space.List(out)
+
+def sourceloc_introspection(pc, function):
+    trace = TraceEntry(pc,
+        function.unit.sources,
+        function.sourcemap,
+        function.unit.path)
+    name, col0, lno0, col1, lno1 = trace.pc_location()
+    start = space.Exnihilo()
+    start.setattr(u"col", space.Integer(col0))
+    start.setattr(u"lno", space.Integer(lno0))
+    stop = space.Exnihilo()
+    stop.setattr(u"col", space.Integer(col1))
+    stop.setattr(u"lno", space.Integer(lno1))
+    obj = space.Exnihilo()
+    obj.setattr(u"source", name)
+    obj.setattr(u"start", start)
+    obj.setattr(u"stop", stop)
+    return obj
