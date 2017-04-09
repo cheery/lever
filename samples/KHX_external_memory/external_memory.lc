@@ -1,0 +1,28 @@
+# Initialization routines are arranged like this, it allows
+# us to coalesce them together in variety of configurations.
+class ExternalMemory
+    instance_support = (vk, extensions):
+        return [
+            "VK_KHR_get_physical_device_properties2",
+            "VK_KHX_external_memory_capabilities",
+            "VK_KHX_external_semaphore_capabilities"]
+
+    setup = (self, vk, instance):
+        # Not sure how this info should be obtained.
+        # It makes me think this method of initializing the
+        # device is slightly flawed.
+        self.handle_spec = {
+            handleTypes = "OPAQUE_FD_BIT_KHX"
+        }
+
+    # We are cutting corners here. This thing should
+    # check whether the device supports _fd or _win32
+    device_support = (vk, dev, extensions):
+        return [
+            "VK_KHX_external_memory",
+            "VK_KHX_external_memory_fd",
+            "VK_KHX_external_semaphore",
+            "VK_KHX_external_semaphore_fd"]
+
+    queue_support = (vk, dev, familyIndex):
+        return true
