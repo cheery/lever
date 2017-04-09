@@ -1,0 +1,137 @@
+#manual{_}{980}{performance}
+Lever needs to perform to occupy a niche of VR programming.
+Failure to perform fast is a failure of the language.
+
+#toc
+
+#section Benchmarks
+
+The benchmarks directory in lever is still a bit of a stub
+when I am updating this text. So far I've checked the
+JIT performance against a nbody simulation.
+
+In the samples directory there are already programs that are
+clearly no longer usable without a working JIT. I can no
+longer expect to run some of them without JIT enabled.
+
+#section Current performance
+
+There's a rudimentary way to compare performance of CPython
+and Lever. Python runs a bootstrap compiler and Lever has
+the same compiler as a library to allow it to run
+standalone.
+
+Lever is extremely heavy at how it compiles because it uses
+customizable grammar with a parsing engine. It allows fast,
+lisp-like experimentation with syntax.
+
+We can trigger python compiler by touching a file we want to
+benchmark with, then run the compile-lib command.
+
+#code bash ##
+    cheery@ruttunen:~/Documents/lever$ touch lib/c.lc
+    cheery@ruttunen:~/Documents/lever$ time python setup.py compile-lib
+    Compiling libraries for lever
+
+    real	0m1.603s
+    user	0m1.540s
+    sys	0m0.028s
+    cheery@ruttunen:~/Documents/lever$ 
+
+Next I wrote a small program that triggers a lever compiler
+to run on the same file.
+
+#code ##
+    import binon, compiler
+
+    source = dir ++ "lib/c.lc"
+    code = compiler.read_file(source, "lib/c.lc")
+    binon.write_file(dir ++ "out.lc.cb", code)
+
+The results propose that Lever is 4 times slower than python at
+compiling itself. But it is likely safe to say you could
+get worse results here.
+
+#code bash ##
+    cheery@ruttunen:~/Documents/lever$ time lever test.lc 
+
+    real	0m7.109s
+    user	0m6.808s
+    sys	0m0.288s
+    cheery@ruttunen:~/Documents/lever$ 
+
+This indicates rather similar results as in early tests.
+Worst-case performance of RPython-written language that
+resembles Python seem to be on the scale of 2 to 20 times
+slower.
+
+#section Future performance
+
+PyPy has used RPython to provide a language that is faster
+than Python on many occassions. With a new language there's
+not the restriction that we would have to fixate on some
+implementation detail. This likely allows us to provide
+better results than with PyPy.
+
+We concentrate on narrow scope of software that we want to
+make fast. Precisely desktop and graphically intensive
+software. That should help too.
+
+There are also some cases like the vector arithmetic support
+in runtime that can really turn tables in interesting
+scenarios into Lever's favor.
+
+#section When it is not enough...
+
+Even if we got near to C speeds with Lever runtime some day,
+there is still the "not as fast as C" -barrier in using
+dynamic languages to graphics programming. No matter how it
+good it looked, it's just not enough when you got to crunch
+it all the way down.
+
+I see that the problem is not the performance of the
+language at this point. It's how well and how gradually can
+you lower out of it? Of course we could prototype everything
+in Python if it was easy to transition the performance
+critical code to the form where it performs. There would be
+huge development gains to get things into place in easy
+language and walk down from that in steps, rather than
+having to do a big jump when you get the design right.
+
+For this reason I've picked some features that make Lever
+easier to translate. When I'll get things far enough for it
+to be useful, I'll replicate some of RPython's translation
+framework on Lever and repurpose it to apply on graphics.
+
+There's no plans to get it to replace PyPy though. They are
+doing lots of good things and I don't see a reason to
+replicate the greater work they do with the JIT generation
+along translation. They are doing whole host of things I
+don't have to do myself at this point.
+
+It's nice to have a small, sub 10kloc runtime you can hack
+away with.
+
+#section Platform performance considerations
+
+There's chance that WebAssembly succeeds to provide a
+generic language target. This might happen somewhere between
+2 to 6 years.
+
+It will be very likely feasible to take this into account
+and have Lever translate to WebAssembly. It requires that
+they come up with their GC-integration and call/cc -support.
+
+There's very, very long run to this. But it would allow both
+the translation framework and Lever itself use WebAssembly
+as a target language. That would be sort of nice.
+
+#section Background on performance.text
+
+I made this text when someone mentioned Lever should perform
+at the
+#href{https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/891637-lever-yet-another-general-purpose-programming-language#post891655}
+{Phoronix.com -article comments}.
+
+I realised I should probably mention my plans to get Lever
+to perform somewhere.
