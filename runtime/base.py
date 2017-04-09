@@ -226,8 +226,7 @@ def encode_utf8(value):
 @builtin
 @signature(Uint8Data)
 def decode_utf8(value):
-    s = rffi.charp2str(rffi.cast(rffi.CCHARP, value.uint8data))
-    return String(s.decode('utf-8'))
+    return String(value.to_str().decode('utf-8'))
 
 @builtin
 def time_(argv):
@@ -488,3 +487,8 @@ class Work:
         self.args = args
         self.retval = null
         self.unwinder = None
+
+@builtin
+@signature(Integer)
+def guess_handle(num):
+    return Integer(uv_stream.uv.guess_handle(num.value))

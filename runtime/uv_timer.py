@@ -56,11 +56,12 @@ def Timer_stop(self):
     check( uv.timer_stop(self.timer) )
     return null
 
-# Close is required anyway, because the Timer may have events waiting on it.
-# TODO: on Timer.close, close the .on_tick event handle as well.
-@Timer.method(u"close", signature(Timer))
-def Timer_close(self):
-    Handle2_close(self)
-    Event_close(self.on_tick) # TODO: this might actually be
-                              #       a recurring pattern here.
-    return null
+# It looks like this was a brain fart for a long while now.
+# # Close is required anyway, because the Timer may have events waiting on it.
+# # TODO: on Timer.close, close the .on_tick event handle as well.
+# @Timer.method(u"close", signature(Timer))
+# def Timer_close(self):
+#     Handle2_close(self)
+#     Event_close(self.on_tick) # TODO: this might actually be
+#                               #       a recurring pattern here.
+#     return null

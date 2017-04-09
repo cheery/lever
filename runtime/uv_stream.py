@@ -226,14 +226,8 @@ class Pipe(Stream):
 
 @Pipe.instantiator2(signature(Boolean))
 def Pipe_init(ipc):
-    ec = core.get_ec()
     ipc = 1 if is_true(ipc) else 0
-    pipe = lltype.malloc(uv.pipe_ptr.TO, flavor="raw", zero=True)
-    status = uv.pipe_init(ec.uv_loop, pipe, ipc)
-    if status < 0:
-        lltype.free(pipe, flavor='raw')
-        raise uv_callback.to_error(status)
-    return Pipe(pipe)
+    return alloc_pipe(ipc)
 
 @Pipe.method(u"bind", signature(Pipe, String))
 def Pipe_bind(self, name):
@@ -265,12 +259,22 @@ def Pipe_pending_instances(self, count):
 def Pipe_pending_count(self):
     self.check_closed()
     result = uv.pipe_pending_count(self.pipe)
-    check(result)
     return Integer(rffi.r_long(result))
 
-# Consider to fix this later, this thing isn't probably capable of letting one to wait.
-#@Pipe.method(u"accept", signature(Pipe))
-#def Pipe_accept(self):
+def alloc_pipe(ipc):
+    ec = core.get_ec()
+    pipe = lltype.malloc(uv.pipe_ptr.TO, flavor="raw", zero=True)
+    status = uv.pipe_init(ec.uv_loop, pipe, ipc)
+    if status < 0:
+        lltype.free(pipe, flavor='raw')
+        raise uv_callback.to_error(status)
+    return Pipe(pipe)
+
+
+@Pipe.method(u"open_fd", signature(Pipe, Integer))
+def Pipe_open_fd(self, fd):
+    check( uv.pipe_open(self.pipe, fd.value) )
+    return null
 
 # if uv.pipe_pending_count(self.pipe) == 0:
 #       raise unwind(LError("No pending handles in pipe"))
@@ -363,3 +367,22 @@ def Pipe_pending_count(self):
 ## RPY_LOCK_FAILURE, RPY_LOCK_ACQUIRED, RPY_LOCK_INTR = range(3)
 #
 ## http://docs.libuv.org/en/v1.x/request.html
+
+
+# This is not a proper place for doing this, figure out later what to do.
+import stdlib.net
+# TODO: Consider to fix this later, this thing isn't capable of letting one to wait.
+@Pipe.method(u"accept", signature(Pipe))
+def Pipe_accept(self):
+    tp = uv.pipe_pending_type(self.pipe)
+    if tp == uv.NAMED_PIPE or tp == uv.UNKNOWN_HANDLE or tp == uv.FILE:
+        client = alloc_pipe(1) # The libuv reports an external_memory file handle as UNKNOWN_HANDLE
+    elif tp == uv.TCP:         # I guess it might be safe to alloc a pipe when that happens.
+        client = stdlib.net.tcp_alloc()
+    elif tp == uv.UDP:
+        client = stdlib.net.udp_alloc()
+    else:
+        raise OldError(u"got fd of type=" + str(tp).decode('utf-8'))
+    check( uv.accept(self.stream, client.stream) )
+    return client
+

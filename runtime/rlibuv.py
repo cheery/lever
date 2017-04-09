@@ -4,6 +4,9 @@ from rpython.rtyper.tool import rffi_platform
 from rpython.translator.tool.cbuild import ExternalCompilationInfo
 import os, sys
 
+stdio_flags = rffi.INT
+uv_file = rffi.INT
+
 # recurring pattern, as we do not know the sizes of structures.
 @specialize.call_location()
 def malloc_bytes(ptr_type, size):
@@ -32,10 +35,10 @@ assert os.path.exists(
     cd("include/stdint-msvc2008.h")
 ), "Download https://github.com/libuv/libuv/blob/v1.x/include/stdint-msvc2008.h into libuv/include/, please."
 
+include_dirs = [cd("include")]
+
 eci = ExternalCompilationInfo(
-    include_dirs = [
-        cd("include")
-    ],
+    include_dirs = include_dirs,
     includes = [
         cd("include/uv.h")
     ],
@@ -117,6 +120,9 @@ error_names = [
     "ESPIPE", "ESRCH", "ETIMEDOUT", "ETXTBSY", "EXDEV", "UNKNOWN",
 ]
 
+exit_cb_arg0 = lltype.Ptr(lltype.ForwardReference())
+exit_cb = rffi.CCallback([exit_cb_arg0, int64_t, rffi.INT],      lltype.Void)
+
 class CConfig:
     _compilation_info_ = eci
 
@@ -162,23 +168,30 @@ class CConfig:
     check_t   = rffi_platform.Struct("uv_check_t",   [("data", rffi.VOIDP)])
     idle_t    = rffi_platform.Struct("uv_idle_t",    [("data", rffi.VOIDP)])
     async_t   = rffi_platform.Struct("uv_async_t",   [("data", rffi.VOIDP)])
-    process_t = rffi_platform.Struct("uv_process_t", [("data", rffi.VOIDP)])
+    process_t = rffi_platform.Struct("uv_process_t", [
+        ("data", rffi.VOIDP),
+        ("pid",  rffi.INT)])
+
+    uid_t = rffi_platform.SimpleType("uv_uid_t", rffi.ULONG)
+    gid_t = rffi_platform.SimpleType("uv_gid_t", rffi.ULONG)
+
+    # the rffi of rpython doesn't seem to support unions.
+    stdio_container_t = rffi_platform.Struct("uv_stdio_container_t", [
+        ("flags", stdio_flags)])
 
     #loop_t = rffi_platform.Struct("uv_loop_t", [("data", rffi.VOIDP)])
-    #process_options_t = rffi_platform.Struct(
-    #    "uv_process_options_t", [
-    #        ("file", rffi.CCHARP),
-    #        ("args", rffi.CCHARPP),
-    #        ("env", rffi.CCHARPP),
-    #        ("cwd", rffi.CCHARP),
-    #        ("flags", rffi.UINT),
-    #        ("stdio_count", rffi.INT),
-    #        ("stdio", lltype.Ptr(lltype.ForwardReference()))])
-    #stdio_container_t = rffi_platform.Struct("uv_stdio_container_t",
-    #                                         [("flags", rffi.INT)])
-    #process_t = rffi_platform.Struct("uv_process_t",
-    #                                 [("data", rffi.VOIDP),
-    #                                  ("pid", rffi.INT)])
+    process_options_t = rffi_platform.Struct("uv_process_options_t", [
+        ("exit_cb", exit_cb),
+        ("file", rffi.CCHARP),
+        ("args", rffi.CCHARPP),
+        ("env", rffi.CCHARPP),
+        ("cwd", rffi.CCHARP),
+        ("flags", rffi.UINT),
+        ("stdio_count", rffi.INT),
+        ("stdio", lltype.Ptr(lltype.ForwardReference())),
+        ("uid", rffi.ULONG),
+        ("gid", rffi.ULONG)])
+
     connect_t  = rffi_platform.Struct("uv_connect_t",  [("data", rffi.VOIDP)])
     udp_send_t = rffi_platform.Struct("uv_udp_send_t", [("data", rffi.VOIDP)])
     #                                 [("handle",
@@ -214,9 +227,6 @@ class CConfig:
         ("ai_canonname", rffi.CCHARP),
         ("ai_next", rffi.VOIDP),
     ])
-
-    uid_t = rffi_platform.SimpleType("uv_uid_t", rffi.ULONG)
-    gid_t = rffi_platform.SimpleType("uv_gid_t", rffi.ULONG)
 
     UV_EOF = rffi_platform.ConstantInteger("UV_EOF")
     UV_ECANCELED = rffi_platform.ConstantInteger("UV_ECANCELED")
@@ -335,11 +345,6 @@ file_flags = {
 
 dirent_ptr = lltype.Ptr(cConfig["dirent_t"])
 
-# # Forward references. Yeah. Taken from typhon
-# cConfig["connect_t"].c_handle.TO.become(cConfig["stream_t"])
-# cConfig["process_options_t"].c_stdio.TO.become(lltype.Array(
-#     cConfig["stdio_container_t"], hints={"nolength": True}))
-
 # Handle types
 loop_ptr = rffi.COpaquePtr("uv_loop_t")
 handle_ptr  = lltype.Ptr(cConfig["handle_t"])
@@ -440,8 +445,6 @@ else:
 #        ("base", rffi.CCHARP))
     os_sock_t = rffi.VOIDP
 
-uv_file = rffi.INT
-
 sockaddr = cConfig["sockaddr"]
 sockaddr_ptr = lltype.Ptr(sockaddr)
 
@@ -460,7 +463,7 @@ async_cb       = rffi.CCallback([async_ptr],                              lltype
 prepare_cb     = rffi.CCallback([prepare_ptr],                            lltype.Void)
 check_cb       = rffi.CCallback([check_ptr],                              lltype.Void)
 idle_cb        = rffi.CCallback([idle_ptr],                               lltype.Void)
-exit_cb        = rffi.CCallback([process_ptr,    int64_t, rffi.INT],      lltype.Void)
+exit_cb_arg0.TO.become(process_ptr.TO)
 walk_cb        = rffi.CCallback([handle_ptr,     rffi.VOIDP],             lltype.Void)
 fs_cb          = rffi.CCallback([fs_ptr],                                 lltype.Void)
 work_cb        = rffi.CCallback([work_ptr],                               lltype.Void)
@@ -475,6 +478,12 @@ getnameinfo_cb = rffi.CCallback([getnameinfo_ptr, rffi.INT, rffi.CCHARP, rffi.CC
 fs_event_cb = rffi.CCallback([fs_event_ptr, rffi.CCHARP, rffi.INT, rffi.INT], lltype.Void)
 fs_poll_cb  = rffi.CCallback([fs_poll_ptr, rffi.INT, lltype.Ptr(stat_t), lltype.Ptr(stat_t)], lltype.Void)
 signal_cb   = rffi.CCallback([signal_ptr, rffi.INT], lltype.Void)
+
+stdio_container_t = cConfig["stdio_container_t"]
+cConfig["process_options_t"].c_stdio.TO.become(
+    lltype.Array(stdio_container_t, hints={"nolength": True}))
+stdio_container_ptr = lltype.Ptr(stdio_container_t)
+process_options_ptr = lltype.Ptr(cConfig["process_options_t"])
 
 membership = rffi.INT
 # uv_membership
@@ -503,6 +512,8 @@ close       = llexternal("uv_close",       [handle_ptr, close_cb], lltype.Void)
 send_buffer_size = llexternal("uv_send_buffer_size", [handle_ptr, rffi.INTP], rffi.INT)
 recv_buffer_size = llexternal("uv_recv_buffer_size", [handle_ptr, rffi.INTP], rffi.INT)
 
+os_fd_t = rffi.LONGP
+fileno = llexternal("uv_fileno", [handle_ptr, os_fd_t], rffi.INT)
 # UV_EXTERN int uv_fileno(const uv_handle_t* handle, uv_os_fd_t* fd);
  
 #def buf_init(uv_buf, base, length):
@@ -625,7 +636,6 @@ getaddrinfo = llexternal("uv_getaddrinfo", [loop_ptr, getaddrinfo_ptr, getaddrin
 freeaddrinfo = llexternal("uv_freeaddrinfo", [addrinfo_ptr], lltype.Void)
 getnameinfo = llexternal("uv_getnameinfo", [loop_ptr, getnameinfo_ptr, getnameinfo_cb, sockaddr_ptr, rffi.INT], rffi.INT)
 
-stdio_flags = rffi.INT
 IGNORE = 0x00
 CREATE_PIPE = 0x01
 INHERIT_FD = 0x02
@@ -633,106 +643,34 @@ INHERIT_STREAM = 0x04
 READABLE_PIPE = 0x10
 WRITABLE_PIPE = 0x20
 
-stdio_container = rffi.CStruct("uv_stdio_container_t",
-    ("flags", stdio_flags),
-    ("data", rffi.VOIDP)) # stream_ptr, (int fd)
-
-# typedef struct uv_process_options_s {
-#   uv_exit_cb exit_cb; /* Called after the process exits. */
-#   const char* file;   /* Path to program to execute. */
-#   /*
-#    * Command line arguments. args[0] should be the path to the program. On
-#    * Windows this uses CreateProcess which concatenates the arguments into a
-#    * string this can cause some strange errors. See the note at
-#    * windows_verbatim_arguments.
-#    */
-#   char** args;
-#   /*
-#    * This will be set as the environ variable in the subprocess. If this is
-#    * NULL then the parents environ will be used.
-#    */
-#   char** env;
-#   /*
-#    * If non-null this represents a directory the subprocess should execute
-#    * in. Stands for current working directory.
-#    */
-#   const char* cwd;
-#   /*
-#    * Various flags that control how uv_spawn() behaves. See the definition of
-#    * `enum uv_process_flags` below.
-#    */
-#   unsigned int flags;
-#   /*
-#    * The `stdio` field points to an array of uv_stdio_container_t structs that
-#    * describe the file descriptors that will be made available to the child
-#    * process. The convention is that stdio[0] points to stdin, fd 1 is used for
-#    * stdout, and fd 2 is stderr.
-#    *
-#    * Note that on windows file descriptors greater than 2 are available to the
-#    * child process only if the child processes uses the MSVCRT runtime.
-#    */
-#   int stdio_count;
-#   uv_stdio_container_t* stdio;
-#   /*
-#    * Libuv can change the child process' user/group id. This happens only when
-#    * the appropriate bits are set in the flags fields. This is not supported on
-#    * windows; uv_spawn() will fail and set the error to UV_ENOTSUP.
-#    */
-#   uv_uid_t uid;
-#   uv_gid_t gid;
-# } uv_process_options_t;
-# 
-# /*
-#  * These are the flags that can be used for the uv_process_options.flags field.
-#  */
-# enum uv_process_flags {
-#   /*
 #    * Set the child process' user id. The user id is supplied in the `uid` field
 #    * of the options struct. This does not work on windows; setting this flag
 #    * will cause uv_spawn() to fail.
-#    */
-#   UV_PROCESS_SETUID = (1 << 0),
-#   /*
+PROCESS_SETUID = (1 << 0)
 #    * Set the child process' group id. The user id is supplied in the `gid`
 #    * field of the options struct. This does not work on windows; setting this
 #    * flag will cause uv_spawn() to fail.
-#    */
-#   UV_PROCESS_SETGID = (1 << 1),
-#   /*
+PROCESS_SETGID = (1 << 1)
 #    * Do not wrap any arguments in quotes, or perform any other escaping, when
 #    * converting the argument list into a command line string. This option is
 #    * only meaningful on Windows systems. On Unix it is silently ignored.
-#    */
-#   UV_PROCESS_WINDOWS_VERBATIM_ARGUMENTS = (1 << 2),
-#   /*
+PROCESS_WINDOWS_VERBATIM_ARGUMENTS = (1 << 2)
 #    * Spawn the child process in a detached state - this will make it a process
 #    * group leader, and will effectively enable the child to keep running after
 #    * the parent exits.  Note that the child process will still keep the
 #    * parent's event loop alive unless the parent process calls uv_unref() on
 #    * the child's process handle.
-#    */
-#   UV_PROCESS_DETACHED = (1 << 3),
-#   /*
+PROCESS_DETACHED = (1 << 3)
 #    * Hide the subprocess console window that would normally be created. This
 #    * option is only meaningful on Windows systems. On Unix it is silently
 #    * ignored.
-#    */
-#   UV_PROCESS_WINDOWS_HIDE = (1 << 4)
-# };
-# 
-# /*
-#  * uv_process_t is a subclass of uv_handle_t.
-#  */
-# struct uv_process_s {
-#   UV_HANDLE_FIELDS
-#   uv_exit_cb exit_cb;
-#   int pid;
-#   UV_PROCESS_PRIVATE_FIELDS
-# };
-# 
-#spawn = llexternal("uv_spawn", [loop_ptr, process_ptr, process_options_ptr], rffi.INT)
-#process_kill = llexternal("uv_process_kill", [process_ptr, rffi.INT], rffi.INT)
-#kill = llexternal("uv_kill", [rffi.INT, rffi.INT], rffi.INT)
+PROCESS_WINDOWS_HIDE = (1 << 4)
+
+
+spawn = llexternal("uv_spawn", [loop_ptr, process_ptr, process_options_ptr], rffi.INT)
+process_kill = llexternal("uv_process_kill", [process_ptr, rffi.INT], rffi.INT)
+kill = llexternal("uv_kill", [rffi.INT, rffi.INT], rffi.INT)
+
 queue_work = llexternal("uv_queue_work", [loop_ptr, work_ptr, work_cb, after_work_cb], rffi.INT)
 #cancel = llexternal("uv_cancel", [req_ptr], rffi.INT)
 # 
@@ -1003,3 +941,38 @@ SomeCallback = rffi.CCallback([], lltype.Void)
 # thread_self = llexternal("uv_thread_self", [], thread_t)
 # thread_join = llexternal("uv_thread_join", [thread_ptr], rffi.INT)
 # thread_equal = llexternal("uv_thread_equal", [thread_ptr, thread_ptr], rffi.INT)
+
+
+STDIO_STREAM_HELPER_C = '''
+#include <uv.h>
+
+RPY_EXTERN
+void
+monte_helper_set_stdio_stream(uv_stdio_container_t *stdio,
+                              uv_stream_t *stream)
+{
+    stdio->data.stream = stream;
+}
+
+RPY_EXTERN
+void
+monte_helper_set_stdio_fd(uv_stdio_container_t *stdio,
+                              int fd)
+{
+    stdio->data.fd = fd;
+}
+'''
+stdio_stream_helper = ExternalCompilationInfo(
+    includes=['uv.h'],
+    include_dirs=include_dirs,
+    separate_module_sources=[STDIO_STREAM_HELPER_C])
+
+set_stdio_stream = rffi.llexternal("monte_helper_set_stdio_stream",
+    [stdio_container_ptr, stream_ptr],
+    lltype.Void,
+    compilation_info=stdio_stream_helper)
+
+set_stdio_fd = rffi.llexternal("monte_helper_set_stdio_fd",
+    [stdio_container_ptr, rffi.INT],
+    lltype.Void,
+    compilation_info=stdio_stream_helper)

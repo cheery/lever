@@ -25,6 +25,9 @@ class TCP(Stream):
 
 @TCP.instantiator2(signature())
 def TCP_init():
+    return tcp_alloc()
+
+def tcp_alloc():
     ec = core.get_ec()
     tcp = lltype.malloc(uv.tcp_ptr.TO, flavor="raw", zero=True)
     status = uv.tcp_init(ec.uv_loop, tcp)
@@ -111,6 +114,9 @@ class UDP(Handle):
 
 @UDP.instantiator2(signature())
 def UDP_init():
+    return udp_alloc()
+
+def udp_alloc():
     ec = core.get_ec()
     udp = lltype.malloc(uv.udp_ptr.TO, flavor="raw", zero=True)
     status = uv.udp_init(ec.uv_loop, udp)

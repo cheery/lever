@@ -191,7 +191,15 @@ def Handle_get_recv_buffer_size(self):
     finally:
         lltype.free(value, flavor='raw')
 
-# TODO: uv.fileno(handle, fd) ?
+#TODO: think about the name.
+@Handle.method(u"get_fileno", signature(Handle))
+def Handle_get_fileno(self):
+    fd = lltype.malloc(rffi.LONGP.TO, 1, flavor='raw', zero=True)
+    try:
+        check( uv.fileno(self.handle, fd) )
+        return Integer(rffi.r_long(fd[0]))
+    finally:
+        lltype.free(fd, flavor='raw')
 
 def check(result):
     if rffi.r_long(result) < 0:

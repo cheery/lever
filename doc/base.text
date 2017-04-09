@@ -6634,15 +6634,10 @@ new concatenated byte sequence.
 #begin{function}{to_mat4}
 #source ##
     {"source":"builtin:/vectormath.py","start":{"col":null,"lno":143},"stop":{"col":null,"lno":183}}
-
-#arg{argv} #TODO
-
-#is_variadic
-
-#returns #TODO
-
-#summary #TODO
-
+#arg{self}
+#optional{translation}{#ref{doc:/base}{vec3}}{vec3(0,0,0)}
+#returns Affine transformation matrix.
+#summary Present your affection to your significant other with matrices.
 #status volatile
 #end{function}
 #end{interface}
@@ -6794,22 +6789,16 @@ new concatenated byte sequence.
 #begin{function}{random_circle}
 #source ##
     {"source":"builtin:/vectormath.py","start":{"col":null,"lno":473},"stop":{"col":null,"lno":478}}
-
-#returns #TODO
-
-#summary #TODO
-
+#returns Random unit vector on a plane.
+#summary This was copied from somewhere in the internet.
 #status volatile
 #end{function}
 
 #begin{function}{random_sphere}
 #source ##
     {"source":"builtin:/vectormath.py","start":{"col":null,"lno":479},"stop":{"col":null,"lno":486}}
-
-#returns #TODO
-
-#summary #TODO
-
+#returns Random unit vector.
+#summary This was copied from somewhere in the internet.
 #status volatile
 #end{function}
 
