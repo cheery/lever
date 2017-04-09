@@ -132,7 +132,7 @@ main = ():
         swapchain.framebuffers.append(framebuffer)
         # DEP: cbuf, begin of renderpass
 
-    shaders = ShaderLoader(gpu.device, dir)
+    shaders = ShaderLoader(gpu.device, dir ++ "glsl")
     # DEP: pipeline
 
     pipeline = pass.p0(shaders.fetch({
