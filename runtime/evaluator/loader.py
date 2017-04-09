@@ -564,7 +564,7 @@ class Introspection(space.Object):
         if pc < len(self.closure.function.block):
             return space.Integer(
                 rffi.r_long(self.closure.function.block[pc]))
-        return space.OldError(u"pc out of range")
+        raise space.OldError(u"pc out of range")
 
 @Introspection.method(u"get_sourceloc", space.signature(Introspection, space.Integer))
 def Introspection_get_source_location(self, pc):
