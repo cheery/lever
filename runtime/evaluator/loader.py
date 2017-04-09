@@ -544,20 +544,21 @@ class Introspection(space.Object):
     def getattr(self, name):
         if name == u"closure":
             return self.closure
-        if name == u"is_generator":
+        elif name == u"is_generator":
             return space.boolean(self.closure.function.flags & 2 != 0)
-        if name == u"excs":
+        elif name == u"excs":
             return self.excs
-        if name == u"regc":
+        elif name == u"regc":
             return space.Integer(
                 rffi.r_long(self.closure.function.regc))
-        if name == u"localc":
+        elif name == u"localc":
             return space.Integer(
                 rffi.r_long(self.closure.function.localc))
-        if name == u"length":
+        elif name == u"length":
             return space.Integer(len(self.closure.function.block))
-        if name == u"module":
+        elif name == u"module":
             return self.closure.frame.module
+        raise space.Object.getattr(self, name)
 
     def getitem(self, index):
         pc = space.cast(index, space.Integer, u"[index]").value
