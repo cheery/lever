@@ -537,6 +537,7 @@ def get_string(unit, block, i):
 
 # The idea of introspection object is to support abstract interpretation of code.
 class Introspection(space.Object):
+    _immutable_fields_ = ["closure", "excs"]
     def __init__(self, closure):
         self.closure = closure
         self.excs = excs_introspection(closure.function.excs)
@@ -558,7 +559,7 @@ class Introspection(space.Object):
             return space.Integer(len(self.closure.function.block))
         elif name == u"module":
             return self.closure.frame.module
-        raise space.Object.getattr(self, name)
+        return space.Object.getattr(self, name)
 
     def getitem(self, index):
         pc = space.cast(index, space.Integer, u"[index]").value
