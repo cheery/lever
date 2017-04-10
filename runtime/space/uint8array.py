@@ -107,9 +107,8 @@ def alloc_uint8array(length):
 def to_uint8array(cstring):
     return Uint8Array(rffi.cast(rffi.UCHARP, rffi.str2charp(cstring)), len(cstring))
 
-@Uint8Array.instantiator
-@signature(Object)
-def _(obj):
+@Uint8Array.instantiator2(signature(Object))
+def Uint8Array_init(obj):
     if isinstance(obj, space.Integer):
         return Uint8Array(lltype.malloc(rffi.UCHARP.TO, obj.value, flavor='raw'), obj.value)
     if isinstance(obj, space.List):
