@@ -352,7 +352,11 @@ def _(restype, argtypes_list):
     argtypes = []
     for argtype in argtypes_list.contents:
         argtypes.append(to_type(argtype))
-    return CFunc(to_type(restype), argtypes)
+    if restype:
+        restype = to_type(restype)
+    else:
+        restype = null
+    return CFunc(restype, argtypes)
 
 class Struct(Type):
     def __init__(self, fields=None, name=u''):
