@@ -1,0 +1,337 @@
+import fs, json
+
+# Long term there's something that can be distilled:
+#   https://gist.github.com/cheery/329a2c769618f6fb317452b0f1a0d691
+
+spec = json.read_file(dir ++ "webassembly-1.json")
+assert spec["version"] == "2017-4-12.decomposing-kitty-MVP"
+spec_preamble = spec["preamble"]
+spec_sections = spec["sections"]
+spec_types = spec["types"]
+spec_opcodes = spec["opcodes"]
+optab = {}
+for entry in spec_opcodes.items()
+    optab[entry[1]["value"]] = object();
+        name = entry[0]
+        meta = entry[1]
+spec_sections_id = {}
+for entry in spec_sections.items()
+    if "id" in entry[1]
+        spec_sections_id[entry[1]["id"]] = entry[0]
+
+read_file = (path):
+    data = fs.read_file(path, "b")
+    file_size = data.length
+
+    index = 0
+    getbyte = ():
+        byte = data[index]
+        index += 1
+        return byte
+    decode = Decoder(getbyte)
+
+    preamble = unserialize(decode, spec_preamble)
+    print("section preamble")
+    for key in preamble
+        print(json.write_string(preamble, {indent = 4}))
+
+    sections = {preamble=preamble}
+    while index < file_size
+        id = decode.varuint7()
+        payload_len = decode.varuint32()
+        base = index
+        if id == 0 
+            name_len = decode.varuint32()
+            name = decode.utf8(name_len)
+        else
+            name = spec_sections_id.get(id, id)
+        section_type = spec_sections.get(name)
+        assert name not in sections, "duplicate section"
+        if section_type
+            sections[name] = unserialize_field(decode, section_type)
+            assert index == payload_len + base
+        else
+            sections[name] = data[index .: payload_len + base]
+            index = payload_len + base
+    return sections
+
+unserialize = (decode, type):
+    if isinstance(type, list)
+        return unserialize_list(decode, type)
+    elif isinstance(type, str)
+        rec = spec_types.get(type)
+        if rec
+            return unserialize(decode, rec)
+        elif type == "init_expr"
+            return unserialize_init_expr(decode)
+        elif type == "expr"
+            return unserialize_expr(decode)
+        else
+            return getattr(decode, type)()
+    elif isinstance(type, dict)
+        return unserialize_field(decode, type)
+    else
+        assert false, interface(type)
+
+unserialize_list = (decode, record):
+    res = {}
+    denyset = set()
+    for type in record
+        name = type.get("name")
+        if name in denyset
+            res[name] = null
+            continue
+        value = unserialize_field(decode, type)
+        force_value = type.get("value")
+        if force_value
+            assert value == force_value
+        if type.get("flatten")
+            res.update(value)
+        elif name
+            res[name] = value
+        if "bits" in type
+            for x in type["bits"].items()
+                if value & x[1] != x[1]
+                    denyset.add( x[0] )
+    return res
+
+unserialize_field = (decode, field):
+    fn = field.get("fn")
+    if fn == "datablock"
+        byte_len = decode.varuint32()
+        base = decode.index
+        value = unserialize(decode, field["type"])
+        assert decode.index == base + byte_len, 
+            "byte size mismatch: " ++ repr([decode.index, base + byte_len])
+        return value
+    elif fn == "optional"
+        if decode.varuint1() == 1
+            return unserialize(decode, field["type"])
+        else
+            return null
+    elif fn == "list"
+        res = []
+        for i in range(decode.varuint32())
+            res.append(unserialize(decode, field["type"]))
+        return res
+    elif fn == "table"
+        value = unserialize(decode, field["type"])
+        for entry in field["values"]
+            if entry["value"] == value
+                value = entry["name"]
+        return value
+    elif fn == "select"
+        value = unserialize(decode, field["type"])
+        for entry in field["choice"]
+            if entry["match"] == value
+                res = unserialize_field(decode, entry)
+                if "dst" in field and isinstance(res, dict)
+                    res[field["dst"]] = value
+                return res
+        assert false, "unknown value in select: " ++ repr(value)
+    # "select", "dst":name, choice [{match, type}]
+    elif fn
+        assert false, "not implemented: " ++ repr(fn)
+    return unserialize(decode, field["type"])
+
+unserialize_init_expr = (decode):
+    return unserialize_expr(decode)
+
+unserialize_expr = (decode):
+    out = []
+    sp = 0
+    while true
+        opcode = decode.uint8()
+        op = optab[opcode]
+        res = unserialize(decode, op.meta["immediate"])
+        res["name"] = op.name
+        #res["meta"] = op.meta
+        if op.name in ["block", "loop", "if"]
+            sp += 1
+        if op.name == "end"
+            if sp > 0
+                sp -= 1
+            else
+                return out
+        out.append(res)
+
+class Decoder
+    +init = (self, getbyte):
+        self.index = 0
+        self.getbyte = ():
+            self.index += 1
+            return getbyte()
+
+    uint8 = (self):
+        return self.getbyte()
+
+    uint16 = (self):
+        a = self.getbyte()
+        b = self.getbyte()
+        return a | b << 8
+
+    uint32 = (self):
+        a = self.getbyte()
+        b = self.getbyte()
+        c = self.getbyte()
+        d = self.getbyte()
+        return a | b << 8 | c << 16 | d << 24
+
+    varuint1 = (self):
+        val = self.uleb128()
+        assert val <= 1
+        return val
+
+    varuint7 = (self):
+        val = self.uleb128()
+        assert val <= 0xFF
+        return val
+
+    varuint16 = (self):
+        val = self.uleb128()
+        assert val <= 0xFFFF
+        return val
+
+    varuint32 = (self):
+        val = self.uleb128()
+        assert val <= 0xFFFFFFFF
+        return val
+
+    uleb128 = (self):
+        result = 0
+        shift = 0
+        while true
+            byte = self.getbyte()
+            result |= (byte & 127) << shift
+            if byte & 128 == 0
+                return result
+            shift += 7
+
+    varint7 = (self):
+        val = self.sleb128()
+        assert -0x80 <= val and val < 0x80
+        return val
+
+    varint16 = (self):
+        val = self.sleb128()
+        assert -0x8000 <= val and val < 0x8000
+        return val
+
+    varint32 = (self):
+        val = self.sleb128()
+        assert -0x80000000 <= val and val < 0x80000000
+        return val
+
+    varint64 = (self):
+        val = self.sleb128()
+        # I could retrieve the 'shift' value to check this out.
+        # but I don't probably catch overflow here in any other way.
+        #assert -0x80000000 <= val and val < 0x80000000
+        return val
+        
+    sleb128 = (self):
+        result = 0
+        shift = 0
+        size = 64 # number of bits in signed integer
+        while true
+            byte = self.getbyte()
+            result |= (byte & 127) << shift
+            shift += 7
+            if byte & 128 == 0
+                break
+        if shift < size and byte & 64 > 0
+            result |= - (1 << shift)
+        return result
+
+    utf8 = (self, length=self.varuint32()):
+        dec = Utf8Decoder() # a bit insane.. got to fix the decode_utf8
+        out = dec(self.bytes(length))
+        out ++= dec.finish()
+        return out
+
+    bytes = (self, length=self.varuint32()):
+        data = Uint8Array(length)
+        for i in range(length)
+            data[i] = self.getbyte()
+        return data
+
+    # TODO: consider float/double encoders/decoders here?
+    #       although this is a quite reliable way to
+    #       pass them around without changing the values.
+    float = (self):
+        return self.bytes(4)
+
+    double = (self):
+        return self.bytes(8)
+        
+# encode = object();
+#     uint8 = (value):
+#         return [value & 255]
+# 
+#     uint16 = (value):
+#         return [
+#             value      & 255,
+#             value >> 8 & 255]
+# 
+#     uint32 = (value):
+#         return [
+#             value       & 255,
+#             value >> 8  & 255,
+#             value >> 16 & 255,
+#             value >> 24 & 255]
+# 
+#     uleb128 = (value):
+#         if value == 0
+#             return [0]
+#         out = []
+#         while value != 0
+#             byte = value & 127
+#             value >>= 7
+#             if value != 0
+#                 byte |= 128
+#             out.append(byte)
+#         return out
+# 
+#     sleb128 = (value):
+#         out = []
+#         more = 1
+#         negative = value < 0
+#         while more
+#             byte = value & 127
+#             value >>= 7
+#             if value == 0 and byte & 64 == 0
+#                 more = 0
+#             elif value == -1 and byte & 64 == 1
+#                 more = 0
+#             else
+#                 byte |= 128
+#             out.append(byte)
+#         return out
+# 
+#     # value_type = i32, i64, f32, f64
+#     # block_type = value_type or block_type (indicating 0 results)
+#     # elem_type  = anyfunc
+#     language_type = {
+#         "i32":        -0x01,
+#         "i64":        -0x02,
+#         "f32":        -0x03,
+#         "f64":        -0x04,
+#         "anyfunc":    -0x10,
+#         "func":       -0x20,
+#         "block_type": -0x40}
+# 
+# TODO: pretty printing module missing.
+#       it should contain this functionality.
+# print_buffer_hexdump = (data):
+#     for k in range(0, data.length, 16)
+#         out = []
+#         txt = []
+#         for x in data[k .: k+16]
+#             out.append(
+#                 x.to_string(16).rjust(2, '0'))
+#             if 32 <= x and x < 127
+#                 txt.append(chr(x))
+#             else
+#                 txt.append('.')
+#         out.append("".join(txt))
+#         print(out...)
