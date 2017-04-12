@@ -1,8 +1,5 @@
 import fs, json
 
-# Long term there's something that can be distilled:
-#   https://gist.github.com/cheery/329a2c769618f6fb317452b0f1a0d691
-
 spec = json.read_file(dir ++ "webassembly-1.json")
 assert spec["version"] == "2017-4-12.decomposing-kitty-MVP"
 spec_preamble = spec["preamble"]
