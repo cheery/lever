@@ -30,12 +30,9 @@ read_file = (path):
         return byte
     decode = Decoder(getbyte)
 
-    preamble = unserialize(decode, spec_preamble)
-    print("section preamble")
-    for key in preamble
-        print(json.write_string(preamble, {indent = 4}))
-
-    sections = {preamble=preamble}
+    sections = {
+        preamble = unserialize(decode, spec_preamble)
+    }
     while index < file_size
         id = decode.varuint7()
         payload_len = decode.varuint32()
@@ -145,7 +142,7 @@ unserialize_expr = (decode):
         op = optab[opcode]
         res = unserialize(decode, op.meta["immediate"])
         res["name"] = op.name
-        #res["meta"] = op.meta
+        res["meta"] = op.meta
         if op.name in ["block", "loop", "if"]
             sp += 1
         if op.name == "end"
