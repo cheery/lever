@@ -17,38 +17,16 @@ def malloc_bytes(ptr_type, size):
 def free(ptr):
     lltype.free(ptr, flavor='raw')
 
-libuv_dir = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "../libuv"))
-def cd(x):
-    return os.path.join(libuv_dir, x)
-
-if sys.platform == "win32":
-    path_to_libuv_library = cd("libuv.lib")
-else:
-    path_to_libuv_library = cd("out/Release/libuv.a")
-    if not os.path.exists(path_to_libuv_library):
-        path_to_libuv_library = cd("out/Release/libuv.a")
-assert os.path.exists(path_to_libuv_library), "cannot find libuv, check it is in libuv/ path."
-
-# This thing seemed to not appear in official includes..
-assert os.path.exists(
-    cd("include/stdint-msvc2008.h")
-), "Download https://github.com/libuv/libuv/blob/v1.x/include/stdint-msvc2008.h into libuv/include/, please."
-
-include_dirs = [cd("include")]
+# This is quite a source of frustration.
+# 
+def envPaths(name):
+    val = os.getenv(name)
+    return [] if val is None else val.split(':')
 
 eci = ExternalCompilationInfo(
-    include_dirs = include_dirs,
-    includes = [
-        cd("include/uv.h")
-    ],
-    # library_dirs = [
-    #    "libuv/out/Release"
-    # ],
-    link_files = [
-        path_to_libuv_library
-    ]
-)
+    includes = ["uv.h"], libraries = ["uv"],
+    include_dirs=envPaths("DEPENDENCY_INCLUDE_PATH"),
+    library_dirs=envPaths("DEPENDENCY_LIBRARY_PATH"))
 
 for t in [rffi.LONG, rffi.LONGLONG]:
     if rffi.sizeof(t) == 8:
@@ -964,7 +942,6 @@ monte_helper_set_stdio_fd(uv_stdio_container_t *stdio,
 '''
 stdio_stream_helper = ExternalCompilationInfo(
     includes=['uv.h'],
-    include_dirs=include_dirs,
     separate_module_sources=[STDIO_STREAM_HELPER_C])
 
 set_stdio_stream = rffi.llexternal("monte_helper_set_stdio_stream",

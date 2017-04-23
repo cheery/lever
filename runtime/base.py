@@ -492,3 +492,12 @@ class Work:
 @signature(Integer)
 def guess_handle(num):
     return Integer(uv_stream.uv.guess_handle(num.value))
+
+@builtin
+@signature(Object)
+def instantiate_(i):
+    if interface == Object:
+        return Exnihilo()
+    if isinstance(i, Interface):
+        return CustomObject(i)
+    raise OldError(u"Cannot instantiate from non-interface")

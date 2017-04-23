@@ -84,8 +84,8 @@ def main():
 # are stabilized, so I don't expect to have trouble with versions.
 # Maybe it happens some day... On someone's computer. That he doesn't have recent enough
 # versions of these libraries.
-pypy_src_url = 'https://bitbucket.org/pypy/pypy/downloads/pypy2-v5.7.0-src'
-pypy_src_dir = 'pypy2-v5.7.0-src'
+pypy_src_url = 'https://bitbucket.org/pypy/pypy/downloads/pypy2-v5.7.1-src'
+pypy_src_dir = 'pypy2-v5.7.1-src'
 
 # If the untagged 'pypy' -directory is around, we will use that.
 # But the pypy_src_url is still downloaded.
@@ -98,9 +98,21 @@ library_depends = "libffi zlib sqlite3 ncurses expat libssl".split(' ')
 def compile_lever(args):
     system = platform.system()
     if system == "Linux":
-        linux_build_depedencies()
+        libuv_abs = os.path.abspath("local/libuv")
+        if os.path.exists(libuv_abs):
+            linux_build_depedencies(libuv_is_local=True)
+            insert_to_env("DEPENDENCY_LIBRARY_PATH", os.path.join(libuv_abs, "out/Release"), ':')
+            insert_to_env("DEPENDENCY_LIBRARY_PATH", os.path.join(libuv_abs, "out/Debug"),   ':')
+            insert_to_env("DEPENDENCY_INCLUDE_PATH", os.path.join(libuv_abs, "include"),   ':')
+        else:
+            linux_build_depedencies(libuv_is_local=False)
     elif system == "Windows":
         windows_build_dependencies()
+        local_abs = os.path.abspath("local")
+        if os.path.exists(local_abs):
+            insert_to_env('PATH',    os.path.join(local_abs, "bin"),     ';')
+            insert_to_env('INCLUDE', os.path.join(local_abs, "include"), ';')
+            insert_to_env('LIB',     os.path.join(local_abs, "lib"),     ';')
     else:
         assert False, "no dependency fetching script for {}".format(system)
     if os.path.exists('pypy'):
@@ -108,7 +120,7 @@ def compile_lever(args):
     else:
         os.environ['PYTHONPATH'] = pypy_src_dir
     rpython_bin = os.path.join(pypy_src_dir, 'rpython', 'bin', 'rpython')
-
+    
     build_flags = []
     if not args.nojit:
         build_flags.append('--translation-jit')
@@ -128,14 +140,28 @@ def compile_lever(args):
             build_flags + ["runtime/goal_standalone.py"])
     compile_libraries(preserve_cache=False)
 
-def linux_build_depedencies():
+# To handle dependencies, I'm adding them into the environment
+# variables before compiling.
+def insert_to_env(name, path, separator):
+    value = os.environ.get(name, '').strip()
+    if value == "":
+        os.environ[name] = path
+    else:
+        os.environ[name] = path + separator + value
+
+def linux_build_depedencies(libuv_is_local):
     devnull = open(os.devnull, 'w')
     for cmd in command_depends:
         if call([cmd, '--version'], stdout=devnull, stderr=devnull) != 0:
             return linux_troubleshoot(cmd)
-    for dependency in library_depends:
+    extra = []
+    extra_apt = []
+    if not libuv_is_local:
+        extra.append("libuv1")
+        extra_apt.append("libuv1-dev")
+    for dependency in library_depends + extra:
         if call(['pkg-config', '--exists', dependency]) != 0:
-            return linux_troubleshoot(dependency)
+            return linux_troubleshoot(dependency, extra_apt)
     linux_download_and_extract(pypy_src_dir, pypy_src_url + '.tar.bz2')
 
 # On windows, you're going to need Visual studio 9.0 and you need to
@@ -148,6 +174,14 @@ def windows_build_dependencies():
         zipfile = ZipFile(StringIO(url.read()))
         zipfile.extractall()
         print("Note that building from source for windows isn't frequent.")
+
+    if os.path.exists("local/include"):
+        stdint_msvc2008_path = "local/include/stdint-msvc2008.h"
+        if not os.path.exists(stdint_msvc2008_path):
+            print("stdint-msvc2008.h missing, downloading it.") 
+            url = urlopen("https://raw.githubusercontent.com/libuv/libuv/v1.x/include/stdint-msvc2008.h")
+            with open(stdint_msvc2008_path, 'wb') as fd:
+                fd.write(url.read())
 
 compile_lib_desc = """This command compiles the scripts in the lib/
 
@@ -180,7 +214,7 @@ def compile_libraries(preserve_cache=True):
                 except Exception as e:
                     print("{}:{}".format(lc_name, e))
 
-def linux_troubleshoot(item):
+def linux_troubleshoot(item, extra_apt=[]):
     print("Dependencies to compile or run:")
     print(' '.join(command_depends + library_depends))
     print()
@@ -189,7 +223,8 @@ def linux_troubleshoot(item):
         print("Ubuntu/debian detected, trying to install")
         check_call(['sudo', 'apt-get', 'install'] +
             "gcc make libffi-dev pkg-config libz-dev libbz2-dev".split(' ') +
-            "libsqlite3-dev libncurses-dev libexpat1-dev libssl-dev".split(' '))
+            "libsqlite3-dev libncurses-dev libexpat1-dev libssl-dev libuv1-dev".split(' ') +
+            extra_apt)
         print("Re-attempt")
         main()
     else:

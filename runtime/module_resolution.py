@@ -139,12 +139,13 @@ root_module.setcache(pathobj.parse(u"builtin:/" + base.module.name), base.module
 # entry generation at runtime/main.py because there are so many
 # items added into the base module all around the system.
 
+import main
 def start(main_script):
     assert isinstance(main_script, String)
     lib_scope = ModuleScope(
         pathobj.concat(core.get_ec().lever_path, pathobj.parse(u"lib")),
         root_module)
-    attach_compiler(lib_scope)
+    lib_scope.compile_file = LazyLoader(lib_scope)
     main_path = pathobj.os_parse(resuffix(main_script.string, u".lc", u""))
     mi = moduleinfo(pathobj.abspath(main_path))
     scope = ModuleScope(mi.directory, lib_scope)
@@ -156,12 +157,18 @@ def start(main_script):
     mi.loadit(this, scope)
     return this
 
-def attach_compiler(lib_scope):
-    mi = moduleinfo(pathobj.concat(lib_scope.local, pathobj.parse(u"compiler")))
-    this = Module(mi.name.string, {}, extends=base.module) # base.module
-    mi.default_config(this, lib_scope)
-    mi.loadit(this, lib_scope)
-    lib_scope.compile_file = this.getattr(u"compile_file")
+class LazyLoader(Object):
+    def __init__(self, lib_scope):
+        self.lib_scope = lib_scope
+
+    def call(self, argv):
+        lib_scope = self.lib_scope
+        mi = moduleinfo(pathobj.concat(lib_scope.local, pathobj.parse(u"compiler")))
+        this = Module(mi.name.string, {}, extends=base.module) # base.module
+        mi.default_config(this, lib_scope)
+        mi.loadit(this, lib_scope)
+        lib_scope.compile_file = this.getattr(u"compile_file")
+        return lib_scope.compile_file.call(argv)
 
 # plans: 
 #        allow modules derive or create new scopes and isolate themselves.
