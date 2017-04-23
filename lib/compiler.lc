@@ -11,6 +11,7 @@ doc = path("doc:/compiler")
 SyntaxError = chartparser.SyntaxError
 SyntaxErrorExpected = chartparser.SyntaxErrorExpected
 
+# TODO: You can shave away 300ms by serializing the preprocessed grammar here.
 language = grammar_language.read_file(dir ++ "../lever-0.8.0.grammar")
 language.new_parser = chartparser.preprocess(
     language.grammar,

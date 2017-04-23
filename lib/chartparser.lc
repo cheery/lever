@@ -48,6 +48,8 @@ preprocess = (user_grammar, default_accept):
             except KeyError as _
                 grammar[rule.lhs] = [rule]
 
+    # TODO: Fix up the performance issue in REPR startup by allowing the
+    #       caching of a grammar.
     new_parser = (accept=default_accept):
         parser = Parser(grammar, blankset, accept, [])
         # In an earley parser that uses NNF, empty input is a special case, that is taken care of here.
