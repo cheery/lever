@@ -50,6 +50,20 @@ class Multimethod(Object):
         self = jit.promote(self)
         if len(argv) < self.arity:
             raise OldError(u"expected at least %d arguments, got %d" % (self.arity, len(argv))) 
+        method = self.fetch_method(argv, suppress_default)
+        if method is None:
+            vec = []
+            for i in range(self.arity):
+                vec.append(space.get_interface(argv[i]))
+            names = []
+            for i in range(self.arity):
+                names.append(vec[i].name)
+            raise OldError(u"no method for ["+u' '.join(names)+u"]")
+        return method.call(argv)
+
+    @jit.unroll_safe
+    def fetch_method(self, argv, suppress_default):
+        self = jit.promote(self)
         if self.arity == 1:
             method = self.get_method(jit.promote(space.get_interface(argv[0])))
         elif self.arity == 2:
@@ -72,17 +86,12 @@ class Multimethod(Object):
             for i in range(self.arity):
                 vec.append(space.get_interface(argv[i]))
             method = self.multimethod_table.get(vec, None)
-        if method is None:
-            vec = []
-            for i in range(self.arity):
-                vec.append(space.get_interface(argv[i]))
-            if self.default is null or suppress_default:
-                names = []
-                for i in range(self.arity):
-                    names.append(vec[i].name)
-                raise OldError(u"no method for ["+u' '.join(names)+u"]")
-            return self.default.call(argv)
-        return method.call(argv)
+        if method is not None:
+            return method
+        if self.default is null or suppress_default:
+            return method
+        else:
+            return self.default
 
     def multimethod(self, *spec):
         vec = list(cls.interface for cls in spec)

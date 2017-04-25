@@ -1,6 +1,6 @@
 # We may want to invert many of these dependencies.
 from builtin import Builtin, signature
-from interface import Object, Interface, null
+from interface import Object, Interface, null, cast
 from customobject import Id
 from multimethod import Multimethod
 from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean
@@ -19,6 +19,7 @@ coerce = Multimethod(2)
 concat = Multimethod(2)
 neg = Multimethod(1)
 pos = Multimethod(1)
+cmp_= Multimethod(2)
 ne  = Multimethod(2)
 eq  = Multimethod(2)
 lt  = Multimethod(2)
@@ -29,6 +30,7 @@ ge  = Multimethod(2)
 by_symbol = {
     u'clamp': clamp,
     u'coerce': coerce,
+    u'cmp': cmp_,
     u'++': concat,
     u'!=': ne,
     u'==': eq,
@@ -93,13 +95,17 @@ def _(a, b):
 #def _(a, b):
 #    return List([Integer(int(a.flag)), Integer(int(b.flag))])
 
-@coerce.multimethod_s(Integer, Boolean)
-def _(a, b):
-    return List([a, Integer(int(b.flag))])
-
-@coerce.multimethod_s(Boolean, Integer)
-def _(a, b):
-    return List([Integer(int(a.flag)), b])
+# There is a discussion that this can actually result in
+# hiding of errors and isn't a very nice feature in the retrospect.
+# We may have to deprecate the implicit int-bool coercion.
+# Lets deprecate them and see what we'll get!
+#@coerce.multimethod_s(Integer, Boolean)
+#def _(a, b):
+#    return List([a, Integer(int(b.flag))])
+#
+#@coerce.multimethod_s(Boolean, Integer)
+#def _(a, b):
+#    return List([Integer(int(a.flag)), b])
 
 @coerce.multimethod_s(Integer, Float)
 def _(a, b):
@@ -174,10 +180,96 @@ def _(a, b):
 def _(a, b):
     return boolean(a.string != b.string)
 
+# The equality here is a bit convoluted, but it should be good.
 @signature(Object, Object)
 def eq_default(a, b):
-    return boolean(a == b)
+    # This strongly enforces the null and boolean identity.
+    # You can't mess it up by multimethod introductions.
+    if a == null or b == null:
+        return boolean(a == b)
+    elif isinstance(a, Boolean) or isinstance(b, Boolean):
+        return boolean(a == b)
+    # This reflects how the cmp_ operates, with an exception that
+    # if cmp cannot succeed, we will use the identity equality.
+    args = [a,b]
+    method = cmp_.fetch_method(args, True)
+    if method is None:
+        c = coerce.fetch_method(args, False)
+        if c is not None:
+            args = cast(c.call(args), List, u"coerce should return a list").contents
+            method = cmp_.fetch_method(args, True)
+    if method is not None:
+        return boolean(
+            cast(method.call(args),
+                Integer, u"cmp should return an int").value == 0)
+    else:
+        # This way, the equality and inequality is always defined,
+        # even if comparison is not defined for everything.
+        return boolean(a == b)
 eq.default = Builtin(eq_default)
+
+@signature(Object, Object)
+def lt_default(a, b):
+    args = [a,b]
+    method = cmp_.fetch_method(args, True)
+    if method is not None:
+        return boolean(
+            cast(method.call(args),
+                Integer, u"cmp should return an int").value < 0)
+    else:
+        args = cast(coerce.call(args), List,
+            u"coerce should return a list")
+        return lt.call_suppressed(args.contents)
+lt.default = Builtin(lt_default)
+
+@signature(Object, Object)
+def le_default(a, b):
+    args = [a,b]
+    method = cmp_.fetch_method(args, True)
+    if method is not None:
+        return boolean(
+            cast(method.call(args),
+                Integer, u"cmp should return int").value <= 0)
+    else:
+        args = cast(coerce.call(args), List,
+            u"coerce should return a list")
+        return le.call_suppressed(args.contents)
+le.default = Builtin(le_default)
+
+@signature(Object, Object)
+def gt_default(a, b):
+    args = [a,b]
+    method = cmp_.fetch_method(args, True)
+    if method is not None:
+        return boolean(
+            cast(method.call(args),
+                Integer, u"cmp should return int").value > 0)
+    else:
+        args = cast(coerce.call(args), List,
+            u"coerce should return a list")
+        return gt.call_suppressed(args.contents)
+gt.default = Builtin(gt_default)
+
+@signature(Object, Object)
+def ge_default(a, b):
+    args = [a,b]
+    method = cmp_.fetch_method(args, True)
+    if method is not None:
+        return boolean(
+            cast(method.call(args),
+                Integer, u"cmp should return int").value >= 0)
+    else:
+        args = cast(coerce.call(args), List,
+            u"coerce should return a list")
+        return ge.call_suppressed(args.contents)
+ge.default = Builtin(ge_default)
+
+@signature(Object, Object)
+def cmp_default(a, b):
+    args = cast(coerce.call([a,b]), List,
+        u"coerce should return a list")
+    return cmp_.call_suppressed(args.contents)
+cmp_.default = Builtin(cmp_default)
 
 @eq.multimethod_s(Integer, Integer)
 def _(a, b):
