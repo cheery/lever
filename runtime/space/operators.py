@@ -100,7 +100,7 @@ def _(a, b):
 
 @floordiv.multimethod_s(Float, Float)
 def _(a, b):
-    return Float(a.number // b.number)
+    return Float(math.floor(a.number / b.number))
 
 # Binary coercion is used in lever arithmetic to turn left and right side into
 # items that can be calculated with.

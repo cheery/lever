@@ -191,10 +191,10 @@ scan_function = (block, func):
                 name = spec.varnames[i]
             else
                 name = chr(0x61+i%25)
-                k = int(i / 25)
+                k = i // 25
                 while k > 0
                     name = chr(0x65+i%25) ++ name
-                    k = int(k / 25)
+                    k = k // 25
             arg["name"] = name
             if argtypes and i < argtypes.length
                 arg["type"] = get_link(argtypes[i])

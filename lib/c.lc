@@ -1266,7 +1266,7 @@ class Preprocessor
             mul = (a, b):
                 return a * b
             div = (a, b):
-                return int(a / b)
+                return a // b
             mod = (a, b):
                 return a % b
             cond = (a, t, f):
