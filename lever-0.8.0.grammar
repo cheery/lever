@@ -146,6 +146,7 @@ expr200 =>
     prefix
     binary {expr200 ^"*" prefix}
     binary {expr200 ^"/" prefix}
+    binary {expr200 ^"//" prefix}
     binary {expr200 ^"%" prefix}
 
 prefix =>

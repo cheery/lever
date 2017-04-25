@@ -13,6 +13,7 @@ from slices import Slice
 from uint8array import Uint8Array, Uint8Slice, Uint8Data, alloc_uint8array
 import setobject
 import space
+import math
 
 clamp = Multimethod(3)
 coerce = Multimethod(2)
@@ -88,6 +89,18 @@ def _(a, b):
 @div.multimethod_s(Float, Float)
 def _(a, b):
     return Float(a.number / b.number)
+
+# Long-time due.
+floordiv  = by_symbol[u'//'] = Multimethod(2)
+coerce_by_default(floordiv)
+
+@floordiv.multimethod_s(Integer, Integer)
+def _(a, b):
+    return Integer(a.value // b.value)
+
+@floordiv.multimethod_s(Float, Float)
+def _(a, b):
+    return Float(a.number // b.number)
 
 # Binary coercion is used in lever arithmetic to turn left and right side into
 # items that can be calculated with.
