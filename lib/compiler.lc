@@ -1033,7 +1033,7 @@ encode_op = (op, consttab):
 #     assert len(op.args) >= len(op.pattern), op.opname
 #     assert op.variadic or len(op.args) == len(op.pattern), op.opname
     out = []
-    oplen = op.args.length + op.has_result
+    oplen = op.args.length + int(op.has_result)
     out.append(op.opcode << 8 | oplen)
     if op.has_result
         out.append(op.index)

@@ -120,7 +120,7 @@ all_nullable = (rhs, nullable):
 sum_nonrec = (rule):
     s = 0
     for x in rule.rhs
-        s += (x != rule.lhs)
+        s += int(x != rule.lhs)
     return s
 
 build_nnf = (grammar, nullable):
@@ -128,7 +128,7 @@ build_nnf = (grammar, nullable):
     for rule in grammar
         order = 0
         for x in rule.rhs
-            order += (x in nullable)
+            order += int(x in nullable)
         for i in range(1 << order)
             result.append(nihilist_rule(rule, i, nullable))
     return result
