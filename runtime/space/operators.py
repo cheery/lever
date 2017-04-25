@@ -89,9 +89,9 @@ def _(a, b):
 
 # Binary coercion is used in lever arithmetic to turn left and right side into
 # items that can be calculated with.
-@coerce.multimethod_s(Boolean, Boolean)
-def _(a, b):
-    return List([Integer(int(a.flag)), Integer(int(b.flag))])
+#@coerce.multimethod_s(Boolean, Boolean)
+#def _(a, b):
+#    return List([Integer(int(a.flag)), Integer(int(b.flag))])
 
 @coerce.multimethod_s(Integer, Boolean)
 def _(a, b):

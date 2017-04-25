@@ -18,7 +18,12 @@ def free(ptr):
     lltype.free(ptr, flavor='raw')
 
 # This is quite a source of frustration.
-# 
+# There would be environment variables that go directly to GCC.
+# but the LIBRARY_PATH is looked after the system libraries,
+# and the another C_INCLUDE_PATH is looked before.
+# The result would be that we get a mess if the dependency is
+# satisfied by both sources.
+
 def envPaths(name):
     val = os.getenv(name)
     return [] if val is None else val.split(':')

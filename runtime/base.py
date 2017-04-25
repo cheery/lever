@@ -226,7 +226,10 @@ def encode_utf8(value):
 @builtin
 @signature(Uint8Data)
 def decode_utf8(value):
-    return String(value.to_str().decode('utf-8'))
+    try:
+        return String(value.to_str().decode('utf-8'))
+    except UnicodeDecodeError as error:
+        raise space.unwind(space.LError(u"unicode decode failed"))
 
 @builtin
 def time_(argv):

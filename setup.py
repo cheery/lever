@@ -149,6 +149,8 @@ def insert_to_env(name, path, separator):
     else:
         os.environ[name] = path + separator + value
 
+# The 'libuv_is_local' here is a bit of a mess.
+# 
 def linux_build_depedencies(libuv_is_local):
     devnull = open(os.devnull, 'w')
     for cmd in command_depends:
