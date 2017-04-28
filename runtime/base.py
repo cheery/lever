@@ -299,6 +299,8 @@ def parse_int(string, base):
             digit = ord(ch) - ord('A') + 10
         else:
             raise unwind(LError(u"invalid digit char: " + ch))
+        if digit >= base:
+            raise unwind(LError(u"invalid digit char: " + ch))
         value = value * base + digit
     return Integer(value)
 

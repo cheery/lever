@@ -106,8 +106,8 @@ class Interface(Object):
         self.name = name
         self.instantiate = None
         self.methods = {}
-        if parent is not None:
-            self.methods.update(parent.methods)
+        #if parent is not None:
+        #    self.methods.update(parent.methods)
         self.doc = None
 
     def call(self, argv):
@@ -133,7 +133,10 @@ class Interface(Object):
 
     @jit.elidable
     def lookup_method(self, name):
-        return self.methods.get(name, None)
+        method = self.methods.get(name, None)
+        if method is None and (self.parent is not self):
+            return self.parent.lookup_method(name)
+        return method
 
     def setattr(self, name, value):
         if name == u"doc":
@@ -151,6 +154,8 @@ class Interface(Object):
 
 Interface.interface = Interface(None, u"interface")
 Interface.interface.parent = Interface.interface
+# TODO: explain myself, why parent of an interface is an interface?
+#       ... I forgot.. that happens.
 
 null = Interface(None, u"null")
 null.interface = null
@@ -247,13 +252,17 @@ internal_methods = {
 }
 
 def register_instantiator(interface, fn):
-    interface.methods[u"+init"] = builtin.Builtin(hate_them,
+    # You should not be able to call the true instantiator of an object.
+    # But calling a fake shouldn't harm either.
+    interface.methods[u"+init"] = builtin.Builtin(
+        (lambda argv: None),
         spec=builtin.get_spec(fn),
         source_location=builtin.get_source_location(fn))
 
 # Internal methods help at documenting the system.
+# TODO: rethink about lifting this eventually?
 def hate_them(argv):
-    raise space.unwind(space.LError(u"no"))
+    raise space.unwind(space.LError(u"hate them"))
 
 #expose_internal_methods(Interface)
 #expose_internal_methods(Object) # if I do this,

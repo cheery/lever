@@ -32,6 +32,8 @@ class Multimethod(Object):
     def __init__(self, arity, default=null, doc=null):
         self.arity = arity
         self.multimethod_table = r_dict(eq_fn, hash_fn, force_non_null=True)
+        self.interface_table = {}
+        self.version = VersionTag()
         self.default = default
         self.doc = doc
 
@@ -41,8 +43,23 @@ class Multimethod(Object):
     def call_suppressed(self, argv):
         return self.invoke_method(argv, suppress_default=True)
 
+    def get_interface(self, obj, version):
+        interface = space.get_interface(obj)
+        return self.get_impl(interface, version)
+
     @jit.elidable
-    def get_method(self, *interface):
+    def get_impl(self, interface, version):
+        impl = interface
+        while impl is not null:
+            if impl in self.interface_table:
+                return impl
+            if impl.parent is impl: # interface loop
+                return interface
+            impl = impl.parent
+        return interface
+
+    @jit.elidable
+    def get_method(self, version, *interface):
         return self.multimethod_table.get(list(interface), None)
 
     @jit.unroll_safe
@@ -63,28 +80,30 @@ class Multimethod(Object):
 
     @jit.unroll_safe
     def fetch_method(self, argv, suppress_default):
+        v = jit.promote(self.version)
         self = jit.promote(self)
         if self.arity == 1:
-            method = self.get_method(jit.promote(space.get_interface(argv[0])))
+            method = self.get_method(v,
+                jit.promote(self.get_interface(argv[0], v)))
         elif self.arity == 2:
-            method = self.get_method(
-                jit.promote(space.get_interface(argv[0])),
-                jit.promote(space.get_interface(argv[1])))
+            method = self.get_method(v,
+                jit.promote(self.get_interface(argv[0], v)),
+                jit.promote(self.get_interface(argv[1], v)))
         elif self.arity == 3:
-            method = self.get_method(
-                jit.promote(space.get_interface(argv[0])),
-                jit.promote(space.get_interface(argv[1])),
-                jit.promote(space.get_interface(argv[2])))
+            method = self.get_method(v,
+                jit.promote(self.get_interface(argv[0], v)),
+                jit.promote(self.get_interface(argv[1], v)),
+                jit.promote(self.get_interface(argv[2], v)))
         elif self.arity == 4:
-            method = self.get_method(
-                jit.promote(space.get_interface(argv[0])),
-                jit.promote(space.get_interface(argv[1])),
-                jit.promote(space.get_interface(argv[2])),
-                jit.promote(space.get_interface(argv[3])))
+            method = self.get_method(v,
+                jit.promote(self.get_interface(argv[0], v)),
+                jit.promote(self.get_interface(argv[1], v)),
+                jit.promote(self.get_interface(argv[2], v)),
+                jit.promote(self.get_interface(argv[3], v)))
         else:
             vec = []
             for i in range(self.arity):
-                vec.append(space.get_interface(argv[i]))
+                vec.append(self.get_interface(argv[i], v))
             method = self.multimethod_table.get(vec, None)
         if method is not None:
             return method
@@ -97,6 +116,9 @@ class Multimethod(Object):
         vec = list(cls.interface for cls in spec)
         def _impl_(fn):
             self.multimethod_table[vec] = Builtin(fn)
+            for i in vec:
+                self.interface_table[i] = None
+            self.version = VersionTag()
             return fn
         return _impl_
 
@@ -123,6 +145,9 @@ class Multimethod(Object):
         if vec in self.multimethod_table:
             raise space.unwind(space.LError(u"Multimethod table is not overwritable."))
         self.multimethod_table[vec] = value
+        for i in vec:
+            self.interface_table[i] = None
+        self.version = VersionTag()
         return value
 
     def getattr(self, index):
@@ -158,3 +183,6 @@ def Multimethod_keys(self):
         space.List(list(vec))
         for vec in self.multimethod_table
     ])
+
+class VersionTag(object):
+    pass

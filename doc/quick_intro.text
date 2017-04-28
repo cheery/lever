@@ -507,6 +507,21 @@ The %"-" multimethod requires at least two arguments. If it
 gets 2 or more arguments, it retrieves the interface of
 those two arguments and goes to check into a lookup table.
 
+For each interface, the multimethod will make a quick check
+whether the interface appears in a table. It will take a
+super() of the interface until it finds a looping interface
+or an interface that appears in the table.
+
+Before doing the check into a lookup table, the multimethod's
+interface table is checked to see whether there is any method
+registered for an interface. If there isn't, the 
+
+If the interface has never seen that lookup table, the
+multimethod will take a supertype of the interface until
+it can find it from the table. If it reaches a null interface
+before finishing, it will give up and it just returns the interface.
+
+
 If there's a method in the lookup table, the multimethod
 will let the method take over. This only happens if the two
 arguments are common combination and present in the table.
@@ -540,9 +555,20 @@ Python. The reason is that we can actually reason about the
 behavior of this function by checking only into two tables
 while the program is running.
 
-It will help with JIT and with abstract interpretation of
-programs in overall.
+Multimethods will help with JIT and with abstract
+interpretation of programs in overall. But you better note
+that adding methods into the table will interfere with JIT
+that uses those methods for now.
 
+
+The rule about multimethod calling super may look like weird
+but it has a good reason to be there. It allows the extensions
+of an interface satisfy the usual subtyping constraints. 
+
+The thing is, if you create something like a Val that has
+defined multimethods. The extensions of that will keep using
+the same multimethod definitions just like that until you
+define new multimethods for your extended interface.
 
 
 
@@ -556,6 +582,7 @@ programs in overall.
 #section Not yet covered in here
 
 #begin{enumerate}
+#item Classes and customization of objects
 #item C foreign function interface that fetches the header
 definitions from a json file.
 #item A documentation system that can check its
@@ -577,4 +604,7 @@ and greenlet concurrency model provided by RPython.
 #item (Perhaps not so far in the future) Compiler / type
 inferencing / partial evaluation framework and integrated
 computer algebra system & autodifferentiator matching in the colors.
+#item (Airborne sky pie) Abstract interpretation, Symbolic execution,
+Verification, Static analysis tools for finding errors.
+#item (Upcoming on the idle time) Full protobuf support.
 #end{enumerate}
