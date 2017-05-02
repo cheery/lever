@@ -1,0 +1,168 @@
+doc = path("doc:/autodiff")
+
+# I copied some of the initial derivatives and equations from python 'ad'
+# module to bootstrap this off. I have to thank Abraham Lee for the 
+# helpful starting point.
+
+# The python AD had lc, qc, cp for first order, second order, third order.
+# I first try with just one derivative.
+
+# The derivatives are defined in respect to input variables, so we provide
+# new ones using a function. The result of trace() becomes a new input
+# variable. You can use it as 'x' on AD.d(x) to retrieve the derivative of
+# the function result.
+trace = (i):
+    if isinstance(i, AD)
+        ad = AD(i.real, dict(i.lc))
+    else
+        ad = AD(real)
+    ad.lc[ad] = 1.0
+    return ad
+
+# This approach should ensure that the library is always used correctly.
+
+# In the future versions you could determine which other properties you want
+# calculated by giving extra arguments into the 'trace'. This is reasonable
+# because you will always know which extra values you want at this point.
+
+# It is possible that the behavior of the AD is going to be a perfect
+# candinate for JIT-optimizations. Many of the loops here are unroll-safe and
+# the dictionary accesses could be safely elided.
+
+class AD
+    +init = (self, real=0.0, lc={}):
+        self.real = real
+        self.lc   = lc
+
+    +repr = (self):
+        return "AD(" ++ repr(self.real) ++ ", ...)"
+
+    d = (self, x):
+        return self.lc.get(x, 0.0)
+
+%"+"[[AD, AD]] = (a, b):
+    f = a.real + b.real
+    vars = list(set(a.lc) | set(b.lc))
+
+    lc_wrt_args = [1.0, 1.0]
+    #qc_wrt_args = [0.0, 0.0]
+    #cp_wrt_args = 0.0
+
+    return chain_rule(f, [a, b], vars, lc_wrt_args) # qc, cp
+
+%"-"[[AD, AD]] = (a, b):
+    f = a.real - b.real
+    vars = list(set(a.lc) | set(b.lc))
+
+    lc_wrt_args = [1.0, 1.0]
+    #qc_wrt_args = [0.0, 0.0]
+    #cp_wrt_args = 0.0
+    return chain_rule(f, [a, b], vars, lc_wrt_args) # qc, cp
+
+%"+expr"[[AD]] = (a):
+    f = +a.real
+    lc_wrt_args = [1.0]
+    return chain_rule(f, [a], list(a.lc), lc_wrt_args) # qc, cp
+
+%"-expr"[[AD]] = (a):
+    f = -a.real
+    lc_wrt_args = [-1.0]
+    return chain_rule(f, [a], list(a.lc), lc_wrt_args) # qc, cp
+
+%"*"[[AD, AD]] = (a, b):
+    f = a.real * b.real
+    vars = list(set(a.lc) | set(b.lc))
+    lc_wrt_args = [b.real, a.real]
+    #qc_wrt_args = [0.0, 0.0]
+    #cp_wrt_args = 1.0
+    return chain_rule(f, [a, b], vars, lc_wrt_args) # qc, cp
+
+%"/"[[AD, AD]] = (a, b):
+    f = a.real / b.real
+    lc_wrt_args = [1.0 / b.real, -(a.real / (b.real * b.real))]
+    #qc_wrt_args = [0.0, 2*x/(b.real * b.real * b.real)]
+    #cp_wrt_args = -1.0 / (b.real * b.real)
+    return chain_rule(f, [a, b], vars, lc_wrt_args) # qc, cp
+
+# pow x y
+#            if x>0:
+#                lc_wrt_args = [y*x**(y - 1), x**y*math.log(x)]
+#                qc_wrt_args = [y*(y - 1)*x**(y - 2), x**y*(math.log(x))**2]
+#                cp_wrt_args = x**y*(y*math.log(x) + 1)/x
+#            else:
+#                lc_wrt_args = [y*x**(y - 1), 0.]
+#                qc_wrt_args = [y*(y - 1)*x**(y - 2), 0.]
+#                cp_wrt_args = 0.
+
+# TODO: extend sin/cos/exp/log/sqrt to multimethods and rewrite these.
+ad_sin = (x):
+    f = sin(x.real)
+    lc_wrt_args = [cos(x.real)]
+    #qc_wrt_args = [-sin(x)]
+    #cp_wrt_args = 0.0
+    return chain_rule(f, [x], list(x.lc), lc_wrt_args) # qc, cp
+
+
+# At this point I understood what's going on here, except that the
+# cross product -thing is still a bit vague.
+ad_cos = (x):
+    f = cos(x.real)
+    lc_wrt_args = [-sin(x.real)]
+    return chain_rule(f, [x], list(x.lc), lc_wrt_args) # qc, cp
+
+ad_exp = (x):
+    f = exp(x.real)
+    lc_wrt_args = [f]
+    return chain_rule(f, [x], list(x.lc), lc_wrt_args) # qc, cp
+
+ad_log = (x):
+    f = log(x.real)
+    lc_wrt_args = [1.0 / x.real]
+    return chain_rule(f, [x], list(x.lc), lc_wrt_args) # qc, cp
+
+ad_sqrt = (x):
+    f = sqrt(x.real)
+    lc_wrt_args = [1.0 / (2.0*f)]
+    return chain_rule(f, [x], list(x.lc), lc_wrt_args) # qc, cp
+
+chain_rule = (real, ad_funcs, variables, lc_wrt): #, qc_wrt, cp_wrt):
+    num_funcs = ad_funcs.length
+    lc = {}
+    #qc = {}
+    for var in variables
+        lc[var] = 0.0
+    #    qc[var] = 0.0
+    # cp would be all vars combined if i<j: [x, y] = 0.0
+
+    for j in range(variables.length)
+        var1 = variables[j]
+        for k in range(variables.length)
+            var1 = variables[k]
+            for i in range(num_funcs)
+                f  = ad_funcs[i]
+                dh = lc_wrt[i]
+                #d2h = qc_wrt[i]
+                if j == k
+                    fdv1 = f.d(var1)
+                    lc[var1] += dh*fdv1
+                    #qc[var1] += dh*f.d2(var1) + d2h*(fdv1 * fdv1)
+                #elif j < k
+                    # cross-product second-order terms
+                    #tmp = dh*f.d2c(var1, var2) + d2h*f.d(var1)*f.d(var2)
+                    #cp_wrt_vars[(var1, var2)] += tmp
+
+            #if j==k and num_funcs > 1:
+            #    tmp = 2*cp_wrt*ad_funcs[0].d(var1)*ad_funcs[1].d(var1)
+            #    qc[var1] += tmp
+
+            #elif j<k and num_funcs>1:
+            #    tmp = cp_wrt*(ad_funcs[0].d(var1)*ad_funcs[1].d(var2) +
+            #                  ad_funcs[0].d(var2)*ad_funcs[1].d(var1))
+            #    cp[(var1, var2)] += tmp
+    return AD(real, lc)
+
+coerce[[AD, int]] = coerce[[AD, float]] = (a, b):
+    return [a, AD(b)]
+
+coerce[[int, AD]] = coerce[[float, AD]] = (a, b):
+    return [AD(a), b]
