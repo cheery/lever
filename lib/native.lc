@@ -1,0 +1,141 @@
+print_function = (func):
+    print(func.restype, func.label, func.argtypes)
+    for ebb in func.ebbs
+        print_ebb(ebb)
+
+print_ebb = (ebb):
+    print(ebb.label, iter_repr(ebb.input) ++ ":")
+    for op in ebb
+        print(" ", op, "=", op.name, op.args...)
+    if ebb.exit
+        print(" ", ebb.exit.name, ebb.exit.args...)
+    else
+        print("  <ebb not terminated>")
+
+class Function
+    +init = (self, label, argtypes, restype):
+        self.label = label
+        self.argtypes = argtypes
+        self.restype = restype
+        self.entry = EBB("entry")
+        self.ebbs = [self.entry]
+
+    new_ebb = (self, label="L" ++ self.ebbs.length.to_string()):
+        ebb = EBB(label)
+        self.ebbs.append(ebb)
+        return ebb
+
+    sort_reverse_postorder = (self):
+        self.ebbs = traverse_postorder(self.entry)
+        self.ebbs.reverse()
+
+class EBB
+    +init = (self, label):
+        self.label = label
+        self.input = {}
+        self.code = []
+        self.exit = null
+
+    arg = (self, label):
+        arg = self.input.get(label)
+        if not arg
+            self.input[label] = arg = Arg(label)
+        return arg
+
+    op = (self, name, args, io=false):
+        op = Op(name, args, io)
+        if not self.exit
+            op.index = self.code.length
+            self.code.append(op)
+        return op
+
+    rcond = (self, cond, values...):
+        return self.op("rcond",
+            [cond] ++ values)
+
+    jcond = (self, cond, ebb, output={}):
+        return self.op("jcond",
+            [cond, Exit(ebb, output)])
+
+    jump = (self, ebb, output={}):
+        exit = Op("jump", [Exit(ebb, output)])
+        if not self.exit
+            self.exit = exit
+        return exit
+
+    ret = (self, values...):
+        exit = Op("return", values)
+        if not self.exit
+            self.exit = exit
+        return exit
+
+    unreachable = (self):
+        exit = Op("unreachable", [])
+        if not self.exit
+            self.exit = exit
+        return exit
+
+    +iter = (self):
+        return iter(self.code)
+
+class Arg
+    +init = (self, label):
+        self.label = label
+        self.t = null
+
+    +repr = (self):
+        if isinstance(self.label, str)
+            return self.label
+        return repr(self.label)
+
+class Op
+    +init = (self, name, args, io=false):
+        self.name = name
+        self.args = args
+        self.t = null
+        self.io = io
+        self.index = -1
+
+    +repr = (self):
+        return "v" ++ self.index.to_string()
+
+class Exit
+    +init = (self, ebb, output={}):
+        self.ebb = ebb
+        self.output = output
+
+    +repr = (self):
+        return reprp(self.ebb.label) ++ iter_pairs(self.output)
+
+iter_pairs = (obj):
+    pairs = []
+    for item in obj.items()
+        pairs.append(
+            reprp(item[0]) ++ "=" ++ reprp(item[1]))
+    return iter_repr(pairs)
+
+iter_repr = (seq):
+    out = []
+    for x in seq
+        out.append(reprp(x))
+    return "(" ++ ", ".join(out) ++ ")"
+
+reprp = (item):
+    if isinstance(item, str)
+        return item
+    else
+        return repr(item)
+
+traverse_postorder = (entry, out=[], visit=set()):
+    visit.add(entry)
+    for op in entry
+        for arg in op.args
+            if isinstance(arg, Exit)
+                if arg.ebb not in visit
+                    traverse_postorder(arg.ebb, out, visit)
+    for arg in entry.exit.args
+        if isinstance(arg, Exit)
+            if arg.ebb not in visit
+                traverse_postorder(arg.ebb, out, visit)
+    out.append(entry)
+    return out
