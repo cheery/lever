@@ -377,7 +377,7 @@ class Stream
             return self.advance()
         self.sp = ch.is_space()
         if self.sp
-            self.indent += self.nl
+            self.indent += int(self.nl)
         else
             self.nl = (ch == "\n")
         if ch == "\n"

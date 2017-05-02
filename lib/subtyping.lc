@@ -1,0 +1,377 @@
+doc = path("doc:/subtyping")
+
+flow_pair = ():
+    neg = Type(-1)
+    pos = Type(+1)
+    neg.flow.add(pos)
+    pos.flow.add(neg)
+    return [neg, pos]
+
+class Type
+    +init = (self, pol=+1, terms={}):
+        self.pol = pol
+        self.terms = terms
+        self.flow = set() # double-link
+
+    +repr = (self):
+        a = []
+        for item in self.terms.values()
+            a.append(repr(item))
+        return "{" ++ " ".join(a) ++ "}"
+
+class Term
+    subsume = (self, other):
+        return true
+
+    pairs = (self, other):
+        return []
+
+    merge = (self, other, pol):
+        null
+        # On negative: union
+        # On positive: intersect
+
+    construct = (self, pos, neg):
+        return self
+
+# TODO: full instructions for
+#       writing terms and using this library.
+
+biunify = (p, q, visited):
+    assert p.polarity > q.polarity, "cannot biunify"
+    if [p, q] in visited
+        return
+    visited.add([p, q])
+    for s in q.flow
+        merge(s, p)
+    for s in p.flow
+        merge(s, q) 
+
+    # if there is var x in q+, and y in q- and x <= y is not true then fail
+    for key in q1.terms
+        t1 = q1.terms[key]
+        t2 = q2.terms.get(key)
+        # TODO: maybe too strict.
+        assert t2,             "cannot biunify"
+        assert t1.subsume(t2), "cannot biunify"
+        for pair in t1.pairs(t2)
+            biunify(pair[0], pair[1], visited)
+
+# This will turn DFA to NDFA.
+# I suppose there are other approaches because
+# (a -> b) M (c -> d) == (a J c) -> (b M d)
+merge = (q1, q2):
+    assert q1.pol == q2.pol
+    for key in q2.terms
+        t2 = q2.terms[key]
+        t1 = q1.terms.get(key)
+        if not t1
+            q1.terms[key] = t1
+        else
+            t1.merge(t2, q1.pol)
+    q1.flow.update(q2.flow)
+    for q3 in q2.flow
+        q3.flow.add(q1)
+
+# Deciding subsumption allows giving type annotations for the programs. It
+# is given on the page 127
+subsume = (q1, q2, visited):
+    assert q1.pol == q2.pol, "cases elided"
+    assert q1.pol > 0, "cases elided"
+    if [q1, q2] in visited
+        return true
+    visited.add([q1, q2])
+
+    for key in q1.terms
+        t1 = q1.terms[key]
+        t2 = q2.terms.get(key)
+        if not t2
+            return false
+        if not t1.subsume(t2)
+            return false
+        for pair in t1.pairs(t2)
+            if not subsume(pair[0], pair[1], visited)
+                return false
+    return true
+
+# "The simplest way to construct a type automaton from a positive or negative
+# type is to first construct a type automaton containing extra transitions labelled
+# by and then to remove these transitions in a second pass. This mirrors the
+# standard algorithm for constructing a nondeterministic finite automaton from
+# a regular expression"
+construct = (groups):
+    flow = {+1:{}, -1:{}}
+    recs = {}
+    visits = set()
+    visit_pos = (g):
+        return visit(g, +1, visit_pos, visit_neg)
+    visit_neg = (g):
+        return visit(g, -1, visit_neg, visit_pos)
+    visit = (g, pol, posf, negf):
+        assert g not in visits
+        visits.add(g)
+        if isinstance(g, VarRepr)
+            if g in recs
+                return recs[g]
+            try
+                return flow[pol][g]
+            except KeyError as ke
+                flow[pol][g] = qs = set([Type(pol)])
+                return qs
+        q = Type(pol)
+        if isinstance(g, Group)
+            assert g.pol == 0 or g.pol == pol
+            if g.rec
+                recs[g.rec] = q
+            q.terms[null] = block = []
+            for t in g.terms
+                block.extend( visit(t, pol, posf, negf) )
+            if g.rec
+                recs.pop(g.rec)
+        else
+            term = g.construct(posf, negf)
+            q.terms[interface(term)] = term
+        return set([q])
+    tmp = []
+    for group in groups
+        tmp.append(visit_pos(group))
+    # flow edge construction:
+    #   (q-) ----> (q+)
+    #   a in H(q-), a in H(q+)
+    for var in flow[-1]
+        bs = flow[+1].get(var, [])
+        for a in flow[-1][var]
+            for b in bs
+                a.flow.add(b)
+                b.flow.add(a)
+    builder = DFABuilder()
+    out = []
+    for q in tmp
+        out.append(builder.get(q))
+    builder.finalize()
+    return out
+
+deconstruct = (nodes):
+    builder = DFABuilder()
+    dfa = []
+    for node in nodes
+        dfa.append(builder.get(set([node]), node.pol))
+    builder.finalize()
+
+    flow_edges = []
+    vartab = {}
+    for node in builder.postorder
+        vartab[node] = set()
+        if node.pol < 0
+            for other in list(node.flow)
+                flow_edges.append([node, other])
+        node.flow.clear()
+    for edge in flow_edges
+        admissable(edge[0], edge[1])
+
+    vars = blank_labels()
+    while true
+        best = 0
+        biclique = null
+        for node in builder.postorder
+            a = set(node.flow)
+            b = set()
+            count = 0
+            for x in a
+                for y in x.flow
+                    if y not in b and y.flow >= a
+                        b.add(y)
+                        count += 1
+
+            if count > best
+                biclique = [a, b]
+                best = count
+        if best == 0
+            break
+        var = VarRepr(vars.next())
+        a = biclique[0]
+        b = biclique[1]
+        for x in a
+            x.flow.difference_update(b)
+            vartab[x].add(var)
+        for x in b
+            x.flow.difference_update(a)
+            vartab[x].add(var)
+
+    recurs = {}
+    lateral = {}
+    decon_pos = (n):
+        return decon(n, +1, decon_pos, decon_neg)
+    decon_neg = (n):
+        return decon(n, -1, decon_neg, decon_pos)
+    decon = (ns, pol, posf, negf):
+        if ns in recurs
+            recg = recurs[ns]
+            if not recg.rec
+                recg.rec = VarRepr()
+            return Group([recg.rec], pol)
+        recurs[ns] = group = Group([], pol)
+        for n in ns
+            assert n.pol == pol
+            for term in n.terms.values()
+                group.terms.append(term.deconstruct(posf, negf))
+            group.terms.extend(vartab[n])
+        group.terms.sort((a, b):
+            a.order > b.order)
+        if group.terms.length == 0
+            if ns in lateral
+                other = lateral[ns]
+                if other.terms.length == 0
+                    other.terms.append(VarRepr(vars.next()))
+                group.terms.extend(other.terms)
+            else
+                lateral[ns] = group
+        recurs.pop(ns)
+        return group
+
+    out = []
+    for n in dfa
+        if n.pol > 0
+            out.append(decon_pos(set([n])))
+        else
+            out.append(decon_neg(set([n])))
+    return out
+
+# flow edge simplification:
+# A flow edge q- ----> q+ is admissable iff t- <= t+
+#   where the types t-, t+ are the types represented by q-, q+
+
+# "This suggests a straightforward heuristic algorithm for optimising the set
+# of flow edges in a scheme automaton. First, we remove all of them. Then, we
+# add them back one at a time, skipping any that are admissable. While the
+# success of this heuristic depends greatly on the order flow edges are processed
+# in, I found that a reverse postorder traversal (so that flow edges on child nodes
+# are processed before parents) gave good results."
+
+# "Of course, in order to implement this we must have an algorithm that
+# decides subtyping problems of the form t- <= t+ (recall that biunification
+# operates on constraints t+ <= t-, so it is unsuitable). Such an algorithm
+# is described in Chapter 8, as it forms the core of the subsumption algorithm."
+admissable = (q1, q2):
+    if q2 in q1.flow
+        return true
+    else
+        q1.flow.add(q2)
+        q2.flow.add(q1)
+        if q1.terms.length == 0
+            return true
+        for key in q1.terms
+            t1 = q1.terms[key]
+            t2 = q2.terms.get(key)
+            if not t2             # These two might mean for worse problems.
+                return true
+            if not t1.subsume(t2)
+                return true
+            res = false
+            for pair in t1.pairs(t2)
+                res |= admissable(pair[0], pair[1])
+            if res
+                return true
+        q1.flow.discard(q2)
+        q2.flow.discard(q1)
+        return false
+
+class DFABuilder
+    +init = (self):
+        self.assoc = {}
+        self.visited = {}
+        self.postorder = []
+
+    get = (self, nodeset, pol=+1):
+        if pol >= 0
+            return self.build(nodeset, +1, self.pos, self.neg)
+        else
+            return self.build(nodeset, -1, self.neg, self.pos)
+
+    pos = (self, nodeset):
+        return set([self.build(nodeset, +1, self.pos, self.neg)])
+
+    neg = (self, nodeset):
+        return set([self.build(nodeset, -1, self.neg, self.pos)])
+
+    build = (self, nodeset, pol, posf, negf):
+        for n in nodeset
+            nodeset.update(n.terms.get(null, []))
+        node = self.visited.get(nodeset)
+        if node
+            assert node.pol == pol, "polarity conflict"
+            return node
+        self.visited[nodeset] = node = Type(pol)
+        for n in nodeset
+            assert n.pol == pol
+            for type in n.terms
+                if type == null
+                    continue
+                term = n.terms[type].construct(posf, negf)
+                dst = node.terms.get(type)
+                if dst
+                    dst.merge(term, node.pol)
+                else
+                    node.terms[type] = term
+            try
+                self.assoc[n].add(node)
+            except KeyError as ke
+                self.assoc[n] = set([node])
+        for key in node.terms
+            node.terms[key] = node.terms[key].construct(posf, negf)
+        self.postorder.append(node)
+        return node
+
+    finalize = (self):
+        for edge in self.visited.items()
+            node = edge[1]
+            for n in edge[0]
+                for f in n.flow
+                    node.flow.update(self.assoc.get(f, []))
+            node.flow.discard(node)
+
+# TODO: treat printing as a separate problem?
+blank_labels = ():
+    a = ord('a')
+    i = 0
+    while true
+        lab = chr(a + i % 26)
+        n = i // 26
+        while n > 0
+            lab = chr(a + n % 26) ++ lab
+            n = n // 26
+
+        yield lab
+        i += 1
+
+class VarRepr
+    +init = (self, name=null):
+        self.name = name
+
+    +repr = (self):
+        if self.name
+            return self.name
+        else
+            return "<var>"
+
+class Group
+    +init = (self, terms=[], pol=0):
+        self.pol = pol
+        self.terms = terms
+        self.rec = null
+
+    +repr = (self):
+        assert not self.rec
+            "implement recursion repr"
+        res = []
+        for i in self.terms
+            res.append(repr(i))
+        if res.length == 0
+            if self.pol > 0
+                return "(bot)"
+            else
+                return "(top)"
+        if self.pol > 0
+            return "(" ++ " | ".join(res) ++ ")"
+        else
+            return "(" ++ " & ".join(res) ++ ")"
