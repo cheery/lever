@@ -579,6 +579,62 @@ define new multimethods for your extended interface.
 
 
 
+
+#subsection Autodiff
+
+Lever stdlib comes with autodiff module. It is in it's
+infancy and currently driving the design of Lever.
+
+Automatic differentiation is a technique to retrieve a
+differential of a function without rewriting it.
+
+In lever autodifferentiation is activated by importing the
+'autodiff' module and constructing variables with it.
+
+#code ##
+    import autodiff
+
+    x = autodiff.var()
+    for i in range(10)
+        y = autodiff.ad_sin(x(i) * 2)
+        print("x:",    i,
+              "y:",    y.real,
+              "y/dx:", y.d(x))
+
+Program output (slightly formatted for readability):
+
+##
+    x: 0 y:  0.0            y/dx:  2.0
+    x: 1 y:  0.909297426826 y/dx: -0.832293673094
+    x: 2 y: -0.756802495308 y/dx: -1.30728724173
+    x: 3 y: -0.279415498199 y/dx:  1.9203405733
+    x: 4 y:  0.989358246623 y/dx: -0.291000067617
+    x: 5 y: -0.544021110889 y/dx: -1.67814305815
+    x: 6 y: -0.536572918    y/dx:  1.68770791746
+    x: 7 y:  0.990607355695 y/dx:  0.273474436416
+    x: 8 y: -0.287903316665 y/dx: -1.91531896065
+    x: 9 y: -0.750987246772 y/dx:  1.32063341649
+
+In future programs, rather than calling 'autodiff.ad_sin',
+the 'sin' is defined as a multimethod, and the autodiff just
+adds a new method for itself.
+
+Future plans for the autodifferentiator include making it
+more featureful and capable of calculating further auxiliary
+results. They are also a great target for JIT compiler
+optimizations and should interact favorably with numerous
+other standard libraries in Lever.
+
+
+
+
+
+
+
+
+
+
+
 #section Not yet covered in here
 
 #begin{enumerate}

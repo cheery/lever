@@ -8,18 +8,20 @@ doc = path("doc:/autodiff")
 # I first try with just one derivative.
 
 # The derivatives are defined in respect to input variables, so we provide
-# new ones using a function. The result of trace() becomes a new input
-# variable. You can use it as 'x' on AD.d(x) to retrieve the derivative of
-# the function result.
-trace = (i):
-    if isinstance(i, AD)
-        ad = AD(i.real, dict(i.lc))
-    else
-        ad = AD(real)
-    ad.lc[ad] = 1.0
-    return ad
+# new ones using the class below. X = Var() can be used as a guard for
+# the new input variable. You can then use AD.d(X) to retrieve the
+# derivative of the function result.
+class var
+    +call = (self, i):
+        if isinstance(i, AD)
+            ad = AD(i.real, dict(i.lc))
+        else
+            ad = AD(i)
+        ad.lc[self] = 1.0
+        return ad
 
-# This approach should ensure that the library is always used correctly.
+# This kind of small addition should help in optimizing the
+# autodiff later.
 
 # In the future versions you could determine which other properties you want
 # calculated by giving extra arguments into the 'trace'. This is reasonable
