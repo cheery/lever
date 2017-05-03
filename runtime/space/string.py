@@ -84,6 +84,24 @@ def String_join(string, seq):
             break
     return String(string.string.join(strings))
 
+@String.method(u"is_lower", signature(String))
+def String_is_lower(string):
+    for ch in string.string:
+        if not unicodedb.islower(ord(ch)):
+            return space.false
+    if len(string.string) == 0:
+        return space.false
+    return space.true
+
+@String.method(u"is_upper", signature(String))
+def String_is_upper(string):
+    for ch in string.string:
+        if not unicodedb.isupper(ord(ch)):
+            return space.false
+    if len(string.string) == 0:
+        return space.false
+    return space.true
+
 @String.method(u"is_alpha", signature(String))
 def String_is_alpha(string):
     for ch in string.string:

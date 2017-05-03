@@ -3,6 +3,7 @@ from interface import Object, null
 from listobject import List
 from numbers import Integer
 from rpython.rlib.objectmodel import compute_hash, r_dict
+from rpython.rlib.rarithmetic import intmask, r_uint
 import space
 
 def eq_fn(this, other):
@@ -29,6 +30,29 @@ class Set(Object):
 
     def iter(self):
         return SetIterator(self._set.iterkeys())
+
+    def eq(self, other):
+        if not isinstance(other, Set):
+            return False
+        if len(self._set) != len(other._set):
+            return False
+        for w_item in self._set.iterkeys():
+            if w_item not in other._set:
+                return False
+        return True
+
+    def hash(self):
+        multi = r_uint(1822399083) + r_uint(1822399083) + 1
+        hash = r_uint(1927868237)
+        hash *= r_uint(len(self._set) + 1)
+        for w_item in self._set.iterkeys():
+            h = w_item.hash()
+            value = (r_uint(h ^ (h << 16) ^ 89869747)  * multi)
+            hash = hash ^ value
+        hash = hash * 69069 + 907133923
+        if hash == 0:
+            hash = 590923713
+        return intmask(hash)
 
 @Set.method(u"copy", signature(Set))
 def Set_copy(self):

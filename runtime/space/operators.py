@@ -354,6 +354,10 @@ def _(a, b):
         rffi.cast(rffi.VOIDP, b.uint8data), b.length)
     return c
 
+@eq.multimethod_s(Set, Set)
+def cmp_eq(a, b):
+    return boolean(a.eq(b))
+
 @lt.multimethod_s(Set, Set)
 def cmp_lt(a, b):
     t = setobject.Set_is_superset(b, a)

@@ -38,7 +38,7 @@ read_string = (string, source=null):
 
 read_tokens = (tokens, source=null):
     parser = language.new_parser()
-    indent = :chartparser.IndentParser(tokens[0].start)
+    indent = chartparser.IndentParser(tokens[0].start);
         indent = language.table.terminal("indent")
         dedent = language.table.terminal("dedent")
         newline = language.table.terminal("newline")
@@ -63,10 +63,9 @@ read_tokens = (tokens, source=null):
     consttab = ConstantTable()
     functions = []
 
-    grammar_language.invoker(actions)
     blank_lhs = (x): # Not used often in this grammar.
         return null
-    rootdef = :object()
+    rootdef = object();
         body = parser.traverse(post, blank_lhs)
         scope = Scope(null, 0, 0, 0, [])
         origin = null
@@ -94,7 +93,7 @@ read_tokens = (tokens, source=null):
     }
     return code
 
-actions = :object()
+actions = object();
     lookup = (symbol):
         return Getvar(symbol.string)
     int = (token):
@@ -177,14 +176,14 @@ actions = :object()
                 Getvar(op.string), slot.getslot(bind), statement)))
 
     lookup_slot = (name):
-        return :object()
+        return object();
             base = null
             getslot = (base):
                 return Getvar(name.string)
             setslot = (base, expr):
                 return Setvar("auto", name.string, expr)
     attr_slot = (base, name):
-        return :object()
+        return object();
             base = base
             getslot = (base):
                 return Code("getattr", base, name.string)
@@ -193,7 +192,7 @@ actions = :object()
                     [base, name.string, expr],
                     [2, 0, 1])
     item_slot = (base, indexer):
-        return :object()
+        return object();
             base = base
             getslot = (base):
                 return Code("getitem", base, indexer)
@@ -246,11 +245,11 @@ actions = :object()
         otherwise.conds.insert(0, [cond, body])
         return otherwise
     %"else" = (body=[]):
-        return :object()
+        return object();
             conds = []
             body = body
     %"done" = ():
-        return :object()
+        return object();
             conds = []
             body = null
 
@@ -296,7 +295,7 @@ actions = :object()
                 header.base,
                 Code("constant", header.name)))
     class_header = (name, base = Getvar("object")):
-        return :object()
+        return object();
             name = name.string
             base = base
 
@@ -306,26 +305,26 @@ actions = :object()
         bindings.variadic = vararg
         return bindings
     only_variadic = (vararg):
-        return :object()
+        return object();
             variadic = vararg
             args = []
             opts = []
     blank_bindings = ():
-        return :object()
+        return object();
             variadic = null
             args = []
             opts = []
     optional = (var, expr):
-        return :object()
+        return object();
             var = var
             expr = expr
     mandatory = (var):
-        return :object()
+        return object();
             variadic = null
             args = [var]
             opts = []
     first_optional = (opt):
-        return :object()
+        return object();
             variadic = null
             args = []
             opts = [opt]
@@ -361,14 +360,14 @@ class Context
         self.finally_exc = null
 
     push_finally = (self, body):
-        self.loop = :object()
+        self.loop = object();
             type = "finally"
             parent = self.loop
             body = body
 
     push_loop = (self, cont, brk):
         self.loop_stack.append(self.loop)
-        self.loop = :object()
+        self.loop = object();
             type = "loop"
             parent = self.loop
             cont = cont
@@ -516,7 +515,7 @@ class Closure extends Cell
             localv.append(self.bindings.variadic.string)
             flags |= 1
         handle = Function(context.closures.length)
-        context.closures.append(:object()
+        context.closures.append(object();
             origin = context.origin
             body = header ++ self.body
             scope = Scope(context.scope, flags, argc, topc, localv)
@@ -716,7 +715,7 @@ class Cond extends Cell
             if val and val.has_result
                 context.op("move", result, val)
             context.op("jump", exit)
-            branch = :object()
+            branch = object();
                 blabel = label
                 bcond = cond
                 byes = byes
@@ -1139,7 +1138,7 @@ class Block
     +iter = (self):
         return iter(self.contents)
 
-    length = :property()
+    length = property();
         get = (self):
             return self.contents.length
 
