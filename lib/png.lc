@@ -1,0 +1,161 @@
+import fs, zlib
+
+png_header = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
+
+read_file = (path):
+    data = fs.read_file(path, "b")
+    ended = false
+    decoder = null
+    for chunk in read_png_chunks(data)
+        assert not ended, "file corruption"
+        if chunk.name == "IHDR"
+            IHDR = read_IHDR(chunk.data)
+            assert IHDR.bit_depth == 8
+                "unusual bit depths not supported by the image decoder"
+            assert IHDR.compression_method == 0
+                "compression method of the image is unknown to the decoder"
+            assert IHDR.filter_method == 0
+                "image filter method is not 0 (adaptive filtering)"
+            assert IHDR.interlace_method == 0
+                "image uses interlacing, that is not implemented by the decoder"
+            assert IHDR.color_type == 6
+                "RGBA supported only"
+            bpp = (IHDR.bit_depth * 4) // 8 # for the RGBA.
+            decoder = Decoder(IHDR.width, IHDR.height, bpp)
+        elif chunk.name == "IDAT"
+            decoder.read(chunk.data)
+        elif chunk.name == "IEND"
+            ended = true
+        else
+            assert chunk.name[0].is_lower()
+                "png contains a critical chunk unknown to the decoder"
+    assert ended, "file truncated"
+    return object();
+        format = "R8G8B8A8_SRGB" # well.. assumptions. TODO: Should read the color profile actually!
+        data = decoder.data
+        width = decoder.width
+        height = decoder.height
+
+class Decoder
+    +init = (self, width, height, stride):
+        self.z = zlib.Decompress()
+        self.width  = width
+        self.height = height
+        self.data = Uint8Array(width * height * stride)
+        self.stride = stride
+        self.y_stride = stride * width
+        self.filter = null
+        self.x = 0
+        self.l = 0
+        self.r = self.y_stride
+        self.new_scanline = true
+
+    read = (self, data):
+        data = self.z.decompress(data)
+        for byte in data
+            if self.new_scanline
+                self.filter = decode_filters[byte]
+                self.new_scanline = false
+                continue
+            if self.l == 0
+                u = 0
+                c = 0
+                if self.x - self.stride >= self.l
+                    l = self.data[self.x - self.stride]
+                else
+                    l = 0
+            else
+                u = self.data[self.x - self.y_stride]
+                if self.x - self.stride >= self.l
+                    l = self.data[self.x - self.stride]
+                    c = self.data[self.x - self.y_stride - self.stride]
+                else
+                    l = 0
+                    c = 0
+            self.data[self.x] = self.filter(byte, l, u, c)
+            self.x += 1
+            if self.x >= self.r
+                self.l += self.y_stride
+                self.r += self.y_stride
+                self.new_scanline = true
+
+decode_filters = {
+    # none
+    0: (byte, l, u, c):
+        return byte
+    # sub
+    1: (byte, l, u, c):
+        return byte + l
+    # up
+    2: (byte, l, u, c):
+        return byte + u
+        if prior
+            return byte + prior[index]
+        return byte
+    # average
+    3: (byte, l, u, c):
+        return byte + (l+u) // 2
+    # paeth
+    4: (byte, l, u, c):
+        return byte + paeth_predictor(l, u, c)
+}
+
+# https://www.w3.org/TR/PNG-Filters.html section 6.6
+paeth_predictor = (a, b, c):
+    p = a + b - c
+    pa = abs_int(p - a)
+    pb = abs_int(p - b)
+    pc = abs_int(p - c)
+    if pa <= pb and pa <= pc
+        return a
+    elif pb <= pc
+        return b
+    else
+        return c
+
+# TODO: make them into multimethods
+abs_int = (a):
+    if a < 0
+        return -a
+    return a
+
+# bits per sample or palette index
+# valid bit depths: 1, 2, 4, 8, 16
+# color type: 1 (palette used) | 2 (color used) | 4 (alpha channel)
+# 0,  1,2,4,8,16   each pixel is a grayscale sample
+# 2,  8, 16        each pixel is R,G,B triple.
+# 3,  1,2,4,8      each pixel is a palette index. PLTE must appear.
+# 4,  8, 16        each pixel is a grayscale sample, with alpha sample.
+# 6,  8, 16        each pixel is R,G,B triple, followed by alpha sample.
+
+read_IHDR = (data):
+    return object();
+        width  = decode_i32(data, 0)
+        height = decode_i32(data, 4)
+        bit_depth  = data[8]
+        color_type = data[9]
+        compression_method = data[10]
+        filter_method = data[11]
+        interlace_method = data[12]
+
+
+read_png_chunks = (data, do_crc_check=true):
+    is_png = (list(data[0 .: 8]) == png_header)
+    assert is_png, "not a png file"
+    i = 8
+    while i < data.length
+        length = decode_i32(data, i)
+        chunk = object()
+        chunk.name = chr(data[i+4]) ++ chr(data[i+5]) ++ chr(data[i+6]) ++ chr(data[i+7])
+        chunk.data = data[i+8 .: i+8+length]
+        chunk.crc = decode_i32(data, i+length+8)
+        if do_crc_check
+            assert chunk.crc == zlib.crc32(data[i+4 .: i+length+8])
+                "CRC check failed"
+        yield chunk
+        i += 12 + length
+
+
+decode_i32 = (data, i):
+    return (data[i+0] << 24 | data[i+1] << 16
+          | data[i+2] <<  8 | data[i+3])

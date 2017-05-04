@@ -1,0 +1,13 @@
+import png
+
+main = ():
+    for i in range(10)
+        image = png.read_file(dir ++ "frants_boe_villender_test.png")
+    #for i in range(0, image.width*4, 16)
+    #    print(hex_intro(image.data[i .:])...)
+
+hex_intro = (seq):
+    for n in seq[0 .: 16]
+        yield n.to_string(16).rjust(2, '0')
+    if seq.length >= 16
+        yield "..."
