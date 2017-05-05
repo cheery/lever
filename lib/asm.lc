@@ -68,8 +68,12 @@ encode_ins = (uid, args):
         op_enc = ops[i]["encoding"]
         arg    = args[i]
         # "addressing_mode" and "name" are ignored.
-        assert arg.type.size == ops[i]["value_size_bits"]
-            [arg.type, ops[i]["value_size_bits"]]
+        if "value_size_bits" in ops[i]
+            assert arg.type.size == ops[i]["value_size_bits"]
+                [arg.type, ops[i]["value_size_bits"]]
+        elif ops[i]["name"] != "m"
+            assert ops[i]["name"] == "rel" ++ arg.type.size.to_string()
+                [arg.type, ops[i]["name"]]
         if op_enc == "MODRM_RM_ENCODING"
             if isinstance(arg, Register)
                 modrm |= 3 << 6
@@ -82,8 +86,8 @@ encode_ins = (uid, args):
                 elif displace != 0 or arg.base == 5
                     modrm |= 1 << 6
                 rex |= 1 * (arg.base >> 3)
-                modrm |= arg.base & 7
                 if arg.index >= 0 or arg.base & 7 == 4
+                    modrm |= 4
                     sib |= arg.base & 7
                     if arg.index < 0
                         sib |= 4 << 3
@@ -92,6 +96,8 @@ encode_ins = (uid, args):
                         sib |= (arg.index & 7) << 3
                         assert arg.index != 4
                     sib |= {1:0, 2:1, 4:2, 8:3}[arg.scale] << 6
+                else
+                    modrm |= arg.base & 7
             elif isinstance(arg, Relative)
                 modrm |= 5
                 displace = arg.offset
@@ -111,7 +117,6 @@ encode_ins = (uid, args):
             imm.append(arg.value)
         else
             assert false, op_enc
-
 
     prefixes = enc.get("legacy_prefixes", {})
     if prefixes.get("has_mandatory_operand_size_override_prefix")
@@ -153,7 +158,9 @@ encode_ins = (uid, args):
         displace_size = 0
         if mod < 3 and modrm & 7 == 4
             out.append(sib)
-        if (mod == 0 and modrm & 7 == 5) or mod == 2
+        if (mod == 0 and modrm & 7 == 5) or
+           (mod == 0 and modrm & 7 == 4 and sib & 7 == 5) or
+           (mod == 2)
             displace_size = 4
         elif mod == 1
             displace_size = 1
@@ -167,8 +174,8 @@ encode_ins = (uid, args):
 
     cob = enc.get("code_offset_bytes", 0)
     if cob > 0
-        imm_format = [cob]
-        assert "immediate_value_bytes" not in enc
+        imm_format = enc.get("immediate_value_bytes", [])
+        imm_format ++= [cob]
     else
         imm_format = enc.get("immediate_value_bytes", [])
 

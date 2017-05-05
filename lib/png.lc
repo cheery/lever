@@ -61,7 +61,7 @@ class Decoder
                 data = data[1 .:]
             L = min(self.y_stride - index, data.length)
             i = index
-            self.filter(prior, scanline, data[.: L], self.stride, index)
+            self.filter(prior, scanline, data[.: L], self.stride, index, L)
             if index + L >= self.y_stride
                 prior    = scanline
                 scanline = self.data[self.next_scanline .: self.next_scanline + self.y_stride]
@@ -77,34 +77,34 @@ class Decoder
 # https://www.w3.org/TR/PNG-Filters.html section 6.6
 decode_filters = [
     # none
-    ((prior, scanline, data, stride, offset):
-        for i in range(offset, offset+data.length)
+    ((prior, scanline, data, stride, offset, length):
+        for i in range(offset, offset+length)
             scanline[i] = data[i - offset]
     ),
     # sub
-    ((prior, scanline, data, stride, offset):
-        for i in range(offset, offset+data.length)
+    ((prior, scanline, data, stride, offset, length):
+        for i in range(offset, offset+length)
             if i < stride
                 scanline[i] = data[i - offset]
             else
                 scanline[i] = data[i - offset] + scanline[i - stride]
     ),
     # up
-    ((prior, scanline, data, stride, offset):
-        for i in range(offset, offset+data.length)
+    ((prior, scanline, data, stride, offset, length):
+        for i in range(offset, offset+length)
             scanline[i] = data[i - offset] + prior[i]
     ),
     # average
-    ((prior, scanline, data, stride, offset):
-        for i in range(offset, offset+data.length)
+    ((prior, scanline, data, stride, offset, length):
+        for i in range(offset, offset+length)
             u = prior[i]
             if i >= stride
                 u = scanline[i - stride] + u
             scanline[i] = data[i - offset] + u // 2
     ),
     # paeth
-    ((prior, scanline, data, stride, offset):
-        for i in range(offset, offset+data.length)
+    ((prior, scanline, data, stride, offset, length):
+        for i in range(offset, offset+length)
             b = prior[i]
             if i < stride
                 a = 0

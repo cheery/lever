@@ -1,0 +1,241 @@
+import asm, fs, ffi, mman, platform
+from asm import Address, Register, Relative, Immediate
+from asm import i8, i16, i32, i64
+
+main = ():
+    assert platform.arch == "x86_64"
+        "It just might not work on x86"
+    assert platform.name.startswith("linux")
+        "Also this depends on the SystemV calling conventions."
+
+    arg_0 = Register(i64, 7) # RDI
+    arg_1 = Register(i64, 6) # RSI
+    arg_2 = Register(i64, 2) # RDX
+    arg_3 = Register(i64, 1) # RCX
+    arg_4 = Register(i64, 8)
+    arg_5 = Register(i64, 9)
+
+    loop_label = 0
+    exit_label = 0
+    ja_label = 0
+    jl1_label = 0
+    jl2_label = 0
+
+    assemble = ():
+        # 1811 PUSH r64                    [64] Push r64.
+        # we need additional register to clobber.
+        emit(1811, Register(i64, 3)) # x .r3
+        emit(1811, Register(i64, 10)) #   .r10
+        emit(1811, Register(i64, 11)) #   .r11
+        emit(1811, Register(i64, 12)) #   .r12
+        emit(1811, Register(i64, 13)) # a .r13
+        emit(1811, Register(i64, 14)) # b .r14
+        emit(1811, Register(i64, 15)) # c .r15
+        # i = 0 .r0
+        # 5973 XOR m64 r64                 [64] r/m64 XOR r64.
+        emit(5973, Register(i64, 0), Register(i64, 0))
+        emit(5973, Register(i64, 13), Register(i64, 13))
+        emit(5973, Register(i64, 15), Register(i64, 15))
+        # j = offset .arg_4(8)
+        # 1289 NEG r64                     [64] Two's complement negate r/m64.
+        #   74 ADD r64 r64                 [64] Add r64 to r/m64.
+        # k = j - stride .r1
+        emit(1289, Register(i64, 1))
+        emit(  74, Register(i64, 1), Register(i64, 8))
+        #  878 JL rel8                     [64] [L] Jump short if less (SFâ  OF).
+        emit( 878, Immediate(i8, loop_label - jl1_label))
+        jl1_label := output.length
+        emit(1254, Register(i64, 13), Address(i8, 0, 7, 1)) # [prior .r7 + k .r1]
+        emit(1254, Register(i64, 15), Address(i8, 0, 6, 1)) # [scanline .r6 + k .r1]
+        # loop:
+        loop_label := output.length
+        # 0475 CMP m64 r64                 [64] Compare r64 with r/m64.
+        # if i >= length goto exit
+        emit( 475, Register(i64, 0), arg_5)
+        # 0862 JAE rel32                   [64] [L] Jump short if above or equal (CF=0).
+        emit( 862, Immediate(i32, exit_label - ja_label))
+        ja_label := output.length
+        ## Test
+        # emit(  54, Address(i64, 0, arg_0.index), Immediate(i32, 1))
+        # 1254 MOVZX r64 m8                [64] Move byte to quadword, zero-extension.
+        #     x = input[i]
+        emit(1254, Register(i64, 14), Address(i8, 0, 7, 8)) # [prior .r7 + j .r8]
+        # Starting paeth predictor here. a.r13, b.r14, c.r15
+        # 1006 LEA r64 m                   [64] Store effective address for m in register r64.
+        # 2327 SUB r64 m64                 [64] Subtract r/m64 from r64.
+        #p = a + b - c    p.r10
+        emit(1006, Register(i64, 10), Address(i64, 0, 13, 14))
+        emit(2327, Register(i64, 10), Register(i64, 15))
+        emit(1289, Register(i64, 10)) # negate to use LEA again.
+        #  335 CMOVL r64 m64               [64] Move if less (SFâ  OF).
+        # 1127 MOV r64 r64                 [64] Move r/m64 to r64.
+        #pa = abs(a - p)  p.r10 a.r13     pa.r11
+        emit(1127, Register(i64,  3), Register(i64, 13)) 
+        emit(1006, Register(i64, 11), Address(i64, 0, 10, 13)) # The a.r13 is free now.
+        # ABS on R11
+        emit(1127, Register(i64, 13), Register(i64, 11)) 
+        emit(1289, Register(i64, 11)) # negate to use CMOVL
+        emit( 335, Register(i64, 11), Register(i64, 13))
+        #pb = abs(b - p)  p.r10 a.r13     pa.r12
+        emit(1006, Register(i64, 12), Address(i64, 0, 10, 14))
+        # ABS on R12
+        emit(1127, Register(i64, 13), Register(i64, 12)) 
+        emit(1289, Register(i64, 12)) # negate to use CMOVL
+        emit( 335, Register(i64, 12), Register(i64, 13))
+        # Now we want to compare and CMOVL if relevant.
+        emit( 475, Register(i64, 12), Register(i64, 11))
+        emit( 335, Register(i64, 11), Register(i64, 12))
+        emit( 335, Register(i64,  3), Register(i64, 14))
+        #pc = abs(c - p)  p.r10 a.r13     pa.r11
+        emit(1006, Register(i64, 12), Address(i64, 0, 10, 15))
+        # ABS on R12
+        emit(1127, Register(i64, 13), Register(i64, 12)) 
+        emit(1289, Register(i64, 12)) # negate to use CMOVL
+        emit( 335, Register(i64, 12), Register(i64, 13))
+        # Now we want to compare and CMOVL if relevant.
+        emit( 475, Register(i64, 12), Register(i64, 11))
+        emit( 335, Register(i64, 11), Register(i64, 12))
+        emit( 335, Register(i64,  3), Register(i64, 15))
+        # Done with paeth, next we add.
+        #emit(1254, Register(i64, 3), Address(i8, 0, 2, 0)) # [input .r2 + i .r0]
+        #   78 ADD r8 m8                   [64] [L] Add r/m8 to r8.
+        emit(  78, Register(i8, 3), Address(i8, 0, 2, 0)) # [input .r2 + i .r0]
+
+        # 1097 MOV m8 r8                   [64] [L] Move r8 to r/m8.
+        #     scanline[j] = x
+        emit(1097, Address(i8, 0, 6, 8), Register(i8, 3)) # [scanline .r6 + j .r8]
+        # 0072 ADD r64 imm8                [64] Add sign-extended imm8 to r/m64.
+        #     i += 1
+        emit(  72, Register(i64, 0), Immediate(i8, 1))
+        #     j += 1
+        emit(  72, Register(i64, 8), Immediate(i8, 1))
+        # clean a and c
+        emit(5973, Register(i64, 13), Register(i64, 13))
+        emit(5973, Register(i64, 15), Register(i64, 15))
+        #     k += 1
+        emit(  72, Register(i64, 1), Immediate(i8, 1))
+
+        #  878 JL rel8                     [64] [L] Jump short if less (SFâ  OF).
+        emit( 878, Immediate(i8, loop_label - jl2_label))
+        jl2_label := output.length
+        emit(1254, Register(i64, 13), Address(i8, 0, 7, 1)) # [prior .r7 + k .r1]
+        emit(1254, Register(i64, 15), Address(i8, 0, 6, 1)) # [scanline .r6 + k .r1]
+
+        #     jump loop
+        # 0886 JMP rel32                   [64] [L] Jump short, RIP = RIP + 8-bit displacement sign extended to 64-bits
+        emit( 886, Immediate(i32, loop_label - exit_label))
+        # exit:
+        exit_label := output.length
+        # Restore .r3 we clobbered. 
+        # 1638 POP r64                     [64] Pop top of stack into r64; increment stack pointer. Cannot encode 32-bit operand size.
+        emit(1638, Register(i64, 15))
+        emit(1638, Register(i64, 14))
+        emit(1638, Register(i64, 13))
+        emit(1638, Register(i64, 12))
+        emit(1638, Register(i64, 11))
+        emit(1638, Register(i64, 10))
+        emit(1638, Register(i64, 3))
+        #     return
+        emit(1901) # RET NEAR
+
+
+    emit = (uid, args...):
+        output.extend(asm.encode_ins(uid, args))
+
+    output = []
+    assemble()
+    output = []
+    assemble()
+
+
+
+    # #   54 ADD m64 imm32               [64] Add imm32 sign-extended to 64-bits to r/m64.
+    # emit(  54, Address(i64, 0, arg_0.index), Immediate(i32, 2))
+    # # 1094 MOV m64 r64                 [64] Move r64 to r/m64.
+    # emit(1094, Register(i64, 0), arg_5)
+    # emit(1901) # RET NEAR
+
+    # So that one can ndisasm this.
+    fd = fs.open(dir ++ "dump", fs.WRONLY | fs.CREAT | fs.TRUNC)
+    fd.pwrite(Uint8Array(output), 0)
+    fd.close()
+
+    buf = mman.Asmbuf(4096)
+    buf.memcpy(Uint8Array(output))
+    buf.finalize()
+
+    
+    prior    = Uint8Array(32)
+    scanline = Uint8Array(32)
+    input    = Uint8Array(16)
+    for i in range(scanline.length)
+        prior[i]    = 0
+        scanline[i] = 0
+    for i in range(input.length)
+        input[i]    = i
+
+    print(asm.format_hex(prior)...)
+    print(asm.format_hex(scanline)...)
+    print(asm.format_hex(input)...)
+
+    print("preparing the function pointer")
+    c_type = ffi.cfunc(ffi.int, [
+        ffi.voidp, ffi.voidp, ffi.voidp,   # prior, scanline, data
+        ffi.size_t,ffi.size_t,ffi.size_t]) # stride, offset, length
+    c_func = ffi.cast(buf, c_type)
+    print("new c function", c_func)
+    #res = c_func(prior, scanline, input, 4, 2, input.length)
+    #print("call result:", res) # prints 'call result: 23'
+    #print(asm.format_hex(prior)...)
+    #print(asm.format_hex(scanline)...)
+    #print(asm.format_hex(input)...)
+
+    png.decode_filters[4] = c_func
+    main_png()
+
+
+    buf.free() 
+
+
+import png, fs, vmprof
+
+
+main_png = ():
+    vmprof_fd = fs.open(dir ++ "png.vmprof",
+        fs.WRONLY | fs.TRUNC | fs.CREAT)
+    vmprof.enable(vmprof_fd, 0.0001)
+
+    for i in range(10)
+        image = png.read_file(dir ++ "../png/frants_boe_villender_test.png")
+
+    for i in range(0, image.width*image.height*4, image.width*4)
+        print(hex_intro(image.data[i .: i+image.width*4])...)
+
+    vmprof.disable()
+    vmprof_fd.close()
+
+main_heated = ():
+    print("heating up")
+    for i in range(10)
+        image = png.read_file(dir ++ "../png/frants_boe_villender_test.png")
+    print("...")
+
+    start = time()
+    for i in range(10)
+        image = png.read_file(dir ++ "../png/frants_boe_villender_test.png")
+    dur = time() - start
+    print("test took", dur, "seconds")
+    
+
+hex_intro = (seq):
+    if seq.length <= 32
+        for n in seq[0 .: 16]
+            yield n.to_string(16).rjust(2, '0')
+        if seq.length <= 16
+            yield "..."
+    else
+        for n in seq[0 .: 16]
+            yield n.to_string(16).rjust(2, '0')
+        yield "..."
+        for n in seq[seq.length - 16 .: ]
+            yield n.to_string(16).rjust(2, '0')

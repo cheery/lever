@@ -8,11 +8,24 @@ main = ():
     for i in range(10)
         image = png.read_file(dir ++ "frants_boe_villender_test.png")
 
-    #for i in range(0, image.width*image.height*4, image.width*4)
-    #    print(hex_intro(image.data[i .: i+image.width*4])...)
+    for i in range(0, image.width*image.height*4, image.width*4)
+        print(hex_intro(image.data[i .: i+image.width*4])...)
 
     vmprof.disable()
     vmprof_fd.close()
+
+main_heated = ():
+    print("heating up")
+    for i in range(10)
+        image = png.read_file(dir ++ "frants_boe_villender_test.png")
+    print("...")
+
+    start = time()
+    for i in range(10)
+        image = png.read_file(dir ++ "frants_boe_villender_test.png")
+    dur = time() - start
+    print("test took", dur, "seconds")
+    
 
 hex_intro = (seq):
     if seq.length <= 32

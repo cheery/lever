@@ -1,0 +1,14 @@
+import asm, fs, ffi, mman, platform
+from asm import Address, Register, Relative, Immediate
+from asm import i8, i16, i32, i64
+
+main = (args):
+    assert platform.arch == "x86_64"
+        "It just might not work on x86"
+    if args.length <= 1
+        for name in asm.by_name
+            print(name)
+
+    for name in args[1 .:]
+        for uid in asm.by_name[name]
+            asm.print_ins_entry(asm.instructions[uid])
