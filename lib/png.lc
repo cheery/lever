@@ -61,15 +61,7 @@ class Decoder
                 data = data[1 .:]
             L = min(self.y_stride - index, data.length)
             i = index
-            for i in range(index, index+L)
-                if i < self.stride
-                    l = 0
-                    c = 0
-                else
-                    l = scanline[i - self.stride]
-                    c = prior[i - self.stride]
-                u = prior[i]
-                scanline[i] = data[i-index] + self.filter(l, u, c)
+            self.filter(prior, scanline, data[.: L], self.stride, index)
             if index + L >= self.y_stride
                 prior    = scanline
                 scanline = self.data[self.next_scanline .: self.next_scanline + self.y_stride]
@@ -85,31 +77,54 @@ class Decoder
 # https://www.w3.org/TR/PNG-Filters.html section 6.6
 decode_filters = [
     # none
-    (l, u, c):
-        return 0,
+    ((prior, scanline, data, stride, offset):
+        for i in range(offset, offset+data.length)
+            scanline[i] = data[i - offset]
+    ),
     # sub
-    (l, u, c):
-        return l,
+    ((prior, scanline, data, stride, offset):
+        for i in range(offset, offset+data.length)
+            if i < stride
+                scanline[i] = data[i - offset]
+            else
+                scanline[i] = data[i - offset] + scanline[i - stride]
+    ),
     # up
-    (l, u, c):
-        return u,
+    ((prior, scanline, data, stride, offset):
+        for i in range(offset, offset+data.length)
+            scanline[i] = data[i - offset] + prior[i]
+    ),
     # average
-    (l, u, c):
-        return (l+u) // 2,
+    ((prior, scanline, data, stride, offset):
+        for i in range(offset, offset+data.length)
+            u = prior[i]
+            if i >= stride
+                u = scanline[i - stride] + u
+            scanline[i] = data[i - offset] + u // 2
+    ),
     # paeth
-    (a, b, c):
-        p = a + b - c
-        pa = abs(p - a)
-        pb = abs(p - b)
-        pc = abs(p - c)
-        if pa <= pb and pa <= pc
-            return a
-        elif pb <= pc
-            return b
-        else
-            return c
+    ((prior, scanline, data, stride, offset):
+        for i in range(offset, offset+data.length)
+            b = prior[i]
+            if i < stride
+                a = 0
+                c = 0
+            else
+                a = scanline[i - stride]
+                c = prior[i - stride]
+            p = a + b - c
+            pa = abs(p - a)
+            pb = abs(p - b)
+            pc = abs(p - c)
+            if pa <= pb and pa <= pc
+                x = a
+            elif pb <= pc
+                x = b
+            else
+                x = c
+            scanline[i] = data[i - offset] + x
+    ),
 ]
-
 
 # bits per sample or palette index
 # valid bit depths: 1, 2, 4, 8, 16
