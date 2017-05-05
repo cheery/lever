@@ -1,13 +1,28 @@
-import png
+import png, fs, vmprof
 
 main = ():
+    vmprof_fd = fs.open(dir ++ "png.vmprof",
+        fs.WRONLY | fs.TRUNC | fs.CREAT)
+    vmprof.enable(vmprof_fd, 0.0001)
+
     for i in range(10)
         image = png.read_file(dir ++ "frants_boe_villender_test.png")
-    #for i in range(0, image.width*4, 16)
-    #    print(hex_intro(image.data[i .:])...)
+
+    #for i in range(0, image.width*image.height*4, image.width*4)
+    #    print(hex_intro(image.data[i .: i+image.width*4])...)
+
+    vmprof.disable()
+    vmprof_fd.close()
 
 hex_intro = (seq):
-    for n in seq[0 .: 16]
-        yield n.to_string(16).rjust(2, '0')
-    if seq.length >= 16
+    if seq.length <= 32
+        for n in seq[0 .: 16]
+            yield n.to_string(16).rjust(2, '0')
+        if seq.length <= 16
+            yield "..."
+    else
+        for n in seq[0 .: 16]
+            yield n.to_string(16).rjust(2, '0')
         yield "..."
+        for n in seq[seq.length - 16 .: ]
+            yield n.to_string(16).rjust(2, '0')

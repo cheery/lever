@@ -44,80 +44,72 @@ class Decoder
         self.data = Uint8Array(width * height * stride)
         self.stride = stride
         self.y_stride = stride * width
-        self.filter = null
-        self.x = 0
-        self.l = 0
-        self.r = self.y_stride
-        self.new_scanline = true
+        self.filter   = null
+        self.prior    = self.data[self.y_stride .: self.y_stride*2]
+        self.scanline = self.data[0 .: self.y_stride]
+        self.index    = 0
+        self.next_scanline = self.y_stride
 
     read = (self, data):
+        prior    = self.prior
+        scanline = self.scanline
+        index    = self.index
         data = self.z.decompress(data)
-        for byte in data
-            if self.new_scanline
-                self.filter = decode_filters[byte]
-                self.new_scanline = false
-                continue
-            if self.l == 0
-                u = 0
-                c = 0
-                if self.x - self.stride >= self.l
-                    l = self.data[self.x - self.stride]
-                else
-                    l = 0
-            else
-                u = self.data[self.x - self.y_stride]
-                if self.x - self.stride >= self.l
-                    l = self.data[self.x - self.stride]
-                    c = self.data[self.x - self.y_stride - self.stride]
-                else
+        while data.length > 0
+            if index == 0 
+                self.filter = decode_filters[data[0]]
+                data = data[1 .:]
+            L = min(self.y_stride - index, data.length)
+            i = index
+            for i in range(index, index+L)
+                if i < self.stride
                     l = 0
                     c = 0
-            self.data[self.x] = self.filter(byte, l, u, c)
-            self.x += 1
-            if self.x >= self.r
-                self.l += self.y_stride
-                self.r += self.y_stride
-                self.new_scanline = true
-
-decode_filters = {
-    # none
-    0: (byte, l, u, c):
-        return byte
-    # sub
-    1: (byte, l, u, c):
-        return byte + l
-    # up
-    2: (byte, l, u, c):
-        return byte + u
-        if prior
-            return byte + prior[index]
-        return byte
-    # average
-    3: (byte, l, u, c):
-        return byte + (l+u) // 2
-    # paeth
-    4: (byte, l, u, c):
-        return byte + paeth_predictor(l, u, c)
-}
+                else
+                    l = scanline[i - self.stride]
+                    c = prior[i - self.stride]
+                u = prior[i]
+                scanline[i] = data[i-index] + self.filter(l, u, c)
+            if index + L >= self.y_stride
+                prior    = scanline
+                scanline = self.data[self.next_scanline .: self.next_scanline + self.y_stride]
+                index    = 0
+                self.next_scanline += self.y_stride
+            else
+                index += L
+            data = data[L .:]
+        self.prior    = prior
+        self.scanline = scanline
+        self.index    = index
 
 # https://www.w3.org/TR/PNG-Filters.html section 6.6
-paeth_predictor = (a, b, c):
-    p = a + b - c
-    pa = abs_int(p - a)
-    pb = abs_int(p - b)
-    pc = abs_int(p - c)
-    if pa <= pb and pa <= pc
-        return a
-    elif pb <= pc
-        return b
-    else
-        return c
+decode_filters = [
+    # none
+    (l, u, c):
+        return 0,
+    # sub
+    (l, u, c):
+        return l,
+    # up
+    (l, u, c):
+        return u,
+    # average
+    (l, u, c):
+        return (l+u) // 2,
+    # paeth
+    (a, b, c):
+        p = a + b - c
+        pa = abs(p - a)
+        pb = abs(p - b)
+        pc = abs(p - c)
+        if pa <= pb and pa <= pc
+            return a
+        elif pb <= pc
+            return b
+        else
+            return c
+]
 
-# TODO: make them into multimethods
-abs_int = (a):
-    if a < 0
-        return -a
-    return a
 
 # bits per sample or palette index
 # valid bit depths: 1, 2, 4, 8, 16

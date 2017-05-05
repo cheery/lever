@@ -2,6 +2,7 @@ from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi
 from rpython.rlib.rstring import UnicodeBuilder
 from space import *
+from space.customobject import CustomObject_instantiate
 from evaluator.loader import from_object
 from evaluator.sourcemaps import TraceEntry
 from async_io import Event, Queue
@@ -100,14 +101,14 @@ def class_(argv):
     if len(argv) > 2:
         name = argv[2]
     assert isinstance(exnihilo, Exnihilo)
-    assert isinstance(parent, Interface)
-    assert isinstance(name, String)
-    interface = Interface(parent, name.string)
-    interface.methods = {}
-    for name, index in exnihilo.map.attribute_indexes.items():
-        interface.methods[name] = exnihilo.storage[index]
-    interface.instantiate = CustomObject.interface.instantiate
-    return interface
+    methods = {}
+    for key, index in exnihilo.map.attribute_indexes.items():
+        methods[key] = exnihilo.storage[index]
+    return Interface(
+        cast(parent, Interface, u"parent"),
+        cast(name, String, u"name").string,
+        methods,
+        CustomObject_instantiate)
 
 @builtin
 @signature(Object)

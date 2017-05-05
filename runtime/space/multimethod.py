@@ -28,7 +28,7 @@ def hash_fn(this):
     return intmask(x)
 
 class Multimethod(Object):
-    _immutable_fields_ = ['arity', 'multimethod_table', 'default?']
+    _immutable_fields_ = ['arity', 'multimethod_table', 'interface_table', 'default?', 'version?']
     def __init__(self, arity, default=null, doc=null):
         self.arity = arity
         self.multimethod_table = r_dict(eq_fn, hash_fn, force_non_null=True)

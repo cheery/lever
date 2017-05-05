@@ -4,6 +4,7 @@ from rpython.rlib.rarithmetic import r_uint, r_ulonglong
 from space import *
 import time
 
+abs_ = Multimethod(1)
 length = Multimethod(1)
 #distance = Multimethod(2)
 dot = Multimethod(2)
@@ -465,6 +466,14 @@ def init_random():
         key.append(r_uint(0))
     random.init_by_array(key)
 
+@abs_.multimethod_s(Float)
+def abs_float(f):
+    return Float(-f.number) if f.number < 0.0 else f
+
+@abs_.multimethod_s(Integer)
+def abs_int(i):
+    return Integer(-i.value) if i.value < 0 else i
+
 @Builtin
 @signature()
 def random_():
@@ -549,14 +558,6 @@ def log_(a, b):
 @signature(Float)
 def ln(a):
     return Float(log(a.number))
-
-@Builtin
-@signature(Float)
-def abs_(f):
-    if f.number < 0.0:
-        return Float(-f.number)
-    else:
-        return f
 
 @Builtin
 @signature(Float)

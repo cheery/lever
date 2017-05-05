@@ -14,7 +14,8 @@ class Object:
             if name not in ('Object', 'Interface', 'null') and 'interface' not in dict:
                 cls.interface = Interface(
                     parent = cls.__bases__[0].interface,
-                    name = re.sub("(.)([A-Z]+)", r"\1_\2", name).lower().decode('utf-8'))
+                    name = re.sub("(.)([A-Z]+)", r"\1_\2", name).lower().decode('utf-8'),
+                    methods = {})
                 if re.match("^L[A-Z]", name):
                     cls.interface.name = name[1:].decode('utf-8')
                 if name not in ('BoundMethod', 'Builtin'):
@@ -98,16 +99,14 @@ class Object:
         return _decarotar_
 
 class Interface(Object):
-    _immutable_fields_ = ['instantiate?', 'methods']
+    _immutable_fields_ = ['instantiate?', 'methods', 'parent']
     # Should add possibility to freeze the interface?
-    def __init__(self, parent, name):
+    def __init__(self, parent, name, methods, instantiate=None):
         assert isinstance(name, unicode)
-        self.parent = parent # TODO: make this matter for custom objects.
+        self.parent = parent
         self.name = name
-        self.instantiate = None
-        self.methods = {}
-        #if parent is not None:
-        #    self.methods.update(parent.methods)
+        self.instantiate = instantiate
+        self.methods = methods
         self.doc = None
 
     def call(self, argv):
@@ -133,9 +132,11 @@ class Interface(Object):
 
     @jit.elidable
     def lookup_method(self, name):
-        method = self.methods.get(name, None)
-        if method is None and (self.parent is not self):
-            return self.parent.lookup_method(name)
+        this = self
+        method = this.methods.get(name, None)
+        while method is None and (this.parent not in (null, Interface.interface)):
+            this = this.parent
+            method = this.methods.get(name, None)
         return method
 
     def setattr(self, name, value):
@@ -152,16 +153,16 @@ class Interface(Object):
             listing.append(space.String(methodname))
         return listing
 
-Interface.interface = Interface(None, u"interface")
+Interface.interface = Interface(None, u"interface", {})
 Interface.interface.parent = Interface.interface
 # TODO: explain myself, why parent of an interface is an interface?
 #       ... I forgot.. that happens.
 
-null = Interface(None, u"null")
+null = Interface(None, u"null", {})
 null.interface = null
 null.parent = null
 
-Object.interface = Interface(null, u"object")
+Object.interface = Interface(null, u"object", {})
 
 class BoundMethod(Object):
     _immutable_fields_ = ['obj', 'name', 'methodfn']

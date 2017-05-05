@@ -30,6 +30,23 @@ class TraceEntry(space.Object):
                 pc -= count
         return space.String(u"<over sourcemap>"), 0, 0, -1, -1
 
+def raw_pc_location(sourcemap, pc):
+    if not isinstance(sourcemap, space.Uint8Data):
+        return 0, -1, -1, -1, -1
+    i = 0
+    while i < sourcemap.length:
+        i, count = dec_vlq(sourcemap, i)
+        i, file_id = dec_vlq(sourcemap, i)
+        i, col0 = dec_vlq(sourcemap, i)
+        i, lno0 = dec_vlq(sourcemap, i)
+        i, col1 = dec_vlq(sourcemap, i)
+        i, lno1 = dec_vlq(sourcemap, i)
+        if pc <= count:
+            return file_id, col0, lno0, col1, lno1
+        else:
+            pc -= count
+    return 0, -1, -1, -1, -1
+
 def dec_vlq(sourcemap, i):
     i, ubyte = nextbyte(sourcemap, i)
     output = 0

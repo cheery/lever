@@ -1,7 +1,7 @@
 from rpython.rlib import jit, rvmprof
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rtyper.lltypesystem import rffi, lltype
-from sourcemaps import TraceEntry
+from sourcemaps import TraceEntry, raw_pc_location
 import pathobj
 import optable
 import space
@@ -38,9 +38,6 @@ def from_object(obj, path):
             rffi.r_ulong(as_i(n.getitem(space.Integer(2)))),
             rffi.r_ulong(as_i(n.getitem(space.Integer(3)))))
             for n in exc_table]
-        #excs = []
-        #for n in exc_table:
-        #    excs.append()
         varnames = space.null                                           # Backwards compatible approach.
         if function_list.contains(space.String(u"varnames")):           # Consider improvements in the major release.
             varnames = function_list.getitem(space.String(u"varnames"))
@@ -294,7 +291,8 @@ def get_function_name(function):
 def get_printable_location(pc, block, module, unit, excs, function): # ,ec
     opcode = rffi.r_ulong(block[pc])>>8
     name = optable.names[opcode]
-    return "pc=%d %s module=%s" % (pc, name, module.repr().encode('utf-8'))
+    lno = raw_pc_location(function.sourcemap, rffi.r_long(pc))[2]
+    return "pc=%d %s module=%s:%d" % (pc, name, module.repr().encode('utf-8'), lno)
 
 rvmprof.register_code_object_class(Function, get_function_name)
 
@@ -537,10 +535,10 @@ def get_string(unit, block, i):
 
 # The idea of introspection object is to support abstract interpretation of code.
 class Introspection(space.Object):
-    _immutable_fields_ = ["closure", "excs"]
+    _immutable_fields_ = ["closure", "excs_l"]
     def __init__(self, closure):
         self.closure = closure
-        self.excs = excs_introspection(closure.function.excs)
+        self.excs_l = excs_introspection(closure.function.excs)
 
     def getattr(self, name):
         if name == u"closure":
@@ -548,7 +546,7 @@ class Introspection(space.Object):
         elif name == u"is_generator":
             return space.boolean(self.closure.function.flags & 2 != 0)
         elif name == u"excs":
-            return self.excs
+            return self.excs_l
         elif name == u"regc":
             return space.Integer(
                 rffi.r_long(self.closure.function.regc))
