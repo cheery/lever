@@ -1,0 +1,36 @@
+import asm, fs, ffi, mman, platform
+from asm import Address, Register, Relative, Immediate
+from asm import i8, i16, i32, i64
+
+main = ():
+    assert platform.arch == "x86_64"
+        "It just might not work on x86"
+
+    for uid in asm.by_name["MOV"]
+        asm.print_ins_entry(asm.instructions[uid])
+
+    output = []
+
+    output.extend(asm.encode_ins(1128, # MOV m8 imm8
+        [Register(i8, 0), Immediate(i8, 23)]))
+    output.extend(asm.encode_ins(1901, # RET NEAR
+        []))
+
+    # Should produce 0xB0, 123, 0xC3
+
+    # So that one can ndisasm this.
+    fd = fs.open(dir ++ "dump", fs.WRONLY | fs.CREAT | fs.TRUNC)
+    fd.pwrite(Uint8Array(output), 0)
+    fd.close()
+
+    buf = mman.Asmbuf(4096)
+    buf.memcpy(Uint8Array(output))
+    buf.finalize()
+
+    print("preparing the function pointer")
+    c_type = ffi.cfunc(ffi.int, [])
+
+    c_func = ffi.cast(buf, c_type)
+    print("new c function", c_func)
+    print("call result:", c_func()) # prints 'call result: 23'
+    buf.free() 

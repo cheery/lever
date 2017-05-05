@@ -1,0 +1,270 @@
+import json
+
+# Attempt is made to make best out of what's available.
+
+doc = path("doc:/asm")
+
+main = ():
+    for uid in by_name["MOV"]
+        ins = instructions[uid]
+        print_ins_entry(ins)
+    print("    ", format_hex(encode_ins(1126, [
+        Address(i64, 0, 4),
+        Register(i64, 0)
+    ]))...)
+    print("    ", format_hex(encode_ins(1126, [
+        Address(i64, 0, 4, 5),
+        Register(i64, 0)
+    ]))...)
+    print("    ", format_hex(encode_ins(1126, [
+        Address(i64, 0, 4, 6),
+        Register(i64, 0)
+    ]))...)
+    print("    ", format_hex(encode_ins(1126, [
+        Address(i64, 0, 4, 7),
+        Register(i64, 0)
+    ]))...)
+    print("    ", format_hex(encode_ins(1126, [
+        Address(i64, 0xabcd, 4, 8),
+        Register(i64, 0)
+    ]))...)
+
+# The reason to add 1000 into the uid is that it's easier to
+# print.
+print_ins_entry = (ins):
+    args = [ins["uid"].to_string().rjust(4), ins["vendor_syntax"]["mnemonic"]]
+    for operand in ins["vendor_syntax"]["operands"]
+        args.append( operand["name"] )
+    info = []
+    if ins["available_in_64_bit"]
+        info.append("[64]")
+    if ins["legacy_instruction"]
+        info.append("[L]")
+    info.append( ins["description"] )
+    print(" ".join(args).ljust(32), info...)
+
+format_hex = (xs):
+    out = []
+    for i in xs
+        out.append(i.to_string(16).rjust(2, '0'))
+    return out
+
+encode_ins = (uid, args):
+    out = []
+    entry = instructions[uid]
+    ops = entry["vendor_syntax"]["operands"]
+    enc = entry["x86_encoding_specification"]
+    assert entry["available_in_64_bit"]
+    assert "vex_prefix" not in enc
+        "vex/evex encoding not implemented"
+    rex = 0
+    operand_op = 0
+    modrm    = 0
+    sib      = 0
+    displace = 0
+    imm = []
+
+    for i in range(ops.length)
+        op_enc = ops[i]["encoding"]
+        arg    = args[i]
+        # "addressing_mode" and "name" are ignored.
+        assert arg.type.size == ops[i]["value_size_bits"]
+            [arg.type, ops[i]["value_size_bits"]]
+        if op_enc == "MODRM_RM_ENCODING"
+            if isinstance(arg, Register)
+                modrm |= 3 << 6
+                modrm |= arg.index & 7
+                rex |= 1 * (arg.index >> 3)
+            elif isinstance(arg, Address)
+                displace = arg.offset
+                if displace < -128 or 128 <= displace
+                    modrm |= 2 << 6
+                elif displace != 0 or arg.base == 5
+                    modrm |= 1 << 6
+                rex |= 1 * (arg.base >> 3)
+                modrm |= arg.base & 7
+                if arg.index >= 0 or arg.base & 7 == 4
+                    sib |= arg.base & 7
+                    if arg.index < 0
+                        sib |= 4 << 3
+                    else
+                        rex |= 2 * (arg.index >> 3)
+                        sib |= (arg.index & 7) << 3
+                        assert arg.index != 4
+                    sib |= {1:0, 2:1, 4:2, 8:3}[arg.scale] << 6
+            elif isinstance(arg, Relative)
+                modrm |= 5
+                displace = arg.offset
+                assert false, arg
+            else
+                assert false, [op_enc, arg]
+        elif op_enc == "MODRM_REG_ENCODING"
+            assert isinstance(arg, Register)
+            modrm |= (arg.index & 7) << 3
+            rex |= 4 * (arg.index >> 3)
+        elif op_enc == "OPCODE_ENCODING"
+            assert isinstance(arg, Register)
+            operand_op = (arg.index & 7)
+            rex |= 1 * (arg.index >> 3)
+        elif op_enc == "IMMEDIATE_VALUE_ENCODING"
+            assert isinstance(arg, Immediate)
+            imm.append(arg.value)
+        else
+            assert false, op_enc
+
+
+    prefixes = enc.get("legacy_prefixes", {})
+    if prefixes.get("has_mandatory_operand_size_override_prefix")
+        out.append(0x66)
+    if prefixes.get("has_mandatory_address_size_override_prefix")
+        out.append(0x67)
+    if prefixes.get("has_mandatory_repne_prefix")
+        out.append(0xF2)
+    if prefixes.get("has_mandatory_repe_prefix")
+        out.append(0xF3)
+    if prefixes.get("has_mandatory_rex_w_prefix")
+        rex |= 0x8
+
+    opcode_form = enc.get("operand_in_opcode", "NO_OPERAND_IN_OPCODE")
+    if opcode_form == "GENERAL_PURPOSE_REGISTER_IN_OPCODE"
+        null
+    elif opcode_form == "FP_STACK_REGISTER_IN_OPCODE"
+        null
+    else
+        assert operand_op == 0
+
+    if rex != 0
+        out.append(0x40 | rex)
+    opcode = enc["opcode"] + operand_op
+    if opcode >> 24 > 0
+        out.append(opcode >> 24 & 255)
+    if opcode >> 16 > 0
+        out.append(opcode >> 16 & 255)
+    if opcode >>  8 > 0
+        out.append(opcode >>  8 & 255)
+    out.append(opcode & 255)
+    
+    modrm_usage = enc.get("modrm_usage", "NO_MODRM_USAGE")
+    if modrm_usage == "OPCODE_EXTENSION_IN_MODRM"
+        modrm |= enc.get("modrm_opcode_extension", 0) << 3
+    if modrm_usage in ["OPCODE_EXTENSION_IN_MODRM", "FULL_MODRM"]
+        out.append(modrm)
+        mod = modrm >> 6
+        displace_size = 0
+        if mod < 3 and modrm & 7 == 4
+            out.append(sib)
+        if (mod == 0 and modrm & 7 == 5) or mod == 2
+            displace_size = 4
+        elif mod == 1
+            displace_size = 1
+        for _ in range(displace_size)
+            out.append(displace & 255)
+            displace >>= 8
+        assert displace in [0, -1], displace_size
+    else
+        assert modrm == 0 and sib == 0 and displace == 0
+            modrm_usage
+
+    cob = enc.get("code_offset_bytes", 0)
+    if cob > 0
+        imm_format = [cob]
+        assert "immediate_value_bytes" not in enc
+    else
+        imm_format = enc.get("immediate_value_bytes", [])
+
+    for bytes in imm_format
+        v = imm.pop(0)
+        for _ in range(bytes)
+            out.append(v & 255)
+            v >>= 8
+        assert v in [0, -1]
+
+    return out
+
+# enc["vex_prefix"]
+ # prefix_type
+  # UNDEFINED_VEX_PREFIX
+  # VEX_PREFIX
+  # EVEX_PREFIX
+ # vex_operand_usage
+  # NO_VEX_OPERAND_USAGE
+  # VEX_OPERAND_IS_FIRST_SOURCE_REGISTER
+  # VEX_OPERAND_IS_SECOND_SOURCE_REGISTER
+  # VEX_OPERAND_IS_DESTINATION_REGISTER
+ # vector_size
+  # VEX_VECTOR_SIZE_IS_IGNORED
+  # VEX_VECTOR_SIZE_IS_ZERO
+  # VEX_VECTOR_SIZE_IS_ONE
+  # VEX_VECTOR_SIZE_IS_128_BIT
+  # VEX_VECTOR_SIZE_IS_256_BIT
+  # VEX_VECTOR_SIZE_IS_512_BIT
+ # mandatory_prefix
+  # NO_MANDATORY_PREFIX
+  # MANDATORY_PREFIX_OPERAND_SIZE_OVERRIDE
+  # MANDATORY_PREFIX_REPE
+  # MANDATORY_PREFIX_REPNE
+ # map_select
+  # UNDEFINED_OPERAND_MAP
+  # MAP_SELECT_0F
+  # MAP_SELECT_0F38
+  # MAP_SELECT_0F3A
+ # vex_w_usage
+  # VEX_W_IS_IGNORED
+  # VEX_W_IS_ZERO
+  # VEX_W_IS_ONE
+ # has_vex_operand_suffix = true | false
+ # vsib_usage
+  # VSIB_UNUSED
+  # VSIB_USED
+ # evex_b_interpretations
+  # UNDEFINED_EVEX_B_INTERPRETATION
+  # EVEX_B_ENABLES_32_BIT_BROADCAST
+  # EVEX_B_ENABLES_64_BIT_BROADCAST
+  # EVEX_B_ENABLES_STATIC_ROUNDING_CONTROL
+  # EVEX_B_ENABLES_SUPPRESS_ALL_EXCEPTIONS
+ # opmask_usage
+  # EVEX_OPMASK_IS_NOT_USED
+  # EVEX_OPMASK_IS_OPTIONAL
+  # EVEX_OPMASK_IS_REQUIRED
+ # masking_operation
+  # NO_EVEX_MASKING
+  # EVEX_MASKING_MERGING_ONLY
+  # EVEX_MASKING_MERGING_AND_ZEROING
+
+table = json.read_file(runtime_path ++ "lib/x86_64.table.json")
+instructions = table["instructions"]
+by_name = table["by_name"]
+
+class Register
+    +init = (self, type, index):
+        self.type = type
+        self.index = index
+
+class Relative
+    +init = (self, offset):
+        self.offset = offset
+
+class Address
+    +init = (self, type, offset, base, index=-1, scale=1):
+        self.type = type
+        self.offset = offset
+        self.base = base
+        self.index = index
+        self.scale = scale # 1, 2, 4, 8
+
+class Immediate
+    +init = (self, type, value):
+        self.type = type
+        self.value = value
+
+class GPR
+    +init = (self, size):
+        self.size = size
+
+    +repr = (self):
+        return "r" ++ self.size.to_string()
+
+i64 = GPR(64)
+i32 = GPR(32)
+i16 = GPR(16)
+i8  = GPR(8)
