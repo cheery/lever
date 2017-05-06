@@ -85,10 +85,13 @@ encode_ins = (uid, args):
                     modrm |= 2 << 6
                 elif displace != 0 or arg.base == 5
                     modrm |= 1 << 6
-                rex |= 1 * (arg.base >> 3)
-                if arg.index >= 0 or arg.base & 7 == 4
+                if arg.index >= 0 or base & 7 == 4 or arg.base < 0
                     modrm |= 4
-                    sib |= arg.base & 7
+                    if arg.base < 0
+                        sib |= 5
+                    else
+                        sib |= arg.base & 7
+                        rex |= 1 * (arg.base >> 3)
                     if arg.index < 0
                         sib |= 4 << 3
                     else
@@ -98,6 +101,7 @@ encode_ins = (uid, args):
                     sib |= {1:0, 2:1, 4:2, 8:3}[arg.scale] << 6
                 else
                     modrm |= arg.base & 7
+                    rex |= 1 * (arg.base >> 3)
             elif isinstance(arg, Relative)
                 modrm |= 5
                 displace = arg.offset
@@ -252,7 +256,7 @@ class Relative
         self.offset = offset
 
 class Address
-    +init = (self, type, offset, base, index=-1, scale=1):
+    +init = (self, type, offset, base=-1, index=-1, scale=1):
         self.type = type
         self.offset = offset
         self.base = base
