@@ -83,9 +83,9 @@ encode_ins = (uid, args):
                 displace = arg.offset
                 if displace < -128 or 128 <= displace
                     modrm |= 2 << 6
-                elif displace != 0 or arg.base == 5
+                elif displace != 0 or arg.base & 7 == 5
                     modrm |= 1 << 6
-                if arg.index >= 0 or base & 7 == 4 or arg.base < 0
+                if arg.index >= 0 or arg.base & 7 == 4 or arg.base < 0
                     modrm |= 4
                     if arg.base < 0
                         sib |= 5
