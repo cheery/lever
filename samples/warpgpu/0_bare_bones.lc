@@ -136,8 +136,8 @@ main = ():
     # DEP: pipeline
 
     pipeline = pass.p0(shaders.fetch({
-        vertex = "vertex_shader.spv:main"
-        fragment = "fragment_shader.spv:main"
+        vertex = "vertex_shader.vert.spv:main"
+        fragment = "fragment_shader.frag.spv:main"
     }), pipeline_layout, vertex_layout) # extra={}...
     gpu.createPipeline(pipeline) # or pipelines.
     # DEP: cbuf

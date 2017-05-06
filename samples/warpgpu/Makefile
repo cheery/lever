@@ -1,7 +1,11 @@
-shaders: glsl/*.spv
+SOURCES = $(wildcard glsl/*.frag glsl/*.vert)
 
-%_frag.spv: %.frag
+SPV = $(patsubst %, %.spv, $(SOURCES))
+
+shaders: $(SPV)
+
+%.frag.spv: %.frag
 	glslangValidator $< -V -o $@
 
-%_vert.spv: %.vert
+%.vert.spv: %.vert
 	glslangValidator $< -V -o $@

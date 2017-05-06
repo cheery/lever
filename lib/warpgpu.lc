@@ -178,14 +178,21 @@ class GPUMemory
         return buffer
 
     # replace this with proper allocator when it starts to matter.
-    associate = (self, obj):
+    associate = (self, obj, flags = ["HOST_VISIBLE_BIT"]):
         req = obj.getMemoryRequirements()
 
         memoryIndex = null
         for memtype in memory_report(self.gpu.physicalDevice).types
-            if (memtype.flags.HOST_VISIBLE_BIT and
-                1 & (req.memoryTypeBits >> memtype.index) != 0)
+            if 1 & (req.memoryTypeBits >> memtype.index) == 0
+                continue
+            ok = true
+            for flag in flags
+                if not getattr(memtype.flags, flag)
+                    ok = false
+                    continue
+            if ok
                 memoryIndex = memtype.index
+                break
         assert memoryIndex, "No gpu-visible memory available for this resource"
 
         #print(req.size, req.alignment, req.memoryTypeBits)

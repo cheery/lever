@@ -108,8 +108,8 @@ main = :
     
     # PIPELINE
     pipeline = renderPass.p0(shaders.fetch({
-        vertex = "glsl/ocean_waves_vert.spv:main"
-        fragment = "glsl/ocean_waves_frag.spv:main"
+        vertex = "glsl/ocean_waves.vert.spv:main"
+        fragment = "glsl/ocean_waves.frag.spv:main"
     }), layout, quad_mesh.pipeline) # extra={}...
     gpu.createPipeline(pipeline)
 

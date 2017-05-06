@@ -15,7 +15,7 @@ main = ():
 
     print(hdir ++ header["vbo"])
     bina = fs.read_file(hdir ++ header["vbo"], "b")
-    print("vertex_count", int(bina.length / header["stride"]))
+    print("vertex_count", bina.length // header["stride"])
 
     nums = ffi.cast(bina, ffi.pointer(ffi.float))
     print(nums[0])

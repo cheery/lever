@@ -148,13 +148,6 @@ main = ():
     assemble()
 
 
-
-    # #   54 ADD m64 imm32               [64] Add imm32 sign-extended to 64-bits to r/m64.
-    # emit(  54, Address(i64, 0, arg_0.index), Immediate(i32, 2))
-    # # 1094 MOV m64 r64                 [64] Move r64 to r/m64.
-    # emit(1094, Register(i64, 0), arg_5)
-    # emit(1901) # RET NEAR
-
     # So that one can ndisasm this.
     fd = fs.open(dir ++ "dump", fs.WRONLY | fs.CREAT | fs.TRUNC)
     fd.pwrite(Uint8Array(output), 0)
