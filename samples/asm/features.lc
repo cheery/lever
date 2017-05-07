@@ -1,0 +1,18 @@
+import asm
+
+main = (args):
+    if args.length <= 1
+        feat = set()
+        for ins in asm.instructions
+            feat.add(ins.get("feature_name"))
+        print(feat...)
+    else
+        feat = set(args[1.:])
+        for ins in asm.instructions
+            if ins.get("feature_name") not in feat
+                continue
+            if "+" not in feat
+                asm.print_ins_entry(ins)
+            elif "vex_prefix" in ins["x86_encoding_specification"]
+                asm.print_ins_entry(ins)
+

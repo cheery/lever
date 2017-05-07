@@ -1,10 +1,6 @@
-import asm, fs, ffi, mman, platform
-from asm import Address, Register, Relative, Immediate
-from asm import i8, i16, i32, i64
+import asm
 
 main = (args):
-    assert platform.arch == "x86_64"
-        "It just might not work on x86"
     if args.length <= 1
         for name in asm.by_name
             print(name)
