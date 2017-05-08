@@ -40,6 +40,9 @@ print_ins_entry = (ins):
         info.append("[64]")
     if ins["legacy_instruction"]
         info.append("[L]")
+    feature = ins.get("feature_name")
+    if feature
+        info.append("[" ++ feature ++ "]")
     info.append( ins["description"] )
     print(" ".join(args).ljust(32), info...)
 
@@ -49,9 +52,12 @@ format_hex = (xs):
         out.append(i.to_string(16).rjust(2, '0'))
     return out
 
-encode_ins = (uid, args):
+encode_ins = (uid, args, features=null):
     out = []
     entry = instructions[uid]
+    if features and "feature_name" in entry
+        assert entry["feature_name"] in features
+            "feature not supported by the target"
     ops = entry["vendor_syntax"]["operands"]
     enc = entry["x86_encoding_specification"]
     assert entry["available_in_64_bit"]
@@ -67,6 +73,9 @@ encode_ins = (uid, args):
     for i in range(ops.length)
         op_enc = ops[i]["encoding"]
         arg    = args[i]
+        if op_enc == "IMPLICIT_ENCODING"
+            continue # You have to check yourself whether your
+                     # implicits hold, sorry.
         # "addressing_mode" and "name" are ignored.
         if "value_size_bits" in ops[i]
             assert arg.type.size == ops[i]["value_size_bits"]
@@ -275,6 +284,15 @@ class GPR
     +repr = (self):
         return "r" ++ self.size.to_string()
 
+class MM
+    +init = (self, size):
+        self.size = size
+
+    +repr = (self):
+        return "mm" ++ self.size.to_string()
+
+m128 = MM(128)
+m64  = MM(64)
 i64 = GPR(64)
 i32 = GPR(32)
 i16 = GPR(16)
