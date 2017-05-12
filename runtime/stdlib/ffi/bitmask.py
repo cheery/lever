@@ -41,6 +41,13 @@ class BitmaskValue(Object):
         self.bitmask = bitmask
         self.value = value
 
+    def contains(self, item):
+        value = o_to_constant(self.bitmask, item)
+        if self.bitmask.multichoice: # Not sure if logic matches what we expect.
+            return self.value & value == value
+        else:                        # We will see that later.
+            return self.value == value
+
     def getattr(self, name):
         if name == u"value":
             return Integer(self.value)
@@ -95,8 +102,39 @@ def to_bitmask_digit(bitmask, value):
     else:
         raise unwind(LTypeError(u"enum cannot handle: " + value.repr()))
 
+@operators.cmp_.multimethod_s(BitmaskValue, List)
+def cmp_bitmask_list(value, seq):
+    cmp_mask = 0
+    for item in seq.contents:
+        cmp_mask |= o_to_constant(value.bitmask, item)
+    if value.value == cmp_mask:
+        return Integer(0)
+    if value.value & cmp_mask == cmp_mask:
+        return Integer(1)
+    else:
+        return Integer(-1)
+
+@operators.cmp_.multimethod_s(List, BitmaskValue)
+def cmp_list_bitmask(seq, value):
+    cmp_mask = 0
+    for item in seq.contents:
+        cmp_mask |= o_to_constant(value.bitmask, item)
+    if value.value == cmp_mask:
+        return Integer(0)
+    if value.value & cmp_mask == cmp_mask:
+        return Integer(-1)
+    else:
+        return Integer(1)
+
+def o_to_constant(bitmask, obj):
+    if isinstance(obj, String):
+        return to_constant(bitmask, obj.string)
+    else:
+        return cast(obj, Integer, u"bitmask value").value
+
 def to_constant(bitmask, string):
     try:
         return bitmask.constants[string]
     except KeyError as _:
         raise unwind(LKeyError(bitmask, String(string)))
+

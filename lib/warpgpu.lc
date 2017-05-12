@@ -185,12 +185,7 @@ class GPUMemory
         for memtype in memory_report(self.gpu.physicalDevice).types
             if 1 & (req.memoryTypeBits >> memtype.index) == 0
                 continue
-            ok = true
-            for flag in flags
-                if not getattr(memtype.flags, flag)
-                    ok = false
-                    continue
-            if ok
+            if flags <= memtype.flags
                 memoryIndex = memtype.index
                 break
         assert memoryIndex, "No gpu-visible memory available for this resource"

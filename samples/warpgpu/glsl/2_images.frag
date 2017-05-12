@@ -16,9 +16,14 @@ float voronoi( in vec2 x, in float time );
 
 void main(void)
 {
+    // Reference color (green)
+    vec4 ref = vec4(0.12156862745098039,0.16470588235294117,0.06274509803921569,1.0);
+
     vec2 tu = (position.xy - 1.0) / 2.0;
-    tu = vec2(tu.x + voronoi(tu * 20.0, g.time) * 0.05, tu.y);
-    frag_color = texture(texSampler, tu);
+    vec2 tz = vec2(tu.x + voronoi(tu * 20.0, g.time) * 0.05, tu.y);
+    vec4 c = texture(texSampler, tu);
+    tz = mix(tz, tu, min(1.0, 3.0*pow(distance(c, ref), 1.08)));
+    frag_color = texture(texSampler, tz);
 }
 
 vec2 hash( vec2 p ){

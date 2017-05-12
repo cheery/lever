@@ -406,7 +406,7 @@ def print_traceback(exception):
 def format_traceback(exception):
     return String(format_traceback_raw(exception))
 
-def format_traceback_raw(exception):
+def format_traceback_raw(exception, in_exception_repr=False):
     traceback = exception.getattr(u"traceback")
     if not isinstance(traceback, space.List):
         raise space.unwind(space.LError(u"Expected null or list as .traceback: %s" % traceback.repr()))
@@ -421,7 +421,13 @@ def format_traceback_raw(exception):
     out += u"\033[31m"
     out += space.get_interface(exception).name
     out += u":\033[0m"
-    return out + u" " + exception.repr()
+    try:
+        return out + u" " + exception.repr()
+    except Unwinder as unwinder:
+        if in_exception_repr:
+            return out + u" ... Second error during exception repr"
+        return (out + u" ... Error during exception repr\n"
+            + format_traceback_raw(unwinder.exception, True))
 
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from rpython.rlib import rgil
