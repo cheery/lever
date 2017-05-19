@@ -72,7 +72,7 @@ encode_ins = (uid, args, features=null):
 
     for i in range(ops.length)
         op_enc = ops[i]["encoding"]
-        arg    = args[i]
+        arg    = args[i].resolve()
         if op_enc == "IMPLICIT_ENCODING"
             continue # You have to check yourself whether your
                      # implicits hold, sorry.
@@ -89,28 +89,30 @@ encode_ins = (uid, args, features=null):
                 modrm |= arg.index & 7
                 rex |= 1 * (arg.index >> 3)
             elif isinstance(arg, Address)
+                a_base = resolve(arg.base)
+                a_index = resolve(arg.index)
                 displace = arg.offset
                 if displace < -128 or 128 <= displace
                     modrm |= 2 << 6
-                elif displace != 0 or arg.base & 7 == 5
+                elif displace != 0 or a_base & 7 == 5
                     modrm |= 1 << 6
-                if arg.index >= 0 or arg.base & 7 == 4 or arg.base < 0
+                if a_index >= 0 or a_base & 7 == 4 or a_base < 0
                     modrm |= 4
-                    if arg.base < 0
+                    if a_base < 0
                         sib |= 5
                     else
-                        sib |= arg.base & 7
-                        rex |= 1 * (arg.base >> 3)
-                    if arg.index < 0
+                        sib |= a_base & 7
+                        rex |= 1 * (a_base >> 3)
+                    if a_index < 0
                         sib |= 4 << 3
                     else
-                        rex |= 2 * (arg.index >> 3)
-                        sib |= (arg.index & 7) << 3
-                        assert arg.index != 4
+                        rex |= 2 * (a_index >> 3)
+                        sib |= (a_index & 7) << 3
+                        assert a_index != 4
                     sib |= {1:0, 2:1, 4:2, 8:3}[arg.scale] << 6
                 else
-                    modrm |= arg.base & 7
-                    rex |= 1 * (arg.base >> 3)
+                    modrm |= a_base & 7
+                    rex |= 1 * (a_base >> 3)
             elif isinstance(arg, Relative)
                 modrm |= 5
                 displace = arg.offset
@@ -255,16 +257,20 @@ table = json.read_file(runtime_path ++ "lib/x86_64.table.json")
 instructions = table["instructions"]
 by_name = table["by_name"]
 
-class Register
+class Operand
+    resolve = (self):
+        return self
+
+class Register extends Operand
     +init = (self, type, index):
         self.type = type
         self.index = index
 
-class Relative
+class Relative extends Operand
     +init = (self, offset):
         self.offset = offset
 
-class Address
+class Address extends Operand
     +init = (self, type, offset, base=-1, index=-1, scale=1):
         self.type = type
         self.offset = offset
@@ -272,7 +278,17 @@ class Address
         self.index = index
         self.scale = scale # 1, 2, 4, 8
 
-class Immediate
+# This allows us to use registers and anything that
+# resolves to them as a base and a index.
+resolve = (operand_or_index):
+    if isinstance(operand_or_index, int)
+        return operand_or_index
+    else
+        operand = operand_or_index.resolve()
+        assert isinstance(operand, Register)
+        return operand.index
+
+class Immediate extends Operand
     +init = (self, type, value):
         self.type = type
         self.value = value
