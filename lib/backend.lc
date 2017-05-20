@@ -1,0 +1,456 @@
+import asm
+from asm import Address, Register, Relative, Immediate
+from asm import i8, i32
+
+# TODO: Put this work on the native -blocks.
+#       To do that, an instruction selector needs to be implemented.
+
+# Spill operation is done on the function objects.
+# We go through the function with our spilled variables.
+# Whenever a spilled variable is defined, we add:
+# x = spill v 
+# When there is an occurrence of 'v', we will insert
+# z = unspill x
+# and replace the 'v' with 'z'
+
+# We check the program through in reverse:
+#   If there is an output with spilled variable, we replace
+#     the output with variable from the spill scope.
+#   If the variable 
+
+# procedure RewriteProgram()
+#   allocate memory locations for each v in spilledNodes
+#   create a new temporary v for each definiton and each use
+#   in the program (instructions), insert a store after each
+#   definition of a v[i], a fetch before each use of a v[i].
+#   put all the v[i] into a set newTemps
+#   spilledNodes = {}
+#   initial = coloredNodes U coalescedNodes U newtemsp
+#   coloredNodes = {}
+#   coalescedNodes = {}
+
+build_program = (program, abi_regs):
+    ircs = build_graphs(program, abi_regs)
+    for irc in ircs.values()
+        irc.work()
+        assert irc.spilled_nodes.length == 0
+            repr(irc.spilled_nodes)
+    # TODO: Add spilled register rewriting? This stage
+    #       has sufficient amount of information to do it.
+    # TODO: Setup the entry for spilled registers.
+
+
+    # Operands are picked up with .get_use_defs
+    # and placed into asm.GPR or asm.MM using 'isinstance'
+    changed = true
+    while changed
+        output = []
+        changed = false
+        for block in program
+            changed = block.encode(output) or changed
+    return output
+
+class Variable
+    +init = (self, type, label):
+        self.type = type
+        self.index = -1
+        self.label = label
+
+    resolve = (self):
+        assert self.index >= 0, "Unresolved variable"
+        return Register(self.type, self.index)
+
+    +repr = (self):
+        return "Variable(" ++ repr(self.type) ++ ", " ++
+            repr(self.label) ++ ")"
+
+class Block
+    +init = (self, code=[]):
+        self.offset = 0
+        self.code = code
+
+    encode = (self, output):
+        changed = self.offset != output.length
+        self.offset = output.length
+        for ins in self.code
+            changed = ins.encode(output) or changed
+        return changed
+
+class BackendInstruction
+    encode = (self, output):
+        return
+
+    get_use_defs = (self):
+        return object({uses = [], defs = [], clobber = [], is_move_related = false})
+
+class Entry extends BackendInstruction
+    +init = (self, register_args):
+        self.register_args = register_args
+    
+    get_use_defs = (self):
+        return object({
+            uses = []
+            defs = list(self.register_args)
+            clobber = []
+            is_move_related = false
+        })
+
+class Jump extends BackendInstruction
+    +init = (self, uids, target, uses):
+        self.uids = uids
+        self.target = target
+        self.offset = 0
+        self.uses = uses
+
+    encode = (self, output):
+        offset = (self.target.offset - self.offset)
+        if offset == 0 # The fall-through case.
+            true
+        elif -128 <= offset and offset < 128
+            output.extend( asm.encode_ins( self.uids[i8], [Immediate(i8, offset)] ) )
+        else
+            output.extend( asm.encode_ins( self.uids[i32], [Immediate(i32, offset)] ) )
+        changed = self.offset != output.length
+        self.offset = output.length
+        return changed
+
+    get_use_defs = (self):
+        return object({uses = list(self.uses), defs = [], clobber = [], is_move_related = false})
+
+class Operation extends BackendInstruction
+    +init = (self, uid, operands, is_move_related=false, clobber=[]):
+        self.uid = uid
+        self.operands = operands
+        self.is_move_related = is_move_related
+        self.operand_usages = get_operand_usages(uid)
+        self.clobber = clobber
+
+    encode = (self, output):
+        if self.is_move_related
+            usd = self.get_use_defs()
+            can_elide = true
+            for var1 in usd.defs
+                for var2 in usd.uses
+                    can_elide = can_elide and var1.index == var2.index
+            if can_elide
+                return false
+        output.extend( asm.encode_ins(self.uid, self.operands) )
+        return false
+
+    get_use_defs = (self):
+        uses = []
+        defs = []
+        clobber = []
+        index = 0
+        for operand in self.operands
+            usage = self.operand_usages[index]
+            if isinstance(operand, Address)
+                if isinstance(operand.base, Variable)
+                    uses.append(operand.base)
+                if isinstance(operand.index, Variable)
+                    uses.append(operand.index)
+            elif usage == "USAGE_READ_WRITE"
+                if isinstance(operand, Variable)
+                    uses.append(operand)
+                    defs.append(operand)
+                elif isinstance(operand, Register)
+                    clobber.append(operand)
+            elif usage == "USAGE_READ"
+                if isinstance(operand, Variable)
+                    uses.append(operand)
+            elif usage == "USAGE_WRITE"
+                if isinstance(operand, Variable)
+                    defs.append(operand)
+                elif isinstance(operand, Register)
+                    clobber.append(operand)
+            else
+                assert not usage, repr(usage)
+            index += 1
+        clobber.extend(self.clobber)
+        return object({uses = uses, defs = defs, clobber = clobber,
+            is_move_related = self.is_move_related})
+
+get_operand_usages = (uid):
+    syntax = asm.instructions[uid]["vendor_syntax"]
+    operands = syntax["operands"]
+    usage = []
+    for operand in operands
+        usage.append(operand["usage"])
+    return usage
+
+build_graphs = (program, abi_regs):
+    ircs = {}
+    for type in abi_regs
+        ircs[type] = IRC(abi_regs[type])
+    for block in program
+        livesets = {}
+        for type in abi_regs
+            livesets[type] = set()
+        for ins in reversed(block.code)
+            a_usd = ins.get_use_defs()
+            for type in abi_regs
+                live = livesets[type]
+                irc = ircs[type]
+                usd = filter_usd(type, a_usd)
+                if usd.is_move_related and usd.defs.length > 0 and usd.uses.length > 0
+                    live.difference_update(usd.uses)
+                    for dst in usd.defs
+                        for src in usd.uses
+                            irc.add_move(dst, src)
+                for var1 in usd.defs
+                    for var2 in live
+                        irc.add_edge(var1, var2)
+                live.difference_update(usd.defs)
+                for var1 in usd.clobber
+                    for var2 in live
+                        irc.add_edge(var1, var2)
+                live.update(usd.uses)
+    return ircs
+
+filter_usd = (t, usd):
+    return object();
+        uses = list(filter_by_type(t, usd.uses))
+        defs = list(filter_by_type(t, usd.defs))
+        clobber = list(filter_by_type(t, usd.clobber))
+        is_move_related = usd.is_move_related
+
+filter_by_type = (t, vars):
+    for var in vars
+        if isinstance(var.type, t)
+            yield var
+
+## IRC: https://www.cs.princeton.edu/research/techreps/TR-498-95
+class IRC
+    +init = (self, options):
+        self.simplify_work = set()
+        self.coalesce_work = set()
+        self.freeze_work = set()
+        self.spill_work = set()
+        # adjacency data
+        self.adj_set = set()
+        self.adj_list = {}
+        self.degree = {}
+        #
+        self.active_moves = set()
+        self.coalesced_moves = set()
+        self.move_list = {}
+        self.precolored = set()
+        self.constrained_moves = set()
+        self.frozen_moves = set()
+        #
+        self.select_stack = []
+        self.coalesced_nodes = []
+        self.alias = {}
+        #
+        # TODO: Add save regs later.. They need special
+        #       activity to resolve.
+        self.K = options.free_regs.length # + options.save_regs.length
+        self.avail_colors = options.free_regs
+        self.spilled_nodes = set()
+        self.colored_nodes = set()
+        self.color = {}
+
+    add_edge = (self, u, v):
+        lhs = [u, v]
+        if lhs not in self.adj_set
+            self.adj_set.add(lhs)
+            self.adj_set.add([v, u])
+            add_half_edge(self, u, v)
+            add_half_edge(self, v, u)
+
+    add_move = (self, dst, src):
+        move = [dst,src]
+        self.coalesce_work.add(move)
+        try
+            self.move_list[dst].add(move)
+        except KeyError as ke
+            self.move_list[dst] = set([move])
+        try
+            self.move_list[src].add(move)
+        except KeyError as ke
+            self.move_list[src] = set([move])
+
+    work = (self):
+        make_worklist(self)
+        while (self.simplify_work.length +
+               self.coalesce_work.length +
+               self.freeze_work.length +
+               self.spill_work.length) > 0
+            if self.simplify_work.length > 0
+                simplify(self)
+            elif self.coalesce_work.length > 0
+                coalesce(self)
+            elif self.freeze_work.length > 0
+                freeze(self)
+            elif self.spill_work.length > 0
+                select_spill(self)
+        assign_colors(self)
+
+add_half_edge = (st, u, v):
+    if isinstance(u, Variable) # not precolored if it's a variable
+        degree = st.degree.get(u, 0)
+        if degree == 0
+            st.degree[u] = 1
+            st.adj_list[u] = [v]
+        else
+            st.degree[u] = degree + 1
+            st.adj_list[u].append(v)
+
+make_worklist = (st):
+    initial = st.adj_list.keys() # for now...
+    for n in initial
+        if st.degree[n] >= st.K
+            st.spill_work.add(n)
+        elif move_related(st, n)
+            st.freeze_work.add(n)
+        else
+            st.simplify_work.add(n)
+    # st.initial = set()
+
+move_related = (st, n):
+    return node_moves(st, n).length > 0
+
+node_moves = (st, n):
+    moves = st.move_list.get(n)
+    if moves
+        moves -= st.active_moves
+        moves -= st.coalesce_work
+        return moves
+    else
+        return set()
+
+simplify = (st):
+    n = st.simplify_work.pop()
+    st.select_stack.append(n)
+    for m in adjacent(st, n)
+        if isinstance(m, Variable)  # We do not have degree on non-variables
+            decrement_degree(st, m)
+
+decrement_degree = (st, m):
+    d = st.degree[m]
+    st.degree[m] = d - 1
+    if d == st.K
+        enable_moves(st, adjacent(st, m) ++ [m])
+        st.spill_work.discard(m)
+        if move_related(st, m)
+            st.freeze_work.add(m)
+        else
+            st.simplify_work.add(m)
+
+enable_moves = (st, nodes):
+    for n in nodes
+        for m in node_moves(st, n)
+            if m in st.active_moves
+                st.active_moves.pop(m)
+                st.coalesce_work.add(m)
+
+coalesce = (st):
+    m = st.coalesce_work.pop()
+    x = get_alias(st, m[0])
+    y = get_alias(st, m[1])
+    if y in st.precolored
+        u = y
+        v = x
+    else
+        u = x
+        v = y
+    if u == v
+        st.coalesced_moves.add(m)
+        add_worklist(st, u)
+    elif v in st.precolored or [u,v] in st.adj_set
+        st.constrained_moves.add(m)
+        add_worklist(st, u)
+        add_worklist(st, v)
+    else
+        coalesce = false
+        if u in st.precolored
+            for t in adjacent(v)
+                if st.degree.get(t,0) < st.K
+                    coalesce = true
+                elif t in st.precolored
+                    coalesce = true
+                elif [t,u] in st.adj_set
+                    coalesce = true
+        else
+            coalesce = conservative(st, adjacent(st, u) ++ adjacent(st, v))
+        if coalesce
+            st.coalesced_moves.add(m)
+            combine(st, u,v)
+        else
+            st.active_moves.add(m)
+
+add_worklist = (st, u):
+    if (u not in st.precolored) and (not move_related(st, u)) and st.degree.get(u, 0) < st.K
+        st.freeze_work.discard(u)
+        st.simplify_work.add(u)
+
+conservative = (st, nodes):
+    k = 0
+    for n in nodes
+        if st.degree.get(n,0) >= st.K
+            k += 1
+    return k < st.K
+
+get_alias = (st, n):
+    while n in st.coalesced_nodes
+        n = get_alias(st, st.alias[n])
+    return n
+
+combine = (st, u, v):
+    st.freeze_work.discard(v)
+    st.spill_work.discard(v)
+    st.alias[v] = u
+    for t in adjacent(st, v)
+        decrement_degree(st, t)
+        add_edge(st, t, u)
+
+freeze = (st):
+    u = st.freeze_work.pop()
+    st.simplify_work.add(u)
+    for m in node_moves(st, u)
+        if m[0] == u
+            v = m[1]
+        else
+            v = m[0]
+        if m in st.active_moves
+            st.active_moves.discard(m)
+        else
+            st.coalesce_work.discard(m)
+        st.frozen_moves.add(m)
+        if node_moves(st, v).length == 0 and st.degree.get(v,0) < st.K
+            st.freeze_work.discard(v)
+            st.simplify_work.add(v)
+
+select_spill = (st):
+    # selected using favorite heuristic
+    # Note: avoid choosing nodes that are the tiny live ranges
+    #       resulting from the fetches of previously spilled registers
+    m = st.spill_work.pop()
+    st.simplify_work.add(m)
+
+assign_colors = (st):
+    while st.select_stack.length > 0
+        n = st.select_stack.pop()
+        ok_colors = set(st.avail_colors)
+        for w in adjacent(st, n) # nU (coloredNodes U precolored)
+            if w in st.colored_nodes
+                ok_colors.discard(st.color[w])
+            if isinstance(w, Register)
+                ok_colors.discard(w.index)
+        if ok_colors.length == 0
+            st.spilled_nodes.add(n)
+        else
+            st.colored_nodes.add(n)
+            st.color[n] = n.index = ok_colors.pop() # TODO: select the "lowest color"
+    for n in st.coalesced_nodes
+        st.color[n] = n.index = st.color.get(get_alias(st, n))
+
+adjacent = (st, n):
+    adj = []
+    for a in st.adj_list[n]
+        if a in st.select_stack
+            continue
+        if a in st.coalesced_nodes
+            continue
+        adj.append(a)
+    return adj
