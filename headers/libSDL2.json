@@ -1,4 +1,5 @@
 {
+  "comment": "Generated with https://github.com/cheery/cffi-gen", 
   "constants": {
     "ADDEVENT": 0, 
     "ALPHA_OPAQUE": 255, 
@@ -23,6 +24,8 @@
     "ASSERTION_IGNORE": 3, 
     "ASSERTION_RETRY": 0, 
     "ASSERT_LEVEL": 2, 
+    "AUDIODEVICEADDED": 4352, 
+    "AUDIODEVICEREMOVED": 4353, 
     "AUDIO_ALLOW_ANY_CHANGE": 7, 
     "AUDIO_ALLOW_CHANNELS_CHANGE": 4, 
     "AUDIO_ALLOW_FORMAT_CHANGE": 2, 
@@ -32,6 +35,7 @@
     "AUDIO_DRIVER_DUMMY": 1, 
     "AUDIO_DRIVER_OSS": 1, 
     "AUDIO_DRIVER_PULSEAUDIO": 1, 
+    "AUDIO_DRIVER_SNDIO": 1, 
     "AUDIO_MASK_BITSIZE": 255, 
     "AUDIO_MASK_DATATYPE": 256, 
     "AUDIO_MASK_ENDIAN": 4096, 
@@ -128,6 +132,9 @@
     "GL_CONTEXT_PROFILE_CORE": 1, 
     "GL_CONTEXT_PROFILE_ES": 4, 
     "GL_CONTEXT_PROFILE_MASK": 21, 
+    "GL_CONTEXT_RELEASE_BEHAVIOR": 24, 
+    "GL_CONTEXT_RELEASE_BEHAVIOR_FLUSH": 1, 
+    "GL_CONTEXT_RELEASE_BEHAVIOR_NONE": 0, 
     "GL_CONTEXT_RESET_ISOLATION_FLAG": 8, 
     "GL_CONTEXT_ROBUST_ACCESS_FLAG": 4, 
     "GL_DEPTH_SIZE": 6, 
@@ -173,22 +180,31 @@
     "HAT_UP": 1, 
     "HINT_ACCELEROMETER_AS_JOYSTICK": "SDL_ACCELEROMETER_AS_JOYSTICK", 
     "HINT_ALLOW_TOPMOST": "SDL_ALLOW_TOPMOST", 
+    "HINT_ANDROID_APK_EXPANSION_MAIN_FILE_VERSION": "SDL_ANDROID_APK_EXPANSION_MAIN_FILE_VERSION", 
+    "HINT_ANDROID_APK_EXPANSION_PATCH_FILE_VERSION": "SDL_ANDROID_APK_EXPANSION_PATCH_FILE_VERSION", 
+    "HINT_ANDROID_SEPARATE_MOUSE_AND_TOUCH": "SDL_ANDROID_SEPARATE_MOUSE_AND_TOUCH", 
     "HINT_DEFAULT": 0, 
+    "HINT_EMSCRIPTEN_KEYBOARD_ELEMENT": "SDL_EMSCRIPTEN_KEYBOARD_ELEMENT", 
     "HINT_FRAMEBUFFER_ACCELERATION": "SDL_FRAMEBUFFER_ACCELERATION", 
     "HINT_GAMECONTROLLERCONFIG": "SDL_GAMECONTROLLERCONFIG", 
     "HINT_GRAB_KEYBOARD": "SDL_GRAB_KEYBOARD", 
     "HINT_IDLE_TIMER_DISABLED": "SDL_IOS_IDLE_TIMER_DISABLED", 
+    "HINT_IME_INTERNAL_EDITING": "SDL_IME_INTERNAL_EDITING", 
     "HINT_JOYSTICK_ALLOW_BACKGROUND_EVENTS": "SDL_JOYSTICK_ALLOW_BACKGROUND_EVENTS", 
+    "HINT_MAC_BACKGROUND_APP": "SDL_MAC_BACKGROUND_APP", 
     "HINT_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK": "SDL_MAC_CTRL_CLICK_EMULATE_RIGHT_CLICK", 
     "HINT_MOUSE_RELATIVE_MODE_WARP": "SDL_MOUSE_RELATIVE_MODE_WARP", 
     "HINT_NORMAL": 1, 
+    "HINT_NO_SIGNAL_HANDLERS": "SDL_NO_SIGNAL_HANDLERS", 
     "HINT_ORIENTATIONS": "SDL_IOS_ORIENTATIONS", 
     "HINT_OVERRIDE": 2, 
+    "HINT_RENDER_DIRECT3D11_DEBUG": "SDL_RENDER_DIRECT3D11_DEBUG", 
     "HINT_RENDER_DIRECT3D_THREADSAFE": "SDL_RENDER_DIRECT3D_THREADSAFE", 
     "HINT_RENDER_DRIVER": "SDL_RENDER_DRIVER", 
     "HINT_RENDER_OPENGL_SHADERS": "SDL_RENDER_OPENGL_SHADERS", 
     "HINT_RENDER_SCALE_QUALITY": "SDL_RENDER_SCALE_QUALITY", 
     "HINT_RENDER_VSYNC": "SDL_RENDER_VSYNC", 
+    "HINT_THREAD_STACK_SIZE": "SDL_THREAD_STACK_SIZE", 
     "HINT_TIMER_RESOLUTION": "SDL_TIMER_RESOLUTION", 
     "HINT_VIDEO_ALLOW_SCREENSAVER": "SDL_VIDEO_ALLOW_SCREENSAVER", 
     "HINT_VIDEO_HIGHDPI_DISABLED": "SDL_VIDEO_HIGHDPI_DISABLED", 
@@ -196,10 +212,28 @@
     "HINT_VIDEO_MINIMIZE_ON_FOCUS_LOSS": "SDL_VIDEO_MINIMIZE_ON_FOCUS_LOSS", 
     "HINT_VIDEO_WINDOW_SHARE_PIXEL_FORMAT": "SDL_VIDEO_WINDOW_SHARE_PIXEL_FORMAT", 
     "HINT_VIDEO_WIN_D3DCOMPILER": "SDL_VIDEO_WIN_D3DCOMPILER", 
+    "HINT_VIDEO_X11_NET_WM_PING": "SDL_VIDEO_X11_NET_WM_PING", 
     "HINT_VIDEO_X11_XINERAMA": "SDL_VIDEO_X11_XINERAMA", 
     "HINT_VIDEO_X11_XRANDR": "SDL_VIDEO_X11_XRANDR", 
     "HINT_VIDEO_X11_XVIDMODE": "SDL_VIDEO_X11_XVIDMODE", 
+    "HINT_WINDOWS_ENABLE_MESSAGELOOP": "SDL_WINDOWS_ENABLE_MESSAGELOOP", 
+    "HINT_WINDOWS_NO_CLOSE_ON_ALT_F4": "SDL_WINDOWS_NO_CLOSE_ON_ALT_F4", 
+    "HINT_WINDOW_FRAME_USABLE_WHILE_CURSOR_HIDDEN": "SDL_WINDOW_FRAME_USABLE_WHILE_CURSOR_HIDDEN", 
+    "HINT_WINRT_HANDLE_BACK_BUTTON": "SDL_WINRT_HANDLE_BACK_BUTTON", 
+    "HINT_WINRT_PRIVACY_POLICY_LABEL": "SDL_WINRT_PRIVACY_POLICY_LABEL", 
+    "HINT_WINRT_PRIVACY_POLICY_URL": "SDL_WINRT_PRIVACY_POLICY_URL", 
     "HINT_XINPUT_ENABLED": "SDL_XINPUT_ENABLED", 
+    "HINT_XINPUT_USE_OLD_JOYSTICK_MAPPING": "SDL_XINPUT_USE_OLD_JOYSTICK_MAPPING", 
+    "HITTEST_DRAGGABLE": 1, 
+    "HITTEST_NORMAL": 0, 
+    "HITTEST_RESIZE_BOTTOM": 7, 
+    "HITTEST_RESIZE_BOTTOMLEFT": 8, 
+    "HITTEST_RESIZE_BOTTOMRIGHT": 6, 
+    "HITTEST_RESIZE_LEFT": 9, 
+    "HITTEST_RESIZE_RIGHT": 5, 
+    "HITTEST_RESIZE_TOP": 3, 
+    "HITTEST_RESIZE_TOPLEFT": 2, 
+    "HITTEST_RESIZE_TOPRIGHT": 4, 
     "ICONV_E2BIG": -2, 
     "ICONV_EILSEQ": -3, 
     "ICONV_EINVAL": -4, 
@@ -224,7 +258,15 @@
     "JOYDEVICEREMOVED": 1542, 
     "JOYHATMOTION": 1538, 
     "JOYSTICK_LINUX": 1, 
+    "JOYSTICK_POWER_EMPTY": 0, 
+    "JOYSTICK_POWER_FULL": 3, 
+    "JOYSTICK_POWER_LOW": 1, 
+    "JOYSTICK_POWER_MAX": 5, 
+    "JOYSTICK_POWER_MEDIUM": 2, 
+    "JOYSTICK_POWER_UNKNOWN": -1, 
+    "JOYSTICK_POWER_WIRED": 4, 
     "KEYDOWN": 768, 
+    "KEYMAPCHANGED": 772, 
     "KEYUP": 769, 
     "LASTERROR": 5, 
     "LASTEVENT": 65535, 
@@ -276,6 +318,8 @@
     "MOUSEBUTTONUP": 1026, 
     "MOUSEMOTION": 1024, 
     "MOUSEWHEEL": 1027, 
+    "MOUSEWHEEL_FLIPPED": 1, 
+    "MOUSEWHEEL_NORMAL": 0, 
     "MULTIGESTURE": 2050, 
     "MUTEX_TIMEDOUT": 1, 
     "NULL_WHILE_LOOP_CONDITION": 0, 
@@ -300,7 +344,7 @@
     "PACKEDORDER_RGBX": 2, 
     "PACKEDORDER_XBGR": 5, 
     "PACKEDORDER_XRGB": 1, 
-    "PATCHLEVEL": 2, 
+    "PATCHLEVEL": 4, 
     "PEEKEVENT": 1, 
     "PIXELFORMAT_ABGR1555": 359862274, 
     "PIXELFORMAT_ABGR4444": 359796738, 
@@ -323,6 +367,8 @@
     "PIXELFORMAT_INDEX4MSB": 304088064, 
     "PIXELFORMAT_INDEX8": 318769153, 
     "PIXELFORMAT_IYUV": 1448433993, 
+    "PIXELFORMAT_NV12": 842094158, 
+    "PIXELFORMAT_NV21": 825382478, 
     "PIXELFORMAT_RGB24": 386930691, 
     "PIXELFORMAT_RGB332": 336660481, 
     "PIXELFORMAT_RGB444": 353504258, 
@@ -358,6 +404,7 @@
     "POWER_LINUX": 1, 
     "PREALLOC": 1, 
     "PRESSED": 1, 
+    "PRIs64": "ld", 
     "QUERY": -1, 
     "QUIT": 256, 
     "RELEASED": 0, 
@@ -365,6 +412,7 @@
     "RENDERER_PRESENTVSYNC": 4, 
     "RENDERER_SOFTWARE": 1, 
     "RENDERER_TARGETTEXTURE": 8, 
+    "RENDER_DEVICE_RESET": 8193, 
     "RENDER_TARGETS_RESET": 8192, 
     "RLEACCEL": 2, 
     "RWOPS_JNIFILE": 3, 
@@ -628,6 +676,7 @@
     "SYSTEM_CURSOR_WAIT": 2, 
     "SYSTEM_CURSOR_WAITARROW": 4, 
     "SYSWMEVENT": 513, 
+    "SYSWM_ANDROID": 9, 
     "SYSWM_COCOA": 4, 
     "SYSWM_DIRECTFB": 3, 
     "SYSWM_MIR": 7, 
@@ -635,6 +684,7 @@
     "SYSWM_UNKNOWN": 0, 
     "SYSWM_WAYLAND": 6, 
     "SYSWM_WINDOWS": 1, 
+    "SYSWM_WINRT": 8, 
     "SYSWM_X11": 2, 
     "TEXTEDITING": 770, 
     "TEXTEDITINGEVENT_TEXT_SIZE": 32, 
@@ -658,16 +708,16 @@
     "USEREVENT": 32768, 
     "VIDEO_DRIVER_DUMMY": 1, 
     "VIDEO_DRIVER_MIR": 1, 
-    "VIDEO_DRIVER_MIR_DYNAMIC": "libmirclient.so.8", 
+    "VIDEO_DRIVER_MIR_DYNAMIC": "libmirclient.so.9", 
     "VIDEO_DRIVER_MIR_DYNAMIC_XKBCOMMON": "libxkbcommon.so.0", 
     "VIDEO_DRIVER_WAYLAND": 1, 
     "VIDEO_DRIVER_WAYLAND_QT_TOUCH": 1, 
     "VIDEO_DRIVER_X11": 1, 
-    "VIDEO_DRIVER_X11_CONST_PARAM_XDATA32": 1, 
     "VIDEO_DRIVER_X11_CONST_PARAM_XEXTADDDISPLAY": 1, 
     "VIDEO_DRIVER_X11_HAS_XKBKEYCODETOKEYSYM": 1, 
     "VIDEO_DRIVER_X11_SUPPORTS_GENERIC_EVENTS": 1, 
     "VIDEO_DRIVER_X11_XCURSOR": 1, 
+    "VIDEO_DRIVER_X11_XDBE": 1, 
     "VIDEO_DRIVER_X11_XINERAMA": 1, 
     "VIDEO_DRIVER_X11_XINPUT2": 1, 
     "VIDEO_DRIVER_X11_XINPUT2_SUPPORTS_MULTITOUCH": 1, 
@@ -709,16 +759,50 @@
     "WINDOW_INPUT_GRABBED": 256, 
     "WINDOW_MAXIMIZED": 128, 
     "WINDOW_MINIMIZED": 64, 
+    "WINDOW_MOUSE_CAPTURE": 16384, 
     "WINDOW_MOUSE_FOCUS": 1024, 
     "WINDOW_OPENGL": 2, 
     "WINDOW_RESIZABLE": 32, 
     "WINDOW_SHOWN": 4
   }, 
   "types": {
+    "AssertData": {
+      "fields": [
+        [
+          "always_ignore", 
+          "int"
+        ], 
+        [
+          "trigger_count", 
+          "uint"
+        ], 
+        [
+          "condition", 
+          "ubyte*"
+        ], 
+        [
+          "filename", 
+          "ubyte*"
+        ], 
+        [
+          "linenum", 
+          "int"
+        ], 
+        [
+          "function", 
+          "ubyte*"
+        ], 
+        [
+          "next", 
+          "AssertData**"
+        ]
+      ], 
+      "type": "struct"
+    }, 
     "AssertionHandler": {
       "to": {
         "argtypes": [
-          "assert_data*", 
+          "AssertData*", 
           "void*"
         ], 
         "restype": "int", 
@@ -792,6 +876,39 @@
         "vararg": false
       }, 
       "type": "pointer"
+    }, 
+    "AudioDeviceEvent": {
+      "fields": [
+        [
+          "type", 
+          "uint"
+        ], 
+        [
+          "timestamp", 
+          "uint"
+        ], 
+        [
+          "which", 
+          "uint"
+        ], 
+        [
+          "iscapture", 
+          "ubyte"
+        ], 
+        [
+          "padding1", 
+          "ubyte"
+        ], 
+        [
+          "padding2", 
+          "ubyte"
+        ], 
+        [
+          "padding3", 
+          "ubyte"
+        ]
+      ], 
+      "type": "struct"
     }, 
     "AudioFilter": {
       "to": {
@@ -1125,6 +1242,10 @@
         [
           "cdevice", 
           "ControllerDeviceEvent"
+        ], 
+        [
+          "adevice", 
+          "AudioDeviceEvent"
         ], 
         [
           "quit", 
@@ -1634,6 +1755,19 @@
       }, 
       "type": "pointer"
     }, 
+    "HitTest": {
+      "to": {
+        "argtypes": [
+          "Window*", 
+          "Point*", 
+          "void*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }, 
+      "type": "pointer"
+    }, 
     "JoyAxisEvent": {
       "fields": [
         [
@@ -2078,6 +2212,10 @@
         [
           "y", 
           "i32"
+        ], 
+        [
+          "direction", 
+          "uint"
         ]
       ], 
       "type": "struct"
@@ -4430,39 +4568,6 @@
       ], 
       "type": "struct"
     }, 
-    "assert_data": {
-      "fields": [
-        [
-          "always_ignore", 
-          "int"
-        ], 
-        [
-          "trigger_count", 
-          "uint"
-        ], 
-        [
-          "condition", 
-          "ubyte*"
-        ], 
-        [
-          "filename", 
-          "ubyte*"
-        ], 
-        [
-          "linenum", 
-          "int"
-        ], 
-        [
-          "function", 
-          "ubyte*"
-        ], 
-        [
-          "next", 
-          "assert_data**"
-        ]
-      ], 
-      "type": "struct"
-    }, 
     "atomic_t": {
       "fields": [
         [
@@ -4741,6 +4846,17 @@
         "vararg": false
       }
     }, 
+    "CaptureMouse": {
+      "name": "SDL_CaptureMouse", 
+      "type": {
+        "argtypes": [
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "ClearError": {
       "name": "SDL_ClearError", 
       "type": {
@@ -4754,6 +4870,17 @@
       "name": "SDL_ClearHints", 
       "type": {
         "argtypes": [], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "ClearQueuedAudio": {
+      "name": "SDL_ClearQueuedAudio", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
         "restype": "void", 
         "type": "cfunc", 
         "vararg": false
@@ -5629,6 +5756,17 @@
         "vararg": false
       }
     }, 
+    "GameControllerFromInstanceID": {
+      "name": "SDL_GameControllerFromInstanceID", 
+      "type": {
+        "argtypes": [
+          "i32"
+        ], 
+        "restype": "GameController*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "GameControllerGetAttached": {
       "name": "SDL_GameControllerGetAttached", 
       "type": {
@@ -5822,7 +5960,7 @@
       "name": "SDL_GetAssertionReport", 
       "type": {
         "argtypes": [], 
-        "restype": "assert_data*", 
+        "restype": "AssertData*", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -6024,6 +6162,20 @@
         "vararg": false
       }
     }, 
+    "GetDisplayDPI": {
+      "name": "SDL_GetDisplayDPI", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "float*", 
+          "float*", 
+          "float*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "GetDisplayMode": {
       "name": "SDL_GetDisplayMode", 
       "type": {
@@ -6065,6 +6217,27 @@
           "void**"
         ], 
         "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetGlobalMouseState": {
+      "name": "SDL_GetGlobalMouseState", 
+      "type": {
+        "argtypes": [
+          "int*", 
+          "int*"
+        ], 
+        "restype": "uint", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetGrabbedWindow": {
+      "name": "SDL_GetGrabbedWindow", 
+      "type": {
+        "argtypes": [], 
+        "restype": "Window*", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -6299,6 +6472,17 @@
           "ubyte*"
         ], 
         "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetQueuedAudioSize": {
+      "name": "SDL_GetQueuedAudioSize", 
+      "type": {
+        "argtypes": [
+          "uint"
+        ], 
+        "restype": "uint", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -7180,6 +7364,15 @@
         "vararg": false
       }
     }, 
+    "HasAVX2": {
+      "name": "SDL_HasAVX2", 
+      "type": {
+        "argtypes": [], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "HasAltiVec": {
       "name": "SDL_HasAltiVec", 
       "type": {
@@ -7417,6 +7610,17 @@
         "vararg": false
       }
     }, 
+    "JoystickCurrentPowerLevel": {
+      "name": "SDL_JoystickCurrentPowerLevel", 
+      "type": {
+        "argtypes": [
+          "Joystick*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "JoystickEventState": {
       "name": "SDL_JoystickEventState", 
       "type": {
@@ -7424,6 +7628,17 @@
           "int"
         ], 
         "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "JoystickFromInstanceID": {
+      "name": "SDL_JoystickFromInstanceID", 
+      "type": {
+        "argtypes": [
+          "i32"
+        ], 
+        "restype": "Joystick*", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -8215,6 +8430,19 @@
         "vararg": false
       }
     }, 
+    "QueueAudio": {
+      "name": "SDL_QueueAudio", 
+      "type": {
+        "argtypes": [
+          "uint", 
+          "void*", 
+          "uint"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "Quit": {
       "name": "SDL_Quit", 
       "type": {
@@ -8600,6 +8828,17 @@
         "vararg": false
       }
     }, 
+    "RenderIsClipEnabled": {
+      "name": "SDL_RenderIsClipEnabled", 
+      "type": {
+        "argtypes": [
+          "Renderer*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "RenderPresent": {
       "name": "SDL_RenderPresent", 
       "type": {
@@ -8691,7 +8930,7 @@
       "name": "SDL_ReportAssertion", 
       "type": {
         "argtypes": [
-          "assert_data*", 
+          "AssertData*", 
           "ubyte*", 
           "ubyte*", 
           "int"
@@ -9225,6 +9464,19 @@
         "vararg": false
       }
     }, 
+    "SetWindowHitTest": {
+      "name": "SDL_SetWindowHitTest", 
+      "type": {
+        "argtypes": [
+          "Window*", 
+          "HitTest", 
+          "void*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "SetWindowIcon": {
       "name": "SDL_SetWindowIcon", 
       "type": {
@@ -9656,6 +9908,18 @@
           "int*"
         ], 
         "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WarpMouseGlobal": {
+      "name": "SDL_WarpMouseGlobal", 
+      "type": {
+        "argtypes": [
+          "int", 
+          "int"
+        ], 
+        "restype": "int", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -10270,6 +10534,17 @@
         "vararg": false
       }
     }, 
+    "sqrtf": {
+      "name": "SDL_sqrtf", 
+      "type": {
+        "argtypes": [
+          "float"
+        ], 
+        "restype": "float", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "sscanf": {
       "name": "SDL_sscanf", 
       "type": {
@@ -10509,6 +10784,28 @@
           "ubyte*"
         ], 
         "restype": "ubyte*", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "tan": {
+      "name": "SDL_tan", 
+      "type": {
+        "argtypes": [
+          "double"
+        ], 
+        "restype": "double", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "tanf": {
+      "name": "SDL_tanf", 
+      "type": {
+        "argtypes": [
+          "float"
+        ], 
+        "restype": "float", 
         "type": "cfunc", 
         "vararg": false
       }
