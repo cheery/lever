@@ -96,8 +96,11 @@ class Mem(Object):
         return Object.setitem(self, Integer(index), value)
 
     def call(self, argv):
-        if isinstance(self.ctype, CFunc):
-            return self.ctype.ccall(self.pointer, argv)
+        ctype = self.ctype
+        if isinstance(ctype, Pointer):
+            ctype = ctype.to
+        if isinstance(ctype, CFunc):
+            return ctype.ccall(self.pointer, argv)
         return Object.call(self, argv)
 
     def repr(self):
@@ -209,6 +212,8 @@ class Pointer(Type):
     def typecheck(self, other):
         if other is null:
             return True
+        if isinstance(self.to, CFunc) and isinstance(other, CFunc):
+            return self.to.typecheck(other) # Technically, we can't represent functions by other than a pointer.
         if isinstance(other, Pointer):
             if isinstance(self.to, Type):
                 return self.to.typecheck(other.to)
@@ -336,7 +341,7 @@ class CFunc(Type):
         raise Exception(u"cannot cfunc store " + value.repr())
 
     def typecheck(self, other):
-        if self is other:
+        if self is other: # TODO: This may be a bit too strict.
             return True
         return False
 
