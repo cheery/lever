@@ -363,9 +363,11 @@ def post_else(env, loc, body):
 def post_done(env, loc):
     return ([], None)
 
-def post_assert(env, loc, cond, body):
+def post_assert(env, loc, cond, body=None):
     if isinstance(body, list):
         body = Prog(body)
+    if body is None:
+        body = Code(loc, "constant", u"")
     return Cond([[loc, Code(loc, "not", cond),
         [Code(loc, "assert", body)]]], None)
 
@@ -454,7 +456,9 @@ class Cond(Cell):
         context.block = exit
         return result
 
-def post_return(env, loc, expr):
+def post_return(env, loc, expr=None):
+    if expr is None:
+        expr = Code(loc, "getglob", u"null")
     return Code(loc, "return", expr)
 
 def post_raise(env, loc, expr):

@@ -17,6 +17,13 @@ language.new_parser = chartparser.preprocess(
     language.grammar,
     language.table.nonterminal("file"))
 
+# We allow the indentation to slip out on these tokens:
+slips = set([
+    language.table.keyword(","),
+    language.table.keyword(")"),
+    language.table.keyword("}"),
+    language.table.keyword("]") ])
+
 main = ():
     code = read_file("sample.lc", "sample.lc")
     this = module("sample", base)
@@ -45,7 +52,7 @@ read_tokens = (tokens, source=null):
     for token in tokens
         indent.step(parser, token.start, source)
         terminal = language.table.terminal(token.name)
-        if not parser.expecting(terminal)
+        if not parser.expecting(terminal) and terminal in slips
             indent.slip(parser, token.start, source)
         if not parser.expecting(terminal)
             raise chartparser.SyntaxErrorExpected(parser.expect, token.start, source)
