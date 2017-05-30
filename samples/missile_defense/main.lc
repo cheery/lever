@@ -8,11 +8,40 @@ if run_profiler
     profile = fs.open("missile_defense.vmprof", fs.WRONLY | fs.TRUNC | fs.CREAT)
     vmprof.enable(profile, 0.0001)
 
+AUDIO_F32 = 0x8120
+
 main = ():
     window = sdl.Window(name, {
         width = 2048
         height = 2048
     })
+    assert sdl.sdl.InitSubSystem(sdl.sdl.INIT_AUDIO) == 0
+        sdl.sdl.GetError()
+
+    have = ffi.automem(sdl.sdl.AudioSpec)
+    sample_freq = 48000
+    sample_dt = 1 / sample_freq
+    audio_t = 0.0
+    fill_audio_buffer = (_, stream, length):
+        data = ffi.cast(stream, ffi.pointer(ffi.float))
+        length = int(length / ffi.sizeof(ffi.float))
+        for i in range(0, length, 2)
+            value = sound_out(audio_t, sample_dt)
+            data[i+0] = value.left
+            data[i+1] = value.right
+            audio_t += sample_dt
+
+    fill_audio_buffer = ffi.callback(sdl.sdl.AudioCallback, fill_audio_buffer)
+
+    audio_dev = sdl.sdl.OpenAudioDevice(null, 0, {
+        freq = sample_freq,
+        format = AUDIO_F32,
+        channels = 2,
+        samples = 4096,
+        callback = fill_audio_buffer
+    }, have, 0)
+
+
     gpu = GPU(window.wsi)
     screen = Rect(0, 0, window.width, window.height)
     swapchain = get_swapchain(
@@ -215,20 +244,73 @@ main = ():
         })
     gpu.createPipeline(pipeline)
 
+    ground_blasts = []
+
+    sound_out = (t, dt):
+        volume = pow(10, -1.2)
+        out = object();
+            left = 0.0
+            right = 0.0
+        noise = (random() * 2 - 1) * volume
+        for blast in ground_blasts
+            u = clamp(blast.x / 2.0, 0.0, 1.0)
+            out.left  += (1-u) * exp(-blast.t * 10.0) * noise * sqr(t*tau*20)
+            out.right += (  u) * exp(-blast.t * 10.0) * noise * sqr(t*tau*20)
+            blast.t += dt
+            if blast.t >= 0.5
+                ground_blasts.remove(blast)
+
+        return out
+
     missiles = []
     clicks = []
 
-    update = ():
+    update = (game_step):
     #schedule(():
     #    while running
         for m in missiles
             vx = cos(m.angle) * m.speed
             vy = sin(m.angle) * m.speed
-            m.x += vx * 1/60
-            m.y += vy * 1/60
-            if m.y < 0
+            m.x += vx * game_step
+            m.y += vy * game_step
+            dead = false
+            if m.y < 0.2
+                dead = true
+                clicks.append(object();
+                    x = m.x
+                    y = m.y
+                    t = 1.0)
+                ground_blasts.append(object();
+                    x = m.x
+                    t = 0.0)
+                if ground_blasts.length > 10
+                    o = null
+                    drop = null
+                    for b in ground_blasts
+                        o = max(b.t, o)
+                        if b.t == o
+                            drop = b
+                    ground_blasts.remove(drop)
+
+            for c in clicks
+                dx = m.x - c.x
+                dy = m.y - c.y
+                if dx*dx + dy*dy <= pow(16/512, 2)
+                    dead = true
+                    clicks.append(object();
+                        x = m.x
+                        y = m.y
+                        t = 1.0)
+                    break
+
+            if dead
                 missiles.remove(m)
     #        sleep(1 / 60.0))
+
+        for c in clicks
+            c.t -= game_step
+            if c.t < 0
+                clicks.remove(c)
 
     schedule(():
         while running
@@ -282,12 +364,14 @@ main = ():
     now = was = time()
     game_step = 1 / 60.0
 
+    sdl.sdl.PauseAudioDevice(audio_dev, 0)
+
     event = ffi.automem(sdl.sdl.Event)
     running = true
     while running
         now = time()
         if now - was > game_step
-            update()
+            update(game_step)
             was += ((now - was) // game_step) * game_step
             render()
         while sdl.sdl.PollEvent(event) != 0
@@ -297,10 +381,14 @@ main = ():
                 ndx = event.button.x / window.width
                 ndy = 1.0 - event.button.y / window.height
                 clicks.append(object();
+                    t = 1.5
                     x = ndx * 2
                     y = ndy * 2)
 
         sleep(0.001)
+    
+    if audio_dev
+        sdl.sdl.CloseAudioDevice(audio_dev)
 
     gpu.device.waitIdle()
     for obj in swapchain.framebuffers ++ swapchain.views
@@ -389,3 +477,12 @@ class SpriteLayer
         ]
         for i in range(out.length)
             self.f32data[stride*idx + i] = out[i]
+
+saw = (t):
+    return (pi - t % tau) / pi
+
+sqr = (t):
+    return int(pi < (t % tau)) * 2 - 1
+
+tri = (t):
+    return abs(1 - (t % tau)/pi) * 2 - 1
