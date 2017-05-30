@@ -1,0 +1,64 @@
+main = ():
+    prev = Uint8Array(80)
+    now  = Uint8Array(80)
+    next = prev
+    for i in range(now.length)
+        now[i] = 0
+        if i == 40
+            now[i] = 1
+
+        prev := now
+        now := next
+        next := prev
+
+    print_state(now)
+    for i in range(1000)
+        step(now, next)
+        prev = now
+        now  = next
+        next = prev
+        print_state(now)
+        sleep(0.05) # This is actually just a plain workaround.
+                    # In certain cases the printout produced garbage
+                    # and I am not quite ready to deal with that
+                    # problem yet.
+
+class Generator
+    +init = (self, size):
+        self.prev = Uint8Array(size)
+        self.now  = Uint8Array(size)
+        for i in range(size)
+            self.prev[i] = 0
+            self.now[i] = 0
+
+    next = (self):
+        next = self.prev
+        step(self.now, next)
+        self.prev = self.now
+        self.now = next
+
+# https://en.wikipedia.org/wiki/Rule_30
+step = (now, next):
+    for i in range(now.length)
+        l = now[(i-1) % now.length]
+        r = now[(i+1) % now.length]
+        c = now[i]
+
+        if l > 0 and c == 0 and r == 0
+            next[i] = 1
+        elif l == 0 and c == 0 and r > 0
+            next[i] = 2
+        elif c > 0 and l == 0 and r > 0
+            next[i] = 3
+        elif c > 0 and l == 0 and r == 0
+            next[i] = 4
+        else
+            next[i] = 0
+
+print_state = (now):
+    out = []
+    for c in now
+        out.append(codes[c])
+    print(''.join(out))
+
+codes = {0: " ", 1: "#", 2: "/", 3: "\\", 4: "*"}

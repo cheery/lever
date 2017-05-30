@@ -5,7 +5,9 @@ from customobject import Id
 from multimethod import Multimethod
 from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean
 from rpython.rlib.objectmodel import specialize, always_inline
+from rpython.rlib.rfloat import copysign
 from rpython.rtyper.lltypesystem import rffi
+from rpython.rtyper.lltypesystem.module.ll_math import math_fmod
 from string import String
 from listobject import List
 from setobject import Set
@@ -77,6 +79,17 @@ shr  = arithmetic_multimethod(u'>>',  (lambda a, b: a >> b))
 min_ = arithmetic_multimethod(u'min', (lambda a, b: min(a, b)), flo=True)
 max_ = arithmetic_multimethod(u'max', (lambda a, b: max(a, b)), flo=True)
 # min default and max default redefined below.
+
+@mod.multimethod_s(Float, Float)
+def float_mod(a, b):
+    y = b.number
+    mod = math_fmod(a.number, y)     # Follows pypy implementation.
+    if mod:                          # I'm not sure why remainder and denominator
+        if (y < 0.0) != (mod < 0.0): # must have the same sign.
+            mod += y
+    else:
+        mod = copysign(0.0, y) 
+    return Float(mod)
 
 # You get a float if you divide.
 div  = by_symbol[u'/'] = Multimethod(2)

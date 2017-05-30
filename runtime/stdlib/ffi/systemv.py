@@ -61,23 +61,27 @@ class Mem(Object):
         return Object.setattr(self, name, value)
 
     def getitem(self, index):
-        if not isinstance(index, Integer):
-            return Object.getitem(self, index)
-        # The getitem and setitem should be just like the getattr/setattr,
-        # But we didn't do shadowed arrays or plain types yet. :)
-        index = index.value
         ctype = self.ctype
-        if isinstance(ctype, Pointer):
-            ctype = ctype.to
-            if isinstance(ctype, Array):
-                ctype = ctype.ctype
-                # TODO: could do length check if length present.
-            if isinstance(ctype, Type):
-                pointer = rffi.ptradd(self.pointer, ctype.size*index)
-                if isinstance(ctype, Struct) or isinstance(ctype, Union) or isinstance(ctype, Array):
-                    return Mem(Pointer(ctype), pointer)
-                return ctype.load(pointer, False)
-        return Object.getitem(self, Integer(index))
+        if isinstance(index, Integer):
+            # The getitem and setitem should be just like the getattr/setattr,
+            # But we didn't do shadowed arrays or plain types yet. :)
+            i = index.value
+            if isinstance(ctype, Pointer):
+                ctype = ctype.to
+                if isinstance(ctype, Array):
+                    ctype = ctype.ctype
+                    # TODO: could do length check if length present.
+                if isinstance(ctype, Type):
+                    pointer = rffi.ptradd(self.pointer, ctype.size*i)
+                    if isinstance(ctype, Struct) or isinstance(ctype, Union) or isinstance(ctype, Array):
+                        return Mem(Pointer(ctype), pointer)
+                    return ctype.load(pointer, False)
+        elif isinstance(index, Slice) and to_int(index.step) == 1: # TODO: consider the index.stop as well.
+            if isinstance(ctype, Pointer):
+                ctype = ctype.to
+                pointer = rffi.ptradd(self.pointer, sizeof(ctype) * to_int(index.start))
+                return SubMem(self, Pointer(ctype), pointer)
+        return Object.getitem(self, index)
 
     def setitem(self, index, value):
         if not isinstance(index, Integer):
@@ -111,6 +115,11 @@ class Mem(Object):
 
     def iter(self):
         return MemIterator(self, self.length)
+
+class SubMem(Mem):
+    def __init__(self, parent, ctype, pointer, length=0, pool=None):
+        self.parent = parent
+        Mem.__init__(self, ctype, pointer, length, pool)
 
 class MemIterator(Object):
     _immutable_fields_ = ['mem', 'length']

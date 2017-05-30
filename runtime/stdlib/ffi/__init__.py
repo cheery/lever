@@ -113,6 +113,17 @@ def builtin(fn):
     return fn
 
 @builtin
+@signature(Object)
+def addressof(obj):
+    if isinstance(obj, Handle):
+        return Integer(rffi.r_long(rffi.cast(rffi.LONG, obj.pointer)))
+    elif isinstance(obj, Mem):
+        return Integer(rffi.r_long(rffi.cast(rffi.LONG, obj.pointer)))
+    elif isinstance(obj, Uint8Data):
+        return Integer(rffi.r_long(rffi.cast(rffi.LONG, obj.uint8data)))
+    raise unwind(LTypeError(u"Can get address of memory locations only"))
+
+@builtin
 @signature(Object, Object)
 def cast(obj, ctype):
     ctype = to_type(ctype)
