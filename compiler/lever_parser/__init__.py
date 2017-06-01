@@ -43,8 +43,11 @@ class Parser(object):
                     indent_stack.append(indent)
                     indent = stream.first.start.col
                 line = stream.first.start.lno
-            expect = parser.expect
             token = stream.advance()
+            while token.name not in parser.expect and 'dedent' in parser.expect and token.name in (u"','", u"')'", u"']'", u"'}'"):
+                parser.step(Literal(token.start, token.start, 'dedent', ''))
+                indent = indent_stack.pop()
+            expect = parser.expect
             parser.step(token)
             if len(parser.chart[-1]) == 0:
                 if self.debug: print_result(parser)
