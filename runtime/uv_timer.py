@@ -39,7 +39,7 @@ def _on_tick_(timer):
     try:
         Event_dispatch(self.on_tick, [])
     except Unwinder as unwinder:
-        core.root_unwind(ec, unwinder)
+        core.root_unwind(unwinder)
 
 @Timer.method(u"set_repeat", signature(Timer, Float))
 def Timer_set_repeat(self, value):

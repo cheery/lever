@@ -223,7 +223,7 @@ def _on_exit_(process, status, signal):
             Integer(status),
             Integer(signal) ])
     except Unwinder as unwinder:
-        core.root_unwind(ec, unwinder)
+        core.root_unwind(unwinder)
 
 @Spawn.method(u"kill", signature(Spawn, Integer))
 def Spawn_kill(self, signum):

@@ -682,7 +682,7 @@ def _fs_event_cb_(handle, filename, events, status):
             greenlet, self.greenlet = self.greenlet, None
             core.switch([greenlet, obj])
     except Unwinder as unwinder:
-        core.root_unwind(ec, unwinder)
+        core.root_unwind(unwinder)
  
 # Not needed because the .close will signal ECANCELED to
 # the callback.

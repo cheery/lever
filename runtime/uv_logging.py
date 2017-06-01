@@ -13,11 +13,15 @@ class Logger:
         self.ec = ec
         self.stdout = stdout
         self.stderr = stderr
+        self.log_dump = []
 
     def log(self, which, obj):
         entry = space.Exnihilo()
         entry.setattr(u"type", space.String(which))
         entry.setattr(u"value", obj)
+        if core.g.ec.get() is not self.ec: # TODO: Fix this using 'async' signaling?
+            return 0                  #  user logs are not getting
+                                      #  cross-thread log messages.
         for logger in list(self.loggers):
             if logger.closed:
                 self.loggers.remove(logger)
@@ -55,6 +59,10 @@ class Logger:
         loggers, self.loggers = self.loggers, []
         # last chance logging
         # at this point it is best-effort.
+        text = "\n".join(self.log_dump)
+        if len(text) > 0:
+            self.log_dump = []
+            self.write_message(self.stderr, text)
         try:
             if len(loggers) > 0:
                 for item in loggers[0].items:
@@ -67,14 +75,21 @@ class Logger:
         except space.Unwinder as unwinder:
             self.exception(unwinder.exception)
 
+    # Here we make the error logs accumulate if it's not feasible to log them.
+
     # Just like in the initialize_stdio()
-    # Here we also ignore error messages.
+    # Here we dump messages into the memory first and later
+    # down into elsewhere.
     # If you cannot log them out, what else can you do?
     # TODO: Some day, make the logging work across threads.
     #       Maybe it should be the day when we'll get STM.
     def write_message(self, std, text):
-        if core.get_ec() != self.ec: # Just discard those damn messages if
-            return                   # they come up in wrong thread.
+        if core.g.ec.get() is not self.ec:
+            self.log_dump.append(text)
+            return
+        if std is self.stderr:
+            text = "\n".join(self.log_dump + [text])
+            self.log_dump = []
 
         array = space.to_uint8array(text)
         bufs, nbufs = uv_callback.obj2bufs(array)

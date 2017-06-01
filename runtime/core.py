@@ -95,7 +95,7 @@ def enqueue_for_exit(ec):
     #        schedule([ded.getattr(u"+finalize")])
     #        active = True
     #    except space.Unwinder as unwinder:
-    #        root_unwind(ec, unwinder)
+    #        root_unwind(unwinder)
     return active
 
 def unref_active_handle(handle, arg):
@@ -146,11 +146,11 @@ def run_finalizers(ec):
         try:
             schedule([ded.getattr(u"+finalize")])
         except space.Unwinder as unwinder:
-            root_unwind(ec, unwinder)
+            root_unwind(unwinder)
         ded = g.finalizer_queue.next_dead()
     ec.finalizer_cycle = False
 
-def root_unwind(ec, unwinder):
+def root_unwind(unwinder):
     g.log.exception(unwinder.exception)
 
 def schedule(argv):

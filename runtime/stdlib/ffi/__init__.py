@@ -297,7 +297,7 @@ def invoke_callback(ffi_cif, ll_res, ll_args, ll_userdata):
             if isinstance(cfunc.restype, Type):
                 cfunc.restype.store(None, ll_res, value)
         except Unwinder as unwinder:
-            core.root_unwind(core.get_ec(), unwinder)
+            core.root_unwind(unwinder)
         except Exception as e:
             try:
                 os.write(STDERR, "SystemError: callback raised ")

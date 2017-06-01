@@ -116,11 +116,19 @@ class StereoAudio
     fill_audio_buffer = (self, _, stream, length):
         data = ffi.cast(stream, ffi.pointer(ffi.float))
         length = int(length / ffi.sizeof(ffi.float))
-        for i in range(0, length, 2)
-            value = self.out(self.t, self.dt)
-            data[i+0] = value.left
-            data[i+1] = value.right
-            self.t += self.dt
+        if self.out == null
+            for i in range(0, length)
+                data[i+0] = 0.0
+        else
+            try
+                for i in range(0, length, 2)
+                    value = self.out(self.t, self.dt)
+                    data[i+0] = value.left
+                    data[i+1] = value.right
+                    self.t += self.dt
+            except Exception as e
+                self.out = null
+                raise e
 
     play = (self):
         if self.dev

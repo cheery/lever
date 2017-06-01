@@ -91,7 +91,7 @@ def _on_close_(handle):
         for event in self.events:
             Event_close(event)
     except Unwinder as unwinder:
-        core.root_unwind(ec, unwinder)
+        core.root_unwind(unwinder)
 
 @Handle2.method(u"get_send_buffer_size", signature(Handle2))
 def Handle2_get_send_buffer_size(self):
