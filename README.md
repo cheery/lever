@@ -315,6 +315,8 @@ When that happens, you have two options:
 
 Lever IRC channel: irc.freenode.net#lever [webchat link](http://webchat.freenode.net/?randomnick=1&channels=%23lever&prompt=1)
 
+Lever also has a [gitter channel](https://gitter.im/leverlanguage/Lobby), which can be easier for people who haven't used IRC before.
+
 ### Project coordination
 
 I have clear vision on Lever and I'd like to have some coordination over lever development. To coordinate I will use STRATEGY and TACTIC -tags in the source code. Finding them you can discover long term goals of the lever and the worksites, as well as the current activity taking place. Here's an example of what you might face:
