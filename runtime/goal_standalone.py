@@ -21,6 +21,7 @@ def system_init(argv):
 def force_config(config):
     config.translation.continuation = True
     config.translation.thread = True
+    config.translation.rweakref = True
 
 def target(driver, args):
     driver.exe_name = "lever"

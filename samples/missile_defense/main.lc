@@ -1,6 +1,7 @@
 import api, ffi, fs, json, png, sdl, vulkan
 from warpgpu import *
 import gpumalloc
+from dsp import saw, sqr, tri
 
 run_profiler = false
 if run_profiler
@@ -8,39 +9,11 @@ if run_profiler
     profile = fs.open("missile_defense.vmprof", fs.WRONLY | fs.TRUNC | fs.CREAT)
     vmprof.enable(profile, 0.0001)
 
-AUDIO_F32 = 0x8120
-
 main = ():
     window = sdl.Window(name, {
         width = 2048
         height = 2048
     })
-    assert sdl.sdl.InitSubSystem(sdl.sdl.INIT_AUDIO) == 0
-        sdl.sdl.GetError()
-
-    have = ffi.automem(sdl.sdl.AudioSpec)
-    sample_freq = 48000
-    sample_dt = 1 / sample_freq
-    audio_t = 0.0
-    fill_audio_buffer = (_, stream, length):
-        data = ffi.cast(stream, ffi.pointer(ffi.float))
-        length = int(length / ffi.sizeof(ffi.float))
-        for i in range(0, length, 2)
-            value = sound_out(audio_t, sample_dt)
-            data[i+0] = value.left
-            data[i+1] = value.right
-            audio_t += sample_dt
-
-    fill_audio_buffer = ffi.callback(sdl.sdl.AudioCallback, fill_audio_buffer)
-
-    audio_dev = sdl.sdl.OpenAudioDevice(null, 0, {
-        freq = sample_freq,
-        format = AUDIO_F32,
-        channels = 2,
-        samples = 4096,
-        callback = fill_audio_buffer
-    }, have, 0)
-
 
     gpu = GPU(window.wsi)
     screen = Rect(0, 0, window.width, window.height)
@@ -246,7 +219,7 @@ main = ():
 
     ground_blasts = []
 
-    sound_out = (t, dt):
+    audio = sdl.StereoAudio((t, dt):
         volume = pow(10, -1.2)
         out = object();
             left = 0.0
@@ -260,7 +233,7 @@ main = ():
             if blast.t >= 0.5
                 ground_blasts.remove(blast)
 
-        return out
+        return out)
 
     missiles = []
     clicks = []
@@ -364,8 +337,7 @@ main = ():
     now = was = time()
     game_step = 1 / 60.0
 
-    sdl.sdl.PauseAudioDevice(audio_dev, 0)
-
+    audio.play()
     event = ffi.automem(sdl.sdl.Event)
     running = true
     while running
@@ -387,40 +359,14 @@ main = ():
 
         sleep(0.001)
     
-    if audio_dev
-        sdl.sdl.CloseAudioDevice(audio_dev)
-
-    gpu.device.waitIdle()
-    for obj in swapchain.framebuffers ++ swapchain.views
-        obj.destroy()
-
-    dsc0.destroy()
-    DSC0.destroy()
-    pipeline.destroy()
-    pipeline_layout.destroy()
-    sprites.view.destroy()
-    sprites.image.mem.free()
-    sprites.image.destroy()
-    vbo.buffer.destroy()
-    vbo.buffer.mem.unmap()
-    vbo.buffer.mem.free()
-    ubo.buffer.destroy()
-    ubo.buffer.mem.free()
-
-    device_only.destroy()
-    readback.destroy()
-    upload.destroy()
-
-    shaders.destroy()
-    pass.destroy()
-    portal.destroy()
-    swapchain.destroy()
-    window.wsi.destroy()
+    audio.close()
     gpu.destroy()
 
     if run_profiler
         vmprof.disable()
         profile.close()
+
+    exit(0)
 
     
 
@@ -477,12 +423,3 @@ class SpriteLayer
         ]
         for i in range(out.length)
             self.f32data[stride*idx + i] = out[i]
-
-saw = (t):
-    return (pi - t % tau) / pi
-
-sqr = (t):
-    return int(pi < (t % tau)) * 2 - 1
-
-tri = (t):
-    return abs(1 - (t % tau)/pi) * 2 - 1

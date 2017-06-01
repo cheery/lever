@@ -196,19 +196,6 @@ main = ():
                 running = false
 
     gpu.device.waitIdle()
-    for obj in swapchain.framebuffers ++ swapchain.views
-        obj.destroy()
-    dsc0.destroy()
-    DSC0.destroy()
-    pipeline.destroy()
-    pipeline_layout.destroy()
-    vbo.buffer.destroy()
     vbo.buffer.mem.free()
-    ubo.buffer.destroy()
     ubo.buffer.mem.free()
-    shaders.destroy()
-    pass.destroy()
-    portal.destroy()
-    swapchain.destroy()
-    window.wsi.destroy()
     gpu.destroy()

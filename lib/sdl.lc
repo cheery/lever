@@ -5,10 +5,17 @@ if platform.name == "win32"
 else
     sdl = ffi.library("libSDL2.so", api.read_file("libSDL2", {}))
 
+sdl.Init(0)
+on_exit(sdl.Quit)
+
+init_on_demand = (flags):
+    if sdl.WasInit(flags) == 0
+        assert sdl.InitSubSystem(flags) == 0
+            sdl.GetError()
+
 class Window
     +init = (self, name, options={}):
-        assert sdl.Init(sdl.INIT_VIDEO) == 0
-            sdl.GetError()
+        init_on_demand(sdl.INIT_VIDEO)
 
         self.handle = sdl.CreateWindow(name,
             options.get("x", 0x1FFF0000),
@@ -30,7 +37,6 @@ class Window
         self.wsi.destroy()
         sdl.DestroyWindow(self.handle)
         self.handle = null
-        sdl.Quit()
 
 class WSI
     +init = (self, window):
@@ -66,6 +72,7 @@ class WSI
         else
             raise Exception("The app lacks swapchain instantiator for your platform.")
         self.surface = p_surface.to
+        self.instance.add_ref(self)
         
     device_support = (self, vk, dev, extensions):
         if "VK_KHR_swapchain" not in extensions
@@ -80,6 +87,50 @@ class WSI
 
     destroy = (self):
         if self.surface
+            self.instance.discard_ref(self)
             self.vk.destroySurfaceKHR(self.instance,
                 self.surface, null)
             self.surface = null
+
+AUDIO_F32 = 0x8120
+
+class StereoAudio
+    +init = (self, out):
+        init_on_demand(sdl.INIT_AUDIO)
+        self.out = out
+
+        have = ffi.automem(sdl.AudioSpec)
+        self.freq = 48000
+        self.dt = 1 / self.freq
+        self.t = 0.0
+
+        self.fill_cb = ffi.callback(sdl.AudioCallback, self.fill_audio_buffer)
+        self.dev = sdl.OpenAudioDevice(null, 0, {
+            freq = self.freq
+            format = AUDIO_F32
+            channels = 2
+            samples = 4096
+            callback = self.fill_cb
+        }, have, 0)
+
+    fill_audio_buffer = (self, _, stream, length):
+        data = ffi.cast(stream, ffi.pointer(ffi.float))
+        length = int(length / ffi.sizeof(ffi.float))
+        for i in range(0, length, 2)
+            value = self.out(self.t, self.dt)
+            data[i+0] = value.left
+            data[i+1] = value.right
+            self.t += self.dt
+
+    play = (self):
+        if self.dev
+            sdl.PauseAudioDevice(self.dev, 0)
+
+    stop = (self):
+        if self.dev
+            sdl.PauseAudioDevice(self.dev, 1)
+
+    close = (self):
+        if self.dev
+            sdl.CloseAudioDevice(self.dev)
+            self.dev = null

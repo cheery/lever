@@ -32,6 +32,8 @@ class GPU extends vulkan.Handle
             queueFamilyIndex = config.queueFamilyIndex
         })
         self.queue = queue
+        self.add_ref = self.device.add_ref
+        self.discard_ref = self.device.discard_ref
 
     createPipeline = (self, pipeline):
         assert isinstance(pipeline, GraphicsPipeline), "TODO: other pipeline objects"
@@ -53,8 +55,8 @@ class GPU extends vulkan.Handle
         self.device.updateDescriptorSets(writes, copies)
 
     destroy = (self):
-        self.pipeline_cache.destroy()
-        self.queue.pool.destroy()
+        # self.pipeline_cache.destroy()
+        # self.queue.pool.destroy()
         self.device.destroy()
         self.instance.destroy()
         self.id = null

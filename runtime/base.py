@@ -513,3 +513,22 @@ def instantiate_(i):
     if isinstance(i, Interface):
         return CustomObject(i)
     raise OldError(u"Cannot instantiate from non-interface")
+
+@builtin
+@signature(Object)
+def register_finalizer(obj):
+    core.g.finalizer_queue.register_finalizer(obj)
+    return null
+
+# @builtin
+# @signature(Object)
+# def finalize_on_exit(obj):
+#     ec = core.get_ec()
+#     ec.must_finalize_on_quit[obj] = true
+#     return null
+
+@builtin
+def on_exit(argv):
+    ec = core.get_ec()
+    ec.on_exit.append(argv)
+    return null

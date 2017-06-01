@@ -53,6 +53,7 @@ def new_entry_point(config, default_lever_path=u''):
 
         ec = core.init_executioncontext(config, lever_path, uv_loop, uv_idler)
         core.g.log = log = uv_logging.Logger(ec, uv_stdout, uv_stderr)
+        core.g.finalizer_ec = ec
         api.init(lever_path)
         vectormath.init_random()
 
@@ -61,7 +62,10 @@ def new_entry_point(config, default_lever_path=u''):
             argv.append(space.String(arg.decode('utf-8')))
         core.schedule(argv)
 
-        uv.run(ec.uv_loop, uv.RUN_DEFAULT)
+        live = True
+        while live:
+            uv.run(ec.uv_loop, uv.RUN_DEFAULT)
+            live = core.enqueue_for_exit(ec)
 
         #uv.loop_close(ec.uv_loop)
 

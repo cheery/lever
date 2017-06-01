@@ -12,6 +12,7 @@ class GPUMemory
         self.flags = flags
         self.min_chunk = min_chunk
         self.allocators = []
+        self.gpu.add_ref(self)
 
     new_chunk = (self, req_size, typeBits):
         chunk_size = self.min_chunk
@@ -62,6 +63,7 @@ class GPUMemory
         return buffer
 
     destroy = (self):
+        self.gpu.discard_ref(self)
         for heap in self.allocators
             heap.chunk.free()
         self.allocators = []

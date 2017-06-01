@@ -4,7 +4,8 @@
 #from rpython.rlib.objectmodel import we_are_translated, keepalive_until_here
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
 from rpython.rlib.rthread import ThreadLocalReference
-#from rpython.rlib import rgc
+from rpython.rlib.rgc import FinalizerQueue
+from rpython.rlib import jit
 from continuations import Continuation
 import rlibuv as uv
 import space
@@ -57,6 +58,10 @@ class ExecutionContext(object):
         #self.debug_hook = None
 
         self.handles = handle_stash(self.uv_loop)
+        #from rpython.rlib.rweakref import RWeakKeyDictionary
+        #self.must_finalize_on_quit = RWeakKeyDictionary(space.Object, space.Object)
+        self.on_exit = []
+        self.finalizer_cycle = False
 
     def enqueue(self, task):
         if len(self.queue) == 0 and not uv.is_active(rffi.cast(uv.handle_ptr, self.uv_idler)):
@@ -71,11 +76,45 @@ def run_queued_tasks(handle):
     if len(ec.queue) == 0: # trick.
         uv.idle_stop(ec.uv_idler)
 
+def enqueue_for_exit(ec):
+    # Ensures that handles that were active during the exit won't keep
+    # the event loop rolling.
+    # This is a bit of a hack, because every waiting greenlet should throw an
+    # 'Exit' or 'Discard' exception instead of this.
+    uv.walk(ec.uv_loop, unref_active_handle, lltype.nullptr(rffi.VOIDP.TO)) 
+    # Also.. How is it even possible that handles are active after an exit?
+    # Well I got it to happen with Ctrl+C.
+
+    on_exit, ec.on_exit = ec.on_exit, []
+    for argv in on_exit:
+        schedule(argv)
+    active = len(on_exit) > 0
+    #while len(ec.must_finalize_on_quit) > 0:
+    #    try:
+    #        ded = ec.must_finalize_on_quit.popitem()[0]
+    #        schedule([ded.getattr(u"+finalize")])
+    #        active = True
+    #    except space.Unwinder as unwinder:
+    #        root_unwind(ec, unwinder)
+    return active
+
+def unref_active_handle(handle, arg):
+    if uv.is_active(handle) != 0:
+        uv.unref(handle)
+
+class RootFinalizerQueue(FinalizerQueue):
+    Class = space.Object
+
+    def finalizer_trigger(self):
+        g.finalizer_ec.finalizer_cycle = True
+
 class GlobalState(object):
     ec = ThreadLocalReference(ExecutionContext, loop_invariant=True)
     log = None
     work_pool = None # Creates work pool on demand.
                      # It's in base.py
+    finalizer_queue = RootFinalizerQueue()
+    finalizer_ec = None
 
 def init_executioncontext(*args):
     ec = ExecutionContext(*args)
@@ -97,6 +136,19 @@ def root_switch(ec, argv):
         switch(argv)
     except space.Unwinder as unwinder:
         g.log.exception(unwinder.exception)
+    if ec.finalizer_cycle:
+        run_finalizers(ec)
+
+@jit.dont_look_inside
+def run_finalizers(ec):
+    ded = g.finalizer_queue.next_dead()
+    while ded:
+        try:
+            schedule([ded.getattr(u"+finalize")])
+        except space.Unwinder as unwinder:
+            root_unwind(ec, unwinder)
+        ded = g.finalizer_queue.next_dead()
+    ec.finalizer_cycle = False
 
 def root_unwind(ec, unwinder):
     g.log.exception(unwinder.exception)

@@ -535,7 +535,7 @@ class IndentParser
     # some extent the whole indent parser in its current form
     # provides bias for certain interpretations of the input.
     slip = (self, parser, pos, source):
-        if parser.expecting(self.dedent)
+        while parser.expecting(self.dedent)
             parser.step(self.dedent, null, pos, pos)
             self.level = self.stack.pop()
 
