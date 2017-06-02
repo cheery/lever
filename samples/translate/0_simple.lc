@@ -1,0 +1,20 @@
+import native
+
+main = ():
+    fn = first_function
+    func = native.export(fn)
+    native.print_function(func)
+
+some_function = (a, b):
+    return other_function(a*2, b+1)
+
+other_function = (c, d):
+    return c + d * 4
+
+#first_function = (a, b):
+#    return a + b
+
+first_function = (a, b):
+    while a < b
+        a *= 2
+    return a + b

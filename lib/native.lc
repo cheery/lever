@@ -1,3 +1,5 @@
+import optable
+
 print_function = (func):
     print(func.restype, func.label, func.argtypes)
     for ebb in func.ebbs
@@ -139,3 +141,160 @@ traverse_postorder = (entry, out=[], visit=set()):
                 traverse_postorder(arg.ebb, out, visit)
     out.append(entry)
     return out
+
+# Convert Lever bytecode into an EBB function.
+export = (fn):
+    code = fn.code
+    spec = fn.spec
+    argt = []
+    argn = []
+    for i in range(spec.argc + spec.optional)
+        argt.append('any')
+        argn.append(spec.varnames[i])
+    assert not spec.is_variadic,  "not translating variadic functions yet"
+    assert code.excs.length == 0, "not translating exceptions yet"
+    assert not code.is_generator, "not translating generators yet"
+    func = Function(fn.doc.name, argt, 'any')
+    func.argnames = argn
+
+    # print(code.regc)
+
+    # We have to extract the jump labels by pre-pass.
+    # It can be worthwhile to reconsider the bytecode later on.
+    jump_labels = {0: func.entry}
+    pc = 0
+    while pc < code.length
+        cc = (code[pc] & 255) + 1
+        opcode = code[pc] >> 8
+        op = optable.dec[opcode]
+        types = argl(op[2], op[3])
+        retv = op[1]
+        for i in range(1+int(retv), cc)
+            tn = types.next()
+            if tn == "block"
+                jump_labels[code[pc+i]] = null
+        pc += cc
+
+    label_pc = list(jump_labels.keys())
+    label_pc.sort()
+    for pc in label_pc
+        if pc != 0
+            jump_labels[pc] = func.new_ebb()
+
+    block = func.entry
+    scope = {}
+    lookup = (index):
+        if index in scope
+            return scope[index]
+        else
+            assert isinstance(index, int), index
+            return block.arg(index)
+    pc = 0
+    while pc < code.length
+        if pc in jump_labels
+            scope = {}
+            block = jump_labels[pc]
+
+        cc = (code[pc] & 255) + 1
+        opcode = code[pc] >> 8
+        op = optable.dec[opcode]
+        name = op[0]
+        retv = op[1]
+        types = argl(op[2], op[3])
+
+        # Another operation that feels lame special case in the retrospect.
+        if name == "move"
+            scope[code.localc + code[pc+1]] = lookup(code[pc+2])
+            pc += cc
+            continue
+
+        args = []
+        for i in range(1+int(retv), cc)
+            tn = types.next()
+            if tn == "string" or tn == "constant"
+                args.append( code.constant(code[pc+i]) )
+            elif tn == "vreg"
+                args.append( lookup(code.localc + code[pc+i]) )
+            elif tn == "block"
+                args.append( jump_labels[code[pc+i]] )
+            else
+                args.append( code[pc+i] )
+
+        assert name != "next", "'next' instruction needs special treatment"
+        assert name != "yield", "'yield' instruction needs special treatment"
+        assert name != "raise", "'raise' instruction needs special treatment"
+        assert name != "assert", "'assert' instruction needs special treatment"
+        assert name != "getupv", "'getupv' instruction needs special treatment"
+        assert name != "func", "'func' instruction needs special treatment"
+        assert name != "loglob", "'loglob' instruction illegal"
+        assert name != "setglob", "'setglob' instruction illegal"
+        assert name != "setupv", "'setupv' instruction illegal"
+        if name == "jump"
+            block.jump(args[0], dict(scope))
+        elif name == "cond"
+            block.jcond(args[0], args[1], dict(scope))
+            block.jump(args[2], dict(scope))
+        elif name == "return"
+            block.ret(args[0])
+        elif name == "getloc"
+            ins = lookup(args[0])
+        elif name == "setloc"
+            scope[args[0]] = args[1]
+        elif name == "getglob"
+            ins = block.op("constant", [getattr(code.module, args[0])], true)
+        else
+            ins = block.op(name, args, true)
+        if retv
+            scope[code.localc + code[pc+1]] = ins
+
+        pc += cc
+
+    simplify(func)
+    return func
+
+# Used by the export(fn) function to decode instructions.
+argl = (args, varg):
+    for obj in args
+        yield obj
+    while true
+        yield varg
+
+# The simplify drops unreachable code and calculates the
+# variable flow.
+simplify = (func):
+    visited = set()
+    edges = []
+    ebbs = []
+
+    dfs = (ebb):
+        if ebb in visited
+            return
+        visited.add(ebb)
+        for op in ebb.code ++ [ebb.exit]
+            for arg in op.args
+                if isinstance(arg, Exit)
+                    dfs(arg.ebb)
+                    edges.append([ebb, arg])
+        ebbs.append(ebb)
+    dfs(func.entry)
+
+    changed = true
+    while changed
+        changed = false
+        for edge in edges
+            ebb = edge[0]
+            exit = edge[1]
+            for key in exit.ebb.input
+                if key not in exit.output
+                    exit.output[key] = ebb.arg(key)
+                    changed = true
+    # It's this simple to trim away the excess outputs once
+    # the fixed point in inputs have been reached.
+    for edge in edges
+        exit = edge[1]
+        for key in list(exit.output)
+            if key not in exit.ebb.input
+                exit.output.pop(key)
+
+    ebbs.reverse()
+    func.ebbs = ebbs
