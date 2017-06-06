@@ -252,6 +252,33 @@ export = (fn):
     simplify(func)
     return func
 
+# The print bytecode is also using the argl. This is meant for the quick
+# checking of the bytecode of a function.
+print_bytecode = (fn):
+    code = fn.code
+    pc = 0
+    while pc < code.length
+        cc = (code[pc] & 255) + 1
+        opcode = code[pc] >> 8
+        out = [pc.to_string().rjust(4, '0') ++ ":"]
+        op = optable.dec[opcode]
+        retv = op[1]
+        if retv
+            out.append(code[pc+1])
+            out.append("=")
+        out.append(op[0])
+        types = argl(op[2], op[3])
+        for i in range(1+int(retv), cc)
+            tn = types.next()
+            if tn == "string" or tn == "constant"
+                out.append( repr(code.constant(code[pc+i])) )
+            elif tn == "vreg"
+                out.append( code[pc+i] )
+            else # on block you could do some pretty printing.
+                out.append( code[pc+i].to_string() ++ "(" ++ tn ++ ")" )
+        print(out...)
+        pc += cc
+
 # Used by the export(fn) function to decode instructions.
 argl = (args, varg):
     for obj in args

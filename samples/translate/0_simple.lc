@@ -1,9 +1,148 @@
 import native
+import subtyping
+from subtyping import Group
 
 main = ():
-    fn = first_function
-    func = native.export(fn)
+    # func = native.export(some_function)
+    # native.print_function(func)
+    # print('')
+    # func = native.export(other_function)
+    # native.print_function(func)
+    # print('')
+    # func = native.export(first_function)
+    # native.print_function(func)
+
+    func = native.export(first_function)
+
+
+    args = [ Group([IntRepr(0, 128)]), Group([IntRepr(0, 128)])]
+    args = subtyping.construct(args, -1)
+
+    st_visited = set()
+    type_env = {}
+
+    type_env[[func.entry, func.entry.arg(0)]] = subtyping.flow_pair(args[0])
+    type_env[[func.entry, func.entry.arg(1)]] = subtyping.flow_pair(args[1])
+
+    lookup_type = (ebb, var):
+        key = [ebb, var]
+        if key in type_env
+            return type_env[key]
+        else
+            type_env[key] = pair = subtyping.flow_pair()
+            return pair
+
+    exit_entry = (ebb, exit):
+        for item in exit.output.items()
+            key = item[0]
+
+            tneg = lookup_type(ebb, item[1])[0]
+            tpos = lookup_type(exit.ebb, exit.ebb.input[key])[1]
+            subtyping.biunify(tpos, tneg, st_visited)
+
+    for _ in range(1)
+        st_visited.clear()
+        for ebb in func.ebbs
+            for arg in ebb.input.values()
+                lookup_type(ebb, arg)
+
+            for ins in ebb.code
+                for arg in ins.args
+                    if isinstance(arg, native.Exit)
+                        exit_entry(ebb, arg)
+                if ins.name == "constant"
+                    arg0 = ins.args[0]
+                    if isinstance(arg0, int)
+                        tneg = subtyping.Type(-1, {Int: Int(arg0, arg0)})
+                        type_env[[ebb, ins]] = subtyping.flow_pair(tneg)
+                        continue
+                elif ins.name == "call" and ins.args[0].name == "constant"
+                    arg0 = ins.args[0].args[0]
+                    if arg0 == %"<"
+                        i64 = subtyping.Type(-1, {Int: Int(-10000000, +10000000)})
+                        a1 = lookup_type(ebb, ins.args[1])[0]
+                        a2 = lookup_type(ebb, ins.args[2])[0]
+                        b1 = subtyping.subsume(i64, a1, set())
+                        b2 = subtyping.subsume(i64, a2, set())
+                        if b1 and b2
+                            ins.args.pop(0)
+                            ins.name = "lt"
+                            #x = a1.terms[Int]
+                            #y = a2.terms[Int]
+                            #low = min(min(x.low + y.low, x.high+y.high), min(x.low + y.high, x.high + y.low))
+                            #high = max(max(x.low + y.low, x.high+y.high), max(x.low + y.high, x.high + y.low))
+                            z = subtyping.Type(-1, {Bool: Bool()})
+                            subtyping.biunify(lookup_type(ebb, ins)[1], z, st_visited)
+
+                    if arg0 == %"*"
+                        i64 = subtyping.Type(-1, {Int: Int(-10000000, +10000000)})
+                        a1 = lookup_type(ebb, ins.args[1])[0]
+                        a2 = lookup_type(ebb, ins.args[2])[0]
+                        b1 = subtyping.subsume(i64, a1, set())
+                        b2 = subtyping.subsume(i64, a2, set())
+                        if b1 and b2
+                            ins.args.pop(0)
+                            ins.name = "mul"
+                            x = a1.terms[Int]
+                            y = a2.terms[Int]
+                            low = min(min(x.low * y.low, x.high*y.high), min(x.low * y.high, x.high * y.low))
+                            high = max(max(x.low * y.low, x.high*y.high), max(x.low * y.high, x.high * y.low))
+                            z = subtyping.Type(-1, {Int: Int(low, high)})
+                            subtyping.biunify(lookup_type(ebb, ins)[1], z, st_visited)
+                    if arg0 == %"+"
+                        i64 = subtyping.Type(-1, {Int: Int(-10000000, +10000000)})
+                        a1 = lookup_type(ebb, ins.args[1])[0]
+                        a2 = lookup_type(ebb, ins.args[2])[0]
+                        b1 = subtyping.subsume(i64, a1, set())
+                        b2 = subtyping.subsume(i64, a2, set())
+                        if b1 and b2
+                            ins.args.pop(0)
+                            ins.name = "add"
+                            x = a1.terms[Int]
+                            y = a2.terms[Int]
+                            low = min(min(x.low + y.low, x.high+y.high), min(x.low + y.high, x.high + y.low))
+                            high = max(max(x.low + y.low, x.high+y.high), max(x.low + y.high, x.high + y.low))
+                            z = subtyping.Type(-1, {Int: Int(low, high)})
+                            subtyping.biunify(lookup_type(ebb, ins)[1], z, st_visited)
+
+                lookup_type(ebb, ins)
+
+            ins = ebb.exit
+            for arg in ins.args
+                if isinstance(arg, native.Exit)
+                    exit_entry(ebb, arg)
+
     native.print_function(func)
+    print()
+    types = []
+    for item in type_env.items()
+        ebb = item[0][0]
+        var = item[0][1]
+        vneg = item[1][0]
+        #vpos = item[1][1]
+        types.append(vneg)
+        #types.append(vpos)
+
+    types = iter(subtyping.deconstruct(types))
+    for item in type_env.items()
+        ebb = item[0][0]
+        var = item[0][1]
+        vneg = types.next()
+        #vpos = types.next()
+        print((ebb.label ++ "." ++ repr(var)).rjust(10), "->", vneg)#, vpos)
+
+
+    #g1 = Group([
+    #    BoolRepr(),
+    #    FuncRepr(
+    #        Group(),
+    #        Group())
+    #], +1)
+    #print(g1)
+    #r = subtyping.construct([g1])[0]
+    #print(r)
+    #g2 = subtyping.deconstruct([r])[0]
+    #print(g2)
 
 some_function = (a, b):
     return other_function(a*2, b+1)
@@ -11,10 +150,98 @@ some_function = (a, b):
 other_function = (c, d):
     return c + d * 4
 
-#first_function = (a, b):
-#    return a + b
-
 first_function = (a, b):
     while a < b
         a *= 2
     return a + b
+
+#hello = ():
+#    a = 1
+#    greeting = "hello"
+#    while a < 5
+#        print(greeting)
+#        a = 10
+
+# Add the types, f64, i64, Bool
+
+class Int extends subtyping.Term
+    +init = (self, low, high):
+        self.low = low
+        self.high = high
+
+    deconstruct = (self, pos, neg):
+        return IntRepr(self.low, self.high)
+
+    merge = (self, other, pol):
+        self.low = min(self.low, other.low)
+        self.high = max(self.high, other.high)
+
+class IntRepr
+    +init = (self, low, high):
+        self.low = low
+        self.high = high
+        self.order = 2
+
+    +repr = (self):
+        return "i[" ++ self.low.to_string() ++ " - " ++ self.high.to_string() ++ "]"
+
+    construct = (self, pos, neg):
+        return Int(self.low, self.high)
+
+
+class Bool extends subtyping.Term
+    deconstruct = (self, pos, neg):
+        return BoolRepr()
+
+class BoolRepr
+    +init = (self):
+        self.order = 1
+
+    +repr = (self):
+        return "bool"
+
+    construct = (self, pos, neg):
+        return Bool()
+
+class Func extends subtyping.Term
+    +init = (self, arg, res):
+        self.arg = arg
+        self.res = res
+
+    pairs = (self, other):
+        for a in self.arg
+            for b in other.arg
+                yield [b, a]
+        for a in self.res
+            for b in other.res
+                yield [a, b]
+
+    merge = (self, other, pol):
+        self.arg.update(other.arg)
+        self.res.update(other.res)
+
+    construct = (self, pos, neg):
+        return func_cons(self, pos, neg, Func)
+
+    deconstruct = (self, pos, neg):
+        return func_cons(self, pos, neg, FuncRepr)
+
+class FuncRepr
+    +init = (self, arg, res):
+        self.order = 0
+        self.arg = arg
+        self.res = res
+
+    +repr = (self):
+        return "(" ++
+            repr(self.arg) ++
+            " -> " ++
+            repr(self.res) ++ ")"
+
+    construct = (self, pos, neg):
+        return func_cons(self, pos, neg, Func)
+
+func_cons = (func, pos, neg, cons):
+    return cons(
+        neg(func.arg),
+        pos(func.res))

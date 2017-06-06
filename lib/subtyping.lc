@@ -2,9 +2,7 @@
 
 doc = path("doc:/subtyping")
 
-flow_pair = ():
-    neg = Type(-1)
-    pos = Type(+1)
+flow_pair = (neg = Type(-1), pos = Type(+1)):
     neg.flow.add(pos)
     pos.flow.add(neg)
     return [neg, pos]
@@ -40,7 +38,7 @@ class Term
 #       writing terms and using this library.
 
 biunify = (p, q, visited):
-    assert p.polarity > q.polarity, "cannot biunify"
+    assert p.pol > q.pol, "cannot biunify"
     if [p, q] in visited
         return
     visited.add([p, q])
@@ -50,9 +48,9 @@ biunify = (p, q, visited):
         merge(s, q) 
 
     # if there is var x in q+, and y in q- and x <= y is not true then fail
-    for key in q1.terms
-        t1 = q1.terms[key]
-        t2 = q2.terms.get(key)
+    for key in p.terms
+        t1 = p.terms[key]
+        t2 = q.terms.get(key)
         # TODO: maybe too strict.
         assert t2,             "cannot biunify"
         assert t1.subsume(t2), "cannot biunify"
@@ -68,7 +66,7 @@ merge = (q1, q2):
         t2 = q2.terms[key]
         t1 = q1.terms.get(key)
         if not t1
-            q1.terms[key] = t1
+            q1.terms[key] = t2
         else
             t1.merge(t2, q1.pol)
     q1.flow.update(q2.flow)
@@ -79,7 +77,6 @@ merge = (q1, q2):
 # is given on the page 127
 subsume = (q1, q2, visited):
     assert q1.pol == q2.pol, "cases elided"
-    assert q1.pol > 0, "cases elided"
     if [q1, q2] in visited
         return true
     visited.add([q1, q2])
@@ -101,7 +98,7 @@ subsume = (q1, q2, visited):
 # by and then to remove these transitions in a second pass. This mirrors the
 # standard algorithm for constructing a nondeterministic finite automaton from
 # a regular expression"
-construct = (groups):
+construct = (groups, c_pol=1):
     flow = {+1:{}, -1:{}}
     recs = {}
     visits = set()
@@ -136,7 +133,10 @@ construct = (groups):
         return set([q])
     tmp = []
     for group in groups
-        tmp.append(visit_pos(group))
+        if c_pol < 0
+            tmp.append(visit_neg(group))
+        else
+            tmp.append(visit_pos(group))
     # flow edge construction:
     #   (q-) ----> (q+)
     #   a in H(q-), a in H(q+)
@@ -149,7 +149,7 @@ construct = (groups):
     builder = DFABuilder()
     out = []
     for q in tmp
-        out.append(builder.get(q))
+        out.append(builder.get(q, c_pol))
     builder.finalize()
     return out
 
@@ -218,8 +218,8 @@ deconstruct = (nodes):
             for term in n.terms.values()
                 group.terms.append(term.deconstruct(posf, negf))
             group.terms.extend(vartab[n])
-        group.terms.sort((a, b):
-            a.order > b.order)
+        #group.terms.sort((a, b):
+        #    a.order > b.order)
         if group.terms.length == 0
             if ns in lateral
                 other = lateral[ns]
@@ -305,7 +305,7 @@ class DFABuilder
             return node
         self.visited[nodeset] = node = Type(pol)
         for n in nodeset
-            assert n.pol == pol
+            assert n.pol == pol, [n.pol, pol]
             for type in n.terms
                 if type == null
                     continue
