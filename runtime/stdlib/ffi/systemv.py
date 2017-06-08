@@ -235,7 +235,7 @@ class Pointer(Type):
 
     def getattr(self, name):
         if name == u"to":
-            return self.to
+            return unshadow(self.to)
         return Type.getattr(self, name)
 
     def repr(self):
@@ -390,6 +390,8 @@ class Struct(Type):
             lltype.free(self.ffitype, flavor='raw')
 
     def cast_to_ffitype(self):
+        if self.fields is None:
+            raise OldError(u"Struct not initialized")
         if not self.ffitype:
             field_types = []
             for name, field in self.fields:
@@ -405,8 +407,7 @@ class Struct(Type):
 
         offset = 0
         for name, ctype in fields:
-            if not isinstance(ctype, Type):
-                raise unwind(LTypeError(u"expected ctype: " + ctype.repr()))
+            ctype = to_type(ctype)
             if self.parameter is not None:
                 raise unwind(LTypeError(u"parametric field in middle of a structure"))
             if ctype.parameter:
@@ -478,9 +479,10 @@ class Struct(Type):
             names.append(u'.' + name)
         return u'<struct ' + u' '.join(names) + u'>'
 
-@Struct.instantiator
-@signature(List)
-def _(fields_list):
+@Struct.instantiator2(signature(List, optional=1))
+def Struct_init(fields_list):
+    if fields_list is None:
+        return Struct()
     fields = []
     for field in fields_list.contents:
         name = field.getitem(Integer(0))
@@ -489,6 +491,39 @@ def _(fields_list):
             raise unwind(LTypeError(u"expected declaration format: [name, ctype]"))
         fields.append((name.string, ctype))
     return Struct(fields)
+
+@Struct.method(u"declare", signature(Struct, List))
+def Struct_declare(self, fields):
+    decl = []
+    for field in fields.contents:
+        name = cast(field.getitem(Integer(0)), String, u"declare[0]")
+        ctype = to_type(field.getitem(Integer(1)))
+        decl.append((name.string, ctype))
+    self.declare(decl)
+    return null
+
+@Struct.method(u"get_fields", signature(Struct))
+def Struct_get_fields(self):
+    fields = []
+    for name in self.namespace:
+        offset, ctype = self.namespace[name]
+        fields.append(List([
+            String(name), Integer(rffi.r_long(offset)), unshadow(ctype)]))
+    return List(fields)
+
+@Struct.method(u"offsetof", signature(Struct, String))
+def Struct_offsetof(self, name):
+    if name.string in self.namespace:
+        return Integer(rffi.r_long(self.namespace[name.string][0]))
+    else:
+        raise unwind(LTypeError(u"no such field"))
+
+@Struct.method(u"typeof", signature(Struct, String))
+def Struct_typeof(self, name):
+    if name.string in self.namespace:
+        return unshadow(self.namespace[name.string][1])
+    else:
+        raise unwind(LTypeError(u"no such field"))
 
 class Union(Type):
     def __init__(self, fields, name=u""):
@@ -508,7 +543,7 @@ class Union(Type):
 
         offset = 0
         for name, ctype in fields:
-            assert isinstance(ctype, Type)
+            ctype = to_type(ctype)
             if ctype.parameter is not None:
                 raise unwind(LTypeError(u"parametric field in an union"))
             self.align = max(self.align, ctype.align)
@@ -568,10 +603,9 @@ class Union(Type):
             names.append(u'.' + name)
         return u'<union ' + u' '.join(names) + u'>'
 
-@Union.instantiator
-@signature(List)
-def _(fields_list):
-    if fields_list is null:
+@Union.instantiator2(signature(List, optional=1))
+def Union_init(fields_list):
+    if fields_list is None:
         return Union(None)
     fields = []
     for field in fields_list.contents:
@@ -581,6 +615,39 @@ def _(fields_list):
             raise unwind(LTypeError(u"expected declaration format: [name, ctype]"))
         fields.append((name.string, ctype))
     return Union(fields)
+
+@Union.method(u"declare", signature(Union, List))
+def Union_declare(self, fields):
+    decl = []
+    for field in fields.contents:
+        name = cast(field.getitem(Integer(0)), String, u"declare[0]")
+        ctype = to_type(field.getitem(Integer(1)))
+        decl.append((name.string, ctype))
+    self.declare(decl)
+    return null
+
+@Union.method(u"get_fields", signature(Union))
+def Union_get_fields(self):
+    fields = []
+    for name in self.namespace:
+        offset, ctype = self.namespace[name]
+        fields.append(List([
+            String(name), Integer(rffi.r_long(offset)), unshadow(ctype)]))
+    return List(fields)
+
+@Union.method(u"offsetof", signature(Union, String))
+def Union_offsetof(self, name):
+    if name.string in self.namespace:
+        return Integer(rffi.r_long(self.namespace[name.string][0]))
+    else:
+        raise unwind(LTypeError(u"no such field"))
+
+@Union.method(u"typeof", signature(Union, String))
+def Union_typeof(self, name):
+    if name.string in self.namespace:
+        return unshadow(self.namespace[name.string][1])
+    else:
+        raise unwind(LTypeError(u"no such field"))
 
 class Array(Type):
     def __init__(self, ctype, length=0):
@@ -617,6 +684,13 @@ class Array(Type):
 
     def on_setattr(self, mem, name, value):
         raise Object.setattr(mem, name, value)
+
+    def getattr(self, name):
+        if name == u"count":
+            return Integer(rffi.r_long(self.length))
+        if name == u"to":
+            return unshadow(self.ctype)
+        return Type.getattr(self, name)
 
     def load(self, offset, copy):
         if copy:

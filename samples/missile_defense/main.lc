@@ -73,11 +73,16 @@ main = ():
             maxLod = 0.0
         })
 
+    vertex_struct = ffi.struct([
+        ["pos", ffi.array(ffi.float, 3)],
+        ["tex", ffi.array(ffi.float, 3)] ])
+
     vertex_layout = object();
         vertexInputState = {
             vertexBindingDescriptions = [{
                 binding = 0
-                stride = 6 * ffi.sizeof(ffi.float)
+                stride = ffi.sizeof(vertex_struct)
+                #stride = 6 * ffi.sizeof(ffi.float)
                 inputRate = "VERTEX"
             }]
             vertexAttributeDescriptions = [
@@ -85,13 +90,15 @@ main = ():
                     binding = 0
                     location = 0
                     format = "R32G32B32_SFLOAT"
-                    offset = 0
+                    offset = vertex_struct.offsetof("pos")
+                    #offset = 0
                 },
                 {
                     binding = 0
                     location = 1
                     format = "R32G32B32_SFLOAT"
-                    offset = 3 * ffi.sizeof(ffi.float)
+                    offset = vertex_struct.offsetof("tex")
+                    #offset = 3 * ffi.sizeof(ffi.float)
                 }
             ]
         }
@@ -101,7 +108,7 @@ main = ():
         max_sprites = 1024*100
         size = 1024 * 6 * 6
         buffer = upload.createBuffer(size, "VERTEX_BUFFER_BIT")
-        data = buffer.mem.map(ffi.float)
+        data = buffer.mem.map(vertex_struct)
 
     sprite_layer = SpriteLayer(vbo.data, vbo.max_sprites, 
         json.read_file(dir ++ "spritesheet.json"), 512, 512)
@@ -412,14 +419,28 @@ class SpriteLayer
         rt_y = s*a_r + c*a_t
         rb_x = c*a_r - s*a_b
         rb_y = s*a_r + c*a_b
-        stride = 6*6
-        out = [
-            x+lt_x, y+lt_y, 0.0, s_l, s_b, 0.0,
-            x+lb_x, y+lb_y, 0.0, s_l, s_t, 0.0,
-            x+rt_x, y+rt_y, 0.0, s_r, s_b, 0.0,
-            x+lb_x, y+lb_y, 0.0, s_l, s_t, 0.0,
-            x+rb_x, y+rb_y, 0.0, s_r, s_t, 0.0,
-            x+rt_x, y+rt_y, 0.0, s_r, s_b, 0.0,
-        ]
-        for i in range(out.length)
-            self.f32data[stride*idx + i] = out[i]
+        self.f32data[6*idx+0].pos = [x+lt_x, y+lt_y, 0.0]
+        self.f32data[6*idx+1].pos = [x+lb_x, y+lb_y, 0.0]
+        self.f32data[6*idx+2].pos = [x+rt_x, y+rt_y, 0.0]
+        self.f32data[6*idx+3].pos = [x+lb_x, y+lb_y, 0.0]
+        self.f32data[6*idx+4].pos = [x+rb_x, y+rb_y, 0.0]
+        self.f32data[6*idx+5].pos = [x+rt_x, y+rt_y, 0.0]
+
+        self.f32data[6*idx+0].tex = [s_l, s_b, 0.0]
+        self.f32data[6*idx+1].tex = [s_l, s_t, 0.0]
+        self.f32data[6*idx+2].tex = [s_r, s_b, 0.0]
+        self.f32data[6*idx+3].tex = [s_l, s_t, 0.0]
+        self.f32data[6*idx+4].tex = [s_r, s_t, 0.0]
+        self.f32data[6*idx+5].tex = [s_r, s_b, 0.0]
+
+        # stride = 6*6
+        # out = [
+        #     x+lt_x, y+lt_y, 0.0, s_l, s_b, 0.0,
+        #     x+lb_x, y+lb_y, 0.0, s_l, s_t, 0.0,
+        #     x+rt_x, y+rt_y, 0.0, s_r, s_b, 0.0,
+        #     x+lb_x, y+lb_y, 0.0, s_l, s_t, 0.0,
+        #     x+rb_x, y+rb_y, 0.0, s_r, s_t, 0.0,
+        #     x+rt_x, y+rt_y, 0.0, s_r, s_b, 0.0,
+        # ]
+        # for i in range(out.length)
+        #     self.f32data[stride*idx + i] = out[i]

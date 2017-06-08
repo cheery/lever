@@ -211,3 +211,8 @@ def to_type(obj):
     if isinstance(obj, Type):
         return obj
     return Shadow(to_type(obj.getattr(u"shadow")), obj)
+
+def unshadow(ctype):
+    if isinstance(ctype, Shadow):
+        return ctype.obj
+    return ctype

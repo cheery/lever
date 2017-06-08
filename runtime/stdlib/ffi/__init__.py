@@ -1,6 +1,6 @@
 from rpython.rlib import rdynload, objectmodel, clibffi, rgc, rgil
 from rpython.rtyper.lltypesystem import rffi, lltype, llmemory
-from simple import Type, to_type
+from simple import Type, to_type, unshadow
 from space import *
 from systemv import Mem, Pointer, CFunc, Struct, Union, Array
 from bitmask import Bitmask
@@ -136,6 +136,16 @@ def cast(obj, ctype):
     if isinstance(obj, Integer) and isinstance(ctype, Pointer):
         return Mem(ctype, rffi.cast(rffi.VOIDP, obj.value))
     raise unwind(LTypeError(u"Can cast memory locations only"))
+
+@builtin
+@signature(Object)
+def typeof(obj):
+    if isinstance(obj, Mem):
+        return unshadow(obj.ctype)
+    elif isinstance(obj, Uint8Data):
+        return unshadow(systemv.types['byte'])
+    else:
+        raise unwind(LTypeError(u"Can typeof memory locations only"))
 
 @builtin
 @signature(Object, Integer, optional=1)
