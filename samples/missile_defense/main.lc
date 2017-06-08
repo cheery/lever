@@ -82,7 +82,6 @@ main = ():
             vertexBindingDescriptions = [{
                 binding = 0
                 stride = ffi.sizeof(vertex_struct)
-                #stride = 6 * ffi.sizeof(ffi.float)
                 inputRate = "VERTEX"
             }]
             vertexAttributeDescriptions = [
@@ -91,14 +90,12 @@ main = ():
                     location = 0
                     format = "R32G32B32_SFLOAT"
                     offset = vertex_struct.offsetof("pos")
-                    #offset = 0
                 },
                 {
                     binding = 0
                     location = 1
                     format = "R32G32B32_SFLOAT"
                     offset = vertex_struct.offsetof("tex")
-                    #offset = 3 * ffi.sizeof(ffi.float)
                 }
             ]
         }
@@ -432,15 +429,3 @@ class SpriteLayer
         self.f32data[6*idx+3].tex = [s_l, s_t, 0.0]
         self.f32data[6*idx+4].tex = [s_r, s_t, 0.0]
         self.f32data[6*idx+5].tex = [s_r, s_b, 0.0]
-
-        # stride = 6*6
-        # out = [
-        #     x+lt_x, y+lt_y, 0.0, s_l, s_b, 0.0,
-        #     x+lb_x, y+lb_y, 0.0, s_l, s_t, 0.0,
-        #     x+rt_x, y+rt_y, 0.0, s_r, s_b, 0.0,
-        #     x+lb_x, y+lb_y, 0.0, s_l, s_t, 0.0,
-        #     x+rb_x, y+rb_y, 0.0, s_r, s_t, 0.0,
-        #     x+rt_x, y+rt_y, 0.0, s_r, s_b, 0.0,
-        # ]
-        # for i in range(out.length)
-        #     self.f32data[stride*idx + i] = out[i]
