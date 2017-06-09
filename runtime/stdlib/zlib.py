@@ -48,6 +48,39 @@ def Compress_init():
     except rzlib.RZlibError as e:
         raise zlib_error(e.msg)
 
+@Compress.method(u"compress_beta", signature(Compress, Object, Object))
+def Compress_compress_beta(self, inp, out):
+    stream = self.stream
+    i_data  = cast(inp.getattr(u"data"),  Uint8Data, u"inp.data")
+    i_start = cast(inp.getattr(u"start"), Integer, u"inp.start").value
+    i_stop  = cast(inp.getattr(u"stop"),  Integer, u"inp.stop").value
+    if not (0 <= i_start <= i_stop <= i_data.length):
+        raise unwind(LTypeError(u"inp.start/stop invalid"))
+
+    o_data  = cast(out.getattr(u"data"),  Uint8Data, u"out.data")
+    o_start = cast(out.getattr(u"start"), Integer, u"out.start").value
+    o_stop  = cast(out.getattr(u"stop"),  Integer, u"out.stop").value
+    if not (0 <= o_start <= o_stop <= o_data.length):
+        raise unwind(LTypeError(u"out.start/stop invalid"))
+
+    stream.c_next_in = rffi.ptradd(i_data.uint8data, i_start)
+    stream.c_avail_in = rffi.r_uint(i_stop - i_start)
+    stream.c_next_out = rffi.ptradd(o_data.uint8data, o_stop)
+    stream.c_avail_out = rffi.r_uint(o_data.length - o_stop)
+    if i_start == i_stop:
+        err = rzlib._deflate(stream, rzlib.Z_FINISH)
+    else:
+        err = rzlib._deflate(stream, 0)
+
+    if err == rzlib.Z_NEED_DICT:
+        raise unwind(LError(u"Z_NEED_DICT"))
+    if err == rzlib.Z_BUF_ERROR:
+        raise unwind(LError(u"Z_BUF_ERROR"))
+    if err == rzlib.Z_OK or err == rzlib.Z_STREAM_END:
+        inp.setattr(u"start", Integer(i_stop - rffi.r_long(stream.c_avail_in)))
+        out.setattr(u"stop", Integer(rffi.r_long(stream.c_avail_out) + o_stop))
+    return null
+
 @Compress.method(u"compress", signature(Compress, Uint8Data))
 def Compress_compress(self, array):
     data = array.to_str()
@@ -90,6 +123,39 @@ def Decompress_init(wbits):
         return Decompress(stream)
     except rzlib.RZlibError as e:
         raise zlib_error(e.msg)
+
+@Decompress.method(u"decompress_beta", signature(Decompress, Object, Object))
+def Decompress_decompress_beta(self, inp, out):
+    stream = self.stream
+    i_data  = cast(inp.getattr(u"data"),  Uint8Data, u"inp.data")
+    i_start = cast(inp.getattr(u"start"), Integer, u"inp.start").value
+    i_stop  = cast(inp.getattr(u"stop"),  Integer, u"inp.stop").value
+    if not (0 <= i_start <= i_stop <= i_data.length):
+        raise unwind(LTypeError(u"inp.start/stop invalid"))
+
+    o_data  = cast(out.getattr(u"data"),  Uint8Data, u"out.data")
+    o_start = cast(out.getattr(u"start"), Integer, u"out.start").value
+    o_stop  = cast(out.getattr(u"stop"),  Integer, u"out.stop").value
+    if not (0 <= o_start <= o_stop <= o_data.length):
+        raise unwind(LTypeError(u"out.start/stop invalid"))
+
+    stream.c_next_in = rffi.ptradd(i_data.uint8data, i_start)
+    stream.c_avail_in = rffi.r_uint(i_stop - i_start)
+    stream.c_next_out = rffi.ptradd(o_data.uint8data, o_stop)
+    stream.c_avail_out = rffi.r_uint(o_data.length - o_stop)
+    if i_start == i_stop:
+        err = rzlib._inflate(stream, rzlib.Z_FINISH)
+    else:
+        err = rzlib._inflate(stream, 0)
+
+    if err == rzlib.Z_NEED_DICT:
+        raise unwind(LError(u"Z_NEED_DICT"))
+    if err == rzlib.Z_BUF_ERROR:
+        raise unwind(LError(u"Z_BUF_ERROR"))
+    if err == rzlib.Z_OK or err == rzlib.Z_STREAM_END:
+        inp.setattr(u"start", Integer(i_stop - rffi.r_long(stream.c_avail_in)))
+        out.setattr(u"stop", Integer(rffi.r_long(stream.c_avail_out) + o_stop))
+    return null
 
 @Decompress.method(u"decompress", signature(Decompress, Uint8Data))
 def Decompress_decompress(self, array):
