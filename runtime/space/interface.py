@@ -4,7 +4,7 @@ from rpython.rlib import jit
 import space
 
 class Object:
-    _immutable_fields_ = ['interface', 'custom_interface', 'flag', 'number', 'value', 'contents', 'data', 'string[*]', 'iterator', 'arity', 'methods', 'default', 'cells']
+    _immutable_fields_ = ['interface', 'custom_interface', 'flag', 'number', 'value', 'contents', 'data', 'string', 'iterator', 'arity', 'methods', 'default', 'cells']
     __slots__ = []
     __attrs__ = []
     # The metaclass here takes care every object will get an interface.

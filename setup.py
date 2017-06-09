@@ -84,8 +84,8 @@ def main():
 # are stabilized, so I don't expect to have trouble with versions.
 # Maybe it happens some day... On someone's computer. That he doesn't have recent enough
 # versions of these libraries.
-pypy_src_url = 'https://bitbucket.org/pypy/pypy/downloads/pypy2-v5.7.1-src'
-pypy_src_dir = 'pypy2-v5.7.1-src'
+pypy_src_url = 'https://bitbucket.org/pypy/pypy/downloads/pypy2-v5.8.0-src'
+pypy_src_dir = os.path.basename(pypy_src_url)
 
 # If the untagged 'pypy' -directory is around, we will use that.
 # But the pypy_src_url is still downloaded.

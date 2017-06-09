@@ -1,3 +1,4 @@
+from rpython.rlib.mutbuffer import MutableStringBuffer
 from rpython.rlib.rstruct import ieee
 from rpython.rlib import rfile
 from bon import open_file
@@ -78,9 +79,11 @@ def wlong(fd, num):
 
 def wdouble(fd, obj):
     assert isinstance(obj, Float)
-    result = []
-    ieee.pack_float(result, obj.number, 8, True)
-    fd.write(''.join(result))
+    result = MutableStringBuffer(8)
+    ieee.pack_float(result, 0, obj.number, 8, True)
+    val = result.finish()
+    assert val is not None
+    fd.write(val)
 
 def wstring(fd, obj):
     assert isinstance(obj, String)

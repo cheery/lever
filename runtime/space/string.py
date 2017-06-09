@@ -8,7 +8,7 @@ from numbers import Integer
 import space
 
 class String(Object):
-    _immutable_fields_ = ['string[*]']
+    _immutable_fields_ = ['string']
     __slots__ = ['string']
     def __init__(self, string):
         #assert isinstance(string, unicode)
