@@ -1,6 +1,9 @@
 import native
 import subtyping
-from subtyping import Group
+from subtyping import Group, Type
+
+# The program below is still our type annotator implementation
+# it will turn into usage, gradually.
 
 main = ():
     # func = native.export(some_function)
@@ -13,124 +16,137 @@ main = ():
     # native.print_function(func)
 
     func = native.export(first_function)
+    native.print_blocks(func.blocks)
+    print()
 
+    some_int = subtyping.flow_pair(
+        Type(-1, {Int: Int()}),
+        Type(+1, {Int: Int()}))
 
-    args = [ Group([IntRepr(0, 128)]), Group([IntRepr(0, 128)])]
-    args = subtyping.construct(args, -1)
+    some_bool = subtyping.flow_pair(
+        Type(-1, {Bool: Bool()}),
+        Type(+1, {Bool: Bool()}))
 
     st_visited = set()
     type_env = {}
 
-    type_env[[func.entry, func.entry.arg(0)]] = subtyping.flow_pair(args[0])
-    type_env[[func.entry, func.entry.arg(1)]] = subtyping.flow_pair(args[1])
+    for i in range(func.args.length)
+        type_env[[null, func.args[i]]] = some_int
 
-    lookup_type = (ebb, var):
-        key = [ebb, var]
+    read_type = (block, var):
+        key = [block, var]
         if key in type_env
             return type_env[key]
         else
             type_env[key] = pair = subtyping.flow_pair()
             return pair
 
-    exit_entry = (ebb, exit):
-        for item in exit.output.items()
-            key = item[0]
+    phi_visited = set()
+    visit_phi = (block, arg):
+        if isinstance(arg, native.Local)
+            return read_type(null, arg)
+        if isinstance(arg, native.Const)
+            if isinstance(arg.value, int)
+                return some_int
+            return subtyping.flow_pair()
+        if not isinstance(arg, native.Phi)
+            return read_type(block, arg)
+        if arg in phi_visited
+            return read_type(arg.block, arg)
+        phi_visited.add(arg)
+        dst = read_type(arg.block, arg)
+        for blk in arg.input
+            src = visit_phi(blk, arg.input[blk])
+            subtyping.biunify(dst[1], src[0], st_visited)
+        return dst
 
-            tneg = lookup_type(ebb, item[1])[0]
-            tpos = lookup_type(exit.ebb, exit.ebb.input[key])[1]
-            subtyping.biunify(tpos, tneg, st_visited)
+    for block in func.blocks
+        for ins in block.code
+            for arg in ins.args
+                visit_phi(block, arg)
 
-    for _ in range(1)
-        st_visited.clear()
-        for ebb in func.ebbs
-            for arg in ebb.input.values()
-                lookup_type(ebb, arg)
-
-            for ins in ebb.code
-                for arg in ins.args
-                    if isinstance(arg, native.Exit)
-                        exit_entry(ebb, arg)
-                if ins.name == "constant"
+    changed = true
+    while changed
+        n = st_visited.length
+        for block in func.blocks
+            for ins in block.code
+                if ins.name == "call"
                     arg0 = ins.args[0]
-                    if isinstance(arg0, int)
-                        tneg = subtyping.Type(-1, {Int: Int(arg0, arg0)})
-                        type_env[[ebb, ins]] = subtyping.flow_pair(tneg)
-                        continue
-                elif ins.name == "call" and ins.args[0].name == "constant"
-                    arg0 = ins.args[0].args[0]
-                    if arg0 == %"<"
-                        i64 = subtyping.Type(-1, {Int: Int(-10000000, +10000000)})
-                        a1 = lookup_type(ebb, ins.args[1])[0]
-                        a2 = lookup_type(ebb, ins.args[2])[0]
-                        b1 = subtyping.subsume(i64, a1, set())
-                        b2 = subtyping.subsume(i64, a2, set())
+
+                    # The information presented here should be wrapped into
+                    # a type engine or something like that.
+                    # The technique presented here is generalizable for
+                    # wide uses and applications though.
+                    if isinstance(arg0, native.Const) and arg0.value == %"<"
+                        a = visit_phi(block, ins.args[1])
+                        b = visit_phi(block, ins.args[2])
+                        b1 = subtyping.subsume(some_int[0], a[0], set())
+                        b2 = subtyping.subsume(some_int[0], b[0], set())
                         if b1 and b2
                             ins.args.pop(0)
                             ins.name = "lt"
-                            #x = a1.terms[Int]
-                            #y = a2.terms[Int]
-                            #low = min(min(x.low + y.low, x.high+y.high), min(x.low + y.high, x.high + y.low))
-                            #high = max(max(x.low + y.low, x.high+y.high), max(x.low + y.high, x.high + y.low))
-                            z = subtyping.Type(-1, {Bool: Bool()})
-                            subtyping.biunify(lookup_type(ebb, ins)[1], z, st_visited)
+                            dst = read_type(block, ins)
+                            subtyping.biunify(dst[1], some_bool[0], st_visited)
 
-                    if arg0 == %"*"
-                        i64 = subtyping.Type(-1, {Int: Int(-10000000, +10000000)})
-                        a1 = lookup_type(ebb, ins.args[1])[0]
-                        a2 = lookup_type(ebb, ins.args[2])[0]
-                        b1 = subtyping.subsume(i64, a1, set())
-                        b2 = subtyping.subsume(i64, a2, set())
-                        if b1 and b2
-                            ins.args.pop(0)
-                            ins.name = "mul"
-                            x = a1.terms[Int]
-                            y = a2.terms[Int]
-                            low = min(min(x.low * y.low, x.high*y.high), min(x.low * y.high, x.high * y.low))
-                            high = max(max(x.low * y.low, x.high*y.high), max(x.low * y.high, x.high * y.low))
-                            z = subtyping.Type(-1, {Int: Int(low, high)})
-                            subtyping.biunify(lookup_type(ebb, ins)[1], z, st_visited)
-                    if arg0 == %"+"
-                        i64 = subtyping.Type(-1, {Int: Int(-10000000, +10000000)})
-                        a1 = lookup_type(ebb, ins.args[1])[0]
-                        a2 = lookup_type(ebb, ins.args[2])[0]
-                        b1 = subtyping.subsume(i64, a1, set())
-                        b2 = subtyping.subsume(i64, a2, set())
+                    if isinstance(arg0, native.Const) and arg0.value == %"+"
+                        a = visit_phi(block, ins.args[1])
+                        b = visit_phi(block, ins.args[2])
+                        b1 = subtyping.subsume(some_int[0], a[0], set())
+                        b2 = subtyping.subsume(some_int[0], b[0], set())
                         if b1 and b2
                             ins.args.pop(0)
                             ins.name = "add"
-                            x = a1.terms[Int]
-                            y = a2.terms[Int]
-                            low = min(min(x.low + y.low, x.high+y.high), min(x.low + y.high, x.high + y.low))
-                            high = max(max(x.low + y.low, x.high+y.high), max(x.low + y.high, x.high + y.low))
-                            z = subtyping.Type(-1, {Int: Int(low, high)})
-                            subtyping.biunify(lookup_type(ebb, ins)[1], z, st_visited)
+                            dst = read_type(block, ins)
+                            subtyping.biunify(dst[1], some_int[0], st_visited)
 
-                lookup_type(ebb, ins)
+                    if isinstance(arg0, native.Const) and arg0.value == %"*"
+                        a = visit_phi(block, ins.args[1])
+                        b = visit_phi(block, ins.args[2])
+                        b1 = subtyping.subsume(some_int[0], a[0], set())
+                        b2 = subtyping.subsume(some_int[0], b[0], set())
+                        if b1 and b2
+                            ins.args.pop(0)
+                            ins.name = "mul"
+                            dst = read_type(block, ins)
+                            subtyping.biunify(dst[1], some_int[0], st_visited)
+        changed = (n < st_visited.length)
 
-            ins = ebb.exit
-            for arg in ins.args
-                if isinstance(arg, native.Exit)
-                    exit_entry(ebb, arg)
-
-    native.print_function(func)
+    visual = native.print_blocks(func.blocks)
     print()
-    types = []
-    for item in type_env.items()
-        ebb = item[0][0]
-        var = item[0][1]
-        vneg = item[1][0]
-        #vpos = item[1][1]
-        types.append(vneg)
-        #types.append(vpos)
+    phi_sets = visual[0]
+    names    = visual[1]
+    for arg in func.args
+        print( arg.name, "->", read_type(null, arg) )
 
-    types = iter(subtyping.deconstruct(types))
-    for item in type_env.items()
-        ebb = item[0][0]
-        var = item[0][1]
-        vneg = types.next()
-        #vpos = types.next()
-        print((ebb.label ++ "." ++ repr(var)).rjust(10), "->", vneg)#, vpos)
+    for block in func.blocks
+        print( names[block] ++ ":" )
+        for phi in phi_sets[block]
+            print( " ", names[phi], "->", read_type(block, phi) )
+        for op in block.code
+            if not op.stmt
+                print( " ", names[op], "->", read_type(block, op) )
 
+    # Could use this one on printing later on.. But it's only really
+    # interesting if the subtypes are more complicated than here.
+
+    # native.print_function(func)
+    # print()
+    # types = []
+    # for item in type_env.items()
+    #     ebb = item[0][0]
+    #     var = item[0][1]
+    #     vneg = item[1][0]
+    #     #vpos = item[1][1]
+    #     types.append(vneg)
+    #     #types.append(vpos)
+
+    # types = iter(subtyping.deconstruct(types))
+    # for item in type_env.items()
+    #     ebb = item[0][0]
+    #     var = item[0][1]
+    #     vneg = types.next()
+    #     #vpos = types.next()
+    #     print((ebb.label ++ "." ++ repr(var)).rjust(10), "->", vneg)#, vpos)
 
     #g1 = Group([
     #    BoolRepr(),
@@ -144,6 +160,8 @@ main = ():
     #g2 = subtyping.deconstruct([r])[0]
     #print(g2)
 
+
+# These functions are here so we can study how they translate.
 some_function = (a, b):
     return other_function(a*2, b+1)
 
@@ -162,32 +180,23 @@ first_function = (a, b):
 #        print(greeting)
 #        a = 10
 
-# Add the types, f64, i64, Bool
+# Add the types, some_float(size), some_int, some_bool
 
+# The subtyping module is customizable, so I'm not sure where these
+# nuggets should go.
 class Int extends subtyping.Term
-    +init = (self, low, high):
-        self.low = low
-        self.high = high
-
     deconstruct = (self, pos, neg):
-        return IntRepr(self.low, self.high)
-
-    merge = (self, other, pol):
-        self.low = min(self.low, other.low)
-        self.high = max(self.high, other.high)
+        return IntRepr()
 
 class IntRepr
-    +init = (self, low, high):
-        self.low = low
-        self.high = high
-        self.order = 2
+    +init = (self):
+        self.order = 1
 
     +repr = (self):
-        return "i[" ++ self.low.to_string() ++ " - " ++ self.high.to_string() ++ "]"
+        return "some int"
 
     construct = (self, pos, neg):
-        return Int(self.low, self.high)
-
+        return Int()
 
 class Bool extends subtyping.Term
     deconstruct = (self, pos, neg):
