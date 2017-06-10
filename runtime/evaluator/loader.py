@@ -1,5 +1,6 @@
 from rpython.rlib import jit, rvmprof
 from rpython.rlib.objectmodel import specialize, always_inline
+from rpython.rlib.rstackovf import StackOverflow
 from rpython.rtyper.lltypesystem import rffi, lltype
 from sourcemaps import TraceEntry, raw_pc_location
 import pathobj
@@ -473,6 +474,10 @@ def interpret(pc, block, frame):
     except space.Unwinder as unwinder:
         unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.sources, frame.sourcemap, unit.path))
         raise
+    except StackOverflow as overflow:
+        raise space.unwind(space.LError(
+            u"maximum recursion depth exceeded"))
+
     return space.null
 
 @jit.unroll_safe
