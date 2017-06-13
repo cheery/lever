@@ -1,5 +1,7 @@
 import tokenizer
 
+doc = path("doc:/chartparser")
+
 main = ():
     s = Nonterminal('s')
     a = Nonterminal('a')
@@ -237,32 +239,29 @@ class Initiator
     # TODO: Fix up the performance issue in REPR startup by allowing the
     #       caching of a grammar.
     +call = (self, accept=self.default_accept):
-        parser = Parser(self.grammar, self.blankset, self.right_recursive, accept, [])
+        parser = Parser(self, accept, [])
         # In an earley parser that uses NNF, empty input is a special case, that is taken care of here.
         if accept in self.blankset
             parser.output.append(SPPF(null, null, null, null))
         # The first chart column
-        transitions = parser.chart
         nodes = {}
         current = []
         leims = {}
         prediction(current, nodes, self.grammar, parser.chart, accept)
         for eim in current
             prediction(current, nodes, self.grammar, parser.chart, eim.postdot())
-            cache_transitions(transitions, eim, null, leims)
-        #parser.chart.append(transitions) # TODO: remove
+            cache_transitions(parser.chart, eim, null, leims)
         return parser
 
 class Parser
-    +init = (self, grammar, blankset, right_recursive, accept, output):
+    +init = (self, init, accept, output):
         self.chart = self.first = {}
-        self.blankset = blankset
-        self.grammar = grammar
-        self.right_recursive = right_recursive
+        self.init = init
         self.accept = accept
         self.output = output
 
     step = (self, term, token, start=null, stop=null):
+        init = self.init
         # completions proceed in non-deterministic manner,
         # until everything has been completed.
         current = []
@@ -271,17 +270,16 @@ class Parser
         nodes = {}
         output = []
         bottom = SPPF(start, stop, token, null)
-        shift_eims(current, nodes, self.chart[term], bottom, self.right_recursive, leims)
+        shift_eims(current, nodes, self.chart[term], bottom, init.right_recursive, leims)
         for eim in current
             # reduction
             cc = nodes[eim]
             if eim.is_completed()
-                shift_eims(current, nodes, eim.origin.get(eim.rule.lhs, []), cc, self.right_recursive, leims)
+                shift_eims(current, nodes, eim.origin.get(eim.rule.lhs, []), cc, init.right_recursive, leims)
                 if eim.rule.lhs == self.accept and eim.origin == self.first
                     output.append(cc)
-            prediction(current, nodes, self.grammar, transitions, eim.postdot())
+            prediction(current, nodes, init.grammar, transitions, eim.postdot())
             cache_transitions(transitions, eim, cc, leims)
-        #self.chart.append(transitions)
         self.chart = transitions
         self.output = output
 
@@ -323,10 +321,10 @@ make_default_blank = (parser, postorder_cb):
         return postorder_cb(expand(null, null, cell, blank_cb, iter([])...))
     return blank_cb
 
-prediction = (current, nodes, grammar, location, postdot):
+prediction = (current, nodes, grammar, transitions, postdot):
     if isinstance(postdot, Nonterminal)
         for rule in grammar.get(postdot, [])
-            eim = EIM(rule, 0, location)
+            eim = EIM(rule, 0, transitions)
             if eim not in nodes
                 nodes[eim] = null
                 current.append(eim)
@@ -446,6 +444,10 @@ class LEO
     +init = (self, left, cc):
         self.left = left
         self.cc = cc
+
+    stop = property();
+        get = (self):
+            return self.cc.stop
 
     to_sppf = (self):
         left = self.left

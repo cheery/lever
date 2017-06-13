@@ -185,7 +185,7 @@ scan_function = (block, func):
 
         argtypes = try_getattr(spec, "argtypes")
         arglist = []
-        for i in range(spec.argc + spec.optional + spec.is_variadic)
+        for i in range(spec.argc + spec.optional + int(spec.is_variadic))
             arg = {}
             if spec.varnames and i < spec.varnames.length
                 name = spec.varnames[i]

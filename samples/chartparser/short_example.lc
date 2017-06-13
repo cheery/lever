@@ -1,0 +1,46 @@
+from chartparser import Rule, Nonterminal, Terminal, preprocess
+
+main = :
+    expr   = Nonterminal("expr")
+    number = Nonterminal("number")
+    digit = Terminal("digit")
+    plus  = Terminal("plus")
+
+    grammar = [
+        Rule(expr, [expr, plus, number], "math_op"),
+        Rule(expr, [number],             "pass_number"),
+        Rule(number, [digit],            "new_number"),
+        Rule(number, [number, digit],    "add_digit")
+    ]
+    new_parser = preprocess(grammar, expr)
+    parser = new_parser()
+    for ch in "123 + 456"
+        if ch.is_space()
+            continue
+        elif ch.is_digit()
+            parser.step(digit, ch)
+        elif ch == "+"
+            parser.step(plus, ch)
+        else
+            print("parsing failed")
+            print(parser.expect...)
+            exit(1)
+    print("accept?", parser.accepted)
+    if parser.accepted
+        result = parser.traverse((rule, tree, start, stop):
+            name = rule.annotation
+            if name == "new_number"
+                num = parse_int(tree[0])
+                return num
+            elif name == "add_digit"
+                return tree[0] * 10 + parse_int(tree[1])
+            elif name == "pass_number"
+                print("a number", tree[0])
+                return tree[0]
+            elif name == "math_op"
+                print("adding two numbers", tree[0], tree[2])
+                return tree[0] + tree[2]
+            else
+                assert false
+                    "Not implemented: " ++ name)
+        print(result)

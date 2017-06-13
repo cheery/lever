@@ -1,0 +1,1254 @@
+#module{chartparser}
+    A parser engine
+
+Puzzles and problems related to parsing occur naturally at
+computer and human interaction. Often the hard parsing
+problems lead to searching for alternatives that eventually
+turn out to be just as problematic as the original challenge.
+
+This parsing module is an implementation of 
+#href{https://jeffreykegler.github.io/Marpa-web-site/}
+{the marpa parsing algorithm}. It is distinctively easy to
+use. 
+
+This module can be used to interpret a sequence or a string
+according to a context free grammar. Alternative uses
+include generating strings or detecting ambiguity in
+generated output.
+
+This is one of the libraries that made Lever feasible to
+implement by a single person.
+
+#toc
+
+#section Short example of use
+
+#code ##
+    from chartparser import Rule, Nonterminal, Terminal, preprocess
+
+    expr   = Nonterminal("expr")
+    number = Nonterminal("number")
+    digit = Terminal("digit")
+    plus  = Terminal("plus")
+
+    grammar = [
+        Rule(expr, [expr, plus, number], "math_op"),
+        Rule(expr, [number],             "pass_number"),
+        Rule(number, [digit],            "new_number"),
+        Rule(number, [number, digit],    "add_digit")
+    ]
+    new_parser = preprocess(grammar, expr)
+    parser = new_parser()
+    for ch in "123 + 456"
+        if ch.is_space()
+            continue
+        elif ch.is_digit()
+            parser.step(digit, ch)
+        elif ch == "+"
+            parser.step(plus, ch)
+        else
+            print("parsing failed")
+            print(parser.expect...)
+            exit(1)
+    print("accept?", parser.accepted)
+    if parser.accepted
+        result = parser.traverse((rule, tree, start, stop):
+            name = rule.annotation
+            if name == "new_number"
+                num = parse_int(tree[0])
+                return num
+            elif name == "add_digit"
+                return tree[0] * 10 + parse_int(tree[1])
+            elif name == "pass_number"
+                print("a number", tree[0])
+                return tree[0]
+            elif name == "math_op"
+                print("adding two numbers", tree[0], tree[2])
+                return tree[0] + tree[2]
+            else
+                assert false
+                    "Not implemented: " ++ name)
+        print(result)
+
+The output:
+
+#code ##
+    accept? true
+    a number 123
+    adding two numbers 123 456
+    579
+
+
+
+
+
+
+
+
+
+
+
+#section Core interface
+
+#begin{interface}{Rule}
+#extends #ref{doc:/base}{object}
+#summary A rule in a context-free grammar.
+
+This object is used to represent production rules in a
+grammar. The meaning is roughly, that things on the rhs can
+be used in the place of a lhs.
+
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":40},"stop":{"col":4,"lno":4}}
+#arg{self} 
+#arg{lhs}
+    Left hand side, expected to be a Nonterminal.
+#arg{rhs}
+    Right hand side, expected to be a sequence of Nonterminals and Terminals.
+#optional{annotation}{null}
+    A field for a custom annotation. You can access this
+    during the traverse to recognize the structure from the
+    rules that are present.
+#summary Creates a new Rule.
+#end{function}
+#begin{function}{+repr}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":45},"stop":{"col":0,"lno":0}}
+#arg{self}
+#returns Representation of the rule. LHS is separated from
+    RHS with a '->'.
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Nonterminal}
+#extends #ref{doc:/base}{object}
+#summary A symbol that is not supposed to appear in the
+    formal language that a grammar represents.
+#status volatile
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":69},"stop":{"col":4,"lno":4}}
+#arg{self}
+#arg{name} Name, in theory it's optional and not used for
+    parsing, but it's a good idea to name your nonterminals.
+#end{function}
+#begin{function}{+repr}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":72},"stop":{"col":0,"lno":0}}
+#arg{self}
+#returns repr(self.name)
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Terminal}
+#extends #ref{doc:/base}{object}
+#summary A symbol, which may appear in the formal language that a grammar represents.
+#status volatile
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":62},"stop":{"col":4,"lno":4}}
+#arg{self}
+#arg{name} Name, in theory it's optional and not used for
+    parsing, but it's a good idea to name your nonterminals.
+#end{function}
+#begin{function}{+repr}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":65},"stop":{"col":0,"lno":0}}
+#arg{self}
+#returns the repr(name), prefixed with '@'
+#status volatile
+#end{function}
+#end{interface}
+
+
+#begin{function}{preprocess}
+#source ##
+    {"source":"chartparser.lc","start":{"col":13,"lno":81},"stop":{"col":0,"lno":0}}
+#arg{user_grammar} List of Rule objects representing the
+    grammar you want to parse.
+#arg{default_accept} Default rule to accept, can be chosen
+    when invoking the initiator.
+#returns An Initiator.
+#summary Preprocesses a grammar and prepares for parsing.
+
+The preprocessing of a grammar should be relatively fast.
+When it begins to take hundreds of milliseconds, you may
+want to consider memoizing the Initiator.
+#end{function}
+
+
+#begin{interface}{Initiator}
+#extends #ref{doc:/base}{object}
+#summary Represents an preprocessed grammar, ready for
+    parsing.
+#begin{function}{+call}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":241},"stop":{"col":0,"lno":0}}
+#arg{self}
+#optional{accept}{null} This parsing algorithm doesn't
+    optimize the grammar by the accept rule, so you can
+    pick any nonterminal during instantiation as the accept
+    symbol.
+#returns a new Parser, containing starting state.
+#summary Instantiates the parser.
+#end{function}
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":233},"stop":{"col":4,"lno":4}}
+#arg{self}
+#arg{grammar}
+#arg{blankset}
+#arg{right_recursive}
+#arg{default_accept}
+#returns Creates a new initiator.
+#summary Use the 'preprocess' function to create a new
+    Initiator.
+#status internal
+#end{function}
+#end{interface}
+
+#begin{interface}{Parser}
+#extends #ref{doc:/base}{object}
+#summary #TODO
+#status volatile
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":257},"stop":{"col":4,"lno":4}}
+#arg{self} #TODO
+#arg{init} #TODO
+#arg{accept} #TODO
+#arg{output} #TODO
+#returns #TODO
+#summary #TODO
+#status volatile
+#end{function}
+#begin{object}{accepted}
+#interface #ref{doc:/base}{property}
+#summary #TODO
+#status volatile
+#end{object}
+#begin{function}{default_ambiguity_resolution}
+#source ##
+    {"source":"chartparser.lc","start":{"col":35,"lno":312},"stop":{"col":0,"lno":0}}
+#arg{self} #TODO
+#arg{sppf} #TODO
+#returns #TODO
+#summary #TODO
+#status volatile
+#end{function}
+#begin{object}{expect}
+#interface #ref{doc:/base}{property}
+#summary #TODO
+#status volatile
+#end{object}
+#begin{function}{expecting}
+#source ##
+    {"source":"chartparser.lc","start":{"col":16,"lno":294},"stop":{"col":4,"lno":4}}
+#arg{self} #TODO
+#arg{symbol} #TODO
+#returns #TODO
+#summary #TODO
+#status volatile
+#end{function}
+#begin{function}{step}
+#source ##
+    {"source":"chartparser.lc","start":{"col":11,"lno":263},"stop":{"col":4,"lno":4}}
+#arg{self} #TODO
+#arg{term} #TODO
+#arg{token} #TODO
+#optional{start}{null} #TODO
+#optional{stop}{null} #TODO
+#returns #TODO
+#summary #TODO
+#status volatile
+#end{function}
+#begin{function}{traverse}
+#source ##
+    {"source":"chartparser.lc","start":{"col":15,"lno":297},"stop":{"col":4,"lno":4}}
+#arg{self} #TODO
+#arg{postorder_cb} #TODO
+#optional{blank_cb}{null} #TODO
+#optional{resolve_ambiguity}{null} #TODO
+#returns #TODO
+#summary #TODO
+#status volatile
+#end{function}
+#end{interface}
+
+
+
+
+
+
+
+
+
+
+
+#section Implementation details
+
+#begin{interface}{EIM}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+hash}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":417},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":388},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{rule} #TODO
+
+#arg{pos} #TODO
+
+#arg{origin} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":421},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{is_completed}
+#source ##
+    {"source":"chartparser.lc","start":{"col":19,"lno":414},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{is_confirmed}
+#source ##
+    {"source":"chartparser.lc","start":{"col":19,"lno":411},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{is_predicted}
+#source ##
+    {"source":"chartparser.lc","start":{"col":19,"lno":408},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{next}
+#source ##
+    {"source":"chartparser.lc","start":{"col":11,"lno":399},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{penult}
+#source ##
+    {"source":"chartparser.lc","start":{"col":13,"lno":404},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{postdot}
+#source ##
+    {"source":"chartparser.lc","start":{"col":14,"lno":394},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{IndentParser}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":673},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#optional{pos}{null} #TODO
+
+#optional{indent}{null} #TODO
+
+#optional{dedent}{null} #TODO
+
+#optional{newline}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{finish}
+#source ##
+    {"source":"chartparser.lc","start":{"col":13,"lno":706},"stop":{"col":37,"lno":37}}
+
+#arg{self} #TODO
+
+#arg{parser} #TODO
+
+#arg{pos} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{slip}
+#source ##
+    {"source":"chartparser.lc","start":{"col":11,"lno":700},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{parser} #TODO
+
+#arg{pos} #TODO
+
+#arg{source} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{step}
+#source ##
+    {"source":"chartparser.lc","start":{"col":11,"lno":681},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{parser} #TODO
+
+#arg{pos} #TODO
+
+#arg{source} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{LEO}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":444},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{left} #TODO
+
+#arg{cc} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{object}{stop}
+#interface #ref{doc:/base}{property}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{to_sppf}
+#source ##
+    {"source":"chartparser.lc","start":{"col":14,"lno":452},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{LEOLink}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":466},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{left} #TODO
+
+#arg{rule} #TODO
+
+#arg{sppf} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Link}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":537},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{left} #TODO
+
+#arg{right} #TODO
+
+#optional{link}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{NNF}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":186},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{rule} #TODO
+
+#arg{present} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Resolve}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":593},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{value} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{SPPF}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":472},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{start} #TODO
+
+#arg{stop} #TODO
+
+#arg{cell} #TODO
+
+#arg{link} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+iter}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":511},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{insert}
+#source ##
+    {"source":"chartparser.lc","start":{"col":13,"lno":484},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{left} #TODO
+
+#arg{right} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{is_leaf}
+#source ##
+    {"source":"chartparser.lc","start":{"col":14,"lno":481},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{single}
+#source ##
+    {"source":"chartparser.lc","start":{"col":13,"lno":497},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{to_sppf}
+#source ##
+    {"source":"chartparser.lc","start":{"col":14,"lno":478},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{SyntaxError}
+#extends #ref{doc:/base}{Exception}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":616},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{message} #TODO
+
+#arg{location} #TODO
+
+#arg{source} #TODO
+
+#optional{at_eof}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":623},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{SyntaxErrorExpected}
+#extends #ref{doc:/chartparser}{SyntaxError}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":627},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{expect} #TODO
+
+#arg{location} #TODO
+
+#arg{source} #TODO
+
+#optional{at_eof}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":634},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{function}{all_nonterminals}
+#source ##
+    {"source":"chartparser.lc","start":{"col":19,"lno":140},"stop":{"col":0,"lno":0}}
+
+#arg{rhs} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{all_nullable}
+#source ##
+    {"source":"chartparser.lc","start":{"col":15,"lno":146},"stop":{"col":0,"lno":0}}
+
+#arg{rhs} #TODO
+
+#arg{nullable} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{ambiguity_traverser}
+#source ##
+    {"source":"chartparser.lc","start":{"col":22,"lno":583},"stop":{"col":0,"lno":0}}
+
+#arg{sppf} #TODO
+
+#arg{postorder_cb} #TODO
+
+#arg{blank_cb} #TODO
+
+#arg{resolve_ambiguity} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{build_nnf}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":160},"stop":{"col":0,"lno":0}}
+
+#arg{grammar} #TODO
+
+#arg{nullable} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{cache_transitions}
+#source ##
+    {"source":"chartparser.lc","start":{"col":20,"lno":332},"stop":{"col":0,"lno":0}}
+
+#arg{transitions} #TODO
+
+#arg{eim} #TODO
+
+#arg{cc} #TODO
+
+#arg{leims} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{count_nonrec}
+#source ##
+    {"source":"chartparser.lc","start":{"col":15,"lno":152},"stop":{"col":0,"lno":0}}
+
+#arg{rule} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{object}{dir}
+#interface #ref{doc:/base}{path}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{expand}
+#source ##
+    {"source":"chartparser.lc","start":{"col":9,"lno":596},"stop":{"col":0,"lno":0}}
+
+#arg{start} #TODO
+
+#arg{stop} #TODO
+
+#arg{cell} #TODO
+
+#arg{blank_callback} #TODO
+
+#arg{seq} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{find_nullable}
+#source ##
+    {"source":"chartparser.lc","start":{"col":16,"lno":108},"stop":{"col":0,"lno":0}}
+
+#arg{grammar} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{find_right_recursive}
+#source ##
+    {"source":"chartparser.lc","start":{"col":23,"lno":194},"stop":{"col":0,"lno":0}}
+
+#arg{grammar} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{format_origin}
+#source ##
+    {"source":"chartparser.lc","start":{"col":16,"lno":641},"stop":{"col":0,"lno":0}}
+
+#arg{source} #TODO
+
+#arg{location} #TODO
+
+#optional{message}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{object}{import}
+#interface #ref{doc:/base}{Import}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{is_leo_eligible}
+#source ##
+    {"source":"chartparser.lc","start":{"col":18,"lno":368},"stop":{"col":0,"lno":0}}
+
+#arg{edges} #TODO
+
+#arg{right_recursive} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{main}
+#source ##
+    {"source":"chartparser.lc","start":{"col":7,"lno":5},"stop":{"col":0,"lno":0}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{make_default_blank}
+#source ##
+    {"source":"chartparser.lc","start":{"col":21,"lno":315},"stop":{"col":0,"lno":0}}
+
+#arg{parser} #TODO
+
+#arg{postorder_cb} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{object}{name}
+#value "chartparser"
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{nihilist_rule}
+#source ##
+    {"source":"chartparser.lc","start":{"col":16,"lno":170},"stop":{"col":0,"lno":0}}
+
+#arg{rule} #TODO
+
+#arg{index} #TODO
+
+#arg{nullable} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{prediction}
+#source ##
+    {"source":"chartparser.lc","start":{"col":13,"lno":324},"stop":{"col":0,"lno":0}}
+
+#arg{current} #TODO
+
+#arg{nodes} #TODO
+
+#arg{grammar} #TODO
+
+#arg{transitions} #TODO
+
+#arg{postdot} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{repr_spaces}
+#source ##
+    {"source":"chartparser.lc","start":{"col":14,"lno":49},"stop":{"col":0,"lno":0}}
+
+#arg{seq} #TODO
+
+#optional{space}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{shift_eim}
+#source ##
+    {"source":"chartparser.lc","start":{"col":12,"lno":374},"stop":{"col":0,"lno":0}}
+
+#arg{current} #TODO
+
+#arg{nodes} #TODO
+
+#arg{eim} #TODO
+
+#arg{bb} #TODO
+
+#arg{cc} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{shift_eims}
+#source ##
+    {"source":"chartparser.lc","start":{"col":13,"lno":346},"stop":{"col":0,"lno":0}}
+
+#arg{current} #TODO
+
+#arg{nodes} #TODO
+
+#arg{edges} #TODO
+
+#arg{cc} #TODO
+
+#arg{right_recursive} #TODO
+
+#arg{leims} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{multimethod}{symbol_lt}{2}
+#begin{method}
+#source ##
+    {"source":"chartparser.lc","start":{"col":37,"lno":654},"stop":{"col":0,"lno":0}}
+
+#arg{a}{#ref{doc:/chartparser}{Terminal}} #TODO
+
+#arg{b}{#ref{doc:/chartparser}{Nonterminal}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{method}
+
+#begin{method}
+#source ##
+    {"source":"chartparser.lc","start":{"col":37,"lno":657},"stop":{"col":0,"lno":0}}
+
+#arg{a}{#ref{doc:/chartparser}{Nonterminal}} #TODO
+
+#arg{b}{#ref{doc:/chartparser}{Terminal}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{method}
+
+#begin{method}
+#source ##
+    {"source":"chartparser.lc","start":{"col":40,"lno":660},"stop":{"col":0,"lno":0}}
+
+#arg{a}{#ref{doc:/chartparser}{Nonterminal}} #TODO
+
+#arg{b}{#ref{doc:/chartparser}{Nonterminal}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{method}
+
+#begin{method}
+#source ##
+    {"source":"chartparser.lc","start":{"col":34,"lno":663},"stop":{"col":0,"lno":0}}
+
+#arg{a}{#ref{doc:/chartparser}{Terminal}} #TODO
+
+#arg{b}{#ref{doc:/chartparser}{Terminal}} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{method}
+
+#summary #TODO
+
+#status volatile
+#end{multimethod}
+
+#begin{function}{traverse_sppf}
+#source ##
+    {"source":"chartparser.lc","start":{"col":16,"lno":543},"stop":{"col":0,"lno":0}}
+
+#arg{stack} #TODO
+
+#arg{postorder_cb} #TODO
+
+#arg{blank_cb} #TODO
+
+#arg{resolve_ambiguity} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{warshall_transitive_closure}
+#source ##
+    {"source":"chartparser.lc","start":{"col":30,"lno":217},"stop":{"col":0,"lno":0}}
+
+#arg{a} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
