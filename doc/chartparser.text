@@ -130,7 +130,6 @@ be used in the place of a lhs.
 #extends #ref{doc:/base}{object}
 #summary A symbol that is not supposed to appear in the
     formal language that a grammar represents.
-#status volatile
 #begin{function}{+init}
 #source ##
     {"source":"chartparser.lc","start":{"col":12,"lno":69},"stop":{"col":4,"lno":4}}
@@ -150,7 +149,6 @@ be used in the place of a lhs.
 #begin{interface}{Terminal}
 #extends #ref{doc:/base}{object}
 #summary A symbol, which may appear in the formal language that a grammar represents.
-#status volatile
 #begin{function}{+init}
 #source ##
     {"source":"chartparser.lc","start":{"col":12,"lno":62},"stop":{"col":4,"lno":4}}
