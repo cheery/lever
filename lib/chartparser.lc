@@ -1,42 +1,87 @@
 import tokenizer
 
-doc = path("doc:/chartparser")
-
 main = ():
     s = Nonterminal('s')
     a = Nonterminal('a')
     b = Nonterminal('b')
     x = Terminal('x')
 
-    terminals = {"x": x}
+    terminals = {
+        "h": x,
+        "i": x,
+        "j": x,
+        "k": x,
+        "l": x,
+        "m": x,
+        "n": x }
 
     accept = s
     user_grammar = [
-        Rule(s, [s, a]),
+        Rule(s, [a, s]),
         Rule(s, []),
-        Rule(a, [x])
-    ]
+        Rule(a, [x]) ]
 
     parser = preprocess(user_grammar, accept)()
-    input_string = "xxxxxx"
+    input_string = "hijklmn"
     for token in input_string
         parser.step(terminals[token], token)
-    print("accepted?", parser.accepted)
-    print("expecting X?", parser.expecting(x))
-    print(parser.traverse(
-        ((x, a):
-            return a
-        ),
-        ((x):
-            return ""
-        )
-    ))
 
+    print("accepted?", parser.accepted)
+    print(repr(parser.traverse(
+        (x, a):
+            return a,
+        (x):
+            return "")))
+
+# Main interface to the chart parser are the rules, terminals and nonterminals.
+class Rule
+    +init = (self, lhs, rhs, annotation=null):
+        self.lhs = lhs
+        self.rhs = rhs
+        self.annotation = annotation
+
+    +repr = (self):
+        out = repr(self.lhs) ++ " -> " ++ repr_spaces(self.rhs)
+        return out
+
+repr_spaces = (seq, space=" "):
+    out = ""
+    for item in seq
+        if out.length > 0
+            out ++= space
+        out ++= repr(item)
+    return out
+
+# Earlier I did not separate terminals from
+# non-terminals because it was not strictly
+# necessary. That turned out to confuse
+# when designing grammars.
+class Terminal
+    +init = (self, name):
+        self.name = name
+
+    +repr = (self):
+        return "@" ++ self.name
+
+class Nonterminal
+    +init = (self, name):
+        self.name = name
+
+    +repr = (self):
+        return self.name
+
+# The NNF grammar is divided into null rules and non-null rules.
+# The null rules are unnecessary for the actual parsing engine,
+# yet they are useful when interpreting the parse results.
+
+# The user of the parsing library shouldn't have to worry about
+# the detail that the grammar is processed.
 preprocess = (user_grammar, default_accept):
     nullable = find_nullable(user_grammar)
     grammar = {}
     blankset = {}
-    for rule in build_nnf(user_grammar, nullable)
+    rules = build_nnf(user_grammar, nullable)
+    for rule in rules
         if rule.rhs.length == 0
             try
                 blankset[rule.lhs].append(rule)
@@ -47,32 +92,17 @@ preprocess = (user_grammar, default_accept):
                 grammar[rule.lhs].append(rule)
             except KeyError as _
                 grammar[rule.lhs] = [rule]
+    right_recursive = find_right_recursive(rules)
+    return Initiator(grammar, blankset, right_recursive, default_accept)
 
-    # TODO: Fix up the performance issue in REPR startup by allowing the
-    #       caching of a grammar.
-    new_parser = (accept=default_accept):
-        parser = Parser(grammar, blankset, accept, [])
-        # In an earley parser that uses NNF, empty input is a special case, that is taken care of here.
-        if accept in nullable
-            for rule in user_grammar
-                if rule.lhs == accept and all_nullable(rule.rhs, nullable)
-                    present = []
-                    for x in rule.rhs
-                        present.append(false)
-                    # TODO: improve this to handle this special case directly via null_symbol, rather like this.
-                    parser.output.append(Rule(accept, [], NNF(rule, present)))
-        # The first chart column
-        transitions = {}
-        nodes = {}
-        current = []
-        prediction(current, nodes, grammar, 0, accept)
-        for eim in current
-            prediction(current, nodes, grammar, 0, eim.postdot())
-            cache_transitions(transitions, eim, null)
-        parser.chart.append(transitions)
-        return parser
-    return Preprocessed(new_parser, blankset, nullable)
+# Earley-style parsing would suffer from nullable rules, so in
+# the marpa-style parsing we get rid of the nullable rules.
 
+# The result is a "nihilist normal form"
+# Further reasoning about this can be found in the paper
+# "Practical Earley Parsing" by Aycock & Horspool
+
+# First we have to discover the nullable rules
 find_nullable = (grammar):
     nullable = set()
     queue = []
@@ -97,7 +127,7 @@ find_nullable = (grammar):
                 if x != rule.lhs
                     new_lookup(index, x)
             nonterminals.append(rule.lhs)
-            nonnullables.append(sum_nonrec(rule))
+            nonnullables.append(count_nonrec(rule))
     for n in queue
         for i in inverse_lookup.get(n, [])
             nonnullables[i] -= 1
@@ -117,12 +147,14 @@ all_nullable = (rhs, nullable):
             return false
     return true
 
-sum_nonrec = (rule):
+count_nonrec = (rule):
     s = 0
     for x in rule.rhs
         s += int(x != rule.lhs)
     return s
 
+# Going through n bits in binary produces all possible permutations
+# where a field is present and not present.
 build_nnf = (grammar, nullable):
     result = []
     for rule in grammar
@@ -147,82 +179,149 @@ nihilist_rule = (rule, index, nullable):
             rhs.append(symbol)
     return Rule(rule.lhs, rhs, NNF(rule, present))
 
-class Preprocessed
-    +init = (self, function, blankset, nullable):
-        self.function = function
-        self.blankset = blankset
-        self.nullable = nullable
+# The nihilist normal form rules are annotated with NNF nodes.
+class NNF
+    +init = (self, rule, present):
+        self.rule = rule       # the original rule
+        self.present = present # tells which fields are present in this rule.
 
-    +call = (self, args...):
-        return self.function(args...)
+# Conditions on whether an item is leo-eligible:
+#   its rule is right recursive
+#   it is quasi-complete
+#   it is postdot-unique
+find_right_recursive = (grammar):
+    edges = []
+    for rule in grammar
+        if rule.rhs.length > 0
+            right = rule.rhs[rule.rhs.length - 1]
+            row = []
+            for other in grammar
+                row.append(other.lhs == right)
+            edges.append(row)
+        else
+            row = []
+            for other in grammar
+                row.append(false)
+            edges.append(row)
+    warshall_transitive_closure(edges)
+    right_recursive = set()
+    i = 0
+    for rule in grammar
+        if edges[i][i]
+            right_recursive.add(rule)
+        i += 1
+    return right_recursive
+
+warshall_transitive_closure = (a):
+    n = a.length
+    for k in range(n)
+        for i in range(n)
+            if not a[i][k]
+                continue
+            for j in range(n)
+                if not a[k][j]
+                    continue
+                a[i][j] = true
+    return a
+
+
+# The nullable set presents the same information as the blankset
+# so we can discard it.
+class Initiator
+    +init = (self, grammar, blankset, right_recursive, default_accept):
+        self.grammar = grammar
+        self.blankset = blankset
+        self.right_recursive = right_recursive
+        self.default_accept = default_accept
+
+    # TODO: Fix up the performance issue in REPR startup by allowing the
+    #       caching of a grammar.
+    +call = (self, accept=self.default_accept):
+        parser = Parser(self.grammar, self.blankset, self.right_recursive, accept, [])
+        # In an earley parser that uses NNF, empty input is a special case, that is taken care of here.
+        if accept in self.blankset
+            parser.output.append(SPPF(null, null, null, null))
+        # The first chart column
+        transitions = parser.chart
+        nodes = {}
+        current = []
+        leims = {}
+        prediction(current, nodes, self.grammar, parser.chart, accept)
+        for eim in current
+            prediction(current, nodes, self.grammar, parser.chart, eim.postdot())
+            cache_transitions(transitions, eim, null, leims)
+        #parser.chart.append(transitions) # TODO: remove
+        return parser
 
 class Parser
-    +init = (self, grammar, blankset, accept, output):
-        self.chart = []
+    +init = (self, grammar, blankset, right_recursive, accept, output):
+        self.chart = self.first = {}
         self.blankset = blankset
         self.grammar = grammar
+        self.right_recursive = right_recursive
         self.accept = accept
         self.output = output
 
     step = (self, term, token, start=null, stop=null):
-        # completions proceed in non-deterministic manner, until
-        # everything has been completed.
+        # completions proceed in non-deterministic manner,
+        # until everything has been completed.
         current = []
+        leims = {}
         transitions = {}
         nodes = {}
-        location = self.chart.length
         output = []
         bottom = SPPF(start, stop, token, null)
-        for trans in self.chart[location-1][term]
-            shift_eim(current, nodes, trans.eim, trans.cc, bottom)
+        shift_eims(current, nodes, self.chart[term], bottom, self.right_recursive, leims)
         for eim in current
             # reduction
             cc = nodes[eim]
             if eim.is_completed()
-                for before in self.chart[eim.origin].get(eim.rule.lhs, [])
-                    shift_eim(current, nodes, before.eim, before.cc, cc)
-                if eim.rule.lhs == self.accept and eim.origin == 0
+                shift_eims(current, nodes, eim.origin.get(eim.rule.lhs, []), cc, self.right_recursive, leims)
+                if eim.rule.lhs == self.accept and eim.origin == self.first
                     output.append(cc)
-            prediction(current, nodes, self.grammar, location, eim.postdot())
-            cache_transitions(transitions, eim, cc)
-        self.chart.append(transitions)
+            prediction(current, nodes, self.grammar, transitions, eim.postdot())
+            cache_transitions(transitions, eim, cc, leims)
+        #self.chart.append(transitions)
+        self.chart = transitions
         self.output = output
- 
-    accepted = :property()
+
+    accepted = property();
         get = (self):
             return self.output.length > 0
 
-    expect = :property()
+    expect = property();
         get = (self):
-            return self.chart[self.chart.length - 1].keys()
- 
+            return self.chart.keys()
+
     expecting = (self, symbol):
-        return symbol in self.chart[self.chart.length - 1]
- 
-    traverse = (self, postorder_callback,
-            blank_callback=make_default_blank(self, postorder_callback),
+        return symbol in self.chart
+
+    traverse = (self, postorder_cb,
+            blank_cb=make_default_blank(self, postorder_cb),
             resolve_ambiguity=self.default_ambiguity_resolution):
         if self.output.length > 1
-            # This is really weird in current context.. I should probably
+            # This is really weird in current context. I should probably
             # rethink this whole ambiguity resolution -thing.
             sppf = resolve_ambiguity(null, self.output)
         else
             sppf = self.output[0]
-        res = traverse_sppf([sppf], postorder_callback, blank_callback, resolve_ambiguity)
-        assert res.length == 1, "broken parser traverse"
+            if isinstance(sppf, SPPF) and sppf.cell == null
+                return blank_cb(self.accept)
+        res = traverse_sppf([sppf], postorder_cb, blank_cb, resolve_ambiguity)
+        assert res.length == 1, "broken parse traverse"
         return res[0]
 
     default_ambiguity_resolution = (self, sppf):
         raise Exception(sppf)
 
-make_default_blank = (parser, postorder_callback):
-    blank_callback = (symbol):
+make_default_blank = (parser, postorder_cb):
+    blank_cb = (symbol):
         blanks = parser.blankset[symbol]
         if blanks.length != 1
             raise Exception("default_blank ambiguity")
         cell = blanks[0]
-        return postorder_callback(expand(null, null, cell, blank_callback, iter([]))...)
-    return blank_callback
+        return postorder_cb(expand(null, null, cell, blank_cb, iter([])...))
+    return blank_cb
 
 prediction = (current, nodes, grammar, location, postdot):
     if isinstance(postdot, Nonterminal)
@@ -232,16 +331,47 @@ prediction = (current, nodes, grammar, location, postdot):
                 nodes[eim] = null
                 current.append(eim)
 
-cache_transitions = (transitions, eim, cc):
+cache_transitions = (transitions, eim, cc, leims):
     if not eim.is_completed()
         postdot = eim.postdot()
-        trans = :object()
+        trans = object();
             eim = eim
             cc = cc
+            leo = null
         try
             transitions[postdot].append(trans)
         except KeyError as _
+            if eim.rule in leims
+                trans.leo = leims[eim.rule]
             transitions[postdot] = [trans]
+
+shift_eims = (current, nodes, edges, cc, right_recursive, leims):
+    if is_leo_eligible(edges, right_recursive)
+        trans = edges[0]
+        if trans.leo
+            link = Link(trans.leo.link, trans.cc)
+            leims[trans.eim.rule] = object();
+                trans = trans.leo.trans
+                link = link
+            eim = trans.leo.trans.eim.next()
+            assert eim not in nodes
+                "assumption that a postdot unique eim does not appear twice"
+            nodes[eim] = LEO(trans.eim.rule, link, cc)
+            current.append(eim)
+        else
+            leims[trans.eim.rule] = object();
+                trans = trans
+                link  = Link(null, trans.cc)
+            shift_eim(current, nodes, trans.eim, trans.cc, cc)
+    else
+        for trans in edges
+            shift_eim(current, nodes, trans.eim, trans.cc, cc)
+
+is_leo_eligible = (edges, right_recursive):
+    if edges.length != 1 # must be postdot-unique
+        return false
+    eim = edges[0].eim
+    return eim.rule in right_recursive and eim.pos == eim.rule.rhs.length - 1 #quasi-complete
 
 shift_eim = (current, nodes, eim, bb, cc):
     eim = eim.next()
@@ -255,129 +385,6 @@ shift_eim = (current, nodes, eim, bb, cc):
             start = cc.start
         nodes[eim] = sppf = SPPF(start, cc.stop, eim.rule, Link(bb, cc))
         current.append(eim)
-
-traverse_sppf = (stack, postorder_callback, blank_callback, resolve_ambiguity):
-    rcount = 1
-    sstack = []
-    rstack = []
-    while stack.length > 0
-        sppf = stack.pop()
-        if sppf.is_leaf()
-            sstack.append(sppf.cell)
-            rcount -= 1
-        else
-            result = sppf.single()
-            if result == null
-                result = resolve_ambiguity(sppf, ambiguity_traverser(sppf,
-                    postorder_callback, blank_callback, resolve_ambiguity))
-            if isinstance(result, Resolve)
-                sstack.append(result.value)
-                rcount -= 1
-            else
-                rstack.append(:object()
-                    rcount = rcount - 1
-                    rlen = result.length
-                    sppf = sppf
-                )
-                rcount = len(result)
-                stack.extend(reversed(result))
-        while rcount == 0 and len(rstack) > 0
-            s = rstack.pop()
-            rcount = s.rcount
-            rlen = s.rlen
-            sppf = s.sppf
-            a = []
-            for i in range(rlen)
-                a.append(sstack.pop(sstack.length+i-rlen))
-            # TODO: Here we do not really identify where the blank rule appears.
-            #       That feature could be really useful sometimes. 
-            #       That information is available in the sppf.
-            sstack.append(postorder_callback(expand(
-                sppf.start, sppf.stop, sppf.cell, blank_callback, iter(a))...))
-    sstack.reverse() # won't hurt.
-    return sstack
-
-ambiguity_traverser = (sppf, postorder_callback, blank_callback, resolve_ambiguity):
-    return (stack):
-        seq = traverse_sppf(stack,
-            postorder_callback,
-            blank_callback,
-            resolve_ambiguity)
-        return postorder_callback(expand(
-            sppf.start, sppf.stop, sppf.cell, blank_callback, iter(seq))...)
-
-class Resolve
-    +init = (self, value):
-        self.value = value
-
-expand = (start, stop, cell, blank_callback, seq):
-    if isinstance(cell.annotation, NNF)
-        nnf = cell.annotation
-        result = []
-        i = 0
-        for p in nnf.present
-            if p
-                result.append(seq.next())
-            else
-                result.append(blank_callback(nnf.rule.rhs[i]))
-            i += 1
-        return [nnf.rule, result, start, stop]
-    return [cell, list(seq), start, stop]
-
-class Rule
-    +init = (self, lhs, rhs, annotation=null):
-        self.lhs = lhs
-        self.rhs = rhs
-        self.annotation = annotation
-
-    +repr = (self):
-        out = repr(self.lhs) ++ " -> " ++ repr_spaces(self.rhs)
-        return out
-
-repr_spaces = (seq, space=" "):
-    out = ""
-    for item in seq
-        if out.length > 0
-            out ++= space
-        out ++= repr(item)
-    return out
-
-## Nihilist normal form
-class NNF
-    +init = (self, rule, present):
-        self.rule = rule
-        self.present = present          # tells which fields are present.
-
-# Earlier I did not separate terminals from
-# non-terminals because it was not strictly
-# necessary. That turned out to confuse
-# when designing grammars.
-class Terminal
-    +init = (self, name):
-        self.name = name
-
-    +repr = (self):
-        return "@" ++ self.name
-
-class Nonterminal
-    +init = (self, name):
-        self.name = name
-
-    +repr = (self):
-        return self.name
-
-symbol_lt = multimethod(2)
-symbol_lt[[Terminal, Nonterminal]] = (a, b):
-    return false
-
-symbol_lt[[Nonterminal, Terminal]] = (a, b):
-    return true
-
-symbol_lt[[Nonterminal, Nonterminal]] = (a, b):
-    return a.name < b.name
-
-symbol_lt[[Terminal, Terminal]] = (a, b):
-    return a.name < b.name
 
 class EIM
     +init = (self, rule, pos, origin):
@@ -418,7 +425,6 @@ class EIM
             repr(self.pos) ++ 
             ":" ++ repr(self.rule)
         
-
 #    # TODO: String formatting
 #    #    if isinstance(self.rule, Rule):
 #    #    lhs = repr(self.rule.lhs)
@@ -435,13 +441,31 @@ class EIM
     if a.pos != b.pos
         return false
     return true
-    
+
+class LEO
+    +init = (self, rule, link, cc):
+        self.rule = rule 
+        self.link = link
+        self.cc = cc
+
+    to_sppf = (self):
+        link = self.link
+        cc = self.cc
+        while link
+            bb = link.right
+            cc = SPPF(bb.start, cc.stop, self.rule, Link(bb, cc))
+            link = link.left
+        return cc
+
 class SPPF # Shared packed parse forest
     +init = (self, start, stop, cell, link):
         self.start = start
         self.stop = stop
         self.cell = cell
         self.link = link
+
+    to_sppf = (self):
+        return self
 
     is_leaf = (self):
         return self.link == null
@@ -504,6 +528,134 @@ class Link
         self.right = right
         self.link = link
 
+
+traverse_sppf = (stack, postorder_cb, blank_cb, resolve_ambiguity):
+    rcount = 1
+    sstack = []
+    rstack = []
+    while stack.length > 0
+        sppf = stack.pop().to_sppf()
+        if sppf.is_leaf()
+            sstack.append(sppf.cell)
+            rcount -= 1
+        else
+            result = sppf.single()
+            if result == null
+                result = resolve_ambiguity(sppf, ambiguity_traverser(sppf,
+                    postorder_cb, blank_cb, resolve_ambiguity))
+            if isinstance(result, Resolve)
+                sstack.append(result.value)
+                rcount -= 1
+            else
+                rstack.append(object();
+                    rcount = rcount - 1
+                    rlen = result.length
+                    sppf = sppf)
+                rcount = result.length
+                stack.extend(reversed(result))
+        while rcount == 0 and rstack.length > 0
+            s = rstack.pop()
+            rcount = s.rcount
+            rlen = s.rlen
+            sppf = s.sppf
+            a = []
+            for i in range(rlen)
+                a.append(sstack.pop(sstack.length+i-rlen))
+            # TODO: Here we do not really identify where the blank rule appears.
+            #       That feature could be really useful sometimes.
+            #       That information is available in the sppf.
+            sstack.append(postorder_cb(expand(
+                sppf.start, sppf.stop, sppf.cell, blank_cb, iter(a))...))
+    sstack.reverse() # won't hurt.
+    return sstack
+
+ambiguity_traverser = (sppf, postorder_cb, blank_cb, resolve_ambiguity):
+    return (stack):
+        seq = traverse_sppf(stack,
+            postorder_cb,
+            blank_cb,
+            resolve_ambiguity)
+        return postorder_cb(expand(
+            sppf.start, sppf.stop, sppf.cell, blank_cb, iter(seq))...)
+
+class Resolve
+    +init = (self, value):
+        self.value = value
+
+expand = (start, stop, cell, blank_callback, seq):
+    if isinstance(cell.annotation, NNF)
+        nnf = cell.annotation
+        result = []
+        i = 0
+        for p in nnf.present
+            if p
+                result.append(seq.next())
+            else
+                result.append(blank_callback(nnf.rule.rhs[i]))
+            i += 1
+        return [nnf.rule, result, start, stop]
+    return [cell, list(seq), start, stop]
+
+
+
+# TODO: 'format_origin' depends on the lno/col positioning information.
+# We may want to change this, as parsing is not necessarily constrained
+# to text files.
+class SyntaxError extends Exception
+    +init = (self, message, location, source, at_eof=false):
+        self.message = message
+        self.location = location
+        self.source = source
+        self.traceback = null
+        self.at_eof = at_eof
+
+    +repr = (self):
+        return format_origin(self.source, self.location, self.message)
+
+class SyntaxErrorExpected extends SyntaxError
+    +init = (self, expect, location, source, at_eof=false):
+        self.expect = list(expect)
+        self.location = location
+        self.source = source
+        self.traceback = null
+        self.at_eof = at_eof
+
+    +repr = (self):
+        msg = [format_origin(self.source, self.location, " expected some of:")]
+        self.expect.sort(symbol_lt)
+        for symbol in self.expect
+            msg.append("    " ++ symbol.name)
+        return "\n".join(msg)
+
+format_origin = (source, location, message=null):
+    loc = [repr(location.lno), repr(location.col)]
+    if message
+        loc.append(message)
+    if isinstance(source, path)
+        loc.insert(0, source.to_string())
+    elif source
+        loc.insert(0, source)
+    else
+        loc.insert(0, "")
+    return ":".join(loc)
+
+symbol_lt = multimethod(2)
+symbol_lt[[Terminal, Nonterminal]] = (a, b):
+    return false
+
+symbol_lt[[Nonterminal, Terminal]] = (a, b):
+    return true
+
+symbol_lt[[Nonterminal, Nonterminal]] = (a, b):
+    return a.name < b.name
+
+symbol_lt[[Terminal, Terminal]] = (a, b):
+    return a.name < b.name
+
+
+# TODO: There's no certain place where this should sit,
+# but it currently depends on .col, .lno -detail.
+
 # There's no certain place where this should sit. But
 # it's relevant with chartparser so it sits here now.
 class IndentParser
@@ -545,39 +697,3 @@ class IndentParser
             parser.step(self.dedent, null, pos, pos)
             self.level = self.stack.pop()
         return self.stack.length == 0
-
-class SyntaxError extends Exception
-    +init = (self, message, location, source, at_eof=false):
-        self.message = message
-        self.location = location
-        self.source = source
-        self.traceback = null
-        self.at_eof = at_eof
-
-    +repr = (self):
-        return format_origin(self.source, self.location, self.message)
-
-class SyntaxErrorExpected extends SyntaxError
-    +init = (self, expect, location, source, at_eof=false):
-        self.expect = list(expect)
-        self.location = location
-        self.source = source
-        self.traceback = null
-        self.at_eof = at_eof
-
-    +repr = (self):
-        msg = [format_origin(self.source, self.location, " expected some of:")]
-        self.expect.sort(symbol_lt)
-        for symbol in self.expect
-            msg.append("    " ++ symbol.name)
-        return "\n".join(msg)
-
-format_origin = (source, location, message=null):
-    loc = [repr(location.lno), repr(location.col)]
-    if message
-        loc.append(message)
-    if source
-        loc.insert(0, source)
-    else
-        loc.insert(0, "")
-    return ":".join(loc)
