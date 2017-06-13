@@ -78,6 +78,10 @@ The output:
     adding two numbers 123 456
     579
 
+The writing of grammar rules may be tedious, so there is a
+separate language for writing rules and annotations into
+them.
+
 
 
 
@@ -152,7 +156,7 @@ be used in the place of a lhs.
     {"source":"chartparser.lc","start":{"col":12,"lno":62},"stop":{"col":4,"lno":4}}
 #arg{self}
 #arg{name} Name, in theory it's optional and not used for
-    parsing, but it's a good idea to name your nonterminals.
+    parsing, but it's a good idea to name your terminals.
 #end{function}
 #begin{function}{+repr}
 #source ##
@@ -212,69 +216,77 @@ want to consider memoizing the Initiator.
 
 #begin{interface}{Parser}
 #extends #ref{doc:/base}{object}
-#summary #TODO
-#status volatile
+#summary A parser state you can step through the input.
+#status the name may change
 #begin{function}{+init}
 #source ##
     {"source":"chartparser.lc","start":{"col":12,"lno":257},"stop":{"col":4,"lno":4}}
-#arg{self} #TODO
-#arg{init} #TODO
-#arg{accept} #TODO
-#arg{output} #TODO
-#returns #TODO
-#summary #TODO
-#status volatile
+#arg{self}
+#arg{init} Initiator
+#arg{accept} Accept rule this parser was created with.
+#arg{output} Starting output, usually empty.
+#summary Use the Initiator.+call to create a new parser,
+    rather than this.
+#status internal
 #end{function}
+
 #begin{object}{accepted}
 #interface #ref{doc:/base}{property}
-#summary #TODO
-#status volatile
+#summary boolean, on whether .output is filled or not.
+
+Indicates whether the input is accepted.
 #end{object}
+
 #begin{function}{default_ambiguity_resolution}
 #source ##
     {"source":"chartparser.lc","start":{"col":35,"lno":312},"stop":{"col":0,"lno":0}}
-#arg{self} #TODO
-#arg{sppf} #TODO
-#returns #TODO
-#summary #TODO
-#status volatile
+#arg{self}
+#arg{sppf}
+#summary Related to ambiguity resolution, throws an exception.
+#status internal
 #end{function}
+
 #begin{object}{expect}
 #interface #ref{doc:/base}{property}
-#summary #TODO
-#status volatile
+#summary A set of symbols the parser is expecting.
 #end{object}
+
 #begin{function}{expecting}
 #source ##
     {"source":"chartparser.lc","start":{"col":16,"lno":294},"stop":{"col":4,"lno":4}}
-#arg{self} #TODO
-#arg{symbol} #TODO
-#returns #TODO
-#summary #TODO
-#status volatile
+#arg{self}
+#arg{symbol} Symbol to be checked.
+#returns true or false
+#summary Can be used to check whether a specific terminal or
+    nonterminal is expected.
 #end{function}
+
 #begin{function}{step}
 #source ##
     {"source":"chartparser.lc","start":{"col":11,"lno":263},"stop":{"col":4,"lno":4}}
-#arg{self} #TODO
-#arg{term} #TODO
-#arg{token} #TODO
-#optional{start}{null} #TODO
-#optional{stop}{null} #TODO
-#returns #TODO
-#summary #TODO
-#status volatile
+#arg{self}
+#arg{term} The Terminal (or Nonterminal) to step with.
+#arg{token} The token to associate to this step.
+#optional{start}{null} Start source location (if used)
+#optional{stop}{null} Stop source location (if used).
+#summary Steps the parsing state with a symbol.
 #end{function}
+
 #begin{function}{traverse}
 #source ##
     {"source":"chartparser.lc","start":{"col":15,"lno":297},"stop":{"col":4,"lno":4}}
-#arg{self} #TODO
-#arg{postorder_cb} #TODO
-#optional{blank_cb}{null} #TODO
-#optional{resolve_ambiguity}{null} #TODO
-#returns #TODO
-#summary #TODO
-#status volatile
+#arg{self}
+#arg{postorder_cb}
+    Traversing function to use. Returns: (rule, tree, start, stop)
+#optional{blank_cb}{null} An optional callback for generating blank
+    symbol. As a default the postorder_cb is used with
+    generated arguments.
+#optional{resolve_ambiguity}{null}
+    A function callback for resolving ambiguity in a grammar
+    during postorder traverse. Not
+    documented for now.
+#returns Whatever the postorder_cb does.
+#summary Postorder traverse the parse tree.
 #end{function}
 #end{interface}
 
