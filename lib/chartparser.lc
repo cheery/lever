@@ -349,19 +349,19 @@ shift_eims = (current, nodes, edges, cc, right_recursive, leims):
     if is_leo_eligible(edges, right_recursive)
         trans = edges[0]
         if trans.leo
-            link = Link(trans.leo.link, trans.cc)
+            link = LEOLink(trans.leo.link, trans.eim.rule, trans.cc)
             leims[trans.eim.rule] = object();
                 trans = trans.leo.trans
                 link = link
             eim = trans.leo.trans.eim.next()
             assert eim not in nodes
                 "assumption that a postdot unique eim does not appear twice"
-            nodes[eim] = LEO(trans.eim.rule, link, cc)
+            nodes[eim] = LEO(link, cc)
             current.append(eim)
         else
             leims[trans.eim.rule] = object();
                 trans = trans
-                link  = Link(null, trans.cc)
+                link  = LEOLink(null, trans.eim.rule, trans.cc)
             shift_eim(current, nodes, trans.eim, trans.cc, cc)
     else
         for trans in edges
@@ -443,19 +443,28 @@ class EIM
     return true
 
 class LEO
-    +init = (self, rule, link, cc):
-        self.rule = rule 
-        self.link = link
+    +init = (self, left, cc):
+        self.left = left
         self.cc = cc
 
     to_sppf = (self):
-        link = self.link
+        left = self.left
         cc = self.cc
-        while link
-            bb = link.right
-            cc = SPPF(bb.start, cc.stop, self.rule, Link(bb, cc))
-            link = link.left
+        while left
+            bb = left.sppf
+            if bb
+                start = bb.start
+            else
+                start = cc.start
+            cc = SPPF(start, cc.stop, left.rule, Link(bb, cc))
+            left = left.left
         return cc
+
+class LEOLink
+    +init = (self, left, rule, sppf):
+        self.left = left
+        self.rule = rule
+        self.sppf = sppf
 
 class SPPF # Shared packed parse forest
     +init = (self, start, stop, cell, link):
