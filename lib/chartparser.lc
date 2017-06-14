@@ -314,11 +314,11 @@ class Parser
 
 make_default_blank = (parser, postorder_cb):
     blank_cb = (symbol):
-        blanks = parser.blankset[symbol]
+        blanks = parser.init.blankset[symbol]
         if blanks.length != 1
             raise Exception("default_blank ambiguity")
         cell = blanks[0]
-        return postorder_cb(expand(null, null, cell, blank_cb, iter([])...))
+        return postorder_cb(expand(null, null, cell, blank_cb, iter([]))...)
     return blank_cb
 
 prediction = (current, nodes, grammar, transitions, postdot):
