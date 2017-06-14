@@ -159,7 +159,7 @@ def linux_build_depedencies(libuv_is_local):
     extra = []
     extra_apt = []
     if not libuv_is_local:
-        extra.append("libuv1")
+        extra.append("libuv")
         extra_apt.append("libuv1-dev")
     for dependency in library_depends + extra:
         if call(['pkg-config', '--exists', dependency]) != 0:
@@ -216,7 +216,13 @@ def compile_libraries(preserve_cache=True):
                 except Exception as e:
                     print("{}:{}".format(lc_name, e))
 
+stop_troubleshoot = False
 def linux_troubleshoot(item, extra_apt=[]):
+    global stop_troubleshoot
+    if stop_troubleshoot:
+        print("That did not solve the problem")
+        sys.exit(1)
+    stop_troubleshoot = True
     print("Dependencies to compile or run:")
     print(' '.join(command_depends + library_depends))
     print()
@@ -225,7 +231,7 @@ def linux_troubleshoot(item, extra_apt=[]):
         print("Ubuntu/debian detected, trying to install")
         check_call(['sudo', 'apt-get', 'install'] +
             "gcc make libffi-dev pkg-config libz-dev libbz2-dev".split(' ') +
-            "libsqlite3-dev libncurses-dev libexpat1-dev libssl-dev libuv1-dev".split(' ') +
+            "libsqlite3-dev libncurses-dev libexpat1-dev libssl-dev libuv1 libuv1-dev".split(' ') +
             extra_apt)
         print("Re-attempt")
         main()
