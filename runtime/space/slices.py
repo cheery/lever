@@ -1,5 +1,7 @@
 from builtin import signature
 from interface import Object, null
+from rpython.rlib.objectmodel import compute_hash
+from rpython.rlib.rarithmetic import intmask
 import space
 
 class Slice(Object):
@@ -19,6 +21,21 @@ class Slice(Object):
         if name == u'step':
             return self.step
         return Object.getattr(self, name)
+
+    def hash(self):
+        mult = 1000003
+        x = 0x345678
+        z = 3
+        for y in [self.start.hash(), self.stop.hash(), self.step.hash()]:
+            x = (x ^ y) * mult
+            z -= 1
+            mult += 82520 + z + z
+        x += 97531
+        return intmask(x)
+
+    def eq(self, other): # TODO: improve this?
+        import operators
+        return space.is_true(operators.eq.call([self, other]))
 
     def iter(self):
         if self.stop is null:

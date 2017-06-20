@@ -330,6 +330,16 @@ def _(a, b):
 def _(a, b):
     return boolean(a.ref == b.ref)
 
+@eq.multimethod_s(Slice, Slice)
+def _(a, b):
+    if is_false( eq.call([a.start, b.start]) ):
+        return false
+    if is_false( eq.call([a.stop, b.stop]) ):
+        return false
+    if is_false( eq.call([a.step, b.step]) ):
+        return false
+    return true
+
 @neg.multimethod_s(Integer)
 def _(a):
     return Integer(-a.value)

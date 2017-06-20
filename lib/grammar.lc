@@ -1,0 +1,885 @@
+from chartparser import Nonterminal, Terminal, Rule
+import chartparser, tokenizer
+
+read_file = (filename, extension_env=default_extensions):
+    env = read_file_bare(filename)
+    # print(env.symbols.values()...)
+    # for use in env.extensions
+    #     print(use[0], use[1], use[2].items()...)
+    # for rule in env.rules
+    #     print(rule, "/", rule.annotation)
+    initiator = chartparser.preprocess(env.rules, env.rules[0].lhs)
+    extensions = []
+    for extension in env.extensions
+        name = extension[0]
+        if name not in extension_env
+            raise Error("Extension " ++ name ++ " not present")
+        ext = extension_env[name]
+        extensions.append([ext, extension[1 .:]])
+    return Initiator(initiator, extensions, env.keywords, env.symbols)
+
+class Initiator
+    +init = (self, init, extensions, keywords, symbols):
+        self.init = init
+        self.extensions = extensions
+        self.keywords = keywords
+        self.symbols = symbols
+
+    +call = (self, accept=null):
+        pos = tokenizer.Position(0, 1)
+        extensions = []
+        for item in self.extensions
+            extensions.append( item[0](pos, item[1]...) )
+        parser = Parser(pos,
+            self, self.init(accept), extensions)
+        return parser
+
+    create_symtab = (self):
+        return object();
+            string = self.symbols.get("string", null)
+            symbol = self.symbols.get("symbol", null)
+            hex = self.symbols.get("hex", null)
+            int = self.symbols.get("int", null)
+            float = self.symbols.get("float", null)
+
+    read_file = (self, filename):
+        tokens = tokenizer.read_file(filename,
+            self.keywords,
+            self.create_symtab())
+        return self.read_tokens(tokens, filename)
+
+    read_string = (self, string, source="<string>"):
+        tokens = tokenizer.read_string(string,
+            self.keywords,
+            self.create_symtab())
+        return self.read_tokens(tokens, source)
+
+    read_tokens = (self, tokens, source="<string>"):
+        parser = self()
+        parser.source = source
+        for token in tokens
+            parser.step(token.name, token, token.start, token.stop)
+        parser.finish()
+        return parser
+
+class Parser
+    +init = (self, pos, init, child, extensions):
+        self.pos = pos
+        self.init = init
+        self.child = child
+        self.extensions = extensions
+        self.source = "<unknown>"
+
+    step = (self, term, token, start=null, stop=null):
+        for ext in self.extensions
+            term = ext.step(self, term, token, start, stop)
+        if not self.child.expecting(term)
+            raise chartparser.SyntaxErrorExpected2(token,
+                self.child.expect, start, self.source)
+        self.child.step(term, token, start, stop)
+        self.pos = stop
+
+    accepted = property();
+        get = (self):
+            return self.child.accepted
+
+    expect = property();
+        get = (self):
+            return self.child.expect
+
+    expecting = (self, symbol):
+        return self.child.expecting(symbol)
+
+    finish = (self):
+        for ext in self.extensions
+            ext.finish(self)
+        if not self.child.accepted
+            raise chartparser.SyntaxErrorExpected2(null,
+                self.child.expect, self.pos, self.source, true)
+
+    traverse = (self, postorder_cb, blank_cb=null, resolve_cb=null):
+        g_postorder_cb = (rule, tree, start, stop):
+            return rule.annotation.postorder(postorder_cb, tree, object();
+                start = start
+                stop = stop)
+        return self.child.traverse(
+            g_postorder_cb, blank_cb, resolve_cb)
+
+class AliasExtension
+    +init = (self, pos, args, options):
+        self.args = args
+        self.on = options.get("on", [])
+
+    step = (self, i, term, token, start, stop):
+        if (not i.expecting(term)) and term in self.on
+            for arg in self.args
+                if i.expecting(arg)
+                    return arg
+        return term
+    
+    finish = (self, i):
+        null
+
+class IndentationExtension
+    +init = (self, pos, args, options):
+        self.indent = chartparser.IndentParser(pos, args...)
+        self.can_close = set(options.get("can_close", []))
+
+    step = (self, i, term, token, start, stop):
+        self.indent.step(i.child, start, i.source)
+        if not i.child.expecting(term) and term in self.can_close
+            self.indent.slip(i.child, start, i.source)
+        return term
+
+    finish = (self, i):
+        if not self.indent.finish(i.child, i.pos, i.source)
+            raise chartparser.SyntaxErrorExpected2("eof",
+                i.child.expect, i.pos, i.source, true)
+
+default_extensions = {
+    "alias": AliasExtension
+    "indentation": IndentationExtension
+}
+
+read_file_bare = (filename):
+    indent = chartparser.IndentParser(
+        tokenizer.Position(0, 1),
+        language.indent,
+        language.dedent,
+        language.newline)
+    parser = language.new_parser()
+    tokens = tokenizer.read_file(filename,
+        language.keywords,
+        language.symtab)
+    pos = tokenizer.Position(0, 1)
+    for token in tokens
+        term = token.name
+        indent.step(parser, token.start, filename)
+        if not parser.expecting(term) and term in language.can_close
+            indent.slip(parser, token.start, filename)
+        if not parser.expecting(term) and term in language.keywords
+            term = language.symtab.symbol
+        # TODO: move this inside the chartparser?
+        if not parser.expecting(term)
+            raise chartparser.SyntaxErrorExpected2(token.string,
+                parser.expect, token.start, filename)
+        parser.step(term, token, token.start, token.stop)
+        pos = token.stop
+    # TODO: move this inside the chartparser?
+    indent.finish(parser, pos, filename)
+    if not parser.accepted
+        raise chartparser.SyntaxErrorExpected2("eof",
+            parser.expect, token.stop, filename, true)
+
+    # TODO: move the 'loc' creation upwards into the chartparser
+    run_action = (name, args):
+        return getattr(actions, name)(args)
+    out = parser.traverse((rule, tree, start, stop):
+        return rule.annotation.postorder(run_action, tree, object();
+            start = start
+            stop = stop))
+
+    env = object();
+        constructives = set()
+        templates     = {}
+        template_memo = {}
+        keywords = {}
+        symbols  = {}
+        rules    = []
+        extensions = []
+    for decl in out
+        decl(0, env)
+    for decl in out
+        decl(1, env)
+    return env
+
+build_grammar_language = ():
+    # Used by the indentation parser
+    indent = Nonterminal("indent")
+    dedent = Nonterminal("dedent")
+    newline = Nonterminal("newline")
+
+    # Principal nonterminals
+    file = Nonterminal('file')
+    decl = Nonterminal('decl')
+    option = Nonterminal('option')
+    body = Nonterminal('body')
+    prod = Nonterminal('prod')
+    primitive = Nonterminal('primitive')
+    expr = Nonterminal('expr')
+    term = Nonterminal('term')
+    prod_seq = Nonterminal('prod_seq')
+    annotation      = Nonterminal('annotation')
+    annotation_term = Nonterminal('annotation_term')
+
+    # Helper nonterminals
+    s_decl_nl = Nonterminal('0')
+    s_symbol_c = Nonterminal('1')
+    j_symbol_c = Nonterminal('2')
+    j_option_nl = Nonterminal('3')
+    o_kw_constructive = Nonterminal('4')
+    s_primitive_c = Nonterminal('5')
+    j_primitive_c = Nonterminal('6')
+    j_prod_nl = Nonterminal('7')
+    m_expr = Nonterminal('8')
+    s_annotation_c = Nonterminal('9')
+    j_annotation_c = Nonterminal('10')
+    prod_seq_a = Nonterminal('11')
+    prod_seq_b = Nonterminal('12')
+    prod_seq_c = Nonterminal('13')
+
+    # Terminals
+    colon = Terminal(':')
+    equal = Terminal('=')
+    slash = Terminal('/')
+    comma = Terminal(',')
+    dot    = Terminal('.')
+    dotdot = Terminal('..')
+    lp = Terminal('(')
+    rp = Terminal(')')
+    lb = Terminal("[")
+    rb = Terminal("]")
+    lc = Terminal("{")
+    rc = Terminal("}")
+    star = Terminal("*")
+    plus = Terminal("+")
+    question = Terminal("?")
+    percent  = Terminal("!")
+
+    symbol = Terminal("symbol")
+    string = Terminal("string")
+    int    = Terminal("int")
+
+    kw_use = Terminal('use')
+    kw_append = Terminal('append')
+    kw_concat = Terminal('concat')
+    kw_constructive = Terminal('constructive')
+    kw_terminal = Terminal('terminal')
+    kw_null = Terminal('null')
+
+    language = object()
+    language.keywords = { ":": colon,
+        "=": equal, "/": slash,
+        ",": comma, ".": dot, "..": dotdot,
+        "(": lp, ")": rp, "[": lb, "]": rb, "{": lc, "}": rc,
+        "*": star, "+": plus,
+        "?": question, "%": percent,
+        "use": kw_use,
+        "append": kw_append,
+        "concat": kw_concat,
+        "constructive": kw_constructive,
+        "terminal": kw_terminal,
+        "null": kw_null }
+    language.can_close = set([rp, lb, lc])
+    language.indent = indent
+    language.dedent = dedent
+    language.newline = newline
+    language.transitional = [
+        kw_terminal, kw_null, kw_constructive,
+        kw_use, kw_append ]
+    language.symtab = object();
+        symbol = symbol
+        int = int
+        string = string
+
+    grammar = [
+        Rule(file, [],      List()),
+        Rule(file, [s_decl_nl], Get(0)),
+
+        Rule(decl, [kw_use, symbol, lp, s_symbol_c, rp],         Label("use", [Get(1), Get(3), Null()])),
+        Rule(decl, [kw_use, symbol, lp, s_symbol_c, rp,
+            indent, j_option_nl, dedent],                        Label("use", [Get(1), Get(3), Get(6)])),
+        Rule(decl, [o_kw_constructive, kw_terminal, s_symbol_c], Label("terminal", [Get(0), Get(2)])),
+        Rule(decl, [symbol, lp, s_symbol_c, rp, colon, body],    Label("template", [Get(0), Get(2), Get(5)])),
+        Rule(decl, [symbol, colon, body],                        Label("rule", [Get(0), Get(2)])),
+
+        Rule(option, [symbol, equal, lb, s_primitive_c, rb], List([Get(0), Get(3)])),
+
+        Rule(prod, [m_expr], Label("prod", [Get(0), Null()])),
+        Rule(prod, [m_expr, slash, annotation], Label("prod", [Get(0), Get(2)])),
+        Rule(prod, [m_expr, slash, symbol], Label("prod", [Get(0), Label("shorthand", [Get(2)])])),
+
+        Rule(expr, [term], Get(0)),
+        Rule(expr, [lp, prod_seq, rp, plus],     Label('plus', [Get(0)])),
+        Rule(expr, [lp, prod_seq, rp, star],     Label('star', [Get(0)])),
+        Rule(expr, [lp, prod_seq, rp, question], Label('opt', [Get(0)])),
+        Rule(expr, [symbol, lp, prod_seq, rp], Label('expand', [Get(0), Get(2)])),
+
+        Rule(prod_seq, [indent, prod_seq_b, dedent], Get(1)),
+        Rule(prod_seq, [prod_seq_c], Get(0)),
+
+        Rule(term, [term, plus],       Label('plus', [Get(0)])),
+        Rule(term, [term, star],       Label('star', [Get(0)])),
+        Rule(term, [term, question],   Label('opt', [Get(0)])),
+        Rule(term, [symbol],           Label('symbol', [Get(0)])),
+        Rule(term, [string],           Label('string', [Get(0)])),
+        Rule(term, [lb, prod_seq, rb], Label('prod_set', [Get(1)])),
+
+        Rule(annotation, [annotation_term],                        Get(0)),
+        Rule(annotation, [annotation, kw_append, annotation_term], Label("append", [Get(0), Get(2)])),
+        Rule(annotation, [annotation, kw_concat, annotation_term], Label("concat", [Get(0), Get(2)])),
+
+        Rule(annotation_term, [lp, annotation, rp], Get(1)),
+        Rule(annotation_term, [int],     Label("index", [Get(0)])),
+        Rule(annotation_term, [dot],     Label("dot", [Get(0)])),
+        Rule(annotation_term, [dotdot],  Label("dotdot", [Get(0)])),
+        Rule(annotation_term, [kw_null], Label("a_null", [])),
+
+        Rule(annotation_term, [symbol, lp, s_annotation_c, rp], Label("label", [Get(0), Get(2)])),
+        Rule(annotation_term, [lb, s_annotation_c, rb],         Label("a_list", [Get(1)])),
+
+        Rule(primitive, [symbol], Label('symbol', [Get(0)])),
+        Rule(primitive, [string], Label('string', [Get(0)])),
+
+        Rule(body, [prod],                      List([Get(0)])),
+        Rule(body, [indent, j_prod_nl, dedent], Get(1)),
+
+        Rule(s_decl_nl, [s_decl_nl, newline, decl], Append(Get(0), Get(2))),
+        Rule(s_decl_nl, [decl],                     List([Get(0)])),
+
+        Rule(o_kw_constructive, [], Null()),
+        Rule(o_kw_constructive, [kw_constructive], Get(0)),
+
+        Rule(s_symbol_c, [],           List()),
+        Rule(s_symbol_c, [j_symbol_c], Get(0)),
+
+        Rule(j_symbol_c, [symbol],                    List([Get(0)])),
+        Rule(j_symbol_c, [j_symbol_c, comma, symbol], Append(Get(0), Get(2))),
+
+        Rule(j_option_nl, [option],                       List([Get(0)])),
+        Rule(j_option_nl, [j_option_nl, newline, option], Append(Get(0), Get(2))),
+
+        Rule(s_primitive_c, [],              List()),
+        Rule(s_primitive_c, [j_primitive_c], Get(0)),
+
+        Rule(j_primitive_c, [primitive],                       List([Get(0)])),
+        Rule(j_primitive_c, [j_primitive_c, comma, primitive], Append(Get(0), Get(2))),
+
+        Rule(j_prod_nl, [prod], List([Get(0)])),
+        Rule(j_prod_nl, [j_prod_nl, newline, prod], Append(Get(0), Get(2))),
+
+        Rule(m_expr, [],             List()),
+        Rule(m_expr, [m_expr, expr], Append(Get(0), Get(1))),
+
+        Rule(prod_seq_b, [prod_seq_c], Get(0)),
+        Rule(prod_seq_b, [prod_seq_b, newline, prod_seq_c], Concat(Get(0), Get(2))),
+
+        Rule(prod_seq_c, [prod_seq_a],        Get(0)),
+        Rule(prod_seq_c, [prod_seq_a, comma], Get(0)),
+
+        Rule(prod_seq_a, [prod],                    List([Get(0)])),
+        Rule(prod_seq_a, [prod_seq_a, comma, prod], Append(Get(0), Get(2))),
+
+        Rule(s_annotation_c, [], List()),
+        Rule(s_annotation_c, [j_annotation_c], Get(0)),
+
+        Rule(j_annotation_c, [annotation],                        List([Get(0)])),
+        Rule(j_annotation_c, [j_annotation_c, comma, annotation], Append(Get(0), Get(2))),
+    ]
+
+    language.new_parser = chartparser.preprocess(
+        grammar, file)
+    
+    return language
+    
+actions = object();
+    use = (args):
+        return (stage, env):
+            if stage == 0
+                for arg in args[1]
+                    sym = arg.string
+                    if sym not in env.symbols
+                        env.symbols[sym] = Terminal(sym)
+                    else
+                        assert isinstance(env.symbols[sym], Terminal)
+                    env.constructives.add(sym)
+            if stage == 1
+                name = args[0].string
+                argv = []
+                for arg in args[1]
+                    sym = arg.string
+                    argv.append(env.symbols[sym])
+                options = {}
+                for item in args[2]
+                    key = item[0].string
+                    vals = []
+                    for val in item[1]
+                        vals.append( val(env).value )
+                    options[key] = vals
+                env.extensions.append([name, argv, options])
+    rule = (args):
+        return (stage, env):
+            if stage == 0
+                sym = args[0].string
+                if sym not in env.symbols
+                    env.symbols[sym] = Nonterminal(sym)
+                else
+                    assert isinstance(env.symbols[sym], Nonterminal)
+            if stage == 1
+                sub_env = {}
+                lhs = env.symbols[args[0].string]
+                for fn in args[1]
+                    node = fn(env, sub_env)
+                    assert not node.is_sym
+                    env.rules.append( make_rule(lhs, node.value, node.annotation) )
+    template = (args):
+        return (stage, env):
+            if stage == 0
+                name = args[0].string
+                argv = []
+                for arg in args[1]
+                    argv.append(arg.string)
+                body = args[2]
+                env.templates[name ++ "/" ++ argv.length.to_string()] = object();
+                    argv = argv
+                    body = body
+    terminal = (args):
+        return (stage, env):
+            if stage == 0
+                for token in args[1]
+                    sym = token.string
+                    if sym not in env.symbols
+                        env.symbols[sym] = Terminal(sym)
+                    else
+                        assert isinstance(env.symbols[sym], Terminal)
+                    if args[0]
+                        env.constructives.add(sym)
+    prod = (args):
+        return (env, sub_env):
+            rhs = []
+            for fn in args[0]
+                rhs.append(fn(env, sub_env))
+            return Prod(rhs, true, args[1])
+    shorthand = (args):
+        return Expr(expr_label, [args[0], [Expr(expr_dotdot, [])]])
+    symbol = (args):
+        return (env, sub_env):
+            sym = args[0].string
+            if sym in sub_env
+                return sub_env[sym]
+            else
+                return Sym(env.symbols[sym], sym not in env.constructives)
+    string = (args):
+        return (env):
+            kw = args[0].string
+            if kw in env.keywords
+                sym = env.keywords[kw]
+            else
+                sym = env.keywords[kw] = Terminal(kw)
+            return Sym(sym, false)
+    plus = (args):
+        return (env, sub_env):
+            arg = args[0](env, sub_env)
+            key = ["+", arg]
+            sym = env.template_memo.get(key)
+            if not sym
+                lhs = Nonterminal(null)
+                sym = env.template_memo[key] = Sym(lhs, true)
+                env.rules.append(make_rule(lhs, [arg],
+                    Expr(expr_list, [Expr(expr_dot, [])])))
+                env.rules.append(make_rule(lhs, [sym, arg],
+                    Expr(expr_append, [Expr(expr_dot, []), Expr(expr_dot, [])])))
+            return sym
+    star = (args):
+        return (env, sub_env):
+            arg = args[0](env, sub_env)
+            key = ["*", arg]
+            sym = env.template_memo.get(key)
+            if not sym
+                lhs = Nonterminal(null)
+                sym = env.template_memo[key] = Sym(lhs, true)
+                env.rules.append(make_rule(lhs, [],
+                    Expr(expr_list, [])))
+                env.rules.append(make_rule(lhs, [sym, arg],
+                    Expr(expr_append, [Expr(expr_dot, []), Expr(expr_dot, [])])))
+            return sym
+    opt = (args):
+        return (env, sub_env):
+            arg = args[0](env, sub_env)
+            key = ["?", arg]
+            sym = env.template_memo.get(key)
+            if not sym
+                lhs = Nonterminal(null)
+                sym = env.template_memo[key] = Sym(lhs, true)
+                env.rules.append(make_rule(lhs, [],
+                    Expr(expr_null, [])))
+                env.rules.append(make_rule(lhs, [arg],
+                    Expr(expr_dot, [])))
+            return sym
+    expand = (args):
+        return (env, sub_env):
+            name = args[0].string
+            argv = args[1]
+            args = []
+            for arg in argv
+                a = arg(env, sub_env)
+                # If we did not do this, the new production rule would
+                # never trigger the memoization.
+                while isinstance(a, Prod) and a.value.length == 1 and a.annotation == null
+                    a = a.value[0]
+                # The simple cases of recursion can be handled without
+                # problems.
+                if isinstance(a, Arg)
+                    a = a.value
+                args.append(a)
+            return expand_template(env, name, args)
+    prod_set = (args):
+        return (env, sub_env):
+            if args[0].length == 1
+                return args[0](env, sub_env)
+            lhs = Nonterminal(null)
+            for fn in args[0]
+                node = fn(env, sub_env)
+                assert not node.is_sym
+                env.rules.append( make_rule(lhs, node.value, node.annotation) )
+            return Sym(lhs, true)
+    index = (args):
+        index = parse_int(args[0].string) - 1
+        return Expr(expr_index, [index])
+    dot = (args):
+        return Expr(expr_dot, args)
+    dotdot = (args):
+        return Expr(expr_dotdot, args)
+    label = (args):
+        return Expr(expr_label, args)
+    a_list = (args):
+        return Expr(expr_list, args[0])
+    append = (args):
+        return Expr(expr_append, args)
+    concat = (args):
+        return Expr(expr_concat, args)
+    a_null = (args):
+        return Expr(expr_null, args)
+
+expand_template = (env, name, args):
+    key = [name, args]
+    sym = env.template_memo.get(key)
+    if sym
+        return sym
+    template_name = name ++ "/" ++ args.length.to_string()
+    template = env.templates.get(template_name)
+    if template
+        sub_env = {}
+        # The overall idea in recognizing recursion this way is that
+        # we start gathering Arg objects with same mark if something
+        # goes wrong.
+        for i in range(args.length)
+            arg = Arg(args[i])
+            assert arg.validate(template_name, i)
+                ["infinite recursion at", template_name, i]
+            sub_env[template.argv[i]] = arg
+        lhs = Nonterminal(null)
+        sym = env.template_memo[key] = Sym(lhs, true)
+        for prod in template.body
+            node = prod(env, sub_env)
+            env.rules.append(make_rule(lhs, node.value, node.annotation))
+    elif name == "sep" and (args.length == 2 or args.length == 3)
+        lhs = Nonterminal(null)
+        sym = env.template_memo[key] = Sym(lhs, true)
+        j_sym = expand_template(env, "join", [args[0], args[1]])
+        env.rules.append(make_rule(lhs, [],
+            Expr(expr_list, [])))
+        env.rules.append(make_rule(lhs, [j_sym], Expr(expr_index, [0])))
+        if args.length == 3
+            c = args[2]
+            env.rules.append(make_rule(lhs, [sym1, c], Expr(expr_index, [0])))
+    elif name == "join" and args.length == 2
+        lhs = Nonterminal(null)
+        sym = env.template_memo[key] = Sym(lhs, true)
+        a = args[0]
+        b = args[1]
+        env.rules.append(make_rule(lhs, [a],
+            Expr(expr_list, [Expr(expr_index, [0])])))
+        env.rules.append(make_rule(lhs, [sym, b, a],
+            Expr(expr_append, [Expr(expr_index, [0]), Expr(expr_index, [2])])))
+    else
+        assert false, ["macro not found", template_name]
+    return sym
+
+expr_index = (stage, xenv, args):
+    index = args[0]
+    if stage == 0
+        xenv.args[index].gather = false
+    return xenv.args[index].value
+
+expr_dot = (stage, xenv, args):
+    if stage == 0
+        if xenv.has_dotdot
+            xenv.last += 1
+        else
+            xenv.first += 1
+    elif stage == 1
+        return xenv.gathers.pop(0)
+
+expr_dotdot = (stage, xenv, args):
+    if stage == 0
+        assert not xenv.has_dotdot
+        xenv.has_dotdot = true
+    if stage == 1
+        a = []
+        for i in range(xenv.dotdot_size)
+            a.append(xenv.gathers.pop(0))
+        return a
+
+expr_label = (stage, xenv, args):
+    if stage == 0
+        for item in args[1]
+            item(stage, xenv)
+    elif stage == 1
+        name = args[0].string
+        a = []
+        for item in args[1]
+            v = item(stage, xenv)
+            if isinstance(v, list)
+                a.extend(v)
+            else
+                a.append(v)
+        return Label(name, a)
+
+expr_list = (stage, xenv, args):
+    if stage == 0
+        for item in args
+            item(stage, xenv)
+    elif stage == 1
+        a = []
+        for item in args
+            v = item(stage, xenv)
+            if isinstance(v, list)
+                a.extend(v)
+            else
+                a.append(v)
+        return List(a)
+
+expr_append = (stage, xenv, args):
+    if stage == 0
+        for item in args
+            item(stage, xenv)
+    elif stage == 1
+        return Append(args[0](stage, xenv), args[1](stage, xenv))
+
+expr_concat = (stage, xenv, args):
+    if stage == 0
+        for item in args
+            item(stage, xenv)
+    elif stage == 1
+        return Concat(args[0](stage, xenv), args[1](stage, xenv))
+
+expr_null = (stage, xenv, args):
+    if stage == 1
+        return Null()
+
+class Arg
+    +init = (self, value):
+        self.is_sym = true
+        self.value = value
+        self.gather = true
+        self.marks = value.get_marks(set())
+    
+    +hash = (self):
+        return hash(self.value)
+
+    get_marks = (self, marks):
+        marks.update(self.marks)
+        return marks
+
+    validate = (self, key...):
+        if key in self.marks
+            return false
+        self.marks.add(key)
+        return true
+
+class Sym
+    +init = (self, value, gather):
+        self.is_sym = true
+        self.value = value
+        self.gather = gather
+
+    get_marks = (self, marks):
+        return marks
+    
+    +hash = (self):
+        return hash(self.value)
+
+class Prod
+    +init = (self, value, gather, annotation):
+        self.is_sym = false
+        self.value = value
+        self.gather = gather
+        self.annotation = annotation
+
+    get_marks = (self, marks):
+        for a in self.value
+            marks = a.get_marks(marks)
+        return marks
+
+    +hash = (self):
+        return hash([self.value, self.annotation])
+
+class Expr
+    +init = (self, fn, args):
+        self.fn = fn
+        self.args = args
+
+    +hash = (self):
+        return hash([self.fn, self.args])
+
+    +call = (self, stage, xenv):
+        return self.fn(stage, xenv, self.args)
+
+%"=="[[Sym, Sym]] = (a, b):
+    return a.value == b.value
+
+%"=="[[Prod, Prod]] = (a, b):
+    return a.value == b.value and a.annotation == b.annotation
+
+%"=="[[Expr, Expr]] = (a, b):
+    return a.fn == b.fn and a.args == b.args
+
+# Accepts a list of structures with fields:
+# .is_sym - whether it's a symbol or a list of fields like this.
+# .value
+# .gather - whether the value is gathered or not.
+# .annotation - function building the annotation, unless it is_sym
+# This is done in a single step, because computing the indices for 'Get'
+# in an expression is easy that way.
+make_rule = (lhs, rhs, fn):
+    assert isinstance(lhs, Nonterminal)
+    syms = []
+    build_rhs = (rhs, fn):
+        args = []
+        for node in rhs
+            gather = node.gather
+            while isinstance(node, Arg)
+                node = node.value
+            if node.is_sym
+                syms.append(node.value)
+                args.append(object();
+                    value = Get(syms.length - 1)
+                    gather = gather)
+            else
+                args.append(object();
+                    value = build_rhs(node.value, node.annotation)
+                    gather = gather)
+        return extract_annotation(fn, args)
+    return Rule(lhs, syms, build_rhs(rhs, fn))
+
+extract_annotation = (expr, args):
+    if expr
+        xenv = object();
+            args = args
+            gathers = []
+            first = 0
+            last = 0
+            has_dotdot = false
+            dotdot_size = 0
+        expr(0, xenv)
+        # The indices potentially change the gather values, so that's why
+        for arg in args
+            if arg.gather
+                xenv.gathers.append(arg.value)
+        xenv.dotdot_size = xenv.gathers.length - xenv.first - xenv.last
+        assert xenv.dotdot_size >= 0
+        return expr(1, xenv)
+    else
+        a = []
+        for arg in args
+            if arg.gather
+                a.append(arg.value)
+        # At default handling, if nothing can be gathered
+        # yet the rhs is not empty, we pick all.
+        # This is rare otherwise and allows the string
+        # gather without explicit marks everywhere.
+        if a.length == 0 and args.length > 0
+            for arg in args
+                a.append(arg.value)
+        if a.length == 0
+            return Null()
+        if a.length == 1
+            return a[0]
+        return List(a)
+
+# These are the elements that are built from the annotations
+# in the grammar file. They are structured to make the
+# interpretation of the parse tree easy.
+class Label
+    +init = (self, name, args):
+        assert isinstance(name, str)
+        self.name = name
+        self.args = args
+
+    +repr = (self):
+        a = []
+        for arg in self.args
+            a.append( repr(arg) )
+        return self.name ++ "(" ++ ", ".join(a) ++ ")"
+
+    postorder = (self, fn, args, loc):
+        a = []
+        for x in self.args
+            a.append( x.postorder(fn, args, loc) )
+        return fn(self.name, a, loc)
+
+class List
+    +init = (self, args=[]):
+        self.args = args
+
+    +repr = (self):
+        a = []
+        for arg in self.args
+            a.append( repr(arg) )
+        return "[" ++ ", ".join(a) ++ "]"
+
+    postorder = (self, fn, args, loc):
+        a = []
+        for x in self.args
+            a.append( x.postorder(fn, args, loc) )
+        return a
+
+class Get
+    +init = (self, index):
+        self.index = index
+
+    +repr = (self):
+        return "Get(" ++ self.index.to_string() ++ ")"
+
+    postorder = (self, fn, args, loc):
+        return args[self.index]
+
+class Append
+    +init = (self, sequence, value):
+        self.sequence = sequence
+        self.value = value
+
+    +repr = (self):
+        return "Append(" ++ repr(self.sequence) ++ ", " ++
+            repr(self.value) ++ ")"
+
+    postorder = (self, fn, args, loc):
+        sequence = self.sequence.postorder(fn, args, loc)
+        sequence.append( self.value.postorder(fn, args, loc) )
+        return sequence
+
+class Concat
+    +init = (self, left, right):
+        self.left = left
+        self.right = right
+
+    +repr = (self):
+        return "Concat(" ++ repr(self.left) ++ ", " ++
+            repr(self.right) ++ ")"
+
+    postorder = (self, fn, args, loc):
+        left = self.left.postorder(fn, args, loc)
+        right = self.right.postorder(fn, args, loc)
+        return left ++ right
+
+class Null
+    +repr = (self):
+        return "Null()"
+
+    postorder = (self, fn, args, loc):
+        return null
+
+
+
+language = build_grammar_language()

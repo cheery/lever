@@ -2,19 +2,26 @@ import fs
 
 doc = path("doc:/tokenizer")
 
-read_file = (path, table={}):
-    return read_string(fs.read_file(path), table)
+read_file = (path, table={}, symtab=default_symtab):
+    return read_string(fs.read_file(path), table, symtab)
 
-read_string = (string, table={}):
+read_string = (string, table={}, symtab=default_symtab):
     stream = TextStream(string)
     tokens = []
     while stream.filled
-        token = next_token(stream, table)
+        token = next_token(stream, table, symtab)
         if token
             tokens.append(token)
     return tokens
 
-next_token = (stream, table):
+default_symtab = object();
+    string = 'string'
+    symbol = 'symbol'
+    hex = 'hex'
+    int = 'int'
+    float = 'float'
+
+next_token = (stream, table, symtab=default_symtab):
     while stream.filled and stream.current.is_space()
         stream.advance()
     if not stream.filled
@@ -22,7 +29,7 @@ next_token = (stream, table):
     if stream.current == "#"
         while stream.filled and stream.current != "\n"
             stream.advance()
-        return next_token(stream, table)
+        return next_token(stream, table, symtab)
     start = stream.position
     if stream.is_sym()
         string = stream.advance()
@@ -36,10 +43,10 @@ next_token = (stream, table):
             if not stream.filled
                 raise SyntaxError(start, stream.position, "Broken string literal")
             stream.advance()
-            return Literal(start, stream.position, "string", string)
+            return Literal(start, stream.position, symtab.string, string)
         while stream.is_sym() or stream.is_digit()
             string ++= stream.advance()
-        name = table.get(string, 'symbol')
+        name = table.get(string, symtab.symbol)
         return Literal(start, stream.position, name, string)
     elif stream.is_digit()
         string = stream.advance()
@@ -48,10 +55,10 @@ next_token = (stream, table):
             string = ""
             while stream.is_digit(16)
                 string ++= stream.advance()
-            return Literal(start, stream.position, "hex", string)
+            return Literal(start, stream.position, symtab.hex, string)
         while stream.is_digit()
             string ++= stream.advance()
-        name = "int"
+        name = symtab.int
         # The stream.pair_ahead is quite of a special case. I'm not sure it's
         # the right thing to do. But we have .: punctuation in our grammar.
         # Add a number immediately ahead 0.: and you wouldn't get what you
@@ -59,12 +66,12 @@ next_token = (stream, table):
         # Optical grouping between those characters feel clean enough, so
         # I implemented some precedence into the tokenizer with 'pair_ahead'
         if stream.filled and stream.current == "." and not stream.pair_ahead(table)
-            name = "float"
+            name = symtab.float
             string ++= stream.advance()
             while stream.is_digit()
                 string ++= stream.advance()
         if stream.filled and (stream.current == 'e' or stream.current == 'E')
-            name = "float"
+            name = symtab.float
             string ++= stream.advance()
             if stream.current == '+' or stream.current == '-'
                 string ++= stream.advance()
@@ -85,7 +92,7 @@ next_token = (stream, table):
         if not stream.filled
             raise SyntaxError(start, stream.position, "Broken string literal")
         stream.advance()
-        return Literal(start, stream.position, "string", string)
+        return Literal(start, stream.position, symtab.string, string)
     elif stream.current in table
         string = stream.advance()
         while stream.filled and string ++ stream.current in table
@@ -94,7 +101,7 @@ next_token = (stream, table):
         return Literal(start, stream.position, name, string)
     else
         string = stream.advance()
-        return Literal(start, stream.position, "symbol", string)
+        return Literal(start, stream.position, symtab.symbol, string)
 
 escape_sequence = (stream):
     if stream.current in escape_sequences

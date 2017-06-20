@@ -1,0 +1,24 @@
+command:
+    mul
+
+mul:
+    add
+    mul '*' add / mul
+    mul '/' add / div
+
+add:
+    prefix
+    add '+' prefix / add
+    add '-' prefix / sub
+
+prefix:
+    term
+    '-' prefix / minus
+    '+' prefix / plus
+
+term:
+    int / a_int
+    hex / a_hex
+    float / a_float
+
+terminal int, hex, float

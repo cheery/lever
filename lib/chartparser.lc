@@ -63,14 +63,18 @@ class Terminal
         self.name = name
 
     +repr = (self):
-        return "@" ++ self.name
+        if self.name
+            return "@" ++ self.name
+        return "<Terminal>"
 
 class Nonterminal
     +init = (self, name):
         self.name = name
 
     +repr = (self):
-        return self.name
+        if self.name
+            return self.name
+        return "<Nonterminal>"
 
 # The NNF grammar is divided into null rules and non-null rules.
 # The null rules are unnecessary for the actual parsing engine,
@@ -310,7 +314,7 @@ class Parser
         return res[0]
 
     default_ambiguity_resolution = (self, sppf):
-        raise Exception(sppf)
+        raise Error(repr(sppf))
 
 make_default_blank = (parser, postorder_cb):
     blank_cb = (symbol):
@@ -633,8 +637,34 @@ class SyntaxErrorExpected extends SyntaxError
 
     +repr = (self):
         msg = [format_origin(self.source, self.location, " expected some of:")]
-        self.expect.sort(symbol_lt)
-        for symbol in self.expect
+        expect = []
+        for e in self.expect
+            if e.name
+                expect.append(e)
+        expect.sort(symbol_lt)
+        for symbol in expect
+            msg.append("    " ++ symbol.name)
+        return "\n".join(msg)
+
+class SyntaxErrorExpected2 extends SyntaxError
+    +init = (self, value, expect, location, source, at_eof=false):
+        self.value = value
+        self.expect = list(expect)
+        self.location = location
+        self.source = source
+        self.traceback = null
+        self.at_eof = at_eof
+
+    +repr = (self):
+        msg = [format_origin(self.source, self.location, " expected some of:")]
+        if self.value
+            msg.insert(0, "got:" ++ repr(self.value))
+        expect = []
+        for e in self.expect
+            if e.name
+                expect.append(e)
+        expect.sort(symbol_lt)
+        for symbol in expect
             msg.append("    " ++ symbol.name)
         return "\n".join(msg)
 

@@ -1,0 +1,28 @@
+import grammar
+
+main = (args):
+    string = " ".join(args[1 .:])
+    calc_lang = grammar.read_file(dir ++ 'calc.grammar')
+    result = calc_lang.read_string(string)
+    result = result.traverse((name, args, loc):
+        if name == 'a_int'
+            return parse_int(args[0].string)
+        elif name == 'a_hex'
+            return parse_int(args[0].string, 16)
+        elif name == 'a_float'
+            return parse_float(args[0].string)
+        elif name == 'plus'
+            return +args[0]
+        elif name == 'minus'
+            return +args[0]
+        elif name == 'mul'
+            return args[0] * args[1]
+        elif name == 'div'
+            return args[0] / args[1]
+        elif name == 'add'
+            return args[0] + args[1]
+        elif name == 'sub'
+            return args[0] - args[1]
+        else
+            assert false, name)
+    print(result)
