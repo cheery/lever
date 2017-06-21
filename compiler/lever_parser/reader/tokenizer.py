@@ -4,14 +4,22 @@
 from stream import CStream
 from data import Literal
 
+default_symtab = {
+    u"string": u"string",
+    u"symbol": u"symbol",
+    u"hex": u"hex",
+    u"int": u"int",
+    u"float": u"float" }
+
 class Error(Exception):
     pass
 
 class L2(object):
-    def __init__(self, stream, table):
+    def __init__(self, stream, table, symtab=default_symtab):
         self.stream = stream
         self.table = table
-        self.first = next_token(self.stream, self.table)
+        self.symtab = symtab
+        self.first = next_token(self.stream, self.table, self.symtab)
         if self.first is not None:
             self.first.lsp = True
             self.first.rsp = self.stream.is_space()
@@ -19,7 +27,7 @@ class L2(object):
     def advance(self):
         lsp = self.stream.is_space()
         t = self.first
-        self.first = next_token(self.stream, self.table)
+        self.first = next_token(self.stream, self.table, self.symtab)
         if self.first is not None:
             self.first.lsp = lsp
             self.first.rsp = self.stream.is_space()
@@ -36,7 +44,7 @@ class L2(object):
         else:
             return self.stream.position
 
-def next_token(stream, table):
+def next_token(stream, table, symtab):
     while stream.filled and stream.is_space():
         stream.advance()
     if not stream.filled:
@@ -44,13 +52,13 @@ def next_token(stream, table):
     if stream.current == u'#':
         while stream.filled and stream.current != u'\n':
             stream.advance()
-        return next_token(stream, table)
+        return next_token(stream, table, symtab)
     start = stream.position
     if stream.is_sym():
         string = stream.advance()
         while stream.is_sym() or stream.is_digit():
             string += stream.advance()
-        name = table.get(string, u'symbol')
+        name = table.get(string, symtab[u'symbol'])
         return Literal(start, stream.position, name, string)
     elif stream.is_digit():
         string = stream.advance()
@@ -59,15 +67,15 @@ def next_token(stream, table):
             string = u""
             while stream.is_hex():
                 string += stream.advance()
-            return Literal(start, stream.position, u'hex', string)
+            return Literal(start, stream.position, symtab[u'hex'], string)
         while stream.is_digit():
             string += stream.advance()
         if stream.filled and stream.current == u'.' and not stream.pair_ahead(table):
             string += stream.advance()
             while stream.is_digit():
                 string += stream.advance()
-            return Literal(start, stream.position, u'float', string)
-        return Literal(start, stream.position, u'int', string)
+            return Literal(start, stream.position, symtab[u'float'], string)
+        return Literal(start, stream.position, symtab[u'int'], string)
     elif stream.current in (u'"', u"'"):
         terminal = stream.advance()
         string = u""
@@ -80,7 +88,7 @@ def next_token(stream, table):
         if not stream.filled:
             raise Error(u"%s: Broken string literal" % start.repr())
         assert terminal == stream.advance()
-        return Literal(start, stream.position, u'string', string)
+        return Literal(start, stream.position, symtab[u'string'], string)
     elif stream.current in table:
         string = stream.advance()
         while stream.filled and string + stream.current in table:
@@ -89,7 +97,7 @@ def next_token(stream, table):
         return Literal(start, stream.position, name, string)
     else:
         string = stream.advance()
-        return Literal(start, stream.position, u'symbol', string)
+        return Literal(start, stream.position, symtab[u'symbol'], string)
 
 def escape_sequence(stream):
     if stream.current in escape_sequences:

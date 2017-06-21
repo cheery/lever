@@ -1,5 +1,11 @@
-from chartparser import Nonterminal, Terminal, Rule
 import chartparser, tokenizer
+
+doc = path("doc:/grammar")
+
+# TODO: implement post_from_import in compiler/
+Nonterminal = chartparser.Nonterminal
+Terminal = chartparser.Terminal
+Rule = chartparser.Rule
 
 read_file = (filename, extension_env=default_extensions):
     env = read_file_bare(filename)
@@ -174,10 +180,12 @@ read_file_bare = (filename):
     # TODO: move the 'loc' creation upwards into the chartparser
     run_action = (name, args):
         return getattr(actions, name)(args)
-    out = parser.traverse((rule, tree, start, stop):
-        return rule.annotation.postorder(run_action, tree, object();
+    traverser = (rule, tree, start, stop):
+        loc = object();
             start = start
-            stop = stop))
+            stop = stop
+        return rule.annotation.postorder(run_action, tree, loc)
+    out = parser.traverse(traverser)
 
     env = object();
         constructives = set()
