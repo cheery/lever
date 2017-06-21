@@ -1,0 +1,328 @@
+#module{tokenizer}
+    Converts strings into Lever tokens
+
+This tokenizer is the first thing that happens to a Lever
+program that is about to be run. The tokenizer is invoked by
+the parser and the compiler.
+
+To bootstrap Lever's compiler with Python, there is a ported
+implementation of this module in compiler/lever_parser/reader/.
+
+#toc
+
+Lever's tokenizer resembles Python's tokenizer a lot. The
+major difference is that the keywords and operators
+collected by the tokenizer are determined by the 'table'
+-argument passed in as an argument. This allows the parsing
+engine to have a last word on the keywords the tokenizer
+parses.
+
+This tokenizer should understand..
+
+#begin{enumerate}
+#item
+    Comments starting with '#' that continue to the end of
+    the line.
+#item
+    Python's raw string syntax, eg. r"foo\bar", r'foo\bar'
+#item
+    Symbols, eg. identifiers, regex. [a-zA-Z_][a-zA-Z0-9_]*
+#item
+    Hexadecimals starting with 0x...
+#item
+    Whole numbers, regex. [0-9]+
+#item
+    Numbers with decimal point and exponent, eg. 1.23e-10, 1.2
+#item
+    Strings with single or double quotes, eg. 'hello' or "world"
+#item
+    Custom keywords or operators.
+#end{enumerate}
+
+The tokenizer treats space as separator between tokens, and
+does not produce Literal -objects for it.
+
+#section API
+
+#begin{function}{read_file}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":12,"lno":5},"stop":{"col":0,"lno":0}}
+#arg{path} The path to the file to be tokenized.
+#optional{table}{null} Keyword table.
+#optional{symtab}{null} Symbol table.
+#returns List of Literal -objects.
+#summary Tokenize a file.
+#status volatile
+#end{function}
+
+#begin{function}{read_string}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":14,"lno":8},"stop":{"col":0,"lno":0}}
+#arg{string} The string to be tokenized.
+#optional{table}{null} Keyword table.
+#optional{symtab}{null} Symbol table.
+#returns List of Literal -objects.
+#summary Tokenize a string.
+#status volatile
+#end{function}
+
+#begin{object}{default_symtab}
+#interface #ref{doc:/base}{object}
+#summary The default symbol table that is used if you do not
+pass a third argument to read_file or read_string.
+
+To create your own symbol table, create an object with
+attributes: 'string', 'symbol', 'hex', 'int', 'float'.
+
+#status volatile
+#end{object}
+
+#section Internal details
+
+The rest of this file isn't well-documented.
+
+#begin{interface}{Literal}
+#extends #ref{doc:/base}{object}
+#summary The representation of a token.
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":12,"lno":126},"stop":{"col":4,"lno":4}}
+#arg{self}
+#arg{start} start source location {col, lno}
+#arg{stop} stop source location {col, lno}
+#arg{name} 'name' of the token, retrieved from the symtab -object.
+#arg{string} The string captured by this token.
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":12,"lno":132},"stop":{"col":0,"lno":0}}
+#arg{self}
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Position}
+#extends #ref{doc:/base}{object}
+#summary represents a source location.
+
+This object is likely unnecessary, and may be replaced by
+something with .col and .lno -attributes in the future.
+#status volatile
+#begin{function}{+init}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":12,"lno":195},"stop":{"col":4,"lno":4}}
+#arg{self}
+#arg{col} column, starts from 0
+#arg{lno} line number, starts from 1
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":12,"lno":199},"stop":{"col":77,"lno":77}}
+#arg{self}
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{TextStream}
+#extends #ref{doc:/base}{object}
+#status internal
+
+Represents a character stream used by the parser. This is
+purely an internal detail.
+
+#begin{function}{+init}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":12,"lno":136},"stop":{"col":4,"lno":4}}
+#arg{self}
+#arg{source}
+#optional{index}{null}
+#optional{col}{null}
+#optional{lno}{null}
+#status volatile
+#end{function}
+
+#begin{function}{advance}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":14,"lno":165},"stop":{"col":4,"lno":4}}
+#arg{self}
+#status volatile
+#end{function}
+
+#begin{object}{current}
+#interface #ref{doc:/base}{property}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{filled}
+#interface #ref{doc:/base}{property}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{get_digit}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":16,"lno":189},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#optional{base}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{is_digit}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":15,"lno":179},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#optional{base}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{is_space}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":15,"lno":184},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{is_sym}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":13,"lno":174},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{pair_ahead}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":17,"lno":150},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{table} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{object}{position}
+#interface #ref{doc:/base}{property}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+#end{interface}
+
+#begin{object}{default_symtab}
+#interface #ref{doc:/base}{object}
+#summary The default symbol table that is used if you do not
+pass a third argument to read_file or read_string.
+#status volatile
+#end{object}
+
+#begin{object}{dir}
+#interface #ref{doc:/base}{path}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{escape_sequence}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":18,"lno":106},"stop":{"col":0,"lno":0}}
+
+#arg{stream} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{object}{escape_sequences}
+#interface #ref{doc:/base}{dict}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{fs}
+#interface #ref{doc:/base}{Module}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{import}
+#interface #ref{doc:/base}{Import}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{name}
+#value "tokenizer"
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{next_token}
+#source ##
+    {"source":"tokenizer.lc","start":{"col":13,"lno":24},"stop":{"col":0,"lno":0}}
+
+#arg{stream} #TODO
+
+#arg{table} #TODO
+
+#optional{symtab}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
