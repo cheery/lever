@@ -1,0 +1,207 @@
+# This file describes & implements the syntax for the
+# lever 0.9.0, the syntax of this file is not simple
+# but it is documented in the
+# https://leverlanguage.com/doc/latest/grammar.html
+use indentation(indent, dedent, newline)
+    can_close = [")", "]", "}", ","]
+
+file: sep(block_statement, newline)
+
+block: indent join(block_statement, newline) dedent
+
+block_statement:
+    statement
+    'return' statement? / return
+    'yield' statement / yield
+    'if' statement block otherwise / if
+
+    local_symbol         '=' block_statement / local_assign
+    symbol              ':=' block_statement / upvalue_assign
+    slot op              '=' block_statement / op_assign
+    expr '[' subexpr ']' '=' block_statement / setitem
+    expr '.' symbol      '=' block_statement / setattr
+
+    'while' statement block         / while
+    'for' symbol 'in' subexpr block / for
+
+    'import' join(symbol, ',')               / import
+    'from' symbol 'import' join(symbol, ',') / from_import
+    'from' symbol 'import' '*'               / from_import_all
+
+    'try' block join(except, newline)        / try
+    'try' block sep(except, newline) finally / try
+
+    'raise' statement / raise
+    'break'           / break
+    'continue'        / continue
+
+    'class' class_header block? / class
+
+    'assert' statement ',' statement / assert
+    'assert' statement block         / assert
+    'assert' statement               / assert
+
+class_header:
+    symbol                          / class_header
+    symbol 'extends' expr           / class_header
+
+local_symbol:
+    symbol     / str_join
+    "+" symbol / str_join(1, 2)
+    "%" string / str_join
+
+slot:
+    symbol            / lookup_slot
+    expr '.' symbol   / attr_slot
+    expr '[' expr ']' / item_slot
+
+otherwise:
+    / done
+    newline 'elif' statement block otherwise / elif
+    newline 'else' block                     / else
+
+except:
+    'except' expr 'as' symbol block / except
+
+finally:
+    'finally' block / finally
+
+statement:
+    expr
+
+subexpr:
+    expr
+    expr? ".:" expr?            / slice_incr
+    expr? ".:" expr? "::" expr  / slice_incr
+    expr? ":." expr?            / slice_decr
+    expr? ":." expr? "::" expr  / slice_decr
+
+expr:
+    expr3
+    expr3 'or' expr / or
+
+expr3:
+    expr5
+    expr5 'and' expr3 / and
+
+expr5:
+    expr8
+    'not' expr8 / not
+
+expr8:
+    expr10
+    expr10 "in" expr10         / in
+    expr10 "not" "in" expr10   / not_in
+    expr10 ["<"] expr10        / binary
+    expr10 [">"] expr10        / binary
+    expr10 ["=="] expr10       / binary
+    expr10 ["!="] expr10       / binary
+    expr10 ["<="] expr10       / binary
+    expr10 [">="] expr10       / binary
+
+expr10:
+    expr20
+    expr10 ["|"] expr20 / binary
+
+expr20:
+    expr30
+    expr20 ["^"] expr30 / binary
+
+expr30:
+    expr50
+    expr30 ["&"] expr50 / binary
+
+expr50:
+    expr100
+    expr50 ["<<"] expr100 / binary
+    expr50 [">>"] expr100 / binary
+
+expr100:
+    expr200
+    expr100 ["++"] expr200 / binary
+    expr100 ["+"] expr200 / binary
+    expr100 ["-"] expr200 / binary
+
+expr200:
+    prefix
+    expr200 ["*"] prefix / binary
+    expr200 ["/"] prefix / binary
+    expr200 ["//"] prefix / binary
+    expr200 ["%"] prefix / binary
+
+prefix:
+    postfix
+    ["+"] postfix / prefix
+    ["-"] postfix / prefix
+
+op:
+    "|"
+    "^"
+    "&"
+    "<<"
+    ">>"
+    "++"
+    "+"
+    "-"
+    "%"
+    "/"
+    "*"
+
+postfix:
+    term
+    postfix "(" sep(subexpr, ',', ',') ")"       / call
+    postfix "(" sep(subexpr, ',', ',') "..." ")" / callv
+    postfix "[" subexpr "]"         / getitem
+    postfix "." @symbol             / getattr
+    postfix ";" block / scopegrabber # It occured to me that scope grab
+                                     # is an useful concept for passing values around.
+                                     # so we need some syntax for it.
+
+term:
+    symbol / symbol
+    int    / int
+    hex    / hex
+    float  / float
+    string / string
+    "(" subexpr ")"
+    "[" arguments "]" / list
+    "(" bindings ")" ":" block / function
+    ":" block / function(blank_bindings(), .)
+    "{" pairs "}"    / dict
+    "{" nl_pairs "}" / dict
+    "{" escaped_keyword "}" / lookup
+    "%" string              / lookup
+    ":" expr block / scopegrabber # DEPRECATED: remove soon.
+                                  # The notation to use ':' on the
+                                  # left side of expression could be
+                                  # argued to be confusing.
+
+terminal int, hex, float, string, symbol
+
+bindings:
+    / blank_bindings
+    optionals
+    optionals ','
+    optionals ',' symbol '...' / with_variadic
+    symbol '...'               / only_variadic
+
+optionals:
+    sep(optional, ',')
+    mandatorys
+
+optional: symbol '=' expr / optional
+
+mandatorys:
+    symbol / mandatory
+    mandatorys ',' symbol / append_mandatory
+
+nl_pairs:
+    indent join(pair ','?, newline) dedent
+
+pairs: sep(pair, ',', ',')
+
+pair:
+    expr ':' expr
+    [symbol / string] '=' expr
+
+escaped_keyword: ['import', 'and', 'or', 'not']
