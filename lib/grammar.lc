@@ -113,12 +113,12 @@ class Parser
 
 class AliasExtension
     +init = (self, pos, args, options):
-        self.args = args
+        self.a = options.get("a", [])
         self.on = options.get("on", [])
 
     step = (self, i, term, token, start, stop):
         if (not i.expecting(term)) and term in self.on
-            for arg in self.args
+            for arg in self.a
                 if i.expecting(arg)
                     return arg
         return term

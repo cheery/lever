@@ -1,0 +1,1278 @@
+#module{grammar}
+Describes the grammar language used in Lever's parsing.
+
+#toc
+
+There is distinct effort made to make the Lever language
+itself easier to develop. The grammar language described
+here has a big role in there.
+
+Here's the context-free-grammar for the grammar language,
+described in itself:
+
+##
+    use alias()
+        a = [symbol]
+        on = ['constructive', 'use', 'terminal', 'append', 'concat']
+    use indentation(indent, dedent, newline)
+        can_close = [')', ']', '}']
+
+    file: sep(decl, newline)
+
+    decl:
+        'use' symbol '(' sep(symbol, ',') ')' (indent join(option, newline) dedent)? / use
+        'constructive'? 'terminal' join(symbol, ',') / terminal
+        symbol '(' sep(symbol, ',') ')' ':' body / template
+        symbol ':' body / rule
+
+    option: symbol '=' '[' sep(primitive, ',') ']'
+
+    primitive:
+        symbol / symbol
+        string / string
+
+    body:
+        prod / [.]
+        indent join(prod, newline) dedent
+
+    prod: expr* ('/' [annotation, symbol / shorthand])? / prod 
+
+    expr:
+        term
+        '(' arg_block(prod) ')' '+' / plus
+        '(' arg_block(prod) ')' '*' / star
+        '(' arg_block(prod) ')' '?' / opt
+        symbol '(' arg_block(prod) ')' / expand
+
+    term:
+        term '+' / plus
+        term '*' / star
+        term '?' / opt
+        symbol / symbol
+        string / string
+        '[' arg_block(prod) ']' / prod_set
+
+    annotation:
+        annotation_term
+        annotation 'append' annotation_term / append
+        annotation 'concat' annotation_term / concat
+
+    annotation_term:
+        '(' annotation ')'
+        int / index
+        '.' / dot
+        '..' / dotdot
+        'null' / a_null
+
+        symbol '(' sep(annotation, ',') ')' / label
+        '[' sep(annotation, ',') ']' / a_list
+
+    arg_block(x):
+        sep(x, ',', ',')
+        indent sep_concat(x, newline) dedent
+
+    sep_concat(x, y):
+        sep(x, ',', ',')
+        seq_b(x) y sep(x, ',', ',') / (. concat .)
+
+#section Structure
+
+The 'lhs: rhs' part in the grammar is the production rule,
+the '/ thing' is an annotation that the rule maps into.
+
+#section Extensions
+
+Extensions do not change how the source grammar is parsed,
+but they will provide additional hints about how it will be
+used.
+
+The use of an extension is described with the 'use'
+-directive, and the ordering of the extensions determines
+in which order they are invoked during parsing.
+
+The symbols passed as 'arguments' are defined as constructive
+terminals, which means they are not gathered during parsing.
+These are used 
+
+
+#subsection indentation -extension
+
+The 'indentation' extension allows you to define
+layout-sensitive grammars. The terminals provided as input
+provide tokens that may be used to trigger the layout
+sensitivity.
+
+The indent/dedent/newline is implemented by feeding such a
+token whenever it may appear and when the parsing state
+expects it. Therefore the current implementation of layout
+sensitivity may result in surprising results at ambiguous
+grammars.
+
+The can_close -option lets you select tokens that allow the
+indentation level to decrease without reaching the end of
+the line first.
+
+#subsection alias -extension
+
+The 'alias' extension is meant for situations when you want
+to have keywords, but do not want them to mess up with user
+code.
+
+The effect of 'alias' is that whenever the parsing cannot
+proceed with one of the terminals in the 'on' -list, but it
+could proceed with one of the terminals in the 'a' -list,
+the alias extension will rename the terminal to allow the
+parsing to pass.
+
+Similarly to the indentation extension, the details are
+still a bit vague on these ones, and may be subject to
+change.
+
+#section A Simple Example
+
+Here's a complicated way to print '4' with the grammar
+library:
+
+The 'calc.grammar':
+
+## 
+    addition: term '+' term / add
+
+    term: int / int
+
+The 'calc.lc':
+
+##
+    import grammar
+
+    main = (args):
+        calc_lang = grammar.read_file(dir ++ 'calc.grammar')
+        
+        result = calc_lange.read_string("1 + 3")
+        result = result.traverse(traverse)
+        print(result)
+
+    traverse = (name, args, loc):
+        if name == 'int'
+            return parse_int(args[0].string)
+        elif name == 'add'
+            return args[0] + args[1]
+        else
+            assert false, [name, args, loc]
+
+#section API
+
+#begin{function}{read_file}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":10},"stop":{"col":0,"lno":0}}
+#arg{filename} The source path to the grammar
+#optional{extension_env}{default_extensions} Environment for the
+    extensions.
+#returns Initiator
+#summary The simplest way to use the grammar module.
+#status volatile
+#end{function}
+
+#begin{interface}{Initiator}
+#extends #ref{doc:/base}{object}
+#summary Can initiate the parsing.
+
+The behavior of this initiator is similar to the
+chartparser.Initiator. You can use this object to initiate
+parsing with the grammar.
+
+#status volatile
+#begin{function}{+call}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":34},"stop":{"col":4,"lno":4}}
+#arg{self} #TODO
+#optional{accept}{null} #TODO
+#returns #TODO
+#summary #TODO
+#status volatile
+#end{function}
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":28},"stop":{"col":4,"lno":4}}
+#arg{self}
+#arg{init}
+#arg{extensions}
+#arg{keywords}
+#arg{symbols}
+#status internal
+#end{function}
+
+#begin{function}{create_symtab}
+#source ##
+    {"source":"grammar.lc","start":{"col":20,"lno":43},"stop":{"col":4,"lno":4}}
+#arg{self} #TODO
+#returns Symbol table to be used with the 'tokenizer' -object.
+#summary #TODO
+#status volatile
+#end{function}
+
+#begin{function}{read_file}
+#source ##
+    {"source":"grammar.lc","start":{"col":16,"lno":51},"stop":{"col":4,"lno":4}}
+#arg{self} #TODO
+#arg{filename} #TODO
+#returns Filled-up Parser -instance.
+#summary Shorthand for running the parser on a file.
+#status volatile
+#end{function}
+#begin{function}{read_string}
+#source ##
+    {"source":"grammar.lc","start":{"col":18,"lno":57},"stop":{"col":4,"lno":4}}
+#arg{self} #TODO
+#arg{string} #TODO
+#optional{source}{null} #TODO
+#returns Filled-up Parser -instance.
+#summary Shorthand for running the parser on a string.
+#status volatile
+#end{function}
+#begin{function}{read_tokens}
+#source ##
+    {"source":"grammar.lc","start":{"col":18,"lno":63},"stop":{"col":0,"lno":0}}
+#arg{self} #TODO
+#arg{tokens} #TODO
+#optional{source}{null} #TODO
+#returns Filled-up Parser -instance.
+#summary Shorthand for running the parser on a sequence of tokens.
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Parser}
+#extends #ref{doc:/base}{object}
+#summary Parser instance.
+
+Wraps the parser produced from the grammar into a bit
+easier-to-use packaging.
+
+#status volatile
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":72},"stop":{"col":4,"lno":4}}
+#arg{self}
+#arg{pos}
+#arg{init}
+#arg{child}
+#arg{extensions}
+#status internal
+#end{function}
+#begin{object}{accepted}
+#interface #ref{doc:/base}{property}
+#summary #TODO
+#status volatile
+#end{object}
+#begin{object}{expect}
+#interface #ref{doc:/base}{property}
+#summary #TODO
+#status volatile
+#end{object}
+#begin{function}{expecting}
+#source ##
+    {"source":"grammar.lc","start":{"col":16,"lno":96},"stop":{"col":4,"lno":4}}
+#arg{self} #TODO
+#arg{symbol} #TODO
+#returns #TODO
+#summary #TODO
+#status volatile
+#end{function}
+#begin{function}{finish}
+#source ##
+    {"source":"grammar.lc","start":{"col":13,"lno":99},"stop":{"col":4,"lno":4}}
+#arg{self} #TODO
+#returns #TODO
+#summary #TODO
+#status volatile
+#end{function}
+#begin{function}{step}
+#source ##
+    {"source":"grammar.lc","start":{"col":11,"lno":79},"stop":{"col":4,"lno":4}}
+#arg{self} #TODO
+#arg{term} #TODO
+#arg{token} #TODO
+#optional{start}{null} #TODO
+#optional{stop}{null} #TODO
+#returns #TODO
+#summary #TODO
+#status volatile
+#end{function}
+#begin{function}{traverse}
+#source ##
+    {"source":"grammar.lc","start":{"col":15,"lno":106},"stop":{"col":0,"lno":0}}
+#arg{self} #TODO
+#arg{postorder_cb} #TODO
+#optional{blank_cb}{null} #TODO
+#optional{resolve_cb}{null} #TODO
+#returns #TODO
+#summary #TODO
+#status volatile
+#end{function}
+#end{interface}
+
+
+#section Internal details
+
+The internals of this module are not well-documented yet.
+
+
+
+
+
+
+#begin{interface}{AliasExtension}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":115},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{pos} #TODO
+
+#arg{args} #TODO
+
+#arg{options} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{finish}
+#source ##
+    {"source":"grammar.lc","start":{"col":13,"lno":126},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{i} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{step}
+#source ##
+    {"source":"grammar.lc","start":{"col":11,"lno":119},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{i} #TODO
+
+#arg{term} #TODO
+
+#arg{token} #TODO
+
+#arg{start} #TODO
+
+#arg{stop} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Append}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":857},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{sequence} #TODO
+
+#arg{value} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":861},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{postorder}
+#source ##
+    {"source":"grammar.lc","start":{"col":16,"lno":865},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{fn} #TODO
+
+#arg{args} #TODO
+
+#arg{loc} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Arg}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+hash}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":686},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":680},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{value} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{get_marks}
+#source ##
+    {"source":"grammar.lc","start":{"col":16,"lno":689},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{marks} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{validate}
+#source ##
+    {"source":"grammar.lc","start":{"col":15,"lno":693},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{key} #TODO
+
+#is_variadic
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Concat}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":871},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{left} #TODO
+
+#arg{right} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":875},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{postorder}
+#source ##
+    {"source":"grammar.lc","start":{"col":16,"lno":879},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{fn} #TODO
+
+#arg{args} #TODO
+
+#arg{loc} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Expr}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+call}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":734},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{stage} #TODO
+
+#arg{xenv} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+hash}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":731},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":727},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{fn} #TODO
+
+#arg{args} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Get}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":847},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{index} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":850},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{postorder}
+#source ##
+    {"source":"grammar.lc","start":{"col":16,"lno":853},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{fn} #TODO
+
+#arg{args} #TODO
+
+#arg{loc} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{IndentationExtension}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":130},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{pos} #TODO
+
+#arg{args} #TODO
+
+#arg{options} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{finish}
+#source ##
+    {"source":"grammar.lc","start":{"col":13,"lno":140},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{i} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{step}
+#source ##
+    {"source":"grammar.lc","start":{"col":11,"lno":134},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{i} #TODO
+
+#arg{term} #TODO
+
+#arg{token} #TODO
+
+#arg{start} #TODO
+
+#arg{stop} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Label}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":813},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{name} #TODO
+
+#arg{args} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":818},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{postorder}
+#source ##
+    {"source":"grammar.lc","start":{"col":16,"lno":824},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{fn} #TODO
+
+#arg{args} #TODO
+
+#arg{loc} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{List}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":831},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#optional{args}{null} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+repr}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":834},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{postorder}
+#source ##
+    {"source":"grammar.lc","start":{"col":16,"lno":840},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{fn} #TODO
+
+#arg{args} #TODO
+
+#arg{loc} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Null}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+repr}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":885},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{postorder}
+#source ##
+    {"source":"grammar.lc","start":{"col":16,"lno":888},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#arg{fn} #TODO
+
+#arg{args} #TODO
+
+#arg{loc} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Prod}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+hash}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":723},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":712},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{value} #TODO
+
+#arg{gather} #TODO
+
+#arg{annotation} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{get_marks}
+#source ##
+    {"source":"grammar.lc","start":{"col":16,"lno":718},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{marks} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{interface}{Sym}
+#extends #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+
+#begin{function}{+hash}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":708},"stop":{"col":0,"lno":0}}
+
+#arg{self} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{+init}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":700},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{value} #TODO
+
+#arg{gather} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{get_marks}
+#source ##
+    {"source":"grammar.lc","start":{"col":16,"lno":705},"stop":{"col":4,"lno":4}}
+
+#arg{self} #TODO
+
+#arg{marks} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+#end{interface}
+
+#begin{object}{actions}
+#interface #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{build_grammar_language}
+#source ##
+    {"source":"grammar.lc","start":{"col":25,"lno":204},"stop":{"col":0,"lno":0}}
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{object}{chartparser}
+#interface #ref{doc:/base}{Module}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{default_extensions}
+#interface #ref{doc:/base}{dict}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{dir}
+#interface #ref{doc:/base}{path}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{expand_template}
+#source ##
+    {"source":"grammar.lc","start":{"col":18,"lno":562},"stop":{"col":0,"lno":0}}
+
+#arg{env} #TODO
+
+#arg{name} #TODO
+
+#arg{args} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{expr_append}
+#source ##
+    {"source":"grammar.lc","start":{"col":14,"lno":661},"stop":{"col":0,"lno":0}}
+
+#arg{stage} #TODO
+
+#arg{xenv} #TODO
+
+#arg{args} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{expr_concat}
+#source ##
+    {"source":"grammar.lc","start":{"col":14,"lno":668},"stop":{"col":0,"lno":0}}
+
+#arg{stage} #TODO
+
+#arg{xenv} #TODO
+
+#arg{args} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{expr_dot}
+#source ##
+    {"source":"grammar.lc","start":{"col":11,"lno":613},"stop":{"col":0,"lno":0}}
+
+#arg{stage} #TODO
+
+#arg{xenv} #TODO
+
+#arg{args} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{expr_dotdot}
+#source ##
+    {"source":"grammar.lc","start":{"col":14,"lno":622},"stop":{"col":0,"lno":0}}
+
+#arg{stage} #TODO
+
+#arg{xenv} #TODO
+
+#arg{args} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{expr_index}
+#source ##
+    {"source":"grammar.lc","start":{"col":13,"lno":607},"stop":{"col":0,"lno":0}}
+
+#arg{stage} #TODO
+
+#arg{xenv} #TODO
+
+#arg{args} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{expr_label}
+#source ##
+    {"source":"grammar.lc","start":{"col":13,"lno":632},"stop":{"col":0,"lno":0}}
+
+#arg{stage} #TODO
+
+#arg{xenv} #TODO
+
+#arg{args} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{expr_list}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":647},"stop":{"col":0,"lno":0}}
+
+#arg{stage} #TODO
+
+#arg{xenv} #TODO
+
+#arg{args} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{expr_null}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":675},"stop":{"col":0,"lno":0}}
+
+#arg{stage} #TODO
+
+#arg{xenv} #TODO
+
+#arg{args} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{function}{extract_annotation}
+#source ##
+    {"source":"grammar.lc","start":{"col":21,"lno":774},"stop":{"col":0,"lno":0}}
+
+#arg{expr} #TODO
+
+#arg{args} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{object}{import}
+#interface #ref{doc:/base}{Import}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{object}{language}
+#interface #ref{doc:/base}{object}
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{make_rule}
+#source ##
+    {"source":"grammar.lc","start":{"col":12,"lno":753},"stop":{"col":0,"lno":0}}
+
+#arg{lhs} #TODO
+
+#arg{rhs} #TODO
+
+#arg{fn} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{object}{name}
+#value "grammar"
+
+#summary #TODO
+
+#status volatile
+#end{object}
+
+#begin{function}{read_file_bare}
+#source ##
+    {"source":"grammar.lc","start":{"col":17,"lno":150},"stop":{"col":0,"lno":0}}
+
+#arg{filename} #TODO
+
+#returns #TODO
+
+#summary #TODO
+
+#status volatile
+#end{function}
+
+#begin{object}{tokenizer}
+#interface #ref{doc:/base}{Module}
+
+#summary #TODO
+
+#status volatile
+#end{object}
