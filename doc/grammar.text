@@ -1,5 +1,5 @@
 #module{grammar}
-Describes the grammar language used in Lever's parsing.
+Describes the language for attribute grammars used during Lever's parsing.
 
 #toc
 
@@ -7,7 +7,7 @@ There is distinct effort made to make the Lever language
 itself easier to develop. The grammar language described
 here has a big role in there.
 
-Here's the context-free-grammar for the grammar language,
+Here's the context-free attribute grammar for the grammar language,
 described in itself:
 
 ##
@@ -154,7 +154,7 @@ The 'calc.lc':
 
     traverse = (name, args, loc):
         if name == 'int'
-            return parse_int(args[0].string)
+            return parse_int(args[0])
         elif name == 'add'
             return args[0] + args[1]
         else

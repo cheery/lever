@@ -35,7 +35,8 @@ block_statement:
     'break'           / break
     'continue'        / continue
 
-    'class' class_header block? / class
+    'class' class_header block / class
+    'class' class_header / class
 
     'assert' statement ',' statement / assert
     'assert' statement block         / assert
@@ -152,19 +153,19 @@ postfix:
     postfix "(" sep(subexpr, ',', ',') ")"       / call
     postfix "(" sep(subexpr, ',', ',') "..." ")" / callv
     postfix "[" subexpr "]"         / getitem
-    postfix "." @symbol             / getattr
+    postfix "." symbol              / getattr
     postfix ";" block / scopegrabber # It occured to me that scope grab
                                      # is an useful concept for passing values around.
                                      # so we need some syntax for it.
 
 term:
-    symbol / symbol
+    symbol / lookup
     int    / int
     hex    / hex
     float  / float
     string / string
     "(" subexpr ")"
-    "[" arguments "]" / list
+    "[" sep(subexpr, ',', ',') "]" / list
     "(" bindings ")" ":" block / function
     ":" block / function(blank_bindings(), .)
     "{" pairs "}"    / dict
@@ -186,7 +187,8 @@ bindings:
     symbol '...'               / only_variadic
 
 optionals:
-    sep(optional, ',')
+    optional / first_optional
+    optionals ',' optional / append_optional
     mandatorys
 
 optional: symbol '=' expr / optional
@@ -195,13 +197,34 @@ mandatorys:
     symbol / mandatory
     mandatorys ',' symbol / append_mandatory
 
-nl_pairs:
-    indent join(pair ','?, newline) dedent
+nl_pairs: indent pairlines dedent
 
-pairs: sep(pair, ',', ',')
+pairlines:
+    pair                   / [.]
+    pairlines newline pair / (. append .)
+    pair ","                   / [.]
+    pairlines newline pair "," / (. append .)
+
+pairs:
+    / empty_list
+    pairs1
+    pairs1 ','
+
+pairs1:
+    pair            / [.]
+    pairs1 ',' pair / (. append .)
 
 pair:
-    expr ':' expr
-    [symbol / string] '=' expr
+    expr ":" expr
+    [symbol / string] "=" expr
+
+# nl_pairs:
+#     indent join(pair ','? / (1), newline) dedent
+# 
+# pairs: sep(pair, ',', ',')
+# 
+# pair:
+#     expr ':' expr
+#     [symbol / string] '=' expr
 
 escaped_keyword: ['import', 'and', 'or', 'not']

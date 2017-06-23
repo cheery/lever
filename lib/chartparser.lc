@@ -15,7 +15,8 @@ main = ():
         "k": x,
         "l": x,
         "m": x,
-        "n": x }
+        "n": x
+    }
 
     accept = s
     user_grammar = [

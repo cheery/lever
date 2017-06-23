@@ -1,6 +1,6 @@
 import tokenizer
 import chartparser
-import grammar_language
+import grammar
 import optable
 import base
 import binon
@@ -11,69 +11,80 @@ doc = path("doc:/compiler")
 SyntaxError = chartparser.SyntaxError
 SyntaxErrorExpected = chartparser.SyntaxErrorExpected
 
-# TODO: You can shave away 300ms by serializing the preprocessed grammar here.
-language = grammar_language.read_file(dir ++ "../lever-0.8.0.grammar")
-language.new_parser = chartparser.preprocess(
-    language.grammar,
-    language.table.nonterminal("file"))
+# TODO: You could shave away 300ms by serializing the preprocessed grammar here.
+language = grammar.read_file(dir ++ "../lever-0.9.0.grammar")
+
+# language.new_parser = chartparser.preprocess(
+#     language.grammar,
+#     language.table.nonterminal("file"))
 
 # We allow the indentation to slip out on these tokens:
-slips = set([
-    language.table.keyword(","),
-    language.table.keyword(")"),
-    language.table.keyword("}"),
-    language.table.keyword("]") ])
+# The slip-out keywords are represented by the grammar itself from now on.
+# slips = set([
+#     language.table.keyword(","),
+#     language.table.keyword(")"),
+#     language.table.keyword("}"),
+#     language.table.keyword("]") ])
 
 main = ():
     code = read_file("sample.lc", "sample.lc")
-    this = module("sample", base)
-    exec(code, this)
+    binon.write_file("sample.lc.cb", code)
+    # this = module("sample", base)
+    # exec(code, this)
 
-    compile_file("sample.lc.cb", "sample.lc")
+    # compile_file("sample.lc.cb", "sample.lc")
 
 compile_file = (cb_path, lc_path):
-    code = read_file(lc_path, path(lc_path).relpath(cb_path.dirname).to_string())
+    source = path(lc_path).relpath(cb_path.dirname).to_string()
+    code = read_file(lc_path, source)
     binon.write_file(cb_path, code)
 
 read_file = (path, source=null):
-    tokens = tokenizer.read_file(path, language.table.keywords)
-    return read_tokens(tokens, source)
+    result = language.read_file(path, source)
+    return read_parse_tree(result, source)
 
 read_string = (string, source=null):
-    tokens = tokenizer.read_string(string, language.table.keywords)
-    return read_tokens(tokens, source)
+    result = language.read_string(string)
+    return read_parse_tree(result, source)
+    #tokens = tokenizer.read_string(string, language.table.keywords)
+    #return read_tokens(tokens, source)
 
-read_tokens = (tokens, source=null):
-    parser = language.new_parser()
-    indent = chartparser.IndentParser(tokens[0].start);
-        indent = language.table.terminal("indent")
-        dedent = language.table.terminal("dedent")
-        newline = language.table.terminal("newline")
-    for token in tokens
-        indent.step(parser, token.start, source)
-        terminal = language.table.terminal(token.name)
-        if not parser.expecting(terminal) and terminal in slips
-            indent.slip(parser, token.start, source)
-        if not parser.expecting(terminal)
-            raise chartparser.SyntaxErrorExpected(parser.expect, token.start, source)
-        parser.step(terminal, token, token.start, token.stop)
-    indent.finish(parser, token.stop)
-    if not parser.accepted
-        raise chartparser.SyntaxErrorExpected(parser.expect, token.stop, source, true)
-    argl = []
-    post = (rule, args, start, stop):
-        cell = rule.annotation(actions, args, argl)
+read_parse_tree = (result, source=null):
+    # parser = language.new_parser()
+    # indent = chartparser.IndentParser(tokens[0].start);
+    #     indent = language.table.terminal("indent")
+    #     dedent = language.table.terminal("dedent")
+    #     newline = language.table.terminal("newline")
+    # for token in tokens
+    #     indent.step(parser, token.start, source)
+    #     terminal = language.table.terminal(token.name)
+    #     if not parser.expecting(terminal) and terminal in slips
+    #         indent.slip(parser, token.start, source)
+    #     if not parser.expecting(terminal)
+    #         raise chartparser.SyntaxErrorExpected(parser.expect, token.start, source)
+    #     parser.step(terminal, token, token.start, token.stop)
+    # indent.finish(parser, token.stop)
+    # if not parser.accepted
+    #     raise chartparser.SyntaxErrorExpected(parser.expect, token.stop, source, true)
+    # argl = []
+    # post = (rule, args, start, stop):
+    #     cell = rule.annotation(actions, args, argl)
+    #     if isinstance(cell, Cell)
+    #         return Origin(cell, 0, start, stop)
+    #     return cell
+    post = (name, args, loc):
+        cell = getattr(actions, name)(args...)
         if isinstance(cell, Cell)
-            return Origin(cell, 0, start, stop)
+            return Origin(cell, 0, loc.start, loc.stop)
         return cell
-    
+
     consttab = ConstantTable()
     functions = []
 
-    blank_lhs = (x): # Not used often in this grammar.
-        return null
+    # blank_lhs = (x): # Not used often in this grammar.
+    #     return null
     rootdef = object();
-        body = parser.traverse(post, blank_lhs)
+        body = result.traverse(post) #, blank_lhs)
         scope = Scope(null, 0, 0, 0, [])
         origin = null
     context = Context([rootdef])
@@ -92,6 +103,7 @@ read_tokens = (tokens, source=null):
         functions.append(dump(
             scope.flags, scope.argc, scope.topc, scope.localv,
             entry, consttab, funcdef.origin))
+
     code = {
         "functions": functions,
         "constants": consttab.constants,
@@ -102,15 +114,15 @@ read_tokens = (tokens, source=null):
 
 actions = object();
     lookup = (symbol):
-        return Getvar(symbol.string)
+        return Getvar(symbol)
     int = (token):
-        return Code("constant", parse_int(token.string, 10))
+        return Code("constant", parse_int(token, 10))
     hex = (token):
-        return Code("constant", parse_int(token.string, 16))
+        return Code("constant", parse_int(token, 16))
     float = (token):
-        return Code("constant", parse_float(token.string))
+        return Code("constant", parse_float(token))
     string = (string):
-        return Code("constant", string.string)
+        return Code("constant", string)
     list = (args=[]):
         return Code("list", args...)
     dict = (pairs=[]):
@@ -131,18 +143,18 @@ actions = object();
             [base, indexer, expr],
             [2, 0, 1])
     getattr = (base, name):
-        return Code("getattr", base, name.string)
+        return Code("getattr", base, name)
     setattr = (base, name, expr):
         return CodeM("setattr",
-            [base, name.string, expr],
+            [base, name, expr],
             [2, 0, 1])
     prefix = (op, rhs):
         return CodeM("call",
-            [Getvar(op.string ++ "expr"), rhs],
+            [Getvar(op ++ "expr"), rhs],
             [1, 0])
     binary = (lhs, op, rhs):
         return CodeM("call",
-            [Getvar(op.string), lhs, rhs],
+            [Getvar(op), lhs, rhs],
             [1, 2, 0])
 
     slice_incr = (start, stop, step=null):
@@ -175,28 +187,28 @@ actions = object();
     local_assign = (name, statement):
         return Setvar("local", name, statement)
     upvalue_assign = (name, statement):
-        return Setvar("upvalue", name.string, statement)
+        return Setvar("upvalue", name, statement)
     op_assign = (slot, op, statement):
         bind = Let(slot.base)
         return bind(
             slot.setslot(bind, Code("call",
-                Getvar(op.string), slot.getslot(bind), statement)))
+                Getvar(op), slot.getslot(bind), statement)))
 
     lookup_slot = (name):
         return object();
             base = null
             getslot = (base):
-                return Getvar(name.string)
+                return Getvar(name)
             setslot = (base, expr):
-                return Setvar("auto", name.string, expr)
+                return Setvar("auto", name, expr)
     attr_slot = (base, name):
         return object();
             base = base
             getslot = (base):
-                return Code("getattr", base, name.string)
+                return Code("getattr", base, name)
             setslot = (base, expr):
                 return CodeM("setattr",
-                    [base, name.string, expr],
+                    [base, name, expr],
                     [2, 0, 1])
     item_slot = (base, indexer):
         return object();
@@ -237,7 +249,7 @@ actions = object();
             finally_body = Prog(finally_body)
         return Try(body, excepts, finally_body)
     %"except" = (expr, symbol, body):
-        return [expr, symbol.string, body]
+        return [expr, symbol, body]
     %"finally" = (body):
         return body
     %"while" = (cond, body):
@@ -275,24 +287,24 @@ actions = object();
         import_fn = Getvar("import")
         proc = []
         for name in names
-            const = Code("constant", name.string)
+            const = Code("constant", name)
             module = Code("call", import_fn, const)
-            proc.append(Setvar("local", name.string, module))
+            proc.append(Setvar("local", name, module))
         return Prog(proc)
 
     from_import = (module_name, names):
         proc = []
         for name in names
-            it = Code("call", Getvar("import"), Code("constant", module_name.string))
+            it = Code("call", Getvar("import"), Code("constant", module_name))
             proc.append(
-                Setvar("local", name.string,
-                    Code("getattr", it, name.string)))
+                Setvar("local", name,
+                    Code("getattr", it, name)))
         return Prog(proc)
 
     from_import_all = (module_name):
         return Code("loglob", Code("call",
             Getvar("import"),
-            Code("constant", module_name.string)))
+            Code("constant", module_name)))
 
     %"class" = (header, block=[]):
         grabber = Code("call", Getvar("object"))
@@ -303,7 +315,7 @@ actions = object();
                 Code("constant", header.name)))
     class_header = (name, base = Getvar("object")):
         return object();
-            name = name.string
+            name = name
             base = base
 
     function = (bindings=blank_bindings(), body=[]):
@@ -349,9 +361,9 @@ actions = object();
         return items
 
     str_join = (item, rest...):
-        out = [item.string]
+        out = [item]
         for item in rest
-            out.append(item.string)
+            out.append(item)
         return "".join(out)
 
 class Context
@@ -510,16 +522,16 @@ class Closure extends Cell
         argc = self.bindings.args.length
         topc = self.bindings.args.length + self.bindings.opts.length
         for var in self.bindings.args
-            localv.append(var.string)
+            localv.append(var)
         for opt in self.bindings.opts
-            localv.append(opt.var.string)
+            localv.append(opt.var)
             cond = Cond([[
-                Code("isnull", Getvar(opt.var.string)), [
-                    Setvar("local", opt.var.string, opt.expr)
+                Code("isnull", Getvar(opt.var)), [
+                    Setvar("local", opt.var, opt.expr)
                 ]]], null)
             header.append(cond)
         if self.bindings.variadic
-            localv.append(self.bindings.variadic.string)
+            localv.append(self.bindings.variadic)
             flags |= 1
         handle = Function(context.closures.length)
         context.closures.append(object();
@@ -628,7 +640,7 @@ class For extends Cell
 
         context.block = repeat
         value = context.op("next", iter, exit)
-        setvar(context, "local", self.bind.string, value)
+        setvar(context, "local", self.bind, value)
         val = Prog(self.body).visit(context)
         if val and val.has_result
             context.op("move", result, val)

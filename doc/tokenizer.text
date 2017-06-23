@@ -42,6 +42,26 @@ This tokenizer should understand..
 The tokenizer treats space as separator between tokens, and
 does not produce Literal -objects for it.
 
+#section Keyword smearing
+
+The keyword table given to the tokenizer may contain symbols
+such as '!='. For these to be correctly recognized, the
+non-alphabetic keywords have to be smeared.
+
+Here's a smearing function you can use for that purpose:
+
+##
+    default_smear = (keyword):
+        for ch in keyword
+            if ch.is_alpha()
+                return [keyword]
+        result = []
+        prefix = []
+        for ch in keyword
+            prefix.append(ch)
+            result.append("".join(prefix))
+        return result
+
 #section API
 
 #begin{function}{read_file}

@@ -1,7 +1,12 @@
 #!/usr/bin/env python2
-import bon, backend, grammarlang
+import bon, backend, grammarlang, grammar
 import os
 import sys
+
+# Thanks to this, python-based-compiler doesn't need to have anything to
+# do with the remaining runtime of lever.
+lever_path = os.environ.get('LEVER_PATH', '')
+parser = grammar.load(os.path.join(lever_path, 'lever-0.9.0.grammar'))
 
 def main():
     assert len(sys.argv) == 3
@@ -11,7 +16,8 @@ def main():
 
 def compile_file(cb_path, src_path):
     debug = os.environ.get('VERBOSE', False)
-    root = parser.from_file(globals(), [None], src_path, as_unicode=True)
+    fn = lambda name, args, rest: globals()['post_'+name](None, rest[0], *args)
+    root = parser.from_file(fn, [], src_path, as_unicode=True)
 
     consttab = backend.ConstantTable()
     location_id = 0
@@ -748,10 +754,5 @@ class LetBody(Cell):
         result = self.body.visit(context)
         self.binding.reg = None
         return result
-
-# Thanks to this, python-based-compiler doesn't need to have anything to
-# do with the remaining runtime of lever.
-lever_path = os.environ.get('LEVER_PATH', '')
-parser = grammarlang.load({}, os.path.join(lever_path, 'lever-0.8.0.grammar'))
 
 if __name__=='__main__': main()

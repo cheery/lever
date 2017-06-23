@@ -199,6 +199,7 @@ def compile_lib(args):
 
 def compile_libraries(preserve_cache=True):
     from compiler import compile
+    import traceback
     print("Compiling libraries for lever")
     for dirname, subdirs, files in os.walk("lib"):
         for name in files:
@@ -214,6 +215,8 @@ def compile_libraries(preserve_cache=True):
                 try:
                     compile.compile_file(cb_name, lc_name)
                 except Exception as e:
+                    if not isinstance(e, KeyError):
+                        traceback.print_exc()
                     print("{}:{}".format(lc_name, e))
 
 stop_troubleshoot = False

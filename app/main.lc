@@ -4,7 +4,7 @@ import base
 import repl
 
 main = :
-    module = :Module("console", base)
+    module = Module("console", base);
         dir = getcwd()
         name = "console"
         %"import" = Import(dir,

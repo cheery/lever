@@ -11,7 +11,7 @@ class Object:
     # So programmer doesn't need to do that.
     class __metaclass__(type):
         def __init__(cls, name, bases, dict):
-            if name not in ('Object', 'Interface', 'null') and 'interface' not in dict:
+            if name not in ('Object', 'Interface', 'Null') and 'interface' not in dict:
                 cls.interface = Interface(
                     parent = cls.__bases__[0].interface,
                     name = re.sub("(.)([A-Z]+)", r"\1_\2", name).lower().decode('utf-8'),
@@ -158,9 +158,15 @@ Interface.interface.parent = Interface.interface
 # TODO: explain myself, why parent of an interface is an interface?
 #       ... I forgot.. that happens.
 
-null = Interface(None, u"null", {})
-null.interface = null
+# This approach ensures that we have Null.__class__.interface that points to Null.
+# It allows the null to behave like an interface, except that null is its own interface.
+class Null(Interface):
+    pass # The class was a late addition.. Apparently the behavior relied on a bug
+         # that was fixed somewhere on the way in the PyPy.
+
+null = Null(None, u"null", {})
 null.parent = null
+Null.interface = null
 
 Object.interface = Interface(null, u"object", {})
 

@@ -14,7 +14,12 @@ read_file = (filename, extension_env=default_extensions):
     #     print(use[0], use[1], use[2].items()...)
     # for rule in env.rules
     #     print(rule, "/", rule.annotation)
-    initiator = chartparser.preprocess(env.rules, env.rules[0].lhs)
+    first_lhs = Nonterminal(null)
+    for rule in env.rules
+        if rule.lhs.name != null
+            first_lhs = rule.lhs
+            break
+    initiator = chartparser.preprocess(env.rules, first_lhs)
     extensions = []
     for extension in env.extensions
         name = extension[0]
@@ -22,6 +27,11 @@ read_file = (filename, extension_env=default_extensions):
             raise Error("Extension " ++ name ++ " not present")
         ext = extension_env[name]
         extensions.append([ext, extension[1 .:]])
+    # The token smearing happens here, for now.
+    for kw in list(env.keywords)
+        for k in default_smear(kw)
+            if k not in env.keywords
+                env.keywords[k] = Terminal(k)
     return Initiator(initiator, extensions, env.keywords, env.symbols)
 
 class Initiator
@@ -48,11 +58,11 @@ class Initiator
             int = self.symbols.get("int", null)
             float = self.symbols.get("float", null)
 
-    read_file = (self, filename):
+    read_file = (self, filename, source=filename):
         tokens = tokenizer.read_file(filename,
             self.keywords,
             self.create_symtab())
-        return self.read_tokens(tokens, filename)
+        return self.read_tokens(tokens, source)
 
     read_string = (self, string, source="<string>"):
         tokens = tokenizer.read_string(string,
@@ -64,7 +74,7 @@ class Initiator
         parser = self()
         parser.source = source
         for token in tokens
-            parser.step(token.name, token, token.start, token.stop)
+            parser.step(token.name, token.string, token.start, token.stop)
         parser.finish()
         return parser
 
@@ -105,9 +115,10 @@ class Parser
 
     traverse = (self, postorder_cb, blank_cb=null, resolve_cb=null):
         g_postorder_cb = (rule, tree, start, stop):
-            return rule.annotation.postorder(postorder_cb, tree, object();
+            loc = object();
                 start = start
-                stop = stop)
+                stop = stop
+            return rule.annotation.postorder(postorder_cb, tree, loc)
         return self.child.traverse(
             g_postorder_cb, blank_cb, resolve_cb)
 
@@ -484,9 +495,9 @@ actions = object();
                 lhs = Nonterminal(null)
                 sym = env.template_memo[key] = Sym(lhs, true)
                 env.rules.append(make_rule(lhs, [arg],
-                    Expr(expr_list, [Expr(expr_dot, [])])))
+                    Expr(expr_list, [Expr(expr_index, [0])])))
                 env.rules.append(make_rule(lhs, [sym, arg],
-                    Expr(expr_append, [Expr(expr_dot, []), Expr(expr_dot, [])])))
+                    Expr(expr_append, [Expr(expr_index, [0]), Expr(expr_index, [1])])))
             return sym
     star = (args):
         return (env, sub_env):
@@ -499,7 +510,7 @@ actions = object();
                 env.rules.append(make_rule(lhs, [],
                     Expr(expr_list, [])))
                 env.rules.append(make_rule(lhs, [sym, arg],
-                    Expr(expr_append, [Expr(expr_dot, []), Expr(expr_dot, [])])))
+                    Expr(expr_append, [Expr(expr_index, [0]), Expr(expr_index, [1])])))
             return sym
     opt = (args):
         return (env, sub_env):
@@ -534,7 +545,7 @@ actions = object();
     prod_set = (args):
         return (env, sub_env):
             if args[0].length == 1
-                return args[0](env, sub_env)
+                return args[0][0](env, sub_env)
             lhs = Nonterminal(null)
             for fn in args[0]
                 node = fn(env, sub_env)
@@ -590,7 +601,7 @@ expand_template = (env, name, args):
         env.rules.append(make_rule(lhs, [j_sym], Expr(expr_index, [0])))
         if args.length == 3
             c = args[2]
-            env.rules.append(make_rule(lhs, [sym1, c], Expr(expr_index, [0])))
+            env.rules.append(make_rule(lhs, [sym, c], Expr(expr_index, [0])))
     elif name == "join" and args.length == 2
         lhs = Nonterminal(null)
         sym = env.template_memo[key] = Sym(lhs, true)
@@ -763,11 +774,13 @@ make_rule = (lhs, rhs, fn):
                 syms.append(node.value)
                 args.append(object();
                     value = Get(syms.length - 1)
-                    gather = gather)
+                    gather = gather
+                )
             else
                 args.append(object();
                     value = build_rhs(node.value, node.annotation)
-                    gather = gather)
+                    gather = gather
+                )
         return extract_annotation(fn, args)
     return Rule(lhs, syms, build_rhs(rhs, fn))
 
@@ -888,6 +901,18 @@ class Null
     postorder = (self, fn, args, loc):
         return null
 
-
+# The tokenizer we use requires symbol-keywords to be
+# smeared in order for them to be recognized.
+# But if we do the same for textual keywords, it will result in a mess.
+default_smear = (keyword):
+    for ch in keyword
+        if ch.is_alpha()
+            return [keyword]
+    result = []
+    prefix = []
+    for ch in keyword
+        prefix.append(ch)
+        result.append("".join(prefix))
+    return result
 
 language = build_grammar_language()

@@ -44,7 +44,7 @@ def dump(fd, data):
     elif tp is null:
         fd.write(chr(7))
     else:
-        raise OldError(u"no binon encoding found for an object.")
+        raise OldError(u"no binon encoding found for an object: " + data.repr())
 
 def w32(fd, value):
     fd.write(''.join([
