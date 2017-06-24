@@ -19,6 +19,14 @@ class Exnihilo(Object):
         else:
             return Object.getattr(self, name)
 
+    def getattr_or(self, name, default):
+        map = jit.promote(self.map)
+        index = map.getindex(name)
+        if index != -1:
+            return self.storage[index]
+        else:
+            return default
+
     def setattr(self, name, value):
         map = jit.promote(self.map)
         index = map.getindex(name)

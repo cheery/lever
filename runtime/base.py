@@ -163,6 +163,13 @@ def getattr(obj, index):
     return obj.getattr(index.string)
 
 @builtin
+@signature(Object, String, Object, optional=1)
+def getattr_or(obj, index, default):
+    if default is None:
+        default = null
+    return obj.getattr_or(index.string, default)
+
+@builtin
 @signature(Object, String, Object)
 def setattr(obj, index, value):
     return obj.setattr(index.string, value)

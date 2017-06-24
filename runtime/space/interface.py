@@ -52,6 +52,14 @@ class Object:
     def callattr(self, name, argv):
         return self.getattr(name).call(argv)
 
+    def getattr_or(self, index, default):
+        try:
+            return self.getattr(index)
+        except space.Unwinder as w:
+            if isinstance(w.exception, space.LAttributeError):
+                return default
+            raise
+
     def contains(self, obj):
         raise space.unwind(space.LTypeError(u"%s cannot contain" % self.repr()))
 
