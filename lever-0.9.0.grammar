@@ -24,6 +24,7 @@ block_statement:
     slot op              '=' block_statement / op_assign
     expr '[' subexpr ']' '=' block_statement / setitem
     expr '.' symbol      '=' block_statement / setattr
+    expr '.' symbol     '?=' block_statement / setattr_default
 
     'while' statement block         / while
     'for' symbol 'in' subexpr block / for
@@ -158,6 +159,7 @@ postfix:
     postfix "(" sep(subexpr, ',', ',') "..." ")" / callv
     postfix "[" subexpr "]"         / getitem
     postfix "." symbol              / getattr
+    postfix ".?" symbol             / getattr_or_null
     postfix ";" block / scopegrabber # It occured to me that scope grab
                                      # is an useful concept for passing values around.
                                      # so we need some syntax for it.

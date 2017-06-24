@@ -144,10 +144,23 @@ actions = object();
             [2, 0, 1])
     getattr = (base, name):
         return Code("getattr", base, name)
+    getattr_or_null = (base, name):
+        return Code("call",
+            Code("getglob", "getattr_or"),
+            base,
+            Code("constant", name))
     setattr = (base, name, expr):
         return CodeM("setattr",
             [base, name, expr],
             [2, 0, 1])
+    setattr_default = (base, name, expr):
+        bind_base = Let(base)
+        cond = Code("call",
+            Getvar("=="), Getvar("null"),
+            actions.getattr_or_null(bind_base, name))
+        body = [Code("setattr", bind_base, name, expr)]
+        conds = [[cond, body]]
+        return bind_base(Cond(conds, null))
     prefix = (op, rhs):
         return CodeM("call",
             [Getvar(op ++ "expr"), rhs],
