@@ -159,14 +159,34 @@ op:
 
 postfix:
     term
-    postfix "(" sep(subexpr, ',', ',') ")"       / call
-    postfix "(" sep(subexpr, ',', ',') "..." ")" / callv
+    postfix "(" arguments ")"          / call
+    postfix "(" subexpr_last "..." ")" / callv
     postfix "[" subexpr "]"         / getitem
     postfix "." symbol              / getattr
     postfix ".?" symbol             / getattr_or_null
     postfix ";" block / scopegrabber # It occured to me that scope grab
                                      # is an useful concept for passing values around.
                                      # so we need some syntax for it.
+                                     
+# The syntax for inlined records is a little bit
+# experimental. It may be desirable to handle this a bit
+# differently.
+arguments: 
+    / []
+    record_last
+    record_last ','
+    subexpr_last
+    subexpr_last ','
+
+record_last:
+    inline_record / [.]
+    subexpr_last ',' inline_record / (. append .)
+
+subexpr_last:
+    join(subexpr, ',')
+    record_last ',' join(subexpr, ',') / (. concat .)
+
+inline_record: join(symbol "=" subexpr, ',') / record
 
 term:
     symbol / lookup
@@ -175,6 +195,7 @@ term:
     float  / float
     string / string
     "(" subexpr ")"
+    "(" sep(symbol "=" subexpr, ',') ")" / record
     "[" sep(subexpr, ',', ',') "]" / list
     "(" bindings ")" ":" block / function
     ":" block / function(blank_bindings(), .)

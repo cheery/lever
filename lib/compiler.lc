@@ -129,6 +129,10 @@ actions = object();
         return CodeGroup("setitem",
             Code("call", Getvar("dict")), pairs)
 
+    record = (pairs):
+        return CodeGroup("setattr", 
+            Code("call", Getvar("object")), pairs)
+
     scopegrabber = (expr, block):
         return ScopeGrab(expr, block)
 
@@ -619,7 +623,10 @@ class CodeGroup extends Cell
         for seq in self.groups
             argv = [prefix]
             for item in seq
-                argv.append(item.visit(context))
+                if isinstance(item, [Cell, Origin])
+                    argv.append(item.visit(context))
+                else # Used at constructing the record() -object.
+                    argv.append(item)
             context.op(self.name, argv...)
         return prefix
 
