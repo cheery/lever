@@ -207,6 +207,17 @@ actions = object();
             slot.setslot(bind, Code("call",
                 Getvar(op), slot.getslot(bind), statement)))
 
+    unpack_assign = (names, statement):
+        bind = Let(statement)
+        prog = []
+        i = 0
+        for name in names
+            prog.append(Setvar("local", name,
+                Code("getitem", base, Code("constant", i))))
+            i += 1
+        prog.append(bind)
+        return bind(Prog(prog))
+
     lookup_slot = (name):
         return object();
             base = null
@@ -268,7 +279,19 @@ actions = object();
     %"while" = (cond, body):
         return While(cond, body)
     %"for" = (bind, iterator, body):
-        return For(bind, iterator, body)
+        bind_fn = (context, value):
+            setvar(context, "local", bind, value)
+        return For(bind_fn, iterator, body)
+    %"for_unpack" = (binds, iterator, body):
+        bind_fn = (context, value):
+            i = 0
+            for bind in binds
+                setvar(context, "local", bind,
+                    context.op("getitem", value,
+                        context.op("constant", i)))
+                i += 1
+        return For(bind_fn, iterator, body)
+
 
     %"if" = (cond, body=[], otherwise=done()):
         otherwise.conds.insert(0, [cond, body])
@@ -653,7 +676,7 @@ class For extends Cell
 
         context.block = repeat
         value = context.op("next", iter, exit)
-        setvar(context, "local", self.bind, value)
+        self.bind(context, value) # setvar(context, "local", self.bind, value)
         val = Prog(self.body).visit(context)
         if val and val.has_result
             context.op("move", result, val)

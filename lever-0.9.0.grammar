@@ -25,9 +25,13 @@ block_statement:
     expr '[' subexpr ']' '=' block_statement / setitem
     expr '.' symbol      '=' block_statement / setattr
     expr '.' symbol     '?=' block_statement / setattr_default
+    '[' sep(symbol, ',') ']'    '=' block_statement / unpack_assign
+    symbol ',' sep(symbol, ',') '=' block_statement / unpack_assign([.] concat ., ..)
 
     'while' statement block         / while
     'for' symbol 'in' subexpr block / for
+    'for' '[' sep(symbol, ',') ']' 'in' subexpr block    / for_unpack
+    'for' symbol ',' sep(symbol, ',') 'in' subexpr block / for_unpack([.] concat ., ..)
 
     'import' join(symbol, ',')               / import
     'from' symbol 'import' join(symbol, ',') / from_import
@@ -212,7 +216,7 @@ pairlines:
     pairlines newline pair "," / (. append .)
 
 pairs:
-    / empty_list
+    / []
     pairs1
     pairs1 ','
 
