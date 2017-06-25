@@ -212,13 +212,11 @@ actions = object();
                 Getvar(op), slot.getslot(bind), statement)))
 
     unpack_assign = (names, statement):
-        bind = Let(statement)
+        bind = Let(Code("iter", statement))
         prog = []
-        i = 0
         for name in names
             prog.append(Setvar("local", name,
-                Code("getitem", base, Code("constant", i))))
-            i += 1
+                Code("call", Code("getattr", bind, "next"))))
         prog.append(bind)
         return bind(Prog(prog))
 
@@ -288,12 +286,10 @@ actions = object();
         return For(bind_fn, iterator, body)
     %"for_unpack" = (binds, iterator, body):
         bind_fn = (context, value):
-            i = 0
+            it = context.op(iter, value)
             for bind in binds
                 setvar(context, "local", bind,
-                    context.op("getitem", value,
-                        context.op("constant", i)))
-                i += 1
+                    context.op("call", context.op("getattr", it, "next")))
         return For(bind_fn, iterator, body)
 
 
