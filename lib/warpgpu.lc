@@ -1,4 +1,4 @@
-import fs, api
+import fs, api, ffi
 import vulkan
 
 class GPU extends vulkan.Handle
@@ -703,3 +703,66 @@ class Portal
         self.fence.destroy()
         self.image_acquired.destroy()
         self.rendering_done.destroy()
+
+# For configuring vertex attributes in pipeline
+class VulkanType
+    +init = (self, format, shadow):
+        self.shadow = shadow
+        self.format = format
+
+    load = (self, val):
+        return val
+
+    store = (self, val):
+        return val
+
+class VertexBinding
+    +init = (self, binding, struct, inputRate):
+        self.binding = binding
+        self.struct = struct
+        self.inputRate = inputRate
+
+    +getattr = (self, name):
+        struct = self.getattr("struct")
+        for item in struct.get_fields()
+            if item[0] == name
+                return VertexBindingField(self.ref, name)
+        return self.getattr(name)
+
+class VertexBindingField
+    +init = (self, binding, name):
+        self.binding = binding
+        self.name = name
+
+class VertexLayout
+    +init = (self, topology, attributes):
+        self.topology = topology
+        self.attributes = attributes
+
+    to_dict = (self):
+        visited_bindings = set()
+        bindings = []
+        attributes = []
+        for location, attr in self.attributes.items()
+            bd = Id(attr.binding)
+            if attr.binding not in visited_bindings
+                visited_bindings.add(attr.binding)
+                bindings.append({
+                    binding = bd.getattr("binding")
+                    stride  = ffi.sizeof(bd.getattr("struct"))
+                    inputRate = bd.getattr("inputRate")
+                })
+            attributes.append({
+                location = location
+                binding = bd.getattr("binding")
+                format = bd.getattr("struct").typeof(attr.name).format
+                offset = bd.getattr("struct").offsetof(attr.name)
+            })
+
+        return {
+            vertexInputState = {
+                vertexBindingDescriptions = bindings
+                vertexAttributeDescriptions = attributes
+            }
+            inputAssemblyState = {topology = self.topology}
+        }
