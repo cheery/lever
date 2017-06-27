@@ -286,7 +286,7 @@ actions = object();
         return For(bind_fn, iterator, body)
     %"for_unpack" = (binds, iterator, body):
         bind_fn = (context, value):
-            it = context.op(iter, value)
+            it = context.op("iter", value)
             for bind in binds
                 setvar(context, "local", bind,
                     context.op("call", context.op("getattr", it, "next")))
@@ -1213,6 +1213,7 @@ class Block
 
 class Op
     +init = (self, loc, opname, args):
+        assert isinstance(opname, str), [loc.start, opname, args]
         self.index = null
         self.loc = loc
         self.opname = opname
