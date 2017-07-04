@@ -85,6 +85,13 @@ class WSI
             queueFamilyIndex, self.surface, p_supported)
         return p_supported.to == vk.TRUE
 
+    extent = property();
+        get = (self):
+            w = ffi.automem(ffi.int)
+            h = ffi.automem(ffi.int)
+            sdl.GetWindowSize(self.window, w, h)
+            return {width=w.to, height=h.to}
+
     destroy = (self):
         if self.surface
             self.instance.discard_ref(self)
@@ -142,3 +149,9 @@ class StereoAudio
         if self.dev
             sdl.CloseAudioDevice(self.dev)
             self.dev = null
+
+
+event = ffi.automem(sdl.Event)
+poll = ():
+    while sdl.PollEvent(event) != 0
+        yield event
