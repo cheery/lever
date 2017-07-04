@@ -6,11 +6,11 @@ main = (args):
     result = calc_lang.read_string(string)
     result = result.traverse((name, args, loc):
         if name == 'a_int'
-            return parse_int(args[0].string)
+            return parse_int(args[0])
         elif name == 'a_hex'
-            return parse_int(args[0].string, 16)
+            return parse_int(args[0], 16)
         elif name == 'a_float'
-            return parse_float(args[0].string)
+            return parse_float(args[0])
         elif name == 'plus'
             return +args[0]
         elif name == 'minus'
