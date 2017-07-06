@@ -80,6 +80,58 @@ described in itself:
 The 'lhs: rhs' part in the grammar is the production rule,
 the '/ thing' is an annotation that the rule maps into.
 
+#subsection How to read the attribute
+
+The annotation coming after the rule may consists of a
+single symbol or even just an expression.
+
+The annotation is a template that is filled by deducting the
+details from the expression.
+
+#subsection Capturing elements
+
+Some pieces of the right hand side rule are ignored. These
+are the keyword string tokens and tokens that have been
+marked as 'constructive', such as indentation and
+dedentation tokens.
+
+If there is not a single element that is captured, the
+ignored elements are retrieved in whole, otherwise only the
+capturing elements are captured.
+
+When there is no annotation provided: If there is only one
+element captured, it is captured 'as it', otherwise the
+captured elements are inserted into a list.
+
+When there is a single symbol, the elements are captured
+into an attribute that holds the name in that symbol.
+
+#subsection Index and dot annotations
+
+The index and dot annotations are read such that the
+elements captured by the index are marked as
+retrieved and not double-captured by the dot annotations.
+
+Every item, captured or not captured, has an unique index.
+These indices start from 1, which is merely a convention
+of the grammar language. You can think of the index '0' as a
+symbol on the left hand side if you're a programmer,
+although the left-hand side cannot be captured.
+
+The single dot '.' captures an one symbol, whereas the
+double dot '..' captures all remaining symbols. The double
+dot may only occur once, and the single dot may appear
+before and after the double dot.
+
+#subsection Annotation expressions
+
+In the annotation you may denote that the contents are
+placed into a list, or that something gets appended into a
+list or that lists are concatenated together.
+
+You may also denote that a null is explicitly passed into an
+annotation.
+
 #section Extensions
 
 Extensions do not change how the source grammar is parsed,
