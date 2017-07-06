@@ -32,7 +32,17 @@ Despite this, the Lever environment has been designed to be maintained by indivi
 
 Python3 is so stable that it didn't provide that many improvements over Python2 to make the breaking worthwhile. If you are looking for something more volatile but better, something like explodes in your hands, you may like to look into Lever.
 
-Works on Windows if not blown.
+## Platforms
+
+Lever's runtime works on the following platforms:
+
+ * Windows (32-bit x86 PC)
+ * Linux (64-bit x86 PC)
+
+If the source code does not compile, you may file an issue in
+https://github.com/cheery/lever/issues
+
+The 32-bit support on Windows will be deprecated when PyPy's translator supports 64-bit Windows environments.
 
 ## Feature list
 
