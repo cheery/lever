@@ -1,4 +1,4 @@
-from math import sqrt, sin, cos, tan, pi, acos, asin, atan, atan2, pow, exp, log, e
+from math import sqrt, sin, cos, tan, pi, acos, asin, atan, atan2, pow as powf, exp, log, e
 from rpython.rlib.rrandom import Random
 from rpython.rlib.rarithmetic import r_uint, r_ulonglong
 from space import *
@@ -12,6 +12,8 @@ cross = Multimethod(2)
 normalize = Multimethod(1)
 #reflect = Multimethod(2)
 #refract = Multimethod(3)
+pow_ = Multimethod(2)
+operators.coerce_by_default(pow_)
 
 class Vec3(Object):
     __slots__ = ['x', 'y', 'z']
@@ -534,15 +536,35 @@ def atan2_(y, x):
 def sqrt_(f):
     return Float(sqrt(f.number))
 
-@Builtin
-@signature(Float, Float)
-def pow_(a, b):
+@pow_.multimethod_s(Float, Float)
+def pow_float(a, b):
     try:
-        return Float(pow(a.number, b.number))
+        return Float(powf(a.number, b.number))
     except OverflowError as ovf:
         raise unwind(LError(u"math range error"))
     except ValueError as val:
         raise unwind(LError(u"math domain error"))
+
+@pow_.multimethod_s(Integer, Integer)
+def pow_int(a, b):
+    try:
+        return Integer(powi(a.value, b.value))
+    except OverflowError as ovf:
+        raise unwind(LError(u"math range error"))
+    except ValueError as val:
+        raise unwind(LError(u"math domain error"))
+
+def powi(iv, iw):
+    temp = iv
+    ix = 1
+    while iw > 0:
+        if iw & 1:
+            ix = ix * temp
+        iw >>= 1   # Shift exponent down by 1 bit
+        if iw == 0:
+            break
+        temp = temp * temp # Square the value of temp
+    return ix
 
 @Builtin
 @signature(Float)

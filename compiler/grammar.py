@@ -126,7 +126,7 @@ default_extensions = {
 
 def read_file_bare(filename):
     fn = lambda name, args, rest: globals()['post_'+name](args)
-    out = language.parse.from_file(fn, [], filename)
+    out = language.parse.from_file(fn, [], filename, as_unicode=True)
 
     #Parser(language.keywords, language.grammar, language.grammar[0].lhs)
 
@@ -818,7 +818,7 @@ class Annotation(object):
 
 class Label(Annotation):
     def __init__(self, name, args):
-        assert isinstance(name, str)
+        assert isinstance(name, (str,unicode))
         self.name = name
         self.args = args
 

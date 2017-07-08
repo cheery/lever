@@ -5,19 +5,21 @@
 use indentation(indent, dedent, newline)
     can_close = [")", "]", "}", ","]
 
-file: sep(block_statement, newline)
+file: sep(cond_statement, newline)
 
-block: indent join(block_statement, newline) dedent
+block: indent join(cond_statement, newline) dedent
+
+cond_statement: 
+    block_statement 'if' statement            / if(., [1])
+    block_statement 'while' statement         / while(., [1])
+    block_statement 'for' symbol 'in' subexpr / for(.., [1])
+    block_statement
 
 block_statement:
     statement
     'return' statement? / return
     'yield' statement / yield
     'if' statement block otherwise / if
-
-    block_statement 'if' statement            / if(., [1])
-    block_statement 'while' statement         / while(., [1])
-    block_statement 'for' symbol 'in' subexpr / for(.., [1])
 
     local_symbol         '=' block_statement / local_assign
     symbol              ':=' block_statement / upvalue_assign
@@ -140,9 +142,9 @@ expr200:
     expr200 ["%"] prefix / binary
 
 prefix:
-    postfix
-    ["+"] postfix / prefix
-    ["-"] postfix / prefix
+    exponent_postfix
+    ["+"] exponent_postfix / prefix
+    ["-"] exponent_postfix / prefix
 
 op:
     "|"
@@ -157,6 +159,10 @@ op:
     "/"
     "*"
 
+exponent_postfix:
+    postfix
+    postfix "**" exponent_postfix                               / exponent
+
 postfix:
     term
     postfix "(" arguments ")"          / call
@@ -167,6 +173,7 @@ postfix:
     postfix ";" block / scopegrabber # It occured to me that scope grab
                                      # is an useful concept for passing values around.
                                      # so we need some syntax for it.
+
                                      
 # The syntax for inlined records is a little bit
 # experimental. It may be desirable to handle this a bit

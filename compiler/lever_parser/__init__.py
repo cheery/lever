@@ -74,7 +74,7 @@ class Parser(object):
 def format_expect(expect):
     trail = "expected end of file"
     if len(expect) > 0:
-        trail = "expected some of: {}".format(', '.join(map(str, expect)))
+        trail = u"expected some of: {}".format(u', '.join(map(unicode, expect)))
     return trail
 
 def traverse(parser, rule, start, stop, namespace, argl):
