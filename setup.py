@@ -21,6 +21,10 @@ def main():
     parser = argparse.ArgumentParser()
     subparsers = parser.add_subparsers()
 
+    cmd = subparsers.add_parser('build-local',
+        help="Compile the statically linked third party dependencies for Lever")
+    cmd.set_defaults(func=build_local)
+
     cmd = subparsers.add_parser('compile',
         help="Compile the lever runtime")
     cmd.set_defaults(func=compile_lever)
@@ -68,6 +72,45 @@ def main():
     args = parser.parse_args()
     return args.func(args)
 
+def build_local(args):
+    root_dir = os.getcwd()
+    local_abs = os.path.abspath("local")
+
+    ninja_path = os.path.join(local_abs, "ninja")
+    rule_git_clone("git://github.com/ninja-build/ninja.git", ninja_path, "release")
+
+    zlib_path = os.path.join(local_abs, "zlib")
+    rule_git_clone("git://github.com/madler/zlib.git", zlib_path, "v1.2.11")
+
+    libuv_path = os.path.join(local_abs, "libuv")
+    rule_git_clone("git://github.com/libuv/libuv.git", libuv_path, "v1.13.1")
+
+    libuv_gyp_path = os.path.join(local_abs, "libuv", "build", "gyp")
+    rule_git_clone("https://chromium.googlesource.com/external/gyp.git", libuv_gyp_path)
+    
+    ninja_bin = os.path.join(local_abs, "ninja/ninja")
+    if not os.path.exists(ninja_bin):
+        os.chdir(ninja_path)
+        check_call([os.path.join(ninja_path, "configure.py"), "--bootstrap"])
+
+
+    if not os.path.exists(os.path.join(zlib_path, "build.ninja")):
+        os.chdir(zlib_path)
+        insert_to_env("PATH", ninja_path) # cmake requires this.
+        check_call(["cmake", "-G", "Ninja"])
+
+    libuv_build_path = os.path.join(libuv_path, "out", "Release")
+    if not os.path.exists(os.path.join(libuv_build_path, "build.ninja")):
+        os.chdir(libuv_path)
+        check_call([os.path.join(libuv_path, "gyp_uv.py"), "-f", "ninja"])
+    
+    check_call(["ninja", "-C", zlib_path, "libz.a"])
+    check_call(["ninja", "-C", libuv_build_path, "libuv.a"])
+
+def rule_git_clone(url, dst, branch):
+    if not os.path.exists(dst):
+        check_call(["git", "clone", "--depth", "1", "-b", branch, url, dst])
+
 # On linux the system checks whether the tools required to build it respond.
 # Then it checks whether the system has the required C libraries to have
 # a chance of successful build.
@@ -98,21 +141,38 @@ library_depends = "libffi zlib sqlite3 ncurses expat libssl".split(' ')
 def compile_lever(args):
     system = platform.system()
     if system == "Linux":
+        zlib_abs = os.path.abspath("local/zlib")
+        if os.path.exists(zlib_abs):
+            insert_to_env("DEPENDENCY_LIBRARY_PATH", zlib_abs)
+            insert_to_env("DEPENDENCY_INCLUDE_PATH", zlib_abs)
+
         libuv_abs = os.path.abspath("local/libuv")
         if os.path.exists(libuv_abs):
             linux_build_depedencies(libuv_is_local=True)
-            insert_to_env("DEPENDENCY_LIBRARY_PATH", os.path.join(libuv_abs, "out/Release"), ':')
-            insert_to_env("DEPENDENCY_LIBRARY_PATH", os.path.join(libuv_abs, "out/Debug"),   ':')
-            insert_to_env("DEPENDENCY_INCLUDE_PATH", os.path.join(libuv_abs, "include"),   ':')
+            insert_to_env("DEPENDENCY_LIBRARY_PATH", os.path.join(libuv_abs, "out/Release"))
+            insert_to_env("DEPENDENCY_LIBRARY_PATH", os.path.join(libuv_abs, "out/Debug"))
+            insert_to_env("DEPENDENCY_INCLUDE_PATH", os.path.join(libuv_abs, "include"))
         else:
             linux_build_depedencies(libuv_is_local=False)
     elif system == "Windows":
+        zlib_abs = os.path.abspath("local/zlib")
+        if os.path.exists(zlib_abs):
+            insert_to_env("DEPENDENCY_LIBRARY_PATH", zlib_abs)
+            insert_to_env("DEPENDENCY_INCLUDE_PATH", zlib_abs)
+
+        libuv_abs = os.path.abspath("local/libuv")
+        if os.path.exists(libuv_abs):
+            insert_to_env('LIB',     os.path.join(libuv_abs, "out/Release"))
+            insert_to_env('LIB',     os.path.join(libuv_abs, "out/Debug"))
+            insert_to_env('INCLUDE', os.path.join(libuv_abs, "include"))
+
         windows_build_dependencies()
-        local_abs = os.path.abspath("local")
-        if os.path.exists(local_abs):
-            insert_to_env('PATH',    os.path.join(local_abs, "bin"),     ';')
-            insert_to_env('INCLUDE', os.path.join(local_abs, "include"), ';')
-            insert_to_env('LIB',     os.path.join(local_abs, "lib"),     ';')
+
+        #local_abs = os.path.abspath("local")
+        #if os.path.exists(local_abs):
+        #    insert_to_env('PATH',    os.path.join(local_abs, "bin"))
+        #    insert_to_env('INCLUDE', os.path.join(local_abs, "include"))
+        #    insert_to_env('LIB',     os.path.join(local_abs, "lib"))
     else:
         assert False, "no dependency fetching script for {}".format(system)
     if os.path.exists('pypy'):
@@ -142,7 +202,7 @@ def compile_lever(args):
 
 # To handle dependencies, I'm adding them into the environment
 # variables before compiling.
-def insert_to_env(name, path, separator):
+def insert_to_env(name, path, separator=os.pathsep):
     value = os.environ.get(name, '').strip()
     if value == "":
         os.environ[name] = path
@@ -177,13 +237,13 @@ def windows_build_dependencies():
         zipfile.extractall()
         print("Note that building from source for windows isn't frequent.")
 
-    if os.path.exists("local/include"):
-        stdint_msvc2008_path = "local/include/stdint-msvc2008.h"
-        if not os.path.exists(stdint_msvc2008_path):
-            print("stdint-msvc2008.h missing, downloading it.") 
-            url = urlopen("https://raw.githubusercontent.com/libuv/libuv/v1.x/include/stdint-msvc2008.h")
-            with open(stdint_msvc2008_path, 'wb') as fd:
-                fd.write(url.read())
+    #if os.path.exists("local/include"):
+    #    stdint_msvc2008_path = "local/include/stdint-msvc2008.h"
+    #    if not os.path.exists(stdint_msvc2008_path):
+    #        print("stdint-msvc2008.h missing, downloading it.") 
+    #        url = urlopen("https://raw.githubusercontent.com/libuv/libuv/v1.x/include/stdint-msvc2008.h")
+    #        with open(stdint_msvc2008_path, 'wb') as fd:
+    #            fd.write(url.read())
 
 compile_lib_desc = """This command compiles the scripts in the lib/
 
