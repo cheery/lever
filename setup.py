@@ -107,7 +107,7 @@ def build_local(args):
     check_call(["ninja", "-C", zlib_path, "libz.a"])
     check_call(["ninja", "-C", libuv_build_path, "libuv.a"])
 
-def rule_git_clone(url, dst, branch):
+def rule_git_clone(url, dst, branch='master'):
     if not os.path.exists(dst):
         check_call(["git", "clone", "--depth", "1", "-b", branch, url, dst])
 
