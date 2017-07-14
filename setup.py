@@ -73,9 +73,10 @@ def main():
     return args.func(args)
 
 def build_local(args):
-    root_dir = os.getcwd()
     local_abs = os.path.abspath("local")
+    system = platform.system()
 
+    # The dependencies are cloned in-place so you don't need to do this.
     ninja_path = os.path.join(local_abs, "ninja")
     rule_git_clone("git://github.com/ninja-build/ninja.git", ninja_path, "release")
 
@@ -88,18 +89,43 @@ def build_local(args):
     libuv_gyp_path = os.path.join(local_abs, "libuv", "build", "gyp")
     rule_git_clone("https://chromium.googlesource.com/external/gyp.git", libuv_gyp_path)
     
+    # TODO: once things work on win32 as well, add the pypy download here?
+
+    # TODO: figure out what is needed to get the 32-bit builds on Windows.
+    #       or does it need anything at all?
+    
+    cmake_ok = (call(["cmake", "--version"]) == 0)
+    if system == "Windows" and not cmake_ok:
+        os.chdir(local_abs)
+        url = urlopen("https://cmake.org/files/v3.9/cmake-3.9.0-rc6-win32-x86.zip")
+        zipfile = ZipFile(StringIO(url.read()))
+        zipfile.extractall()
+    elif not cmake_ok:
+        print("cmake not found on your system, it is required for compiling zlib")
+        exit(1)
+
+    if system == "Windows"
+        cmake_path = os.path.join(local_abs, "cmake-3.9.0-rc6-win32-x86", "bin")
+        insert_to_env("PATH", cmake_path)
+    
+    # We compile our own ninja because it's easy to build and we can ensure
+    # we have a fresh ninja that way.
     ninja_bin = os.path.join(local_abs, "ninja/ninja")
     if not os.path.exists(ninja_bin):
         os.chdir(ninja_path)
         check_call([os.path.join(ninja_path, "configure.py"), "--bootstrap"])
 
-    # cmake requires this, also we use it below ourselves.
+    # cmake requires ninja in the path, but the last two commands also need it to work.
     insert_to_env("PATH", ninja_path)
 
+    # The cmake is particularly nasty dependency compared to the Ninja.
+    # Only the zlib needs the cmake, though it compiles quite well despite it.
     if not os.path.exists(os.path.join(zlib_path, "build.ninja")):
         os.chdir(zlib_path)
         check_call(["cmake", "-G", "Ninja"])
 
+    # The libuv produces the ninja build through a crummy gyp_uv wrapper
+    # that uses the libuv/build/gyp to produce the files.
     libuv_build_path = os.path.join(libuv_path, "out", "Release")
     if not os.path.exists(os.path.join(libuv_build_path, "build.ninja")):
         os.chdir(libuv_path)
@@ -107,6 +133,9 @@ def build_local(args):
     
     check_call(["ninja", "-C", zlib_path, "libz.a"])
     check_call(["ninja", "-C", libuv_build_path, "libuv.a"])
+
+    #
+    print("Now you can run: python setup.py compile")
 
 def rule_git_clone(url, dst, branch='master'):
     if not os.path.exists(dst):
