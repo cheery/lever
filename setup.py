@@ -93,10 +93,11 @@ def build_local(args):
         os.chdir(ninja_path)
         check_call([os.path.join(ninja_path, "configure.py"), "--bootstrap"])
 
+    # cmake requires this, also we use it below ourselves.
+    insert_to_env("PATH", ninja_path)
 
     if not os.path.exists(os.path.join(zlib_path, "build.ninja")):
         os.chdir(zlib_path)
-        insert_to_env("PATH", ninja_path) # cmake requires this.
         check_call(["cmake", "-G", "Ninja"])
 
     libuv_build_path = os.path.join(libuv_path, "out", "Release")
