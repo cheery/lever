@@ -10,6 +10,7 @@ from StringIO import StringIO
 from subprocess import call, check_call
 from urllib import urlopen
 from zipfile import ZipFile
+import shutil
 import argparse
 import glob
 import os
@@ -81,60 +82,73 @@ def build_local(args):
     rule_git_clone("git://github.com/ninja-build/ninja.git", ninja_path, "release")
 
     zlib_path = os.path.join(local_abs, "zlib")
-    rule_git_clone("git://github.com/madler/zlib.git", zlib_path, "v1.2.11")
+    rule_git_clone("git://github.com/madler/zlib.git", zlib_path, "master")
 
     libuv_path = os.path.join(local_abs, "libuv")
-    rule_git_clone("git://github.com/libuv/libuv.git", libuv_path, "v1.13.1")
+    rule_git_clone("git://github.com/libuv/libuv.git", libuv_path, "v1.13.1") # or v1.10.0
 
     libuv_gyp_path = os.path.join(local_abs, "libuv", "build", "gyp")
     rule_git_clone("https://chromium.googlesource.com/external/gyp.git", libuv_gyp_path)
-    
+
+    if system == 'Windows':
+        windows_build_dependencies()
+    else:
+        linux_build_depedencies(libuv_is_local=True)
     # TODO: once things work on win32 as well, add the pypy download here?
-
-    # TODO: figure out what is needed to get the 32-bit builds on Windows.
-    #       or does it need anything at all?
-    
-    cmake_ok = (call(["cmake", "--version"]) == 0)
-    if system == "Windows" and not cmake_ok:
-        os.chdir(local_abs)
-        url = urlopen("https://cmake.org/files/v3.9/cmake-3.9.0-rc6-win32-x86.zip")
-        zipfile = ZipFile(StringIO(url.read()))
-        zipfile.extractall()
-    elif not cmake_ok:
-        print("cmake not found on your system, it is required for compiling zlib")
-        exit(1)
-
-    if system == "Windows"
-        cmake_path = os.path.join(local_abs, "cmake-3.9.0-rc6-win32-x86", "bin")
-        insert_to_env("PATH", cmake_path)
     
     # We compile our own ninja because it's easy to build and we can ensure
     # we have a fresh ninja that way.
     ninja_bin = os.path.join(local_abs, "ninja/ninja")
+    if system == 'Windows':
+        ninja_bin += ".exe"
+
     if not os.path.exists(ninja_bin):
         os.chdir(ninja_path)
-        check_call([os.path.join(ninja_path, "configure.py"), "--bootstrap"])
+        check_call(["python", os.path.join(ninja_path, "configure.py"), "--bootstrap"])
 
-    # cmake requires ninja in the path, but the last two commands also need it to work.
+    # cmake required ninja in the path, but the last two commands also need it to work.
     insert_to_env("PATH", ninja_path)
 
     # The cmake is particularly nasty dependency compared to the Ninja.
     # Only the zlib needs the cmake, though it compiles quite well despite it.
-    if not os.path.exists(os.path.join(zlib_path, "build.ninja")):
-        os.chdir(zlib_path)
-        check_call(["cmake", "-G", "Ninja"])
+    if system == 'Windows':
+        if not os.path.exists(os.path.join(zlib_path, "zlib.lib")):
+            os.chdir(zlib_path)
+            check_call(["nmake", "-f", "win32/Makefile.msc", "zlib.lib"])
+                    # zlib.lib, zlib.h, zconf.h
+    else:
+        if not os.path.exists(os.path.join(zlib_path, "build.ninja")):
+            os.chdir(zlib_path)
+            check_call(["cmake", "-G", "Ninja"])
+        check_call(["ninja", "-C", zlib_path, "libz.a"])
+
 
     # The libuv produces the ninja build through a crummy gyp_uv wrapper
     # that uses the libuv/build/gyp to produce the files.
+
     libuv_build_path = os.path.join(libuv_path, "out", "Release")
+        
     if not os.path.exists(os.path.join(libuv_build_path, "build.ninja")):
         os.chdir(libuv_path)
-        check_call([os.path.join(libuv_path, "gyp_uv.py"), "-f", "ninja"])
+        if system == 'Windows':
+            os.environ["GYP_MSVS_VERSION"] = "auto"
+            check_call(["python", os.path.join(libuv_path, "gyp_uv.py"), "-f", "ninja",
+                "-Dtarget_arch=ia32", "-Duv_library=shared_library"])]
+        else:
+            check_call(["python", os.path.join(libuv_path, "gyp_uv.py"), "-f", "ninja"])
     
-    check_call(["ninja", "-C", zlib_path, "libz.a"])
-    check_call(["ninja", "-C", libuv_build_path, "libuv.a"])
+    if system == 'Windows':
+        check_call(["ninja", "-C", libuv_build_path])
+        # I don't know what they're thinking at libuv, but lets fix this.
+        shutil.copy(
+            os.path.join(libuv_build_path, "libuv.dll.lib"),
+            os.path.join(libuv_build_path, "libuv.lib"))
+        shutil.copy(
+            os.path.join(libuv_build_path, "libuv.dll"),
+            "libuv.dll")
+    else:
+        check_call(["ninja", "-C", libuv_build_path, "libuv.a"])
 
-    #
     print("Now you can run: python setup.py compile")
 
 def rule_git_clone(url, dst, branch='master'):
@@ -187,13 +201,13 @@ def compile_lever(args):
     elif system == "Windows":
         zlib_abs = os.path.abspath("local/zlib")
         if os.path.exists(zlib_abs):
-            insert_to_env("DEPENDENCY_LIBRARY_PATH", zlib_abs)
-            insert_to_env("DEPENDENCY_INCLUDE_PATH", zlib_abs)
+            insert_to_env("LIB", zlib_abs)
+            insert_to_env("INCLUDE", zlib_abs)
 
         libuv_abs = os.path.abspath("local/libuv")
         if os.path.exists(libuv_abs):
-            insert_to_env('LIB',     os.path.join(libuv_abs, "out/Release"))
-            insert_to_env('LIB',     os.path.join(libuv_abs, "out/Debug"))
+            insert_to_env('LIB',     os.path.join(libuv_abs, "out", "Release"))
+            #insert_to_env('LIB',     os.path.join(libuv_abs, "out", "Debug"))
             insert_to_env('INCLUDE', os.path.join(libuv_abs, "include"))
 
         windows_build_dependencies()
@@ -240,7 +254,6 @@ def insert_to_env(name, path, separator=os.pathsep):
         os.environ[name] = path + separator + value
 
 # The 'libuv_is_local' here is a bit of a mess.
-# 
 def linux_build_depedencies(libuv_is_local):
     devnull = open(os.devnull, 'w')
     for cmd in command_depends:
@@ -262,18 +275,12 @@ def linux_build_depedencies(libuv_is_local):
 # automates it. Maybe some day...
 def windows_build_dependencies():
     if not os.path.exists(pypy_src_dir):
+        print("Downloading the PyPy SRC")
+        print("Note that building from source for windows isn't frequent, hitches may occur.")
         url = urlopen(pypy_src_url + '.zip')
         zipfile = ZipFile(StringIO(url.read()))
         zipfile.extractall()
-        print("Note that building from source for windows isn't frequent.")
 
-    #if os.path.exists("local/include"):
-    #    stdint_msvc2008_path = "local/include/stdint-msvc2008.h"
-    #    if not os.path.exists(stdint_msvc2008_path):
-    #        print("stdint-msvc2008.h missing, downloading it.") 
-    #        url = urlopen("https://raw.githubusercontent.com/libuv/libuv/v1.x/include/stdint-msvc2008.h")
-    #        with open(stdint_msvc2008_path, 'wb') as fd:
-    #            fd.write(url.read())
 
 compile_lib_desc = """This command compiles the scripts in the lib/
 
@@ -336,7 +343,6 @@ def linux_download_and_extract(target, archive):
         if len(glob.glob(target + '.tar.bz2')) == 0:
             check_call(['wget', archive])
         check_call(["tar", "-xf", target + '.tar.bz2'])
-
 
 def win32_dist(args):
     """
