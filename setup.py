@@ -133,7 +133,7 @@ def build_local(args):
         if system == 'Windows':
             os.environ["GYP_MSVS_VERSION"] = "auto"
             check_call(["python", os.path.join(libuv_path, "gyp_uv.py"), "-f", "ninja",
-                "-Dtarget_arch=ia32", "-Duv_library=shared_library"])]
+                "-Dtarget_arch=ia32", "-Duv_library=shared_library"])
         else:
             check_call(["python", os.path.join(libuv_path, "gyp_uv.py"), "-f", "ninja"])
     

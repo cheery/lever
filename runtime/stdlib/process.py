@@ -137,19 +137,19 @@ def Spawn_init(options):
                 flavor='raw', zero=True)
             for i in range(c_options.c_stdio_count):
                 if e.contents[i] == null:
-                    c_options.c_stdio[i].c_flags = rffi.cast(rffi.UINT, uv.IGNORE)
+                    c_options.c_stdio[i].c_flags = rffi.cast(uv.stdio_flags, uv.IGNORE)
                     continue
                 o = cast(e.contents[i], Dict, u".stdio[i]")
                 set_stdio(c_options.c_stdio[i], o)
         name = String(u"uid")
         if options.contains(name):
             n = cast(options.getitem(name), Integer, u".uid") 
-            c_options.c_uid = rffi.cast(rffi.UINT, n.value)
+            c_options.c_uid = rffi.cast(uv.id_t, n.value)
             flags |= uv.PROCESS_SETUID
         name = String(u"gid")
         if options.contains(name):
             n = cast(options.getitem(name), Integer, u".gid") 
-            c_options.c_gid = rffi.cast(rffi.UINT, n.value)
+            c_options.c_gid = rffi.cast(uv.id_t, n.value)
             flags |= uv.PROCESS_SETGID
         name = String(u"windows_verbatim_arguments")
         if options.contains(name):
@@ -213,7 +213,7 @@ def set_stdio(stdio, obj):
         uv.set_stdio_stream(stdio,
             cast(fd_obj,
                 uv_stream.Stream, u".stdio[i].fd").stream)
-    stdio.c_flags = rffi.cast(rffi.UINT, c_flags)
+    stdio.c_flags = rffi.cast(uv.stdio_flags, c_flags)
 
 def _on_exit_(process, status, signal):
     ec = core.get_ec()

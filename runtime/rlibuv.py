@@ -28,8 +28,13 @@ def envPaths(name):
     val = os.getenv(name)
     return [] if val is None else val.split(':')
 
+if sys.platform == "win32":
+    libuv_libname = "libuv"
+else:
+    libuv_libname = "uv"
+
 eci = ExternalCompilationInfo(
-    includes = ["uv.h"], libraries = ["uv"],
+    includes = ["uv.h", "fcntl.h"], libraries = [libuv_libname],
     include_dirs=envPaths("DEPENDENCY_INCLUDE_PATH"),
     library_dirs=envPaths("DEPENDENCY_LIBRARY_PATH"))
 
@@ -232,18 +237,20 @@ class CConfig:
     #IN6ADDR_LOOPBACK_INIT = rffi_platform.ConstantInteger("IN6ADDR_LOOPBACK_INIT")
     AI_NUMERICSERV = rffi_platform.ConstantInteger("AI_NUMERICSERV")
     AI_CANONNAME = rffi_platform.ConstantInteger("AI_CANONNAME")
-    AI_IDN = rffi_platform.ConstantInteger("AI_IDN")
-    AI_CANONIDN = rffi_platform.ConstantInteger("AI_CANONIDN")
-    AI_IDN_ALLOW_UNASSIGNED = rffi_platform.ConstantInteger("AI_IDN_ALLOW_UNASSIGNED")
-    AI_IDN_USE_STD3_ASCII_RULES = rffi_platform.ConstantInteger("AI_IDN_USE_STD3_ASCII_RULES")
     NI_NAMEREQD = rffi_platform.ConstantInteger("NI_NAMEREQD")
     NI_DGRAM = rffi_platform.ConstantInteger("NI_DGRAM")
     NI_NOFQDN = rffi_platform.ConstantInteger("NI_NOFQDN")
     NI_NUMERICHOST = rffi_platform.ConstantInteger("NI_NUMERICHOST")
     NI_NUMERICSERV = rffi_platform.ConstantInteger("NI_NUMERICSERV")
-    NI_IDN = rffi_platform.ConstantInteger("NI_IDN")
-    NI_IDN_ALLOW_UNASSIGNED = rffi_platform.ConstantInteger("NI_IDN_ALLOW_UNASSIGNED")
-    NI_IDN_USE_STD3_ASCII_RULES = rffi_platform.ConstantInteger("NI_IDN_USE_STD3_ASCII_RULES")
+
+    # TODO: decide what to do for these (more below).
+    #NI_IDN = rffi_platform.ConstantInteger("NI_IDN")
+    #NI_IDN_ALLOW_UNASSIGNED = rffi_platform.ConstantInteger("NI_IDN_ALLOW_UNASSIGNED")
+    #NI_IDN_USE_STD3_ASCII_RULES = rffi_platform.ConstantInteger("NI_IDN_USE_STD3_ASCII_RULES")
+    #AI_IDN = rffi_platform.ConstantInteger("AI_IDN")
+    #AI_CANONIDN = rffi_platform.ConstantInteger("AI_CANONIDN")
+    #AI_IDN_ALLOW_UNASSIGNED = rffi_platform.ConstantInteger("AI_IDN_ALLOW_UNASSIGNED")
+    #AI_IDN_USE_STD3_ASCII_RULES = rffi_platform.ConstantInteger("AI_IDN_USE_STD3_ASCII_RULES")
 
     INET6_ADDRSTRLEN = rffi_platform.ConstantInteger("INET6_ADDRSTRLEN")
 
@@ -294,23 +301,25 @@ net_constants = {
 #    u"IN6ADDR_LOOPBACK_INIT": cConfig["IN6ADDR_LOOPBACK_INIT"],
     u"AI_NUMERICSERV": cConfig["AI_NUMERICSERV"],
     u"AI_CANONNAME": cConfig["AI_CANONNAME"],
-    u"AI_IDN": cConfig["AI_IDN"],
-    u"AI_CANONIDN": cConfig["AI_CANONIDN"],
-    u"AI_IDN_ALLOW_UNASSIGNED": cConfig["AI_IDN_ALLOW_UNASSIGNED"],
-    u"AI_IDN_USE_STD3_ASCII_RULES": cConfig["AI_IDN_USE_STD3_ASCII_RULES"],
     u"NI_NAMEREQD": cConfig["NI_NAMEREQD"],
     u"NI_DGRAM": cConfig["NI_DGRAM"],
     u"NI_NOFQDN": cConfig["NI_NOFQDN"],
     u"NI_NUMERICHOST": cConfig["NI_NUMERICHOST"],
     u"NI_NUMERICSERV": cConfig["NI_NUMERICSERV"],
-    u"NI_IDN": cConfig["NI_IDN"],
-    u"NI_IDN_ALLOW_UNASSIGNED": cConfig["NI_IDN_ALLOW_UNASSIGNED"],
-    u"NI_IDN_USE_STD3_ASCII_RULES": cConfig["NI_IDN_USE_STD3_ASCII_RULES"],
     u"UDP_IPV6ONLY": 1,
     u"UDP_PARTIAL": 2,
     u"UDP_REUSEADDR": 4,
     u"UDP_LEAVE_GROUP": 0,
     u"UDP_JOIN_GROUP": 1,
+
+    # TODO: decide what to do for these.
+    #u"AI_IDN": cConfig["AI_IDN"],
+    #u"AI_CANONIDN": cConfig["AI_CANONIDN"],
+    #u"AI_IDN_ALLOW_UNASSIGNED": cConfig["AI_IDN_ALLOW_UNASSIGNED"],
+    #u"AI_IDN_USE_STD3_ASCII_RULES": cConfig["AI_IDN_USE_STD3_ASCII_RULES"],
+    #u"NI_IDN": cConfig["NI_IDN"],
+    #u"NI_IDN_ALLOW_UNASSIGNED": cConfig["NI_IDN_ALLOW_UNASSIGNED"],
+    #u"NI_IDN_USE_STD3_ASCII_RULES": cConfig["NI_IDN_USE_STD3_ASCII_RULES"],
 }
 
 INET6_ADDRSTRLEN = cConfig['INET6_ADDRSTRLEN']
@@ -422,11 +431,15 @@ if sys.platform != "win32":
 #        ("base", rffi.CCHARP),
 #        ("size", rffi.SIZE_T))
     os_sock_t = rffi.INT
-else:
+    stdio_flags = rffi.UINT
+    id_t        = rffi.UINT
+else: # on windows:
 #    buf_t = lltype.Struct("uv_buf_t",
 #        ("size", rffi.SIZE_T), # or ULONG
 #        ("base", rffi.CCHARP))
     os_sock_t = rffi.VOIDP
+    stdio_flags = rffi.INT
+    id_t        = rffi.UCHAR       
 
 sockaddr = cConfig["sockaddr"]
 sockaddr_ptr = lltype.Ptr(sockaddr)
