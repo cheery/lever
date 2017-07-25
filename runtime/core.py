@@ -210,6 +210,11 @@ def new_greenlet(cont):
         unwinder = None
     except space.Unwinder as unwinder:
         argv = []
+    except Exception as exc:
+        msg = "SystemError: greenlet raised " + str(exc)
+        argv = []
+        unwinder = space.unwind(space.LError(msg.decode('utf-8')))
+
     assert self == ec.current
     parent = self.parent
     while parent and parent.handle.is_empty():

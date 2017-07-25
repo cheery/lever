@@ -474,6 +474,10 @@ def interpret(pc, block, frame):
     except space.Unwinder as unwinder:
         unwinder.traceback.contents.append(TraceEntry(rffi.r_long(pc), unit.sources, frame.sourcemap, unit.path))
         raise
+    except OverflowError as oe: # TODO: make/use actual error classes for these.
+        raise space.unwind(space.LError(u"Overflow error"))
+    except ValueError as ve: # TODO: make/use actual error classes for these.
+        raise space.unwind(space.LError(u"Value error"))
     except StackOverflow as overflow:
         raise space.unwind(space.LError(
             u"maximum recursion depth exceeded"))

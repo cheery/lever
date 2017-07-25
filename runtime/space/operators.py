@@ -4,6 +4,7 @@ from interface import Object, Interface, null, cast
 from customobject import Id
 from multimethod import Multimethod
 from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean
+from rpython.rlib.rarithmetic import LONG_BIT, ovfcheck
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rlib.rfloat import copysign
 from rpython.rtyper.lltypesystem import rffi
@@ -74,11 +75,44 @@ or_  = arithmetic_multimethod(u'|',   (lambda a, b: a | b))
 mod  = arithmetic_multimethod(u'%',   (lambda a, b: a % b))
 and_ = arithmetic_multimethod(u'&',   (lambda a, b: a & b))
 xor  = arithmetic_multimethod(u'^',   (lambda a, b: a ^ b))
-shl  = arithmetic_multimethod(u'<<',  (lambda a, b: a << b))
-shr  = arithmetic_multimethod(u'>>',  (lambda a, b: a >> b))
 min_ = arithmetic_multimethod(u'min', (lambda a, b: min(a, b)), flo=True)
 max_ = arithmetic_multimethod(u'max', (lambda a, b: max(a, b)), flo=True)
 # min default and max default redefined below.
+
+shl = by_symbol[u'<<'] = Multimethod(2)
+coerce_by_default(shl)
+
+shr = by_symbol[u'>>'] = Multimethod(2)
+coerce_by_default(shr)
+
+@shl.multimethod_s(Integer, Integer)
+def int_shl(a, b):
+    a_v = a.value
+    b_v = b.value
+    if b_v < LONG_BIT: # 0 <= b < LONG_BIT
+        c = ovfcheck(a_v << b_v)
+        return Integer(c)
+    if b_v < 0:
+        raise space.unwind(space.LError(u"negative shift count"))
+    # b_v >= LONG_BIT
+    if a_v == 0:
+        return a
+    raise OverflowError
+
+@shr.multimethod_s(Integer, Integer)
+def int_shr(a, b):
+    a_v = a.value
+    b_v = b.value
+    if b_v >= LONG_BIT: # not (0 <= b < LONG_BIT)
+        if b_v < 0:
+            raise space.unwind(space.LError(u"negative shift count"))
+        # b >= LONG_BIT
+        if a_v == 0:
+            return a
+        a_v = -1 if a_v < 0 else 0
+    else:
+        a_v = a_v >> b_v
+    return Integer(a_v)
 
 @mod.multimethod_s(Float, Float)
 def float_mod(a, b):
