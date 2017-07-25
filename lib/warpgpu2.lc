@@ -36,6 +36,18 @@ class GPU extends vulkan.Device
             self.pipeline_cache, pipeline.config)
         pipeline.id = pipeline.pipeline.id
 
+    createPipelines = (self, pipelines):
+        g_configs = []
+        for pipeline in pipelines
+            assert isinstance(pipeline, GraphicsPipeline), "TODO: other pipeline objects"
+            g_configs.append(pipeline.config)
+        g_pipelines = self.createGraphicsPipelines(
+            self.pipeline_cache, g_configs)
+
+        for i in range(pipelines.length)
+            pipelines[i].pipeline = g_pipelines[i]
+            pipelines[i].id = pipelines[i].pipeline.id
+
     update = (self, changes):
         if not isinstance(changes, list)
             changes = [changes]
