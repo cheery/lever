@@ -1,4 +1,6 @@
-from math import sqrt, sin, cos, tan, pi, acos, asin, atan, atan2, pow as powf, exp, log, e
+from math import sqrt, sin, cos, tan, pi, acos, asin, atan, atan2, pow as powf, exp, log, e, frexp, ldexp
+from rpython.rlib.rfloat import INFINITY, NAN, DBL_MIN, DBL_MAX, DBL_EPSILON
+from rpython.rtyper.lltypesystem import rffi
 from rpython.rlib.rrandom import Random
 from rpython.rlib.rarithmetic import r_uint, r_ulonglong
 from space import *
@@ -609,6 +611,27 @@ def projection_matrix(fovy, aspect, znear, zfar):
         0.0,      0.0,  (2*zfar*znear) / zd, 0.0
     ])
 
+@Builtin
+@signature(Float)
+def frexp_(a):
+    mantissa, exponent = frexp(a.number)
+    return List([Float(mantissa), Integer(rffi.r_long(exponent))])
+
+@Builtin
+@signature(Float, Integer)
+def ldexp_(mantissa, exponent):
+    return Float(ldexp(mantissa.number, int(exponent.value)))
+
+# This may not be a good approach to incrementing a float an epsilon ahead.
+@Builtin
+@signature(Float)
+def next_increment(a):
+    mantissa, exponent = frexp(a.number)
+    if mantissa == 0.0:
+        return Float(DBL_MIN)
+    mantissa += DBL_EPSILON / 2.0
+    return Float(ldexp(mantissa, exponent))
+
 by_symbol = {
     u"vec3": Vec3.interface,
     u"quat": Quat.interface,
@@ -634,6 +657,9 @@ by_symbol = {
     u"pi":        Float(pi),
     u"tau":       Float(pi*2),
     u"projection_matrix": projection_matrix,
+    u"ldexp": ldexp_,
+    u"frexp": frexp_,
+    u"next_increment": next_increment,
     u"abs":       abs_,
     u"sign":      sign,
     u"pow":       pow_,
@@ -641,4 +667,9 @@ by_symbol = {
     u"log":       log_,
     u"ln":        ln,
     u"e":         Float(e),
+    u'inf': Float(INFINITY),
+    u'nan': Float(NAN),
+    u'dbl_min': Float(DBL_MIN),
+    u'dbl_max': Float(DBL_MAX),
+    u'dbl_epsilon': Float(DBL_EPSILON),
 }
