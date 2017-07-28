@@ -525,8 +525,8 @@ def acos_(f):
 
 @Builtin
 @signature(Float)
-def atan_(f):
-    return Float(atan(f.number))
+def atan_(x):
+    return Float(atan(x.number))
 
 @Builtin
 @signature(Float, Float)
@@ -592,8 +592,6 @@ def sign(f):
         return Float(+1.0)
     else:
         return Float(0.0)
-
-#acos, asin, atan, atan2
 
 @Builtin
 @signature(Object, Object, Object, Object)
@@ -662,6 +660,10 @@ by_symbol = {
     u"next_increment": next_increment,
     u"abs":       abs_,
     u"sign":      sign,
+    u"acos":      acos_,
+    u"asin":      asin_,
+    u"atan":      atan_,
+    u"atan2":     atan2_,
     u"pow":       pow_,
     u"exp":       exp_,
     u"log":       log_,

@@ -1,37 +1,485 @@
-from ffi import automem
-import api, ffi, platform
+import api, base, ffi, font, fs, json, png, sdl, vulkan
+from warpgpu2 import *
 
-if platform.name == "win32"
-    sdl2_libname = "SDL2.dll"
-else
-    sdl2_libname = "libSDL2.so"
-sdl = ffi.library(sdl2_libname, api.read_file("libSDL2", {}))
+# This is an upcoming sample program / tutorial in the leverlanguage.com
+#
+# If you read and understand what is going on, I would hope
+# you will reply and help me abstract this code into units
+# that are:
+#  * Flexible, not limiting the usecases of Vulkan.
+#  * Incrementally easier to use and layered, where outmost
+#    abstractions require little or no experience for using them.
+#  * Not unnecessarily standing as obstacles for optimizing
+#    the code.
+#  * Reloadable/Restartable either whole or in increments,
+#    allowing screen resize, resource updates, live
+#    modifications to the renderer.
 
 main = ():
-    assert sdl.Init(sdl.INIT_VIDEO) == 0
-        "SDL Init failed"
-    win = null
-    ren = null
-    try
-        win = sdl.CreateWindow("Hello", 0, 0, 640, 480, sdl.WINDOW_SHOWN)
-        assert win
-            "SDL CreateWindow failed"
+    # The window system integration interacts with the
+    # Instance & Device initialization a lot.
 
-        ren = sdl.CreateRenderer(win, -1,
-            sdl.RENDERER_ACCELERATED | sdl.RENDERER_PRESENTVSYNC)
-        assert ren
-            "SDL CreateRenderer failed"
+    # Because of the way SDL is structured, you cannot provide
+    # the parameters for the Vulkan instance until you have
+    # created at least one window.
+    window = sdl.Window(name, {
+        width = 512
+        height = 512
+    })
 
-        event = automem(sdl.Event)
+    # In future the windowing library may provide parameters
+    # that let you initialize the Vulkan instance before we
+    # have to create a window to draw into.
+
+    # This 'GPU' instance may retrieve any number of
+    # 'sidekicks' that are initialized along the way.
+
+    # By default it initializes...
+    #  * one device
+    #  * one graphics+compute queue
+    #  * one command pool for that queue
+    #  * one pipeline cache for the device.
+    gpu = GPU(window.wsi)
+
+    # The WSI sidekick has created a surface for the window,
+    # This function creates a swapchain. The swapchain
+    # consists of bunch of images and a mechanism to
+    # synchronize them with the windowing system that is
+    # being used.
+    swapchain = create_swapchain(gpu, window.wsi)
+
+    # The GPUMemory objects represent heaps for various
+    # purposes. The allocation routines they use are
+    # designed such that they may be
+    # reused for individual buffers when necessary.
+
+    # Several heaps created for various purposes:
+    device_only = GPUMemory(gpu, device_flags)
+    readback    = GPUMemory(gpu, readback_flags)
+    upload      = GPUMemory(gpu, upload_flags)
+
+    # The GPU sidekicks may also produce heaps for special
+    # purposes, including cross-process sharing.
+
+    # This programming language supports a style of
+    # programming where we create a persistent object into a
+    # live-programming environment. This is that object.
+    app = object()
+
+    # The C FFI API is used for communicating the layout
+    # used by the vertex structures we have. It is
+    # completely configurable, and can be made to support
+    # all of the data types Vulkan provides.
+    R32G32B32_SFLOAT = VulkanType("R32G32B32_SFLOAT", ffi.array(ffi.float, 3))
+
+    # The structure, binding point, vertex feedrate and
+    # shader locations are compactly and readably listed in these structures:
+    vertex_struct = ffi.struct([
+        ["pos",   R32G32B32_SFLOAT],
+        ["coord", R32G32B32_SFLOAT],
+        ["color", R32G32B32_SFLOAT] ])
+    vxb0 = VertexBinding(0, vertex_struct, "VERTEX")
+
+    vertex_layout_line = VertexLayout("LINE_LIST", {
+        0: vxb0.pos
+        1: vxb0.coord
+        2: vxb0.color
+    })
+
+    vertex_layout_tri = VertexLayout("TRIANGLE_LIST", {
+        0: vxb0.pos
+        1: vxb0.coord
+        2: vxb0.color
+    })
+
+    # The data is streamed in using these buffers, they are
+    # annotated with some meta-data to make it easier to
+    # work with them.
+    vbo = object();
+        max_vertices = 1024
+        size = max_vertices * ffi.sizeof(vertex_struct)
+        buffer = upload.createBuffer(size, "VERTEX_BUFFER_BIT")
+        data = buffer.mem.map(vertex_struct) # This will be eventually bounds-checked.
+        vertex_count = 0
+    app.vbo = vbo
+
+    tri_vbo = object();
+        max_vertices = 10 * 1024 * 1024
+        struct_size = ffi.sizeof(vertex_struct)
+        size = max_vertices * ffi.sizeof(vertex_struct)
+        buffer = upload.createBuffer(size, "VERTEX_BUFFER_BIT")
+        data = buffer.mem.map(vertex_struct)
+        print("triangle vbo size", size, "actual", buffer.mem.chunk.size)
+        print("vertex struct size", ffi.sizeof(vertex_struct))
+        vertex_count = 0
+    app.tri_vbo = tri_vbo
+
+    # The uniform buffer objects are objects too.
+    # But right now we are not needing them.
+
+    # ubo = object();
+    #     size = 2 * 4 * 4 * ffi.sizeof(ffi.float)
+    #     buffer = upload.createBuffer(size, "UNIFORM_BUFFER_BIT")
+    #     data = buffer.mem.map(ffi.float)
+    #     stuff = [
+    #         1.0, 0.0, 0.0, 0.0,
+    #         0.0, 1.0, 0.0, 0.0,
+    #         0.0, 0.0, 1.0, 0.0,
+    #         0.0, 0.0, 0.0, 1.0,
+
+    #         1.0, 0.0, 0.0, 0.0,
+    #         0.0, 1.0, 0.0, 0.0,
+    #         0.0, 0.0, 1.0, 0.0,
+    #        -1.0,-1.0, 0.0, 1.0 ]
+    #     for i in range(stuff.length)
+    #         data[i] = stuff[i]
+    #     buffer.mem.unmap()
+
+    # The command buffer allocation is still primitive.
+    cbuf = gpu.queue.pool.allocate({
+        level = "PRIMARY",
+        commandBufferCount = 1})[0]
+
+    # The descriptor set layouts provide the means to feed
+    # textures, buffers and uniform constants into the rasterizing.
+    #
+    # The descriptor set layout communicates the layout to
+    # the pipeline, it is a dual concept for the vertex
+    # layout.
+
+    # DSC0 = DescriptorSetLayout(gpu, {
+    #     # "screen": {
+    #     #     binding=0,
+    #     #     descriptorType = "UNIFORM_BUFFER",
+    #     #     stageFlags="VERTEX_BIT"
+    #     # },
+    #     # "texSampler": {
+    #     #     binding = 1,
+    #     #     descriptorType = "COMBINED_IMAGE_SAMPLER",
+    #     #     stageFlags = "FRAGMENT_BIT"
+    #     # },
+    # })
+
+    # The layout can be instantiated just like that and
+    # filled up. The call implicitly created a descriptor
+    # pool for the allocation, so this is potentially
+    # inefficient.
+
+    # dsc0 = DSC0()
+
+    # The descriptor sets are treated as 'lazily' updated.
+    # You fill them up like this, and later you use the
+    # .update -command to have the GPU update their state.
+
+    # dsc0.screen = {
+    #     buffer = ubo.buffer
+    #     offset = 0
+    #     range = -1 # ubo.buffer.size
+    # }
+    # dsc0.texSampler = {
+    #     imageLayout = "SHADER_READ_ONLY_OPTIMAL"
+    #     imageView = sprites.view
+    #     sampler = sprites.sampler
+    # }
+    # gpu.update(dsc0)
+
+    # Finally you have pipeline layouts that combine the
+    # descriptor set layouts and push constant range layouts
+    # into together.
+    pipeline_layout = vulkan.PipelineLayout(gpu, {
+        flags = 0
+        setLayouts = [] # DSC0
+        pushConstantRanges = []})
+
+    # Build-up of a render pass is a complex and involving
+    # procedure. To make it more tractable you have a lot
+    # of help in this RenderPassBuilder to do it.
+
+    pb = RenderPassBuilder()
+
+    # The attachments are indexed in the order where they
+    # are created. Each of them gets an unique name you can
+    # use to refer on them.
+    pb.attachment('color0',
+        format = swapchain.config.format,
+        samples = swapchain.config.samples,
+        loadOp = "CLEAR",
+        storeOp = "STORE",
+        initialLayout = 0, # UNDEFINED
+        finalLayout = "PRESENT_SRC_KHR")
+    pb.attachment('depth_stencil0',
+        format = "D24_UNORM_S8_UINT",
+        samples = swapchain.config.samples,
+        loadOp = "CLEAR",
+        stencilLoadOp = "CLEAR")
+
+    # The subpasses are treated as same.
+    pb.subpass("p0", "GRAPHICS", 
+        colorAttachments = [
+            pb.color0("COLOR_ATTACHMENT_OPTIMAL")
+        ],
+        depthStencilAttachment = pb.depth_stencil0("DEPTH_STENCIL_ATTACHMENT_OPTIMAL"))
+
+    # The render pass should also get subpass dependencies
+    # passed into it here. There is no automation on
+    # handling them present.
+
+    # The attachments describe a depth stencil image
+    # although we are not using it right now. (The
+    # validation layer moans about this one)
+
+    # If you use a depth buffer, you allocate it like this,
+    # with an image view.
+    depth_stencil = vulkan.Image(gpu, {
+        imageType = "2D"
+        format = "D24_UNORM_S8_UINT"
+        extent = {
+            width = swapchain.rect.width
+            height = swapchain.rect.height
+            depth = 1
+        }
+        mipLevels = 1
+        arrayLayers = 1
+        samples = swapchain.config.samples
+        tiling = "OPTIMAL"
+        usage = ["DEPTH_STENCIL_ATTACHMENT_BIT"]
+        sharingMode = "EXCLUSIVE"
+        initialLayout = "UNDEFINED"
+    })
+    depth_stencil_data = device_only.alloc(depth_stencil)
+    depth_stencil_view = vulkan.ImageView(gpu, {
+        image = depth_stencil
+        viewType = "2D"
+        format = "D24_UNORM_S8_UINT"
+        components = {r = "R", g = "G", b = "B", a = "A"}
+        subresourceRange = {
+            aspectMask = ["DEPTH_BIT", "STENCIL_BIT"]
+            layerCount = 1
+            levelCount = 1
+        }
+    })
+
+    # Here the pass is finally built, the rectangle
+    # describing dimensions of the swapchain is passed, so
+    # that it doesn't need to be passed during pipeline and
+    # framebuffer creation, it is optional here though.
+    pass = pb.build(gpu, swapchain.rect)
+
+    # The rendering target is described here. You define the
+    # images, framebuffers, views, etc. to be used during
+    # the rendering.
+    target = object()
+    target.swapchain = swapchain
+    target.images = swapchain.getImages()
+    target.views = []
+    target.framebuffers = []
+    for image in target.images
+        view = vulkan.ImageView(gpu, {
+            image = image
+            viewType = "2D"
+            format = swapchain.config.format
+            components = {r = "R", g = "G", b = "B", a = "A"}
+            subresourceRange = swapchain.subresource_range
+        })
+        target.views.append(view)
+        framebuffer = pass.Framebuffer({
+            color0 = view,
+            depth_stencil0 = depth_stencil_view})
+        target.framebuffers.append(framebuffer)
+
+    # The shader loader keeps a cache from the shaders that
+    # have been loaded, so that the same shader is not
+    # loaded twice.
+    shaders = ShaderLoader(gpu, dir ++ "glsl")
+
+    # These passes are different by the vertex feed rate
+    # they use. We potentially may want to re-asses how
+    # these are created later.
+    
+    # These are also lazily 'set' objects, their creation
+    # occurs in the 'gpu.createPipelines' below.
+    tri_pipeline = pass.p0(
+        shaders.fetch({
+            vertex = "main.vert.spv:main"
+            fragment = "main.frag.spv:main"
+        }),
+        pipeline_layout,
+        vertex_layout_tri)
+
+    pipeline = pass.p0(
+        shaders.fetch({
+            vertex = "main.vert.spv:main"
+            fragment = "main.frag.spv:main"
+        }),
+        pipeline_layout,
+        vertex_layout_line)
+        #,
+        #{
+        #    # colorBlendState = {
+        #    #     attachments = [{
+        #    #         blendEnable = true
+        #    #         srcColorBlendFactor = "ONE"
+        #    #         dstColorBlendFactor = "ONE"
+        #    #         colorBlendOp = "SUBTRACT"
+
+        #    #         srcAlphaBlendFactor = "ONE"
+        #    #         dstAlphaBlendFactor = "ONE"
+        #    #         alphaBlendOp = "SUBTRACT"
+
+        #    #         colorWriteMask = ["R_BIT", "G_BIT", "B_BIT", "A_BIT"]
+        #    #     }]
+        #    # }
+        #    # depthStencilState = {
+        #    #     stencilTestEnable = true
+        #    #     front = {
+        #    #         reference  = 0
+        #    #         #compareMask = dynamic
+        #    #         compareOp = "NOT_EQUAL"
+        #    #         failOp = "INCREMENT_AND_WRAP"
+        #    #         #passOp = "KEEP"
+        #    #         #depthFailOp = "KEEP"
+        #    #         #writeMask = dynamic
+        #    #     }
+        #    #     back = {
+        #    #         reference  = 0
+        #    #         #compareMask = dynamic
+        #    #         compareOp = "NOT_EQUAL"
+        #    #         failOp = "DECREMENT_AND_WRAP"
+        #    #         #passOp = "KEEP"
+        #    #         #depthFailOp = "KEEP"
+        #    #         #writeMask = dynamic
+        #    #     }
+        #    # }
+        #    # dynamicState = {
+        #    #     dynamicStates = [
+        #    #         "STENCIL_COMPARE_MASK",
+        #    #         "STENCIL_WRITE_MASK"
+        #    #     ]
+        #    # }
+        #})
+
+    # This should also eventually accept compute pipelines
+    # be created this way.
+    gpu.createPipelines([pipeline, tri_pipeline])
+
+    # The rendering portal maintains the acquisition and
+    # presentation of images, you call acquire() and later
+    # give it a command buffer that draws the image it will
+    # present.
+    portal = Portal(gpu, target)
+
+    app.background_color = [0.5, 0.5, 0.5, 1.0]
+    app.render = ():
+        if not portal.acquire().SUCCESS
+            return
+        # The command buffer usage is mostly unabstracted.
+        # It is hard to come up with functionality that
+        # would properly convey all this information
+        # otherwise.
         
-        running = true
-        while running
-            while sdl.PollEvent(event) != 0
-                if event.type == sdl.QUIT
-                    running = false
-    finally
-        if ren
-            sdl.DestroyRenderer(ren)
-        if win
-            sdl.DestroyWindow(win)
-        sdl.Quit()
+        # Also the command buffer creation is one of the few
+        # things that often end up on a critical path like this.
+        cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
+        cbuf.beginRenderPass({
+            renderPass = pass
+            framebuffer = portal.framebuffer
+            renderArea = swapchain.rect.area
+            clearValues = [
+                {color = {float32 = app.background_color}},
+                # {color = {float32 = [0,0,0,0]}},
+                {depthStencil = {depth=1.0, stencil=0}}
+            ]},
+            "INLINE")
+
+        # Binding each pipeline with associated vertex
+        # buffers, then issuing the specific draw for them.
+        cbuf.bindPipeline("GRAPHICS", tri_pipeline)
+        cbuf.bindVertexBuffers(0, [tri_vbo.buffer], [0])
+        cbuf.draw(tri_vbo.vertex_count, 1, 0, 0)
+
+        cbuf.bindPipeline("GRAPHICS", pipeline)
+        #cbuf.bindDescriptorSets("GRAPHICS", pipeline_layout, 0,
+        #    [], []) # dsc0
+        cbuf.bindVertexBuffers(0, [vbo.buffer], [0])
+        # cbuf.setStencilCompareMask("FRONT_AND_BACK", 0)
+        # cbuf.setStencilWriteMask("FRONT_AND_BACK", 0xFF)
+        # cbuf.draw(vbo.vertex_count, 1, 0, 0)
+        # cbuf.setStencilCompareMask("FRONT_AND_BACK", 0xFF)
+        # cbuf.setStencilWriteMask("FRONT_AND_BACK", 0)
+        cbuf.draw(vbo.vertex_count, 1, 0, 0)
+
+        # That's it, this renders the scene.
+        cbuf.endRenderPass()
+        cbuf.end()
+        portal.present([cbuf])
+
+    # Stub.
+    app.update = (dt):
+        null
+
+    # The persistent object is provided to the live-edit
+    # scope, which starts loading plugins at this point when
+    # everything they need has been initialized.
+    live_edit_scope(app, true)
+
+    # The above command is mostly asynchronous, so the loop
+    # is immediately started. It is maintaining an
+    # update+render loop.
+    now = was = time()
+    game_step = 1 / 60
+    event = ffi.automem(sdl.sdl.Event)
+    running = true
+    while running
+        now = time()
+        if now - was > game_step
+            app.update(game_step)
+            was += ((now - was) // game_step) * game_step
+            app.render()
+        for event in sdl.poll()
+            if event.type == sdl.sdl.QUIT
+                running = false
+            # if event.type == sdl.sdl.MOUSEBUTTONDOWN
+            #     ndx = event.button.x / window.width
+            #     ndy = 1.0 - event.button.y / window.height
+            #     clicks.append(object();
+            #         t = 1.5
+            #         x = ndx * 2
+            #         y = ndy * 2)
+        sleep(0.001)
+
+    # All the resources are released at once, and in order,
+    # here. In practical use the allocation/deallocation
+    # needs a bit more finesse than present here.
+    gpu.destroy()
+
+# This thing implements the live editing scope right now. It
+# will be dropped into an individual module later on.
+
+# You can see from here how the reloader works and uses the
+# ulitilities provided by my standard libraries.
+live_edit_scope = (env, live_editing, keep_alive=false):
+    reloading = true
+    do_reload = ():
+        try
+            env.scope = ModuleScope(dir ++ "app", %"import".scope)
+            env.scope.base_module = Module("middle", base)
+            env.scope.base_module.app = env
+            env.plugin_import = Import(env.scope.local, env.scope)
+            env.code = env.plugin_import("code")
+            init = env.code.?init
+            if init
+                init()
+        finally
+            reloading := false
+    schedule(do_reload)
+    watch_edits = ():
+        watcher = fs.watch(env.scope.local)
+        watcher.ref = keep_alive
+        for event in watcher
+            s = str(event.path)
+            if s.endswith(".lc") and not s.startswith(".")
+                if not reloading
+                    reloading := true
+                    sleep(0.2, do_reload)
+    schedule(watch_edits) if live_editing
+    return env

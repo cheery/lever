@@ -1,0 +1,573 @@
+import fs
+
+# This code was translated from the following url:
+# https://github.com/pyalot/js-font-triangulate
+
+# The only extension done so far is the composite glyph handling.
+
+# The parsing with this library may be a little slow in a desktop
+# environment. It'll be a good subject to benchmarks later on.
+
+# For now this library is going to be kept clean from the renderer
+# specific code.
+
+# Also, the triangulator is separate unit that can be found from the
+# lib/polygon.lc
+
+### useful specifications
+#   https://developer.apple.com/fonts/TTRefMan/RM06/Chap6.html
+#   http://scripts.sil.org/cms/scripts/page.php?item_id=IWS-Chapter08
+
+read_file = (font_file):
+    buffer = fs.read_file(font_file, "b")
+    return TTF(buffer)
+
+class TTF
+    +init = (self, buffer):
+        self.buffer = buffer
+        self.stream = BufferStream(buffer)
+
+        type = self.stream.uint()
+        if type == 0x00010000
+            self.type = 'truetype'
+        elif type == 0x4f54544f
+            self.type = 'opentype'
+        else
+            self.type = 'UNKNOWN'
+
+        table_count = self.stream.ushort()
+        self.stream.seek(12)
+        self.tables = object()
+        self.not_used = []
+
+        for i in range(table_count)
+            name = self.stream.string(4)
+            checkSum = self.stream.uint()
+            offset = self.stream.uint()
+            length = self.stream.uint()
+            cls = getattr_or(tableTypes, name)
+            if cls
+                table = cls(self.stream.stream(offset), self.tables)
+                setattr(self.tables, name, table)
+            else
+                self.not_used.append(name)
+ 
+        self.tables.loca.parse()
+        self.tables.glyf.parse()
+        self.tables.cmap.parse()
+        if self.tables.?hhea
+            self.tables.hmtx.parse()
+        if self.tables.?vhea
+            self.tables.vmtx.parse()
+
+    chars = (self):
+        return self.tables.cmap.chars
+
+    getGlyph = (self, char):
+        return self.tables.cmap.char2glyph[char]
+
+tableTypes = object();
+    class head
+        +init = (self, stream):
+            self.stream = stream
+            self.version = stream.fixed1616()
+            self.revision = stream.fixed1616()
+            checkSumAdjustment = stream.uint()
+            magic = stream.uint()
+            if magic != 0x5f0f3cf5
+                raise Error("ttf magic did not match")
+            self.flags = stream.ushort()
+            self.unitsPerEm = stream.ushort()
+
+            self.created = stream.ulong()
+            self.modified = stream.ulong()
+
+            self.xmin = stream.short() / self.unitsPerEm
+            self.ymin = stream.short() / self.unitsPerEm
+            self.ymax = stream.short() / self.unitsPerEm
+            self.ymax = stream.short() / self.unitsPerEm
+
+            self.style = stream.ushort()
+            self.smallestReadablePixelSize = stream.ushort()
+            self.directionHint = stream.short()
+            self.locaFormat = stream.short()
+            self.glyphFormat = stream.short()
+
+            if self.glyphFormat != 0
+                raise Error('Unknown Glyph Format')
+
+    class glyf
+        +init = (self, stream, tables):
+            self.stream = stream
+            self.tables = tables
+
+        parse = (self):
+            self.glyphs = []
+            for offset in self.tables.loca.offsets
+                self.glyphs.append(Glyph(self.tables, self.stream.streamRel(offset)))
+    
+    class loca
+        +init = (self, stream, tables):
+            self.stream = stream
+            self.tables = tables
+
+        parse = (self):
+            if self.tables.head.locaFormat == 0
+                self.offsets = []
+                for i in range(0, self.tables.maxp.numGlyfs - 1)
+                    self.offsets.append(self.stream.ushort()*2)
+            else
+                self.offsets = self.stream.uints(self.tables.maxp.numGlyfs-2)
+
+    class maxp
+        +init = (self, stream):
+            self.stream = stream
+            version = stream.uint()
+            if version != 0x00010000
+                raise Error('Unknown Maxp version')
+            self.numGlyfs = stream.ushort()
+
+    class cmap
+        +init = (self, stream, tables):
+            self.stream = stream
+            self.tables = tables
+            version = self.stream.ushort()
+            if version != 0
+                raise Error('cmap invalid version: ' ++ version.to_string())
+
+            tableCount = self.stream.ushort()
+            found = false
+            for i in range(tableCount)
+                platformId = self.stream.ushort()
+                encodingId = self.stream.ushort()
+                offset = self.stream.uint()
+                if platformId == 3 and encodingId == 1
+                    found = true
+                    break
+            if found 
+                self.stream.seek(offset)
+                version = self.stream.ushort()
+                if version != 4
+                    raise Error('Invalid cmap version: ' ++ version.to_string())
+            else
+                raise Error('No cmap table found for windows/unicode')
+ 
+        parse = (self):
+            length = self.stream.ushort()
+            language = self.stream.ushort()
+            segCount = self.stream.ushort()/2
+            searchRange = self.stream.ushort()
+            entrySelector = self.stream.ushort()
+            rangeShift = self.stream.ushort()
+            endCodes = self.stream.ushorts(segCount)
+            if endCodes[endCodes.length-1] != 0xffff
+                raise Error('Invalid end code table')
+            reservedPad = self.stream.ushort()
+            if reservedPad != 0
+                raise Error('reservedPad was not 0')
+            startCodes = self.stream.ushorts(segCount)
+            idDeltas = self.stream.ushorts(segCount)
+            idOffsetsAddress = self.stream.get_pos()
+            idOffsets = self.stream.ushorts(segCount)
+ 
+            self.char2glyph = {}
+            self.chars = []
+            segmentIdx = 0
+            for startCode in startCodes
+                idDelta = idDeltas[segmentIdx]
+                endCode = endCodes[segmentIdx]
+                offset = idOffsets[segmentIdx]
+
+                if endCode == 0xffff
+                    break
+
+                for charCode  in range(startCode, endCode+1)
+                    if offset == 0
+                        glyphIdx = (charCode + idDelta) % 65536
+                    else
+                        idOffset = offset + (charCode-startCode)*2 + idOffsetsAddress + segmentIdx*2
+                        glyphIdx = self.stream.seek(idOffset).ushort()
+ 
+                    char = chr(charCode)
+                    if self.tables.glyf.glyphs.length > glyphIdx
+                        glyph = self.tables.glyf.glyphs[glyphIdx]
+                        self.chars.append(char)
+                        self.char2glyph[char] = glyph
+                segmentIdx += 1
+
+    class hhea
+        +init = (self, stream):
+            self.stream = stream
+
+            version = self.stream.uint()
+            if version != 0x00010000
+                raise Error('Wrong HHEA version: ' ++ version.to_string())
+            self.ascent = self.stream.short()
+            self.descent = self.stream.short()
+            self.lineGap = self.stream.short()
+            self.advanceWidthMax = self.stream.ushort()
+            self.minLeftSideBearing = self.stream.short()
+            self.minRightSideBearing = self.stream.short()
+            self.xMaxExtent = self.stream.short()
+            self.carretSlopeRise = self.stream.short()
+            self.carretSlopeRun = self.stream.short()
+            self.carretOffset = self.stream.short()
+            reserved = self.stream.shorts(4)
+            dataFormat = self.stream.short()
+            if dataFormat != 0
+                raise Error('Wrong HHEA metric data format')
+            self.metricCount = self.stream.ushort()
+     
+    class hmtx
+        +init = (self, stream, tables):
+            self.stream = stream
+            self.tables = tables
+
+        parse = (self):
+            self.metrics = []
+            for i in range(self.tables.hhea.metricCount)
+                self.metrics.append(advance = self.stream.ushort(), bearing=self.stream.short())
+            #TODO handle monospace
+ 
+    class vhea
+        +init = (self, stream):
+            version = self.stream.uint()
+            if version != 0x00010000
+                raise Error('Wrong HHEA version: ' ++ version.to_string())
+            self.ascent = self.stream.short()
+            self.descent = self.stream.short()
+            self.lineGap = self.stream.short()
+            self.minTopSideBearing = self.stream.short()
+            self.minBottomSideBearing = self.stream.short()
+            self.yMaxExtent = self.stream.short()
+            self.carretSlopeRise = self.stream.short()
+            self.carretSlopeRun = self.stream.short()
+            self.carretOffset = self.stream.short()
+            reserved = self.stream.shorts(4)
+            dataFormat = self.stream.short()
+            if dataFormat != 0
+                raise Error('Wrong HHEA metric data format')
+            self.metricCount = self.stream.ushort()
+            print("metricCount =", self.metricCount)
+    
+    class vmtx
+        +init = (self, stream, tables):
+            self.stream = stream
+            self.tables = tables
+
+        parse = (self):
+            self.metrics = []
+            for i in range(self.tables.hhea.metricCount)
+                self.metrics.append(advance = self.stream.ushort(), bearing=self.stream.short())
+            #TODO handle monospace
+            
+    
+    class kern
+        +init = (self, stream):
+            self.stream = stream
+            version = self.stream.uint()
+            if version == 0x00010000
+                numTables = self.stream.uint()
+            else
+                self.stream.seek(0)
+                version = self.stream.ushort()
+                numTables = self.stream.ushort()
+                if version != 0
+                    raise Error('incompatible kern format')
+
+class Glyph
+    +init = (self, tables, stream):
+        self.tables = tables
+        self.stream = stream
+        self.unitsPerEm = self.tables.head.unitsPerEm
+
+        contourCount = self.stream.short()
+        self.xmin = self.stream.short()/self.unitsPerEm
+        self.ymin = self.stream.short()/self.unitsPerEm
+        self.xmax = self.stream.short()/self.unitsPerEm
+        self.ymax = self.stream.short()/self.unitsPerEm
+
+        self.width = self.xmax - self.xmin
+        self.height = self.ymax - self.ymin
+        self.centerX = (self.xmax + self.xmin)/2
+        self.centerY = (self.ymax + self.ymin)/2
+
+        if contourCount == -1 #compound glyph
+            self.type = 'compound'
+            self.compounds = []
+            flags = 0x0020
+            while flags & 0x0020 != 0
+                flags = self.stream.ushort()
+                compound = object()
+                compound.glyphIndex = self.stream.ushort()
+                    
+                if flags & 0x0001 != 0 # ARG_1_AND_2_ARE_WORDS
+                    if flags & 0x0002 != 0 # SIGNED
+                        x = self.stream.short()
+                        y = self.stream.short()
+                    else
+                        x = self.stream.ushort()
+                        y = self.stream.ushort()
+                else
+                    x = self.stream.byte()
+                    y = self.stream.byte()
+                    if flags & 0x0002 != 0 # SIGNED
+                        x = sign_extend(x, 8)
+                        y = sign_extend(y, 8)
+                compound.x = x / self.unitsPerEm
+                compound.y = y / self.unitsPerEm
+
+                if flags & 0x0008 != 0 # WE_HAVE_A_SCALE
+                    scale = self.stream.f2dot14()
+                    compound.matrix = [scale, 0, 0, scale]
+                elif flags & 0x0040 != 0 # WE_HAVE_AN_X_AND_Y_SCALE
+                    xscale = self.stream.f2dot14()
+                    yscale = self.stream.f2dot14()
+                    compound.matrix = [xscale, 0, 0, yscale]
+                elif flags & 0x0080 != 0 # WE_HAVE_A_TWO_BY_TWO
+                    xscale  = self.stream.f2dot14()
+                    scale01 = self.stream.f2dot14()
+                    scale10 = self.stream.f2dot14()
+                    yscale  = self.stream.f2dot14()
+                    compound.matrix = [xscale, scale01, scale10, yscale]
+                else
+                    compound.matrix = [1, 0, 0, 1]
+                # Umm.. hmm....
+                #if flags & 0x0200 != 0 # USE_MY_METRICS
+                #    print('USE_MY_METRIC')
+                # There are some other parts of the structure I didn't study here.
+                self.compounds.append(compound)
+            if flags & 0x0100 != 0 # WE_HAVE_INSTRUCTIONS
+                instructionCount = self.stream.ushort()
+                self.compounds = []
+                self.contours = [] # wtf
+                return
+
+            self.contours = []
+            return
+
+        self.type = 'contours'
+
+        self.contourEndPoints = self.stream.ushorts(contourCount)
+
+        instructionCount = self.stream.ushort()
+        if instructionCount > 1024*4 #no idea what's wrong here, data after this is garbage
+            print('Malformed Font, instructionCount too large: ' + instructionCount.to_string())
+            self.contours = []
+            return
+
+        self.instructions = self.stream.bytes(instructionCount)
+        if self.contourEndPoints.length > 0
+            self.coordinatesCount = self.contourEndPoints[self.contourEndPoints.length - 1]
+        else
+            self.coordinatesCount = 0
+        self.flags = []
+        while self.flags.length <= self.coordinatesCount
+            flag = self.stream.byte()
+            self.flags.append(flag)
+            if (flag & 1<<3) > 0
+                repeat = self.stream.byte()
+                for _ in range(repeat)
+                    self.flags.append(flag)
+
+        self.coords = []
+        for flag in self.flags
+            self.coords.append(onCurve=(flag & 1<<0) > 0)
+
+        self.addCoords(1, 4, 'x')
+        self.addCoords(2, 5, 'y')
+
+        self.readPath()
+    
+    addCoords = (self, isByteBit, sameBit, name):
+        value = 0
+        i = 0
+        for flag in self.flags
+            same = (flag & 1<<sameBit)>0
+            if (flag & 1<<isByteBit)>0
+                if same
+                    value += self.stream.byte()
+                else
+                    value -= self.stream.byte()
+            elif not same
+                value += self.stream.short()
+            setattr(self.coords[i], name, value/self.unitsPerEm)
+            i += 1
+        return
+
+    readPath = (self):
+        self.contours = []
+        contours = []
+
+        start = 0
+        for end in self.contourEndPoints
+            coords = self.coords[start .: end+1]
+            while coords[0].onCurve == false and coords[1].onCurve == true
+                coords.append(coords.pop(0))
+            contours.append(coords)
+            start = end+1
+
+        for coords in contours
+            path = []
+            self.contours.append(path)
+            i = 0
+            while i < coords.length
+                c1 = coords[(i+0)%coords.length]
+                c2 = coords[(i+1)%coords.length]
+                if c1.onCurve
+                    if c2.onCurve
+                        i += 1
+                        path.append(name='line', v0=(x=c1.x, y=c1.y), v1=(x=c2.x, y=c2.y))
+                    else
+                        c3 = coords[(i+2)%coords.length]
+                        if c3.onCurve
+                            i += 2
+                            path.append(name='bezier',
+                                v0=(x=c1.x, y=c1.y),
+                                c0=(x=c2.x, y=c2.y),
+                                v1=(x=c3.x, y=c3.y))
+                        else
+                            i += 1
+                            xm=(c2.x+c3.x)/2
+                            ym=(c2.y+c3.y)/2
+                            path.append(name='bezier',
+                                v0=(x=c1.x, y=c1.y),
+                                c0=(x=c2.x, y=c2.y),
+                                v1=(x=xm, y=ym))
+                else
+                    if c2.onCurve
+                        raise Error('wtf?')
+                    else
+                        c3 = coords[(i+2)%coords.length]
+                        if c3.onCurve
+                            i += 2
+                            xm=(c1.x+c2.x)/2
+                            ym=(c1.y+c2.y)/2
+                            path.append(name='bezier',
+                                v0=(x=xm, y=ym),
+                                c0=(x=c2.x, y=c2.y),
+                                v1=(x=c3.x, y=c3.y))
+                        else
+                            i += 1
+                            xm1=(c1.x+c2.x)/2
+                            ym1=(c1.y+c2.y)/2
+                            xm2=(c2.x+c3.x)/2
+                            ym2=(c2.y+c3.y)/2
+                            path.append(name='bezier',
+                                v0=(x=xm1, y=ym1),
+                                c0=(x=c2.x, y=c2.y),
+                                v1=(x=xm2, y=ym2))
+
+        if self.contours.length == 1 and self.contours[0].length == 0
+            self.contours = []
+
+class BufferStream
+    +init = (self, buffer, pos=0):
+        self.start = pos
+        self.pos   = pos
+        self.buffer = buffer
+
+    ## position modifiers ##
+    get_pos = (self):
+        return self.pos - self.start
+
+    seek = (self, pos):
+        self.pos = self.start + pos
+        return self
+     
+    ## substream constructors ##
+    stream = (self, offset):
+        return BufferStream(self.buffer, offset)
+
+    streamRel = (self, offset):
+        return BufferStream(self.buffer, offset + self.pos)
+ 
+    ## basic data types
+    byte = (self):
+        value = self.buffer[self.pos]
+        self.pos += 1
+        return value
+     
+    char = (self):
+        byte = self.buffer[self.pos]
+        self.pos += 1
+        return chr(byte)
+     
+    short = (self):
+        value = self.buffer[self.pos] << 8 | self.buffer[self.pos+1]
+        self.pos += 2
+        return sign_extend(value, 16)
+
+    ushort = (self):
+        value = self.buffer[self.pos] << 8 | self.buffer[self.pos+1]
+        self.pos += 2
+        return value
+
+    int = (self):
+        value = self.ushort() << 16 | self.ushort()
+        return sign_extend(value, 32)
+
+    uint = (self):
+        value = self.ushort() << 16 | self.ushort()
+        return value
+
+    float = (self):
+        data = self.buffer[self.pos .: self.pos + 4]
+        fdata = ffi.cast(data, ffi.pointer(ffi.float))
+        self.pos += 4
+        return fdata[0]
+
+    ulong = (self):
+        a = self.uint()
+        b = self.uint()
+        return a << 32 + b
+
+    fixed1616 = (self):
+        return self.int() / (1 << 16)
+
+    f2dot14 = (self):
+        x = self.ushort()
+        n = (0xC0000 & x) >> 14
+        return n + (x & 0x3FFF) / 16383.0
+
+    ## array data types ##
+    bytes = (self, count):
+        result = Uint8Array(self.buffer[self.pos .: self.pos + count])
+        self.pos += count
+        return result
+     
+    string = (self, length):
+        #result = decode_utf8( self.buffer[self.pos .: self.pos + length] )
+        out = []
+        for byte in self.buffer[self.pos .: self.pos + length]
+            out.append(chr(byte))
+        self.pos += length
+        return "".join(out)
+     
+    shorts = (self, count):
+        result = []
+        for i in range(count)
+            result.append(self.short())
+        return result
+
+    ushorts = (self, count):
+        result = []
+        for i in range(count)
+            result.append(self.ushort())
+        return result
+
+    ints = (self, count):
+        result = []
+        for i in range(count)
+            result.append(self.int())
+        return result
+
+    uints = (self, count):
+        result = []
+        for i in range(count)
+            result.append(self.uint())
+        return result
+
+sign_extend = (x, bits):
+    m = 1 << bits - 1
+    return (x ^ m) - m
