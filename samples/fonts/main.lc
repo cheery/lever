@@ -41,6 +41,11 @@ main = ():
     #  * one pipeline cache for the device.
     gpu = GPU(window.wsi)
 
+    gpu_prop = gpu.physicalDevice.getProperties()
+
+    sampling = "8_BIT"
+    if sampling not in gpu_prop.limits.framebufferColorSampleCounts
+        sampling = "1_BIT"
     # The WSI sidekick has created a surface for the window,
     # This function creates a swapchain. The swapchain
     # consists of bunch of images and a mechanism to
@@ -65,6 +70,9 @@ main = ():
     # programming where we create a persistent object into a
     # live-programming environment. This is that object.
     app = object()
+    app.metric = window.getDPI()
+    app.width  = 512
+    app.height = 512
 
     # The C FFI API is used for communicating the layout
     # used by the vertex structures we have. It is
@@ -104,7 +112,7 @@ main = ():
     app.vbo = vbo
 
     tri_vbo = object();
-        max_vertices = 10 * 1024 * 1024
+        max_vertices = 1024 * 1024
         struct_size = ffi.sizeof(vertex_struct)
         size = max_vertices * ffi.sizeof(vertex_struct)
         buffer = upload.createBuffer(size, "VERTEX_BUFFER_BIT")
@@ -203,22 +211,33 @@ main = ():
     pb.attachment('color0',
         format = swapchain.config.format,
         samples = swapchain.config.samples,
-        loadOp = "CLEAR",
+        loadOp = "DONT_CARE",
         storeOp = "STORE",
         initialLayout = 0, # UNDEFINED
         finalLayout = "PRESENT_SRC_KHR")
-    pb.attachment('depth_stencil0',
-        format = "D24_UNORM_S8_UINT",
-        samples = swapchain.config.samples,
+    pb.attachment('mcolor0',
+        format = swapchain.config.format,
+        samples = sampling,
         loadOp = "CLEAR",
-        stencilLoadOp = "CLEAR")
+        storeOp = "DONT_CARE", # not needed after resolve.
+        initialLayout = 0,
+        finalLayout = "COLOR_ATTACHMENT_OPTIMAL")
+    
+    #pb.attachment('depth_stencil0',
+    #    format = "D24_UNORM_S8_UINT",
+    #    samples = swapchain.config.samples,
+    #    loadOp = "CLEAR",
+    #    stencilLoadOp = "CLEAR")
 
     # The subpasses are treated as same.
     pb.subpass("p0", "GRAPHICS", 
         colorAttachments = [
-            pb.color0("COLOR_ATTACHMENT_OPTIMAL")
+            pb.mcolor0("COLOR_ATTACHMENT_OPTIMAL")
         ],
-        depthStencilAttachment = pb.depth_stencil0("DEPTH_STENCIL_ATTACHMENT_OPTIMAL"))
+        resolveAttachments = [
+            pb.color0("COLOR_ATTACHMENT_OPTIMAL")
+        ])
+        #depthStencilAttachment = pb.depth_stencil0("DEPTH_STENCIL_ATTACHMENT_OPTIMAL"))
 
     # The render pass should also get subpass dependencies
     # passed into it here. There is no automation on
@@ -228,11 +247,9 @@ main = ():
     # although we are not using it right now. (The
     # validation layer moans about this one)
 
-    # If you use a depth buffer, you allocate it like this,
-    # with an image view.
-    depth_stencil = vulkan.Image(gpu, {
+    multisample_color = vulkan.Image(gpu, {
         imageType = "2D"
-        format = "D24_UNORM_S8_UINT"
+        format = swapchain.config.format
         extent = {
             width = swapchain.rect.width
             height = swapchain.rect.height
@@ -240,30 +257,57 @@ main = ():
         }
         mipLevels = 1
         arrayLayers = 1
-        samples = swapchain.config.samples
+        samples = sampling
         tiling = "OPTIMAL"
-        usage = ["DEPTH_STENCIL_ATTACHMENT_BIT"]
+        usage = ["COLOR_ATTACHMENT_BIT"]
         sharingMode = "EXCLUSIVE"
         initialLayout = "UNDEFINED"
     })
-    depth_stencil_data = device_only.alloc(depth_stencil)
-    depth_stencil_view = vulkan.ImageView(gpu, {
-        image = depth_stencil
+    multisample_color_data = device_only.alloc(multisample_color)
+    multisample_color_view = vulkan.ImageView(gpu, {
+        image = multisample_color
         viewType = "2D"
-        format = "D24_UNORM_S8_UINT"
+        format = swapchain.config.format
         components = {r = "R", g = "G", b = "B", a = "A"}
-        subresourceRange = {
-            aspectMask = ["DEPTH_BIT", "STENCIL_BIT"]
-            layerCount = 1
-            levelCount = 1
-        }
+        subresourceRange = swapchain.subresource_range
     })
+
+    # If you use a depth buffer, you allocate it like this,
+    # with an image view.
+    #depth_stencil = vulkan.Image(gpu, {
+    #    imageType = "2D"
+    #    format = "D24_UNORM_S8_UINT"
+    #    extent = {
+    #        width = swapchain.rect.width
+    #        height = swapchain.rect.height
+    #        depth = 1
+    #    }
+    #    mipLevels = 1
+    #    arrayLayers = 1
+    #    samples = swapchain.config.samples
+    #    tiling = "OPTIMAL"
+    #    usage = ["DEPTH_STENCIL_ATTACHMENT_BIT"]
+    #    sharingMode = "EXCLUSIVE"
+    #    initialLayout = "UNDEFINED"
+    #})
+    #depth_stencil_data = device_only.alloc(depth_stencil)
+    #depth_stencil_view = vulkan.ImageView(gpu, {
+    #    image = depth_stencil
+    #    viewType = "2D"
+    #    format = "D24_UNORM_S8_UINT"
+    #    components = {r = "R", g = "G", b = "B", a = "A"}
+    #    subresourceRange = {
+    #        aspectMask = ["DEPTH_BIT", "STENCIL_BIT"]
+    #        layerCount = 1
+    #        levelCount = 1
+    #    }
+    #})
 
     # Here the pass is finally built, the rectangle
     # describing dimensions of the swapchain is passed, so
     # that it doesn't need to be passed during pipeline and
     # framebuffer creation, it is optional here though.
-    pass = pb.build(gpu, swapchain.rect)
+    pass = pb.build(gpu, swapchain.rect, sampling)
 
     # The rendering target is described here. You define the
     # images, framebuffers, views, etc. to be used during
@@ -283,8 +327,10 @@ main = ():
         })
         target.views.append(view)
         framebuffer = pass.Framebuffer({
-            color0 = view,
-            depth_stencil0 = depth_stencil_view})
+            color0 = view
+            mcolor0 = multisample_color_view
+        })
+            #depth_stencil0 = depth_stencil_view})
         target.framebuffers.append(framebuffer)
 
     # The shader loader keeps a cache from the shaders that
@@ -386,8 +432,9 @@ main = ():
             renderArea = swapchain.rect.area
             clearValues = [
                 {color = {float32 = app.background_color}},
+                {color = {float32 = app.background_color}},
                 # {color = {float32 = [0,0,0,0]}},
-                {depthStencil = {depth=1.0, stencil=0}}
+                #{depthStencil = {depth=1.0, stencil=0}}
             ]},
             "INLINE")
 

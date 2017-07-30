@@ -17,6 +17,7 @@ class Window
     +init = (self, name, options={}):
         init_on_demand(sdl.INIT_VIDEO)
 
+        # TODO: Figure out WINDOW_ALLOW_HIGHDPI
         self.handle = sdl.CreateWindow(name,
             options.get("x", 0x1FFF0000),
             options.get("y", 0x1FFF0000),
@@ -37,6 +38,19 @@ class Window
         self.wsi.destroy()
         sdl.DestroyWindow(self.handle)
         self.handle = null
+
+    getDPI = (self):
+        display_id = sdl.GetWindowDisplayIndex(self.handle)
+        ddpi = ffi.automem(ffi.float)
+        hdpi = ffi.automem(ffi.float)
+        vdpi = ffi.automem(ffi.float)
+        assert sdl.GetDisplayDPI(display_id, ddpi, hdpi, vdpi) == 0
+        return (ddpi = ddpi.to,
+            xdpi = hdpi.to,
+            ydpi = vdpi.to,
+            ddpcm = ddpi.to / 2.54,
+            xdpcm = hdpi.to / 2.54,
+            ydpcm = vdpi.to / 2.54)
 
 class WSI
     +init = (self, window):
@@ -149,7 +163,6 @@ class StereoAudio
         if self.dev
             sdl.CloseAudioDevice(self.dev)
             self.dev = null
-
 
 event = ffi.automem(sdl.Event)
 poll = ():

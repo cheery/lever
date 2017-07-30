@@ -104,7 +104,9 @@ tableTypes = object();
         parse = (self):
             self.glyphs = []
             for offset in self.tables.loca.offsets
-                self.glyphs.append(Glyph(self.tables, self.stream.streamRel(offset)))
+                glyph = Glyph(self.tables, self.stream.streamRel(offset),
+                    self.glyphs.length)
+                self.glyphs.append(glyph)
     
     class loca
         +init = (self, stream, tables):
@@ -276,9 +278,10 @@ tableTypes = object();
                     raise Error('incompatible kern format')
 
 class Glyph
-    +init = (self, tables, stream):
+    +init = (self, tables, stream, index):
         self.tables = tables
         self.stream = stream
+        self.index  = index
         self.unitsPerEm = self.tables.head.unitsPerEm
 
         contourCount = self.stream.short()

@@ -10,26 +10,65 @@ init = ():
 
     app.background_color = [0.1, 0.1, 0.1, 1.0]
     app.vbo.vertex_count = 0
-
-    x = -1.0
-    glyph0 = font.getGlyph("@") # or z
-    glyph1 = font.getGlyph("h")
-    glyph2 = font.getGlyph("=")
-
-    app.vbo.vertex_count = 0
     app.tri_vbo.vertex_count = 0
 
-    #draw_contours(glyph0.contours, -1.0, -0.1, 1.5, [1,1,1])
-    render_glyph(font, glyph0, -0.7, -0.1, 1.5, [0.7, 0.3, 0.3])
-    render_glyph(font, glyph2, -0.1, -0.9, 1.5, [0.3, 0.3, 0.7])
-    render_glyph(font, glyph1, -0.8, -0.8, 1.5, [0.3, 0.7, 0.3])
+    #print(app.metric.xdpi, app.metric.ydpi)
+    #print(app.metric.xdpcm == app.metric.ydpcm)
 
-    for n in range(32, 127)
-        glyph = font.getGlyph(chr(n))
-        n -= 32
-        render_glyph(font, glyph, -1 + 2 * (n % 12 / 12), +0.8 - 0.25 * (n // 12), 0.25)
+    vertices = app.vbo.data
+    head = font.tables.head
+    hhea = font.tables.hhea
 
-    print("tri vertex count", app.tri_vbo.vertex_count)
+    x_height_cm = 0.1
+    x_height = font.getGlyph('x').height
+    
+    #line_height_cm = 0.25
+    #line_height = (hhea.ascent - hhea.descent + hhea.lineGap) / head.unitsPerEm
+
+    scale = (2 / app.height) * app.metric.ydpcm * (x_height_cm / x_height)
+
+    x = -1.0
+    y =  0.9 - hhea.ascent * scale / head.unitsPerEm
+
+    i = app.vbo.vertex_count
+    a = y + hhea.ascent * scale / head.unitsPerEm
+    vertices[i+0] = dict(pos=[ -1, a, 0 ], coord=[0, 0.5, 0], color=[0.8,0.8,0.8])
+    vertices[i+1] = dict(pos=[ +1, a, 0 ], coord=[0, 0.5, 0], color=[0.8,0.8,0.8])
+    app.vbo.vertex_count += 2
+
+    for ch in "Hello, virtual worlds.\nOur short demo is very short\nSo short\nToo short."
+        if ch == "\n"
+            x = -1.0
+            y -= (hhea.ascent - hhea.descent + hhea.lineGap) / head.unitsPerEm * scale
+            continue
+        glyph = font.getGlyph(ch)
+        metric = font.tables.hmtx.metrics[glyph.index]
+        if ch != " "
+            render_glyph(font, glyph, x, y, scale, [1, 1, 1])
+        x += metric.advance / head.unitsPerEm * scale 
+
+    i = app.vbo.vertex_count
+    a = y + hhea.descent * scale / head.unitsPerEm
+    vertices[i+0] = dict(pos=[ -1, a, 0 ], coord=[0, 0.5, 0], color=[0.8,0.8,0.8])
+    vertices[i+1] = dict(pos=[ +1, a, 0 ], coord=[0, 0.5, 0], color=[0.8,0.8,0.8])
+    app.vbo.vertex_count += 2
+
+    #glyph0 = font.getGlyph("@") # or z
+    #glyph1 = font.getGlyph("h")
+    #glyph2 = font.getGlyph("=")
+
+
+    ##draw_contours(glyph0.contours, -1.0, -0.1, 1.5, [1,1,1])
+    #render_glyph(font, glyph0, -0.7, -0.1, 1.5, [0.7, 0.3, 0.3])
+    #render_glyph(font, glyph2, -0.1, -0.9, 1.5, [0.3, 0.3, 0.7])
+    #render_glyph(font, glyph1, -0.8, -0.8, 1.5, [0.3, 0.7, 0.3])
+
+    #for n in range(32, 127)
+    #    glyph = font.getGlyph(chr(n))
+    #    n -= 32
+    #    render_glyph(font, glyph, -1 + 2 * (n % 12 / 12), +0.8 - 0.25 * (n // 12), 0.25)
+
+    #print("tri vertex count", app.tri_vbo.vertex_count)
 
 render_glyph = (font, glyph, x, y, scale, color=[1,1,1]):
     if glyph.type == "compound"

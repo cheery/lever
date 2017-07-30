@@ -131,6 +131,7 @@ create_swapchain = (device, wsi):
     imageFormat = null
     colorSpace = null
     for prop in gpu.listSurfaceFormats(surface)
+        print(prop)
         imageFormat = prop.format
         colorSpace = prop.colorSpace
         break
