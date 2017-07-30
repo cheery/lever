@@ -87,11 +87,11 @@ coerce_by_default(shr)
 
 @shl.multimethod_s(Integer, Integer)
 def int_shl(a, b):
-    a_v = a.value
-    b_v = b.value
+    a_v = int(a.value)
+    b_v = int(b.value)
     if b_v < LONG_BIT: # 0 <= b < LONG_BIT
         c = ovfcheck(a_v << b_v)
-        return Integer(c)
+        return Integer(rffi.r_long(c))
     if b_v < 0:
         raise space.unwind(space.LError(u"negative shift count"))
     # b_v >= LONG_BIT
