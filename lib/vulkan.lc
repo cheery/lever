@@ -66,10 +66,11 @@ vkdecorator = (api, name, desc):
             for argtype in desc["argtypes"]
                 argtypes.append(api.lookup_type(argtype))
             return ffi.cfunc(restype, argtypes)
-    if desc["type"] == "pointer"
-        to = desc["to"]
-        if isinstance(to, dict) and to["type"] == "opaque"
-            return vkhandle(api.build_type(name, desc), name)
+    if desc["type"] == "vulkan_handle"
+        if platform_bits == 32 and not desc["dispatchable"]
+            return vkhandle(ffi.u64, name)
+        else
+            return vkhandle(api.build_type(name, {type="pointer", to={"type":"opaque"}}), name)
     return api.build_type(name, desc)
 
 lib = api.read_file("libvulkan.json", null, vkdecorator)
@@ -89,8 +90,10 @@ checker.store = (value):
 
 if platform.name == "win32"
     vk = ffi.library("vulkan-1.dll", lib)
+    platform_bits = 32
 else
     vk = ffi.library("libvulkan.so.1", lib)
+    platform_bits = 64
 
 
 listInstanceExtensions = (name=null):

@@ -7,14 +7,14 @@
         "ATTACHMENT_UNUSED": -1, 
         "FALSE": 0, 
         "LOD_CLAMP_NONE": 1000.0, 
-        "LUID_SIZE_KHX": 8, 
+        "LUID_SIZE_KHR": 8, 
         "MAX_DESCRIPTION_SIZE": 256, 
         "MAX_DEVICE_GROUP_SIZE_KHX": 32, 
         "MAX_EXTENSION_NAME_SIZE": 256, 
         "MAX_MEMORY_HEAPS": 16, 
         "MAX_MEMORY_TYPES": 32, 
         "MAX_PHYSICAL_DEVICE_NAME_SIZE": 256, 
-        "QUEUE_FAMILY_EXTERNAL_KHX": -2, 
+        "QUEUE_FAMILY_EXTERNAL_KHR": -2, 
         "QUEUE_FAMILY_IGNORED": -1, 
         "REMAINING_ARRAY_LAYERS": -1, 
         "REMAINING_MIP_LEVELS": -1, 
@@ -23,8 +23,6 @@
         "UUID_SIZE": 16, 
         "VK_AMD_DRAW_INDIRECT_COUNT_EXTENSION_NAME": "VK_AMD_draw_indirect_count", 
         "VK_AMD_DRAW_INDIRECT_COUNT_SPEC_VERSION": 1, 
-        "VK_AMD_EXTENSION_133_EXTENSION_NAME": "VK_AMD_extension_133", 
-        "VK_AMD_EXTENSION_133_SPEC_VERSION": 0, 
         "VK_AMD_EXTENSION_134_EXTENSION_NAME": "VK_AMD_extension_134", 
         "VK_AMD_EXTENSION_134_SPEC_VERSION": 0, 
         "VK_AMD_EXTENSION_135_EXTENSION_NAME": "VK_AMD_extension_135", 
@@ -69,8 +67,6 @@
         "VK_AMD_EXTENSION_40_SPEC_VERSION": 0, 
         "VK_AMD_EXTENSION_41_EXTENSION_NAME": "VK_AMD_extension_41", 
         "VK_AMD_EXTENSION_41_SPEC_VERSION": 0, 
-        "VK_AMD_EXTENSION_42_EXTENSION_NAME": "VK_AMD_extension_42", 
-        "VK_AMD_EXTENSION_42_SPEC_VERSION": 0, 
         "VK_AMD_EXTENSION_43_EXTENSION_NAME": "VK_AMD_extension_43", 
         "VK_AMD_EXTENSION_43_SPEC_VERSION": 0, 
         "VK_AMD_EXTENSION_44_EXTENSION_NAME": "VK_AMD_extension_44", 
@@ -85,6 +81,8 @@
         "VK_AMD_GCN_SHADER_SPEC_VERSION": 1, 
         "VK_AMD_GPU_SHADER_HALF_FLOAT_EXTENSION_NAME": "VK_AMD_gpu_shader_half_float", 
         "VK_AMD_GPU_SHADER_HALF_FLOAT_SPEC_VERSION": 1, 
+        "VK_AMD_GPU_SHADER_INT16_EXTENSION_NAME": "VK_AMD_gpu_shader_int16", 
+        "VK_AMD_GPU_SHADER_INT16_SPEC_VERSION": 1, 
         "VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_EXTENSION_NAME": "VK_AMD_negative_viewport_height", 
         "VK_AMD_NEGATIVE_VIEWPORT_HEIGHT_SPEC_VERSION": 1, 
         "VK_AMD_RASTERIZATION_ORDER_EXTENSION_NAME": "VK_AMD_rasterization_order", 
@@ -95,6 +93,8 @@
         "VK_AMD_SHADER_EXPLICIT_VERTEX_PARAMETER_SPEC_VERSION": 1, 
         "VK_AMD_SHADER_TRINARY_MINMAX_EXTENSION_NAME": "VK_AMD_shader_trinary_minmax", 
         "VK_AMD_SHADER_TRINARY_MINMAX_SPEC_VERSION": 1, 
+        "VK_AMD_TEXTURE_GATHER_BIAS_LOD_EXTENSION_NAME": "VK_AMD_texture_gather_bias_lod", 
+        "VK_AMD_TEXTURE_GATHER_BIAS_LOD_SPEC_VERSION": 1, 
         "VK_ANDROID_NATIVE_BUFFER_NAME": "VK_ANDROID_native_buffer", 
         "VK_ANDROID_NATIVE_BUFFER_NUMBER": 11, 
         "VK_ANDROID_NATIVE_BUFFER_SPEC_VERSION": 4, 
@@ -103,12 +103,17 @@
         "VK_ARM_EXTENSION_02_EXTENSION_NAME": "VK_ARM_extension_02", 
         "VK_ARM_EXTENSION_02_SPEC_VERSION": 0, 
         "VK_COLORSPACE_SRGB_NONLINEAR_KHR": 0, 
+        "VK_DEBUG_REPORT_OBJECT_TYPE_DEBUG_REPORT_EXT": 28, 
         "VK_EXT_ACQUIRE_XLIB_DISPLAY_EXTENSION_NAME": "VK_EXT_acquire_xlib_display", 
         "VK_EXT_ACQUIRE_XLIB_DISPLAY_SPEC_VERSION": 1, 
+        "VK_EXT_BLEND_OPERATION_ADVANCED_EXTENSION_NAME": "VK_EXT_blend_operation_advanced", 
+        "VK_EXT_BLEND_OPERATION_ADVANCED_SPEC_VERSION": 2, 
         "VK_EXT_DEBUG_MARKER_EXTENSION_NAME": "VK_EXT_debug_marker", 
         "VK_EXT_DEBUG_MARKER_SPEC_VERSION": 4, 
         "VK_EXT_DEBUG_REPORT_EXTENSION_NAME": "VK_EXT_debug_report", 
-        "VK_EXT_DEBUG_REPORT_SPEC_VERSION": 6, 
+        "VK_EXT_DEBUG_REPORT_SPEC_VERSION": 8, 
+        "VK_EXT_DEPTH_RANGE_UNRESTRICTED_EXTENSION_NAME": "VK_EXT_depth_range_unrestricted", 
+        "VK_EXT_DEPTH_RANGE_UNRESTRICTED_SPEC_VERSION": 1, 
         "VK_EXT_DIRECT_MODE_DISPLAY_EXTENSION_NAME": "VK_EXT_direct_mode_display", 
         "VK_EXT_DIRECT_MODE_DISPLAY_SPEC_VERSION": 1, 
         "VK_EXT_DISCARD_RECTANGLES_EXTENSION_NAME": "VK_EXT_discard_rectangles", 
@@ -117,16 +122,24 @@
         "VK_EXT_DISPLAY_CONTROL_SPEC_VERSION": 1, 
         "VK_EXT_DISPLAY_SURFACE_COUNTER_EXTENSION_NAME": "VK_EXT_display_surface_counter", 
         "VK_EXT_DISPLAY_SURFACE_COUNTER_SPEC_VERSION": 1, 
+        "VK_EXT_EXTENSION_159_EXTENSION_NAME": "VK_EXT_extension_159", 
+        "VK_EXT_EXTENSION_159_SPEC_VERSION": 0, 
+        "VK_EXT_EXTENSION_160_EXTENSION_NAME": "VK_EXT_extension_160", 
+        "VK_EXT_EXTENSION_160_SPEC_VERSION": 0, 
+        "VK_EXT_EXTENSION_161_EXTENSION_NAME": "VK_EXT_extension_161", 
+        "VK_EXT_EXTENSION_161_SPEC_VERSION": 0, 
         "VK_EXT_EXTENSION_28_EXTENSION_NAME": "VK_NV_extension_28", 
         "VK_EXT_EXTENSION_28_SPEC_VERSION": 0, 
         "VK_EXT_HDR_METADATA_EXTENSION_NAME": "VK_EXT_hdr_metadata", 
         "VK_EXT_HDR_METADATA_SPEC_VERSION": 1, 
+        "VK_EXT_SAMPLER_FILTER_MINMAX_EXTENSION_NAME": "VK_EXT_sampler_filter_minmax", 
+        "VK_EXT_SAMPLER_FILTER_MINMAX_SPEC_VERSION": 1, 
         "VK_EXT_SHADER_SUBGROUP_BALLOT_EXTENSION_NAME": "VK_EXT_shader_subgroup_ballot", 
         "VK_EXT_SHADER_SUBGROUP_BALLOT_SPEC_VERSION": 1, 
         "VK_EXT_SHADER_SUBGROUP_VOTE_EXTENSION_NAME": "VK_EXT_shader_subgroup_vote", 
         "VK_EXT_SHADER_SUBGROUP_VOTE_SPEC_VERSION": 1, 
         "VK_EXT_SWAPCHAIN_COLOR_SPACE_EXTENSION_NAME": "VK_EXT_swapchain_colorspace", 
-        "VK_EXT_SWAPCHAIN_COLOR_SPACE_SPEC_VERSION": 2, 
+        "VK_EXT_SWAPCHAIN_COLOR_SPACE_SPEC_VERSION": 3, 
         "VK_EXT_VALIDATION_FLAGS_EXTENSION_NAME": "VK_EXT_validation_flags", 
         "VK_EXT_VALIDATION_FLAGS_SPEC_VERSION": 1, 
         "VK_GOOGLE_DISPLAY_TIMING_EXTENSION_NAME": "VK_GOOGLE_display_timing", 
@@ -151,56 +164,72 @@
         "VK_IMG_FILTER_CUBIC_SPEC_VERSION": 1, 
         "VK_IMG_FORMAT_PVRTC_EXTENSION_NAME": "VK_IMG_format_pvrtc", 
         "VK_IMG_FORMAT_PVRTC_SPEC_VERSION": 1, 
+        "VK_KHR_16BIT_STORAGE_EXTENSION_NAME": "VK_KHR_16bit_storage", 
+        "VK_KHR_16BIT_STORAGE_SPEC_VERSION": 1, 
         "VK_KHR_ANDROID_SURFACE_EXTENSION_NAME": "VK_KHR_android_surface", 
         "VK_KHR_ANDROID_SURFACE_SPEC_VERSION": 6, 
+        "VK_KHR_DEDICATED_ALLOCATION_EXTENSION_NAME": "VK_KHR_dedicated_allocation", 
+        "VK_KHR_DEDICATED_ALLOCATION_SPEC_VERSION": 1, 
         "VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_EXTENSION_NAME": "VK_KHR_descriptor_update_template", 
         "VK_KHR_DESCRIPTOR_UPDATE_TEMPLATE_SPEC_VERSION": 1, 
         "VK_KHR_DISPLAY_EXTENSION_NAME": "VK_KHR_display", 
         "VK_KHR_DISPLAY_SPEC_VERSION": 21, 
         "VK_KHR_DISPLAY_SWAPCHAIN_EXTENSION_NAME": "VK_KHR_display_swapchain", 
         "VK_KHR_DISPLAY_SWAPCHAIN_SPEC_VERSION": 9, 
-        "VK_KHR_EXTENSION_112_EXTENSION_NAME": "VK_KHR_extension_112", 
-        "VK_KHR_EXTENSION_112_SPEC_VERSION": 0, 
-        "VK_KHR_EXTENSION_113_EXTENSION_NAME": "VK_KHR_extension_113", 
-        "VK_KHR_EXTENSION_113_SPEC_VERSION": 0, 
-        "VK_KHR_EXTENSION_114_EXTENSION_NAME": "VK_KHR_extension_114", 
-        "VK_KHR_EXTENSION_114_SPEC_VERSION": 0, 
-        "VK_KHR_EXTENSION_115_EXTENSION_NAME": "VK_KHR_extension_115", 
-        "VK_KHR_EXTENSION_115_SPEC_VERSION": 0, 
-        "VK_KHR_EXTENSION_116_EXTENSION_NAME": "VK_KHR_extension_116", 
-        "VK_KHR_EXTENSION_116_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_117_EXTENSION_NAME": "VK_KHR_extension_117", 
         "VK_KHR_EXTENSION_117_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_118_EXTENSION_NAME": "VK_KHR_extension_118", 
         "VK_KHR_EXTENSION_118_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_119_EXTENSION_NAME": "VK_KHR_extension_119", 
         "VK_KHR_EXTENSION_119_SPEC_VERSION": 0, 
-        "VK_KHR_EXTENSION_120_EXTENSION_NAME": "VK_KHR_extension_120", 
-        "VK_KHR_EXTENSION_120_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_122_EXTENSION_NAME": "VK_KHR_extension_122", 
         "VK_KHR_EXTENSION_122_SPEC_VERSION": 0, 
-        "VK_KHR_EXTENSION_128_EXTENSION_NAME": "VK_KHR_extension_128", 
-        "VK_KHR_EXTENSION_128_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_129_EXTENSION_NAME": "VK_EXT_extension_129", 
         "VK_KHR_EXTENSION_129_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_130_EXTENSION_NAME": "VK_KHR_extension_130", 
         "VK_KHR_EXTENSION_130_SPEC_VERSION": 0, 
-        "VK_KHR_EXTENSION_131_EXTENSION_NAME": "VK_KHR_extension_131", 
-        "VK_KHR_EXTENSION_131_SPEC_VERSION": 0, 
-        "VK_KHR_EXTENSION_132_EXTENSION_NAME": "VK_KHR_extension_132", 
-        "VK_KHR_EXTENSION_132_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_148_EXTENSION_NAME": "VK_EXT_extension_148", 
         "VK_KHR_EXTENSION_148_SPEC_VERSION": 0, 
+        "VK_KHR_EXTENSION_157_EXTENSION_NAME": "VK_KHR_extension_157", 
+        "VK_KHR_EXTENSION_157_SPEC_VERSION": 0, 
+        "VK_KHR_EXTENSION_158_EXTENSION_NAME": "VK_KHR_extension_158", 
+        "VK_KHR_EXTENSION_158_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_82_EXTENSION_NAME": "VK_KHR_extension_82", 
         "VK_KHR_EXTENSION_82_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_83_EXTENSION_NAME": "VK_KHR_extension_83", 
         "VK_KHR_EXTENSION_83_SPEC_VERSION": 0, 
-        "VK_KHR_EXTENSION_84_EXTENSION_NAME": "VK_KHR_extension_84", 
-        "VK_KHR_EXTENSION_84_SPEC_VERSION": 0, 
         "VK_KHR_EXTENSION_94_EXTENSION_NAME": "VK_KHR_extension_94", 
         "VK_KHR_EXTENSION_94_SPEC_VERSION": 0, 
+        "VK_KHR_EXTERNAL_FENCE_CAPABILITIES_EXTENSION_NAME": "VK_KHR_external_fence_capabilities", 
+        "VK_KHR_EXTERNAL_FENCE_CAPABILITIES_SPEC_VERSION": 1, 
+        "VK_KHR_EXTERNAL_FENCE_EXTENSION_NAME": "VK_KHR_external_fence", 
+        "VK_KHR_EXTERNAL_FENCE_FD_EXTENSION_NAME": "VK_KHR_external_fence_fd", 
+        "VK_KHR_EXTERNAL_FENCE_FD_SPEC_VERSION": 1, 
+        "VK_KHR_EXTERNAL_FENCE_SPEC_VERSION": 1, 
+        "VK_KHR_EXTERNAL_FENCE_WIN32_EXTENSION_NAME": "VK_KHR_external_fence_win32", 
+        "VK_KHR_EXTERNAL_FENCE_WIN32_SPEC_VERSION": 1, 
+        "VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME": "VK_KHR_external_memory_capabilities", 
+        "VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_SPEC_VERSION": 1, 
+        "VK_KHR_EXTERNAL_MEMORY_EXTENSION_NAME": "VK_KHR_external_memory", 
+        "VK_KHR_EXTERNAL_MEMORY_FD_EXTENSION_NAME": "VK_KHR_external_memory_fd", 
+        "VK_KHR_EXTERNAL_MEMORY_FD_SPEC_VERSION": 1, 
+        "VK_KHR_EXTERNAL_MEMORY_SPEC_VERSION": 1, 
+        "VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME": "VK_KHR_external_memory_win32", 
+        "VK_KHR_EXTERNAL_MEMORY_WIN32_SPEC_VERSION": 1, 
+        "VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME": "VK_KHR_external_semaphore_capabilities", 
+        "VK_KHR_EXTERNAL_SEMAPHORE_CAPABILITIES_SPEC_VERSION": 1, 
+        "VK_KHR_EXTERNAL_SEMAPHORE_EXTENSION_NAME": "VK_KHR_external_semaphore", 
+        "VK_KHR_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME": "VK_KHR_external_semaphore_fd", 
+        "VK_KHR_EXTERNAL_SEMAPHORE_FD_SPEC_VERSION": 1, 
+        "VK_KHR_EXTERNAL_SEMAPHORE_SPEC_VERSION": 1, 
+        "VK_KHR_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME": "VK_KHR_external_semaphore_win32", 
+        "VK_KHR_EXTERNAL_SEMAPHORE_WIN32_SPEC_VERSION": 1, 
+        "VK_KHR_GET_MEMORY_REQUIREMENTS_2_EXTENSION_NAME": "VK_KHR_get_memory_requirements2", 
+        "VK_KHR_GET_MEMORY_REQUIREMENTS_2_SPEC_VERSION": 1, 
         "VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME": "VK_KHR_get_physical_device_properties2", 
         "VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_SPEC_VERSION": 1, 
+        "VK_KHR_GET_SURFACE_CAPABILITIES_2_EXTENSION_NAME": "VK_KHR_get_surface_capabilities2", 
+        "VK_KHR_GET_SURFACE_CAPABILITIES_2_SPEC_VERSION": 1, 
         "VK_KHR_INCREMENTAL_PRESENT_EXTENSION_NAME": "VK_KHR_incremental_present", 
         "VK_KHR_INCREMENTAL_PRESENT_SPEC_VERSION": 1, 
         "VK_KHR_MAINTENANCE1_EXTENSION_NAME": "VK_KHR_maintenance1", 
@@ -209,54 +238,40 @@
         "VK_KHR_MIR_SURFACE_SPEC_VERSION": 4, 
         "VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME": "VK_KHR_push_descriptor", 
         "VK_KHR_PUSH_DESCRIPTOR_SPEC_VERSION": 1, 
+        "VK_KHR_RELAXED_BLOCK_LAYOUT_EXTENSION_NAME": "VK_KHR_relaxed_block_layout", 
+        "VK_KHR_RELAXED_BLOCK_LAYOUT_SPEC_VERSION": 0, 
         "VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_EXTENSION_NAME": "VK_KHR_sampler_mirror_clamp_to_edge", 
         "VK_KHR_SAMPLER_MIRROR_CLAMP_TO_EDGE_SPEC_VERSION": 1, 
         "VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME": "VK_KHR_shader_draw_parameters", 
         "VK_KHR_SHADER_DRAW_PARAMETERS_SPEC_VERSION": 1, 
+        "VK_KHR_SHARED_PRESENTABLE_IMAGE_EXTENSION_NAME": "VK_KHR_shared_presentable_image", 
+        "VK_KHR_SHARED_PRESENTABLE_IMAGE_SPEC_VERSION": 1, 
+        "VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_EXTENSION_NAME": "VK_KHR_storage_buffer_storage_class", 
+        "VK_KHR_STORAGE_BUFFER_STORAGE_CLASS_SPEC_VERSION": 1, 
         "VK_KHR_SURFACE_EXTENSION_NAME": "VK_KHR_surface", 
         "VK_KHR_SURFACE_SPEC_VERSION": 25, 
         "VK_KHR_SWAPCHAIN_EXTENSION_NAME": "VK_KHR_swapchain", 
         "VK_KHR_SWAPCHAIN_SPEC_VERSION": 68, 
+        "VK_KHR_VARIABLE_POINTERS_EXTENSION_NAME": "VK_KHR_variable_pointers", 
+        "VK_KHR_VARIABLE_POINTERS_SPEC_VERSION": 1, 
         "VK_KHR_WAYLAND_SURFACE_EXTENSION_NAME": "VK_KHR_wayland_surface", 
         "VK_KHR_WAYLAND_SURFACE_SPEC_VERSION": 6, 
+        "VK_KHR_WIN32_KEYED_MUTEX_EXTENSION_NAME": "VK_KHR_win32_keyed_mutex", 
+        "VK_KHR_WIN32_KEYED_MUTEX_SPEC_VERSION": 1, 
         "VK_KHR_WIN32_SURFACE_EXTENSION_NAME": "VK_KHR_win32_surface", 
-        "VK_KHR_WIN32_SURFACE_SPEC_VERSION": 5, 
+        "VK_KHR_WIN32_SURFACE_SPEC_VERSION": 6, 
         "VK_KHR_XCB_SURFACE_EXTENSION_NAME": "VK_KHR_xcb_surface", 
         "VK_KHR_XCB_SURFACE_SPEC_VERSION": 6, 
         "VK_KHR_XLIB_SURFACE_EXTENSION_NAME": "VK_KHR_xlib_surface", 
         "VK_KHR_XLIB_SURFACE_SPEC_VERSION": 6, 
         "VK_KHR_extension_146_EXTENSION_NAME": "VK_KHR_extension_146", 
         "VK_KHR_extension_146_SPEC_VERSION": 0, 
-        "VK_KHR_extension_147_EXTENSION_NAME": "VK_KHR_extension_147", 
-        "VK_KHR_extension_147_SPEC_VERSION": 0, 
-        "VK_KHR_relaxed_block_layout_EXTENSION_NAME": "VK_KHR_relaxed_block_layout", 
-        "VK_KHR_relaxed_block_layout_SPEC_VERSION": 0, 
-        "VK_KHR_variable_pointers_EXTENSION_NAME": "VK_KHR_variable_pointers", 
-        "VK_KHR_variable_pointers_SPEC_VERSION": 0, 
         "VK_KHX_DEVICE_GROUP_CREATION_EXTENSION_NAME": "VK_KHX_device_group_creation", 
         "VK_KHX_DEVICE_GROUP_CREATION_SPEC_VERSION": 1, 
         "VK_KHX_DEVICE_GROUP_EXTENSION_NAME": "VK_KHX_device_group", 
         "VK_KHX_DEVICE_GROUP_SPEC_VERSION": 1, 
-        "VK_KHX_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME": "VK_KHX_external_memory_capabilities", 
-        "VK_KHX_EXTERNAL_MEMORY_CAPABILITIES_SPEC_VERSION": 1, 
-        "VK_KHX_EXTERNAL_MEMORY_EXTENSION_NAME": "VK_KHX_external_memory", 
-        "VK_KHX_EXTERNAL_MEMORY_FD_EXTENSION_NAME": "VK_KHX_external_memory_fd", 
-        "VK_KHX_EXTERNAL_MEMORY_FD_SPEC_VERSION": 1, 
-        "VK_KHX_EXTERNAL_MEMORY_SPEC_VERSION": 1, 
-        "VK_KHX_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME": "VK_KHX_external_memory_win32", 
-        "VK_KHX_EXTERNAL_MEMORY_WIN32_SPEC_VERSION": 1, 
-        "VK_KHX_EXTERNAL_SEMAPHORE_CAPABILITIES_EXTENSION_NAME": "VK_KHX_external_semaphore_capabilities", 
-        "VK_KHX_EXTERNAL_SEMAPHORE_CAPABILITIES_SPEC_VERSION": 1, 
-        "VK_KHX_EXTERNAL_SEMAPHORE_EXTENSION_NAME": "VK_KHX_external_semaphore", 
-        "VK_KHX_EXTERNAL_SEMAPHORE_FD_EXTENSION_NAME": "VK_KHX_external_semaphore_fd", 
-        "VK_KHX_EXTERNAL_SEMAPHORE_FD_SPEC_VERSION": 1, 
-        "VK_KHX_EXTERNAL_SEMAPHORE_SPEC_VERSION": 1, 
-        "VK_KHX_EXTERNAL_SEMAPHORE_WIN32_EXTENSION_NAME": "VK_KHX_external_semaphore_win32", 
-        "VK_KHX_EXTERNAL_SEMAPHORE_WIN32_SPEC_VERSION": 1, 
         "VK_KHX_MULTIVIEW_EXTENSION_NAME": "VK_KHX_multiview", 
         "VK_KHX_MULTIVIEW_SPEC_VERSION": 1, 
-        "VK_KHX_WIN32_KEYED_MUTEX_EXTENSION_NAME": "VK_KHX_win32_keyed_mutex", 
-        "VK_KHX_WIN32_KEYED_MUTEX_SPEC_VERSION": 1, 
         "VK_MESA_EXTENSION_126_EXTENSION_NAME": "VK_MESA_extension_126", 
         "VK_MESA_EXTENSION_126_SPEC_VERSION": 0, 
         "VK_MESA_EXTENSION_127_EXTENSION_NAME": "VK_MESA_extension_127", 
@@ -297,18 +312,14 @@
         "VK_NV_EXTENSION_103_SPEC_VERSION": 0, 
         "VK_NV_EXTENSION_104_EXTENSION_NAME": "VK_NV_extension_104", 
         "VK_NV_EXTENSION_104_SPEC_VERSION": 0, 
-        "VK_NV_EXTENSION_149_EXTENSION_NAME": "VK_NV_extension_149", 
-        "VK_NV_EXTENSION_149_SPEC_VERSION": 0, 
-        "VK_NV_EXTENSION_150_EXTENSION_NAME": "VK_NV_extension_150", 
-        "VK_NV_EXTENSION_150_SPEC_VERSION": 0, 
         "VK_NV_EXTENSION_151_EXTENSION_NAME": "VK_NV_extension_151", 
         "VK_NV_EXTENSION_151_SPEC_VERSION": 0, 
         "VK_NV_EXTENSION_152_EXTENSION_NAME": "VK_NV_extension_152", 
         "VK_NV_EXTENSION_152_SPEC_VERSION": 0, 
-        "VK_NV_EXTENSION_153_EXTENSION_NAME": "VK_NV_extension_153", 
-        "VK_NV_EXTENSION_153_SPEC_VERSION": 0, 
-        "VK_NV_EXTENSION_1_EXTENSION_NAME": "VK_NV_extension_1", 
-        "VK_NV_EXTENSION_1_SPEC_VERSION": 0, 
+        "VK_NV_EXTENSION_155_EXTENSION_NAME": "VK_NV_extension_155", 
+        "VK_NV_EXTENSION_155_SPEC_VERSION": 0, 
+        "VK_NV_EXTENSION_156_EXTENSION_NAME": "VK_NV_extension_156", 
+        "VK_NV_EXTENSION_156_SPEC_VERSION": 0, 
         "VK_NV_EXTENSION_53_EXTENSION_NAME": "VK_NV_extension_53", 
         "VK_NV_EXTENSION_53_SPEC_VERSION": 0, 
         "VK_NV_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME": "VK_NV_external_memory_capabilities", 
@@ -317,6 +328,12 @@
         "VK_NV_EXTERNAL_MEMORY_SPEC_VERSION": 1, 
         "VK_NV_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME": "VK_NV_external_memory_win32", 
         "VK_NV_EXTERNAL_MEMORY_WIN32_SPEC_VERSION": 1, 
+        "VK_NV_FILL_RECTANGLE_EXTENSION_NAME": "VK_NV_fill_rectangle", 
+        "VK_NV_FILL_RECTANGLE_SPEC_VERSION": 1, 
+        "VK_NV_FRAGMENT_COVERAGE_TO_COLOR_EXTENSION_NAME": "VK_NV_fragment_coverage_to_color", 
+        "VK_NV_FRAGMENT_COVERAGE_TO_COLOR_SPEC_VERSION": 1, 
+        "VK_NV_FRAMEBUFFER_MIXED_SAMPLES_EXTENSION_NAME": "VK_NV_framebuffer_mixed_samples", 
+        "VK_NV_FRAMEBUFFER_MIXED_SAMPLES_SPEC_VERSION": 1, 
         "VK_NV_GEOMETRY_SHADER_PASSTHROUGH_EXTENSION_NAME": "VK_NV_geometry_shader_passthrough", 
         "VK_NV_GEOMETRY_SHADER_PASSTHROUGH_SPEC_VERSION": 1, 
         "VK_NV_GLSL_SHADER_EXTENSION_NAME": "VK_NV_glsl_shader", 
@@ -337,6 +354,7 @@
         "AccessFlags": {
             "constants": {
                 "COLOR_ATTACHMENT_READ_BIT": 128, 
+                "COLOR_ATTACHMENT_READ_NONCOHERENT_BIT_EXT": 524288, 
                 "COLOR_ATTACHMENT_WRITE_BIT": 256, 
                 "COMMAND_PROCESS_READ_BIT_NVX": 131072, 
                 "COMMAND_PROCESS_WRITE_BIT_NVX": 262144, 
@@ -871,10 +889,65 @@
         "BlendOp": {
             "constants": {
                 "ADD": 0, 
+                "BLUE_EXT": 1000148045, 
+                "COLORBURN_EXT": 1000148018, 
+                "COLORDODGE_EXT": 1000148017, 
+                "CONTRAST_EXT": 1000148041, 
+                "DARKEN_EXT": 1000148015, 
+                "DIFFERENCE_EXT": 1000148021, 
+                "DST_ATOP_EXT": 1000148010, 
+                "DST_EXT": 1000148002, 
+                "DST_IN_EXT": 1000148006, 
+                "DST_OUT_EXT": 1000148008, 
+                "DST_OVER_EXT": 1000148004, 
+                "EXCLUSION_EXT": 1000148022, 
+                "GREEN_EXT": 1000148044, 
+                "HARDLIGHT_EXT": 1000148019, 
+                "HARDMIX_EXT": 1000148030, 
+                "HSL_COLOR_EXT": 1000148033, 
+                "HSL_HUE_EXT": 1000148031, 
+                "HSL_LUMINOSITY_EXT": 1000148034, 
+                "HSL_SATURATION_EXT": 1000148032, 
+                "INVERT_EXT": 1000148023, 
+                "INVERT_OVG_EXT": 1000148042, 
+                "INVERT_RGB_EXT": 1000148024, 
+                "LIGHTEN_EXT": 1000148016, 
+                "LINEARBURN_EXT": 1000148026, 
+                "LINEARDODGE_EXT": 1000148025, 
+                "LINEARLIGHT_EXT": 1000148028, 
                 "MAX": 4, 
                 "MIN": 3, 
+                "MINUS_CLAMPED_EXT": 1000148040, 
+                "MINUS_EXT": 1000148039, 
+                "MULTIPLY_EXT": 1000148012, 
+                "OVERLAY_EXT": 1000148014, 
+                "PINLIGHT_EXT": 1000148029, 
+                "PLUS_CLAMPED_ALPHA_EXT": 1000148037, 
+                "PLUS_CLAMPED_EXT": 1000148036, 
+                "PLUS_DARKER_EXT": 1000148038, 
+                "PLUS_EXT": 1000148035, 
+                "RED_EXT": 1000148043, 
                 "REVERSE_SUBTRACT": 2, 
-                "SUBTRACT": 1
+                "SCREEN_EXT": 1000148013, 
+                "SOFTLIGHT_EXT": 1000148020, 
+                "SRC_ATOP_EXT": 1000148009, 
+                "SRC_EXT": 1000148001, 
+                "SRC_IN_EXT": 1000148005, 
+                "SRC_OUT_EXT": 1000148007, 
+                "SRC_OVER_EXT": 1000148003, 
+                "SUBTRACT": 1, 
+                "VIVIDLIGHT_EXT": 1000148027, 
+                "XOR_EXT": 1000148011, 
+                "ZERO_EXT": 1000148000
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
+        }, 
+        "BlendOverlapEXT": {
+            "constants": {
+                "CONJOINT_EXT": 2, 
+                "DISJOINT_EXT": 1, 
+                "UNCORRELATED_EXT": 0
             }, 
             "ctype": "i32", 
             "type": "enum"
@@ -892,11 +965,8 @@
             "type": "enum"
         }, 
         "Buffer": {
-            "to": {
-                "name": "Buffer", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "BufferCopy": {
             "aliases": {}, 
@@ -1061,6 +1131,31 @@
             ], 
             "type": "struct"
         }, 
+        "BufferMemoryRequirementsInfo2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "BUFFER_MEMORY_REQUIREMENTS_INFO_2_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "buffer", 
+                    "Buffer"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "BufferUsageFlags": {
             "constants": {
                 "INDEX_BUFFER_BIT": 64, 
@@ -1077,11 +1172,8 @@
             "type": "bitmask"
         }, 
         "BufferView": {
-            "to": {
-                "name": "BufferView", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "BufferViewCreateFlags": "i32", 
         "BufferViewCreateInfo": {
@@ -1347,6 +1439,7 @@
                 "DISPLAY_P3_NONLINEAR_EXT": 1000104001, 
                 "DOLBYVISION_EXT": 1000104009, 
                 "EXTENDED_SRGB_LINEAR_EXT": 1000104002, 
+                "EXTENDED_SRGB_NONLINEAR_EXT": 1000104014, 
                 "HDR10_HLG_EXT": 1000104010, 
                 "HDR10_ST2084_EXT": 1000104008, 
                 "PASS_THROUGH_EXT": 1000104013, 
@@ -1356,11 +1449,8 @@
             "type": "enum"
         }, 
         "CommandBuffer": {
-            "to": {
-                "name": "CommandBuffer", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": true, 
+            "type": "vulkan_handle"
         }, 
         "CommandBufferAllocateInfo": {
             "aliases": {}, 
@@ -1499,11 +1589,8 @@
             "type": "bitmask"
         }, 
         "CommandPool": {
-            "to": {
-                "name": "CommandPool", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "CommandPoolCreateFlags": {
             "constants": {
@@ -1701,6 +1788,16 @@
             ], 
             "type": "struct"
         }, 
+        "CoverageModulationModeNV": {
+            "constants": {
+                "ALPHA_NV": 2, 
+                "NONE_NV": 0, 
+                "RGBA_NV": 3, 
+                "RGB_NV": 1
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
+        }, 
         "CullModeFlags": {
             "constants": {
                 "BACK_BIT": 2, 
@@ -1711,7 +1808,7 @@
             "ctype": "i32", 
             "type": "bitmask"
         }, 
-        "D3D12FenceSubmitInfoKHX": {
+        "D3D12FenceSubmitInfoKHR": {
             "aliases": {}, 
             "autoarrays": {
                 "signalSemaphoreValues": [
@@ -1724,7 +1821,7 @@
                 ]
             }, 
             "defaults": {
-                "sType": "D3D12_FENCE_SUBMIT_INFO_KHX"
+                "sType": "D3D12_FENCE_SUBMIT_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -1927,19 +2024,8 @@
             "type": "struct"
         }, 
         "DebugReportCallbackEXT": {
-            "to": {
-                "name": "DebugReportCallbackEXT", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
-        }, 
-        "DebugReportErrorEXT": {
-            "constants": {
-                "CALLBACK_REF_EXT": 1, 
-                "NONE_EXT": 0
-            }, 
-            "ctype": "i32", 
-            "type": "enum"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "DebugReportFlagsEXT": {
             "constants": {
@@ -1958,7 +2044,7 @@
                 "BUFFER_VIEW_EXT": 13, 
                 "COMMAND_BUFFER_EXT": 6, 
                 "COMMAND_POOL_EXT": 25, 
-                "DEBUG_REPORT_EXT": 28, 
+                "DEBUG_REPORT_CALLBACK_EXT_EXT": 28, 
                 "DESCRIPTOR_POOL_EXT": 22, 
                 "DESCRIPTOR_SET_EXT": 23, 
                 "DESCRIPTOR_SET_LAYOUT_EXT": 20, 
@@ -2121,11 +2207,8 @@
             "type": "struct"
         }, 
         "DescriptorPool": {
-            "to": {
-                "name": "DescriptorPool", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "DescriptorPoolCreateFlags": {
             "constants": {
@@ -2197,11 +2280,8 @@
             "type": "struct"
         }, 
         "DescriptorSet": {
-            "to": {
-                "name": "DescriptorSet", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "DescriptorSetAllocateInfo": {
             "aliases": {}, 
@@ -2245,11 +2325,8 @@
             "type": "struct"
         }, 
         "DescriptorSetLayout": {
-            "to": {
-                "name": "DescriptorSetLayout", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "DescriptorSetLayoutBinding": {
             "aliases": {}, 
@@ -2447,11 +2524,8 @@
             "type": "struct"
         }, 
         "DescriptorUpdateTemplateKHR": {
-            "to": {
-                "name": "DescriptorUpdateTemplateKHR", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "DescriptorUpdateTemplateTypeKHR": {
             "constants": {
@@ -2462,11 +2536,8 @@
             "type": "enum"
         }, 
         "Device": {
-            "to": {
-                "name": "Device", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": true, 
+            "type": "vulkan_handle"
         }, 
         "DeviceCreateFlags": "i32", 
         "DeviceCreateInfo": {
@@ -2962,11 +3033,8 @@
             "type": "struct"
         }, 
         "DeviceMemory": {
-            "to": {
-                "name": "DeviceMemory", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "DeviceQueueCreateFlags": "i32", 
         "DeviceQueueCreateInfo": {
@@ -3075,11 +3143,8 @@
             "type": "enum"
         }, 
         "DisplayKHR": {
-            "to": {
-                "name": "DisplayKHR", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "DisplayModeCreateFlagsKHR": "i32", 
         "DisplayModeCreateInfoKHR": {
@@ -3112,11 +3177,8 @@
             "type": "struct"
         }, 
         "DisplayModeKHR": {
-            "to": {
-                "name": "DisplayModeKHR", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "DisplayModeParametersKHR": {
             "aliases": {}, 
@@ -3450,11 +3512,8 @@
             "type": "enum"
         }, 
         "Event": {
-            "to": {
-                "name": "Event", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "EventCreateFlags": "i32", 
         "EventCreateInfo": {
@@ -3482,11 +3541,11 @@
             ], 
             "type": "struct"
         }, 
-        "ExportMemoryAllocateInfoKHX": {
+        "ExportFenceCreateInfoKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "EXPORT_MEMORY_ALLOCATE_INFO_KHX"
+                "sType": "EXPORT_FENCE_CREATE_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -3502,7 +3561,70 @@
                 ], 
                 [
                     "handleTypes", 
-                    "ExternalMemoryHandleTypeFlagsKHX"
+                    "ExternalFenceHandleTypeFlagsKHR"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExportFenceWin32HandleInfoKHR": {
+            "aliases": {
+                "attributes": "pAttributes"
+            }, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXPORT_FENCE_WIN32_HANDLE_INFO_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "pAttributes", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "dwAccess", 
+                    "u32"
+                ], 
+                [
+                    "name", 
+                    "void*"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExportMemoryAllocateInfoKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXPORT_MEMORY_ALLOCATE_INFO_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleTypes", 
+                    "ExternalMemoryHandleTypeFlagsKHR"
                 ]
             ], 
             "type": "struct"
@@ -3532,13 +3654,13 @@
             ], 
             "type": "struct"
         }, 
-        "ExportMemoryWin32HandleInfoKHX": {
+        "ExportMemoryWin32HandleInfoKHR": {
             "aliases": {
                 "attributes": "pAttributes"
             }, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "EXPORT_MEMORY_WIN32_HANDLE_INFO_KHX"
+                "sType": "EXPORT_MEMORY_WIN32_HANDLE_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -3604,11 +3726,11 @@
             ], 
             "type": "struct"
         }, 
-        "ExportSemaphoreCreateInfoKHX": {
+        "ExportSemaphoreCreateInfoKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "EXPORT_SEMAPHORE_CREATE_INFO_KHX"
+                "sType": "EXPORT_SEMAPHORE_CREATE_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -3624,18 +3746,18 @@
                 ], 
                 [
                     "handleTypes", 
-                    "ExternalSemaphoreHandleTypeFlagsKHX"
+                    "ExternalSemaphoreHandleTypeFlagsKHR"
                 ]
             ], 
             "type": "struct"
         }, 
-        "ExportSemaphoreWin32HandleInfoKHX": {
+        "ExportSemaphoreWin32HandleInfoKHR": {
             "aliases": {
                 "attributes": "pAttributes"
             }, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHX"
+                "sType": "EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -3723,11 +3845,11 @@
             ], 
             "type": "struct"
         }, 
-        "ExternalBufferPropertiesKHX": {
+        "ExternalBufferPropertiesKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "EXTERNAL_BUFFER_PROPERTIES_KHX"
+                "sType": "EXTERNAL_BUFFER_PROPERTIES_KHR"
             }, 
             "fields": [
                 [
@@ -3743,16 +3865,67 @@
                 ], 
                 [
                     "externalMemoryProperties", 
-                    "ExternalMemoryPropertiesKHX"
+                    "ExternalMemoryPropertiesKHR"
                 ]
             ], 
             "type": "struct"
         }, 
-        "ExternalImageFormatPropertiesKHX": {
+        "ExternalFenceFeatureFlagsKHR": {
+            "constants": {
+                "EXPORTABLE_BIT_KHR": 1, 
+                "IMPORTABLE_BIT_KHR": 2
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
+        "ExternalFenceHandleTypeFlagsKHR": {
+            "constants": {
+                "OPAQUE_FD_BIT_KHR": 1, 
+                "OPAQUE_WIN32_BIT_KHR": 2, 
+                "OPAQUE_WIN32_KMT_BIT_KHR": 4, 
+                "SYNC_FD_BIT_KHR": 8
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
+        "ExternalFencePropertiesKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "EXTERNAL_IMAGE_FORMAT_PROPERTIES_KHX"
+                "sType": "EXTERNAL_FENCE_PROPERTIES_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "exportFromImportedHandleTypes", 
+                    "ExternalFenceHandleTypeFlagsKHR"
+                ], 
+                [
+                    "compatibleHandleTypes", 
+                    "ExternalFenceHandleTypeFlagsKHR"
+                ], 
+                [
+                    "externalFenceFeatures", 
+                    "ExternalFenceFeatureFlagsKHR"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ExternalImageFormatPropertiesKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "EXTERNAL_IMAGE_FORMAT_PROPERTIES_KHR"
             }, 
             "fields": [
                 [
@@ -3768,7 +3941,7 @@
                 ], 
                 [
                     "externalMemoryProperties", 
-                    "ExternalMemoryPropertiesKHX"
+                    "ExternalMemoryPropertiesKHR"
                 ]
             ], 
             "type": "struct"
@@ -3797,11 +3970,11 @@
             ], 
             "type": "struct"
         }, 
-        "ExternalMemoryBufferCreateInfoKHX": {
+        "ExternalMemoryBufferCreateInfoKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHX"
+                "sType": "EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -3817,16 +3990,16 @@
                 ], 
                 [
                     "handleTypes", 
-                    "ExternalMemoryHandleTypeFlagsKHX"
+                    "ExternalMemoryHandleTypeFlagsKHR"
                 ]
             ], 
             "type": "struct"
         }, 
-        "ExternalMemoryFeatureFlagsKHX": {
+        "ExternalMemoryFeatureFlagsKHR": {
             "constants": {
-                "DEDICATED_ONLY_BIT_KHX": 1, 
-                "EXPORTABLE_BIT_KHX": 2, 
-                "IMPORTABLE_BIT_KHX": 4
+                "DEDICATED_ONLY_BIT_KHR": 1, 
+                "EXPORTABLE_BIT_KHR": 2, 
+                "IMPORTABLE_BIT_KHR": 4
             }, 
             "ctype": "i32", 
             "type": "bitmask"
@@ -3840,15 +4013,15 @@
             "ctype": "i32", 
             "type": "bitmask"
         }, 
-        "ExternalMemoryHandleTypeFlagsKHX": {
+        "ExternalMemoryHandleTypeFlagsKHR": {
             "constants": {
-                "D3D11_TEXTURE_BIT_KHX": 8, 
-                "D3D11_TEXTURE_KMT_BIT_KHX": 16, 
-                "D3D12_HEAP_BIT_KHX": 32, 
-                "D3D12_RESOURCE_BIT_KHX": 64, 
-                "OPAQUE_FD_BIT_KHX": 1, 
-                "OPAQUE_WIN32_BIT_KHX": 2, 
-                "OPAQUE_WIN32_KMT_BIT_KHX": 4
+                "D3D11_TEXTURE_BIT_KHR": 8, 
+                "D3D11_TEXTURE_KMT_BIT_KHR": 16, 
+                "D3D12_HEAP_BIT_KHR": 32, 
+                "D3D12_RESOURCE_BIT_KHR": 64, 
+                "OPAQUE_FD_BIT_KHR": 1, 
+                "OPAQUE_WIN32_BIT_KHR": 2, 
+                "OPAQUE_WIN32_KMT_BIT_KHR": 4
             }, 
             "ctype": "i32", 
             "type": "bitmask"
@@ -3863,11 +4036,11 @@
             "ctype": "i32", 
             "type": "bitmask"
         }, 
-        "ExternalMemoryImageCreateInfoKHX": {
+        "ExternalMemoryImageCreateInfoKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "EXTERNAL_MEMORY_IMAGE_CREATE_INFO_KHX"
+                "sType": "EXTERNAL_MEMORY_IMAGE_CREATE_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -3883,7 +4056,7 @@
                 ], 
                 [
                     "handleTypes", 
-                    "ExternalMemoryHandleTypeFlagsKHX"
+                    "ExternalMemoryHandleTypeFlagsKHR"
                 ]
             ], 
             "type": "struct"
@@ -3913,50 +4086,50 @@
             ], 
             "type": "struct"
         }, 
-        "ExternalMemoryPropertiesKHX": {
+        "ExternalMemoryPropertiesKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {}, 
             "fields": [
                 [
                     "externalMemoryFeatures", 
-                    "ExternalMemoryFeatureFlagsKHX"
+                    "ExternalMemoryFeatureFlagsKHR"
                 ], 
                 [
                     "exportFromImportedHandleTypes", 
-                    "ExternalMemoryHandleTypeFlagsKHX"
+                    "ExternalMemoryHandleTypeFlagsKHR"
                 ], 
                 [
                     "compatibleHandleTypes", 
-                    "ExternalMemoryHandleTypeFlagsKHX"
+                    "ExternalMemoryHandleTypeFlagsKHR"
                 ]
             ], 
             "type": "struct"
         }, 
-        "ExternalSemaphoreFeatureFlagsKHX": {
+        "ExternalSemaphoreFeatureFlagsKHR": {
             "constants": {
-                "EXPORTABLE_BIT_KHX": 1, 
-                "IMPORTABLE_BIT_KHX": 2
+                "EXPORTABLE_BIT_KHR": 1, 
+                "IMPORTABLE_BIT_KHR": 2
             }, 
             "ctype": "i32", 
             "type": "bitmask"
         }, 
-        "ExternalSemaphoreHandleTypeFlagsKHX": {
+        "ExternalSemaphoreHandleTypeFlagsKHR": {
             "constants": {
-                "D3D12_FENCE_BIT_KHX": 8, 
-                "FENCE_FD_BIT_KHX": 16, 
-                "OPAQUE_FD_BIT_KHX": 1, 
-                "OPAQUE_WIN32_BIT_KHX": 2, 
-                "OPAQUE_WIN32_KMT_BIT_KHX": 4
+                "D3D12_FENCE_BIT_KHR": 8, 
+                "OPAQUE_FD_BIT_KHR": 1, 
+                "OPAQUE_WIN32_BIT_KHR": 2, 
+                "OPAQUE_WIN32_KMT_BIT_KHR": 4, 
+                "SYNC_FD_BIT_KHR": 16
             }, 
             "ctype": "i32", 
             "type": "bitmask"
         }, 
-        "ExternalSemaphorePropertiesKHX": {
+        "ExternalSemaphorePropertiesKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "EXTERNAL_SEMAPHORE_PROPERTIES_KHX"
+                "sType": "EXTERNAL_SEMAPHORE_PROPERTIES_KHR"
             }, 
             "fields": [
                 [
@@ -3972,25 +4145,22 @@
                 ], 
                 [
                     "exportFromImportedHandleTypes", 
-                    "ExternalSemaphoreHandleTypeFlagsKHX"
+                    "ExternalSemaphoreHandleTypeFlagsKHR"
                 ], 
                 [
                     "compatibleHandleTypes", 
-                    "ExternalSemaphoreHandleTypeFlagsKHX"
+                    "ExternalSemaphoreHandleTypeFlagsKHR"
                 ], 
                 [
                     "externalSemaphoreFeatures", 
-                    "ExternalSemaphoreFeatureFlagsKHX"
+                    "ExternalSemaphoreFeatureFlagsKHR"
                 ]
             ], 
             "type": "struct"
         }, 
         "Fence": {
-            "to": {
-                "name": "Fence", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "FenceCreateFlags": {
             "constants": {
@@ -4023,6 +4193,71 @@
                 ]
             ], 
             "type": "struct"
+        }, 
+        "FenceGetFdInfoKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "FENCE_GET_FD_INFO_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "fence", 
+                    "Fence"
+                ], 
+                [
+                    "handleType", 
+                    "ExternalFenceHandleTypeFlagsKHR"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "FenceGetWin32HandleInfoKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "FENCE_GET_WIN32_HANDLE_INFO_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "fence", 
+                    "Fence"
+                ], 
+                [
+                    "handleType", 
+                    "ExternalFenceHandleTypeFlagsKHR"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "FenceImportFlagsKHR": {
+            "constants": {
+                "TEMPORARY_BIT_KHR": 1
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
         }, 
         "Filter": {
             "constants": {
@@ -4242,6 +4477,7 @@
                 "SAMPLED_IMAGE_BIT": 1, 
                 "SAMPLED_IMAGE_FILTER_CUBIC_BIT_IMG": 8192, 
                 "SAMPLED_IMAGE_FILTER_LINEAR_BIT": 4096, 
+                "SAMPLED_IMAGE_FILTER_MINMAX_BIT_EXT": 65536, 
                 "STORAGE_IMAGE_ATOMIC_BIT": 4, 
                 "STORAGE_IMAGE_BIT": 2, 
                 "STORAGE_TEXEL_BUFFER_ATOMIC_BIT": 32, 
@@ -4300,11 +4536,8 @@
             "type": "struct"
         }, 
         "Framebuffer": {
-            "to": {
-                "name": "Framebuffer", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "FramebufferCreateFlags": "i32", 
         "FramebufferCreateInfo": {
@@ -4595,11 +4828,8 @@
             "type": "struct"
         }, 
         "Image": {
-            "to": {
-                "name": "Image", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "ImageAspectFlags": {
             "constants": {
@@ -4827,6 +5057,7 @@
                 "PREINITIALIZED": 8, 
                 "PRESENT_SRC_KHR": 1000001002, 
                 "SHADER_READ_ONLY_OPTIMAL": 5, 
+                "SHARED_PRESENT_KHR": 1000111000, 
                 "TRANSFER_DST_OPTIMAL": 7, 
                 "TRANSFER_SRC_OPTIMAL": 6, 
                 "UNDEFINED": 0
@@ -4887,6 +5118,31 @@
             ], 
             "type": "struct"
         }, 
+        "ImageMemoryRequirementsInfo2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IMAGE_MEMORY_REQUIREMENTS_INFO_2_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "image", 
+                    "Image"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "ImageResolve": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -4911,6 +5167,31 @@
                 [
                     "extent", 
                     "Extent3D"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ImageSparseMemoryRequirementsInfo2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "image", 
+                    "Image"
                 ]
             ], 
             "type": "struct"
@@ -5044,11 +5325,8 @@
             "type": "bitmask"
         }, 
         "ImageView": {
-            "to": {
-                "name": "ImageView", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "ImageViewCreateFlags": "i32", 
         "ImageViewCreateInfo": {
@@ -5109,11 +5387,11 @@
             "ctype": "i32", 
             "type": "enum"
         }, 
-        "ImportMemoryFdInfoKHX": {
+        "ImportFenceFdInfoKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "IMPORT_MEMORY_FD_INFO_KHX"
+                "sType": "IMPORT_FENCE_FD_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -5128,8 +5406,16 @@
                     }
                 ], 
                 [
+                    "fence", 
+                    "Fence"
+                ], 
+                [
+                    "flags", 
+                    "FenceImportFlagsKHR"
+                ], 
+                [
                     "handleType", 
-                    "ExternalMemoryHandleTypeFlagsKHX"
+                    "ExternalFenceHandleTypeFlagsKHR"
                 ], 
                 [
                     "fd", 
@@ -5138,11 +5424,52 @@
             ], 
             "type": "struct"
         }, 
-        "ImportMemoryWin32HandleInfoKHX": {
+        "ImportFenceWin32HandleInfoKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "IMPORT_MEMORY_WIN32_HANDLE_INFO_KHX"
+                "sType": "IMPORT_FENCE_WIN32_HANDLE_INFO_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "fence", 
+                    "Fence"
+                ], 
+                [
+                    "flags", 
+                    "FenceImportFlagsKHR"
+                ], 
+                [
+                    "handleType", 
+                    "ExternalFenceHandleTypeFlagsKHR"
+                ], 
+                [
+                    "handle", 
+                    "void*"
+                ], 
+                [
+                    "name", 
+                    "void*"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ImportMemoryFdInfoKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IMPORT_MEMORY_FD_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -5158,10 +5485,43 @@
                 ], 
                 [
                     "handleType", 
-                    "ExternalMemoryHandleTypeFlagsKHX"
+                    "ExternalMemoryHandleTypeFlagsKHR"
+                ], 
+                [
+                    "fd", 
+                    "int"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "ImportMemoryWin32HandleInfoKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleType", 
+                    "ExternalMemoryHandleTypeFlagsKHR"
                 ], 
                 [
                     "handle", 
+                    "void*"
+                ], 
+                [
+                    "name", 
                     "void*"
                 ]
             ], 
@@ -5196,11 +5556,11 @@
             ], 
             "type": "struct"
         }, 
-        "ImportSemaphoreFdInfoKHX": {
+        "ImportSemaphoreFdInfoKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "IMPORT_SEMAPHORE_FD_INFO_KHX"
+                "sType": "IMPORT_SEMAPHORE_FD_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -5219,8 +5579,12 @@
                     "Semaphore"
                 ], 
                 [
+                    "flags", 
+                    "SemaphoreImportFlagsKHR"
+                ], 
+                [
                     "handleType", 
-                    "ExternalSemaphoreHandleTypeFlagsKHX"
+                    "ExternalSemaphoreHandleTypeFlagsKHR"
                 ], 
                 [
                     "fd", 
@@ -5229,11 +5593,11 @@
             ], 
             "type": "struct"
         }, 
-        "ImportSemaphoreWin32HandleInfoKHX": {
+        "ImportSemaphoreWin32HandleInfoKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHX"
+                "sType": "IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -5252,11 +5616,19 @@
                     "Semaphore"
                 ], 
                 [
+                    "flags", 
+                    "SemaphoreImportFlagsKHR"
+                ], 
+                [
                     "handleType", 
-                    "ExternalSemaphoreHandleTypeFlagsKHX"
+                    "ExternalSemaphoreHandleTypeFlagsKHR"
                 ], 
                 [
                     "handle", 
+                    "void*"
+                ], 
+                [
+                    "name", 
                     "void*"
                 ]
             ], 
@@ -5316,11 +5688,8 @@
             "type": "struct"
         }, 
         "IndirectCommandsLayoutNVX": {
-            "to": {
-                "name": "IndirectCommandsLayoutNVX", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "IndirectCommandsLayoutTokenNVX": {
             "aliases": {}, 
@@ -5391,11 +5760,8 @@
             "type": "enum"
         }, 
         "Instance": {
-            "to": {
-                "name": "Instance", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": true, 
+            "type": "vulkan_handle"
         }, 
         "InstanceCreateFlags": "i32", 
         "InstanceCreateInfo": {
@@ -5692,11 +6058,69 @@
             ], 
             "type": "struct"
         }, 
-        "MemoryFdPropertiesKHX": {
+        "MemoryDedicatedAllocateInfoKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "MEMORY_FD_PROPERTIES_KHX"
+                "sType": "MEMORY_DEDICATED_ALLOCATE_INFO_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "image", 
+                    "Image"
+                ], 
+                [
+                    "buffer", 
+                    "Buffer"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "MemoryDedicatedRequirementsKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "MEMORY_DEDICATED_REQUIREMENTS_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "prefersDedicatedAllocation", 
+                    "u32"
+                ], 
+                [
+                    "requiresDedicatedAllocation", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "MemoryFdPropertiesKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "MEMORY_FD_PROPERTIES_KHR"
             }, 
             "fields": [
                 [
@@ -5713,6 +6137,64 @@
                 [
                     "memoryTypeBits", 
                     "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "MemoryGetFdInfoKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "MEMORY_GET_FD_INFO_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "memory", 
+                    "DeviceMemory"
+                ], 
+                [
+                    "handleType", 
+                    "ExternalMemoryHandleTypeFlagsKHR"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "MemoryGetWin32HandleInfoKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "MEMORY_GET_WIN32_HANDLE_INFO_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "memory", 
+                    "DeviceMemory"
+                ], 
+                [
+                    "handleType", 
+                    "ExternalMemoryHandleTypeFlagsKHR"
                 ]
             ], 
             "type": "struct"
@@ -5773,6 +6255,31 @@
             ], 
             "type": "struct"
         }, 
+        "MemoryRequirements2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "MEMORY_REQUIREMENTS_2_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "memoryRequirements", 
+                    "MemoryRequirements"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "MemoryType": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -5789,11 +6296,11 @@
             ], 
             "type": "struct"
         }, 
-        "MemoryWin32HandlePropertiesKHX": {
+        "MemoryWin32HandlePropertiesKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "MEMORY_WIN32_HANDLE_PROPERTIES_KHX"
+                "sType": "MEMORY_WIN32_HANDLE_PROPERTIES_KHR"
             }, 
             "fields": [
                 [
@@ -6017,11 +6524,8 @@
             "type": "struct"
         }, 
         "ObjectTableNVX": {
-            "to": {
-                "name": "ObjectTableNVX", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "ObjectTablePipelineEntryNVX": {
             "aliases": {}, 
@@ -6086,6 +6590,46 @@
                 ]
             ], 
             "type": "struct"
+        }, 
+        "ObjectType": {
+            "constants": {
+                "BUFFER": 9, 
+                "BUFFER_VIEW": 13, 
+                "COMMAND_BUFFER": 6, 
+                "COMMAND_POOL": 25, 
+                "DEBUG_REPORT_CALLBACK_EXT": 1000011000, 
+                "DESCRIPTOR_POOL": 22, 
+                "DESCRIPTOR_SET": 23, 
+                "DESCRIPTOR_SET_LAYOUT": 20, 
+                "DESCRIPTOR_UPDATE_TEMPLATE_KHR": 1000085000, 
+                "DEVICE": 3, 
+                "DEVICE_MEMORY": 8, 
+                "DISPLAY_KHR": 1000002000, 
+                "DISPLAY_MODE_KHR": 1000002001, 
+                "EVENT": 11, 
+                "FENCE": 7, 
+                "FRAMEBUFFER": 24, 
+                "IMAGE": 10, 
+                "IMAGE_VIEW": 14, 
+                "INDIRECT_COMMANDS_LAYOUT_NVX": 1000086001, 
+                "INSTANCE": 1, 
+                "OBJECT_TABLE_NVX": 1000086000, 
+                "PHYSICAL_DEVICE": 2, 
+                "PIPELINE": 19, 
+                "PIPELINE_CACHE": 16, 
+                "PIPELINE_LAYOUT": 17, 
+                "QUERY_POOL": 12, 
+                "QUEUE": 4, 
+                "RENDER_PASS": 18, 
+                "SAMPLER": 21, 
+                "SEMAPHORE": 5, 
+                "SHADER_MODULE": 15, 
+                "SURFACE_KHR": 1000000000, 
+                "SWAPCHAIN_KHR": 1000001000, 
+                "UNKNOWN": 0
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
         }, 
         "Offset2D": {
             "aliases": {}, 
@@ -6263,11 +6807,115 @@
             "type": "bitmask"
         }, 
         "PhysicalDevice": {
-            "to": {
-                "name": "PhysicalDevice", 
-                "type": "opaque"
+            "dispatchable": true, 
+            "type": "vulkan_handle"
+        }, 
+        "PhysicalDevice16BitStorageFeaturesKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR"
             }, 
-            "type": "pointer"
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "storageBuffer16BitAccess", 
+                    "u32"
+                ], 
+                [
+                    "uniformAndStorageBuffer16BitAccess", 
+                    "u32"
+                ], 
+                [
+                    "storagePushConstant16", 
+                    "u32"
+                ], 
+                [
+                    "storageInputOutput16", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceBlendOperationAdvancedFeaturesEXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "advancedBlendCoherentOperations", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceBlendOperationAdvancedPropertiesEXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "advancedBlendMaxColorAttachments", 
+                    "u32"
+                ], 
+                [
+                    "advancedBlendIndependentBlend", 
+                    "u32"
+                ], 
+                [
+                    "advancedBlendNonPremultipliedSrcColor", 
+                    "u32"
+                ], 
+                [
+                    "advancedBlendNonPremultipliedDstColor", 
+                    "u32"
+                ], 
+                [
+                    "advancedBlendCorrelatedOverlap", 
+                    "u32"
+                ], 
+                [
+                    "advancedBlendAllOperations", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
         }, 
         "PhysicalDeviceDiscardRectanglePropertiesEXT": {
             "aliases": {}, 
@@ -6294,11 +6942,11 @@
             ], 
             "type": "struct"
         }, 
-        "PhysicalDeviceExternalBufferInfoKHX": {
+        "PhysicalDeviceExternalBufferInfoKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHX"
+                "sType": "PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -6322,16 +6970,16 @@
                 ], 
                 [
                     "handleType", 
-                    "ExternalMemoryHandleTypeFlagsKHX"
+                    "ExternalMemoryHandleTypeFlagsKHR"
                 ]
             ], 
             "type": "struct"
         }, 
-        "PhysicalDeviceExternalImageFormatInfoKHX": {
+        "PhysicalDeviceExternalFenceInfoKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO_KHX"
+                "sType": "PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -6347,16 +6995,16 @@
                 ], 
                 [
                     "handleType", 
-                    "ExternalMemoryHandleTypeFlagsKHX"
+                    "ExternalFenceHandleTypeFlagsKHR"
                 ]
             ], 
             "type": "struct"
         }, 
-        "PhysicalDeviceExternalSemaphoreInfoKHX": {
+        "PhysicalDeviceExternalImageFormatInfoKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO_KHX"
+                "sType": "PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -6372,7 +7020,32 @@
                 ], 
                 [
                     "handleType", 
-                    "ExternalSemaphoreHandleTypeFlagsKHX"
+                    "ExternalMemoryHandleTypeFlagsKHR"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PhysicalDeviceExternalSemaphoreInfoKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "handleType", 
+                    "ExternalSemaphoreHandleTypeFlagsKHR"
                 ]
             ], 
             "type": "struct"
@@ -6667,11 +7340,11 @@
             ], 
             "type": "struct"
         }, 
-        "PhysicalDeviceIDPropertiesKHX": {
+        "PhysicalDeviceIDPropertiesKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
             "defaults": {
-                "sType": "PHYSICAL_DEVICE_ID_PROPERTIES_KHX"
+                "sType": "PHYSICAL_DEVICE_ID_PROPERTIES_KHR"
             }, 
             "fields": [
                 [
@@ -6708,6 +7381,10 @@
                         "length": 8, 
                         "type": "array"
                     }
+                ], 
+                [
+                    "deviceNodeMask", 
+                    "u32"
                 ], 
                 [
                     "deviceLUIDValid", 
@@ -7459,6 +8136,35 @@
             ], 
             "type": "struct"
         }, 
+        "PhysicalDeviceSamplerFilterMinmaxPropertiesEXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "filterMinmaxSingleComponentFormats", 
+                    "u32"
+                ], 
+                [
+                    "filterMinmaxImageComponentMapping", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "PhysicalDeviceSparseImageFormatInfo2KHR": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -7528,6 +8234,31 @@
             ], 
             "type": "struct"
         }, 
+        "PhysicalDeviceSurfaceInfo2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_SURFACE_INFO_2_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "surface", 
+                    "SurfaceKHR"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "PhysicalDeviceType": {
             "constants": {
                 "CPU": 4, 
@@ -7539,12 +8270,38 @@
             "ctype": "i32", 
             "type": "enum"
         }, 
-        "Pipeline": {
-            "to": {
-                "name": "Pipeline", 
-                "type": "opaque"
+        "PhysicalDeviceVariablePointerFeaturesKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PHYSICAL_DEVICE_VARIABLE_POINTER_FEATURES_KHR"
             }, 
-            "type": "pointer"
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "variablePointersStorageBuffer", 
+                    "u32"
+                ], 
+                [
+                    "variablePointers", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "Pipeline": {
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "PipelineBindPoint": {
             "constants": {
@@ -7555,11 +8312,8 @@
             "type": "enum"
         }, 
         "PipelineCache": {
-            "to": {
-                "name": "PipelineCache", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "PipelineCacheCreateFlags": "i32", 
         "PipelineCacheCreateInfo": {
@@ -7609,6 +8363,39 @@
             }, 
             "ctype": "i32", 
             "type": "enum"
+        }, 
+        "PipelineColorBlendAdvancedStateCreateInfoEXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PIPELINE_COLOR_BLEND_ADVANCED_STATE_CREATE_INFO_EXT"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "srcPremultiplied", 
+                    "u32"
+                ], 
+                [
+                    "dstPremultiplied", 
+                    "u32"
+                ], 
+                [
+                    "blendOverlap", 
+                    "BlendOverlapEXT"
+                ]
+            ], 
+            "type": "struct"
         }, 
         "PipelineColorBlendAttachmentState": {
             "aliases": {}, 
@@ -7704,6 +8491,90 @@
                         "length": 4, 
                         "type": "array"
                     }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PipelineCoverageModulationStateCreateFlagsNV": "i32", 
+        "PipelineCoverageModulationStateCreateInfoNV": {
+            "aliases": {}, 
+            "autoarrays": {
+                "coverageModulationTable": [
+                    "coverageModulationTableCount", 
+                    "pCoverageModulationTable"
+                ]
+            }, 
+            "defaults": {
+                "sType": "PIPELINE_COVERAGE_MODULATION_STATE_CREATE_INFO_NV"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "flags", 
+                    "PipelineCoverageModulationStateCreateFlagsNV"
+                ], 
+                [
+                    "coverageModulationMode", 
+                    "CoverageModulationModeNV"
+                ], 
+                [
+                    "coverageModulationTableEnable", 
+                    "u32"
+                ], 
+                [
+                    "coverageModulationTableCount", 
+                    "u32"
+                ], 
+                [
+                    "pCoverageModulationTable", 
+                    {
+                        "to": "float", 
+                        "type": "pointer"
+                    }
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "PipelineCoverageToColorStateCreateFlagsNV": "i32", 
+        "PipelineCoverageToColorStateCreateInfoNV": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "PIPELINE_COVERAGE_TO_COLOR_STATE_CREATE_INFO_NV"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "flags", 
+                    "PipelineCoverageToColorStateCreateFlagsNV"
+                ], 
+                [
+                    "coverageToColorEnable", 
+                    "u32"
+                ], 
+                [
+                    "coverageToColorLocation", 
+                    "u32"
                 ]
             ], 
             "type": "struct"
@@ -7904,11 +8775,8 @@
             "type": "struct"
         }, 
         "PipelineLayout": {
-            "to": {
-                "name": "PipelineLayout", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "PipelineLayoutCreateFlags": "i32", 
         "PipelineLayoutCreateInfo": {
@@ -8418,6 +9286,7 @@
         "PolygonMode": {
             "constants": {
                 "FILL": 0, 
+                "FILL_RECTANGLE_NV": 1000153000, 
                 "LINE": 1, 
                 "POINT": 2
             }, 
@@ -8503,7 +9372,9 @@
                 "FIFO_KHR": 2, 
                 "FIFO_RELAXED_KHR": 3, 
                 "IMMEDIATE_KHR": 0, 
-                "MAILBOX_KHR": 1
+                "MAILBOX_KHR": 1, 
+                "SHARED_CONTINUOUS_REFRESH_KHR": 1000111001, 
+                "SHARED_DEMAND_REFRESH_KHR": 1000111000
             }, 
             "ctype": "i32", 
             "type": "enum"
@@ -8684,11 +9555,8 @@
             "type": "bitmask"
         }, 
         "QueryPool": {
-            "to": {
-                "name": "QueryPool", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "QueryPoolCreateFlags": "i32", 
         "QueryPoolCreateInfo": {
@@ -8748,11 +9616,8 @@
             "type": "enum"
         }, 
         "Queue": {
-            "to": {
-                "name": "Queue", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": true, 
+            "type": "vulkan_handle"
         }, 
         "QueueFamilyProperties": {
             "aliases": {}, 
@@ -8886,11 +9751,8 @@
             "type": "struct"
         }, 
         "RenderPass": {
-            "to": {
-                "name": "RenderPass", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "RenderPassBeginInfo": {
             "aliases": {}, 
@@ -9090,7 +9952,7 @@
                 "ERROR_INCOMPATIBLE_DISPLAY_KHR": -1000003001, 
                 "ERROR_INCOMPATIBLE_DRIVER": -9, 
                 "ERROR_INITIALIZATION_FAILED": -3, 
-                "ERROR_INVALID_EXTERNAL_HANDLE_KHX": -1000072003, 
+                "ERROR_INVALID_EXTERNAL_HANDLE_KHR": -1000072003, 
                 "ERROR_INVALID_SHADER_NV": -1000012000, 
                 "ERROR_LAYER_NOT_PRESENT": -6, 
                 "ERROR_MEMORY_MAP_FAILED": -5, 
@@ -9106,7 +9968,6 @@
                 "EVENT_SET": 3, 
                 "INCOMPLETE": 5, 
                 "NOT_READY": 1, 
-                "NV_EXTENSION_1_ERROR": -1000013000, 
                 "SUBOPTIMAL_KHR": 1000001003, 
                 "SUCCESS": 0, 
                 "TIMEOUT": 2
@@ -9128,11 +9989,8 @@
             "type": "bitmask"
         }, 
         "Sampler": {
-            "to": {
-                "name": "Sampler", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "SamplerAddressMode": {
             "constants": {
@@ -9238,12 +10096,43 @@
             "ctype": "i32", 
             "type": "enum"
         }, 
-        "Semaphore": {
-            "to": {
-                "name": "Semaphore", 
-                "type": "opaque"
+        "SamplerReductionModeCreateInfoEXT": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "SAMPLER_REDUCTION_MODE_CREATE_INFO_EXT"
             }, 
-            "type": "pointer"
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "reductionMode", 
+                    "SamplerReductionModeEXT"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "SamplerReductionModeEXT": {
+            "constants": {
+                "MAX_EXT": 2, 
+                "MIN_EXT": 1, 
+                "WEIGHTED_AVERAGE_EXT": 0
+            }, 
+            "ctype": "i32", 
+            "type": "enum"
+        }, 
+        "Semaphore": {
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "SemaphoreCreateFlags": "i32", 
         "SemaphoreCreateInfo": {
@@ -9271,12 +10160,74 @@
             ], 
             "type": "struct"
         }, 
-        "ShaderModule": {
-            "to": {
-                "name": "ShaderModule", 
-                "type": "opaque"
+        "SemaphoreGetFdInfoKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "SEMAPHORE_GET_FD_INFO_KHR"
             }, 
-            "type": "pointer"
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "semaphore", 
+                    "Semaphore"
+                ], 
+                [
+                    "handleType", 
+                    "ExternalSemaphoreHandleTypeFlagsKHR"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "SemaphoreGetWin32HandleInfoKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "semaphore", 
+                    "Semaphore"
+                ], 
+                [
+                    "handleType", 
+                    "ExternalSemaphoreHandleTypeFlagsKHR"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "SemaphoreImportFlagsKHR": {
+            "constants": {
+                "TEMPORARY_BIT_KHR": 1
+            }, 
+            "ctype": "i32", 
+            "type": "bitmask"
+        }, 
+        "ShaderModule": {
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "ShaderModuleCreateFlags": "i32", 
         "ShaderModuleCreateInfo": {
@@ -9330,6 +10281,31 @@
             }, 
             "ctype": "i32", 
             "type": "bitmask"
+        }, 
+        "SharedPresentSurfaceCapabilitiesKHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "SHARED_PRESENT_SURFACE_CAPABILITIES_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "sharedPresentSupportedUsageFlags", 
+                    "ImageUsageFlags"
+                ]
+            ], 
+            "type": "struct"
         }, 
         "SharingMode": {
             "constants": {
@@ -9505,6 +10481,31 @@
                 [
                     "imageMipTailStride", 
                     "u64"
+                ]
+            ], 
+            "type": "struct"
+        }, 
+        "SparseImageMemoryRequirements2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "SPARSE_IMAGE_MEMORY_REQUIREMENTS_2_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "memoryRequirements", 
+                    "SparseImageMemoryRequirements"
                 ]
             ], 
             "type": "struct"
@@ -9701,6 +10702,7 @@
                 "BIND_SPARSE_INFO": 7, 
                 "BUFFER_CREATE_INFO": 12, 
                 "BUFFER_MEMORY_BARRIER": 44, 
+                "BUFFER_MEMORY_REQUIREMENTS_INFO_2_KHR": 1000146000, 
                 "BUFFER_VIEW_CREATE_INFO": 13, 
                 "CMD_PROCESS_COMMANDS_INFO_NVX": 1000086002, 
                 "CMD_RESERVE_SPACE_FOR_COMMANDS_INFO_NVX": 1000086003, 
@@ -9710,7 +10712,7 @@
                 "COMMAND_POOL_CREATE_INFO": 39, 
                 "COMPUTE_PIPELINE_CREATE_INFO": 29, 
                 "COPY_DESCRIPTOR_SET": 36, 
-                "D3D12_FENCE_SUBMIT_INFO_KHX": 1000078002, 
+                "D3D12_FENCE_SUBMIT_INFO_KHR": 1000078002, 
                 "DEBUG_MARKER_MARKER_INFO_EXT": 1000022002, 
                 "DEBUG_MARKER_OBJECT_NAME_INFO_EXT": 1000022000, 
                 "DEBUG_MARKER_OBJECT_TAG_INFO_EXT": 1000022001, 
@@ -9741,19 +10743,24 @@
                 "DISPLAY_PRESENT_INFO_KHR": 1000003000, 
                 "DISPLAY_SURFACE_CREATE_INFO_KHR": 1000002001, 
                 "EVENT_CREATE_INFO": 10, 
-                "EXPORT_MEMORY_ALLOCATE_INFO_KHX": 1000072002, 
+                "EXPORT_FENCE_CREATE_INFO_KHR": 1000113000, 
+                "EXPORT_FENCE_WIN32_HANDLE_INFO_KHR": 1000114001, 
+                "EXPORT_MEMORY_ALLOCATE_INFO_KHR": 1000072002, 
                 "EXPORT_MEMORY_ALLOCATE_INFO_NV": 1000056001, 
-                "EXPORT_MEMORY_WIN32_HANDLE_INFO_KHX": 1000073001, 
+                "EXPORT_MEMORY_WIN32_HANDLE_INFO_KHR": 1000073001, 
                 "EXPORT_MEMORY_WIN32_HANDLE_INFO_NV": 1000057001, 
-                "EXPORT_SEMAPHORE_CREATE_INFO_KHX": 1000077000, 
-                "EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHX": 1000078001, 
-                "EXTERNAL_BUFFER_PROPERTIES_KHX": 1000071003, 
-                "EXTERNAL_IMAGE_FORMAT_PROPERTIES_KHX": 1000071001, 
-                "EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHX": 1000072000, 
-                "EXTERNAL_MEMORY_IMAGE_CREATE_INFO_KHX": 1000072001, 
+                "EXPORT_SEMAPHORE_CREATE_INFO_KHR": 1000077000, 
+                "EXPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR": 1000078001, 
+                "EXTERNAL_BUFFER_PROPERTIES_KHR": 1000071003, 
+                "EXTERNAL_FENCE_PROPERTIES_KHR": 1000112001, 
+                "EXTERNAL_IMAGE_FORMAT_PROPERTIES_KHR": 1000071001, 
+                "EXTERNAL_MEMORY_BUFFER_CREATE_INFO_KHR": 1000072000, 
+                "EXTERNAL_MEMORY_IMAGE_CREATE_INFO_KHR": 1000072001, 
                 "EXTERNAL_MEMORY_IMAGE_CREATE_INFO_NV": 1000056000, 
-                "EXTERNAL_SEMAPHORE_PROPERTIES_KHX": 1000076001, 
+                "EXTERNAL_SEMAPHORE_PROPERTIES_KHR": 1000076001, 
                 "FENCE_CREATE_INFO": 8, 
+                "FENCE_GET_FD_INFO_KHR": 1000115001, 
+                "FENCE_GET_WIN32_HANDLE_INFO_KHR": 1000114002, 
                 "FORMAT_PROPERTIES_2_KHR": 1000059002, 
                 "FRAMEBUFFER_CREATE_INFO": 37, 
                 "GRAPHICS_PIPELINE_CREATE_INFO": 28, 
@@ -9761,13 +10768,17 @@
                 "IMAGE_CREATE_INFO": 14, 
                 "IMAGE_FORMAT_PROPERTIES_2_KHR": 1000059003, 
                 "IMAGE_MEMORY_BARRIER": 45, 
+                "IMAGE_MEMORY_REQUIREMENTS_INFO_2_KHR": 1000146001, 
+                "IMAGE_SPARSE_MEMORY_REQUIREMENTS_INFO_2_KHR": 1000146002, 
                 "IMAGE_SWAPCHAIN_CREATE_INFO_KHX": 1000060008, 
                 "IMAGE_VIEW_CREATE_INFO": 15, 
-                "IMPORT_MEMORY_FD_INFO_KHX": 1000074000, 
-                "IMPORT_MEMORY_WIN32_HANDLE_INFO_KHX": 1000073000, 
+                "IMPORT_FENCE_FD_INFO_KHR": 1000115000, 
+                "IMPORT_FENCE_WIN32_HANDLE_INFO_KHR": 1000114000, 
+                "IMPORT_MEMORY_FD_INFO_KHR": 1000074000, 
+                "IMPORT_MEMORY_WIN32_HANDLE_INFO_KHR": 1000073000, 
                 "IMPORT_MEMORY_WIN32_HANDLE_INFO_NV": 1000057000, 
-                "IMPORT_SEMAPHORE_FD_INFO_KHX": 1000079000, 
-                "IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHX": 1000078000, 
+                "IMPORT_SEMAPHORE_FD_INFO_KHR": 1000079000, 
+                "IMPORT_SEMAPHORE_WIN32_HANDLE_INFO_KHR": 1000078000, 
                 "INDIRECT_COMMANDS_LAYOUT_CREATE_INFO_NVX": 1000086001, 
                 "INSTANCE_CREATE_INFO": 1, 
                 "IOS_SURFACE_CREATE_INFO_MVK": 1000122000, 
@@ -9778,17 +10789,26 @@
                 "MEMORY_ALLOCATE_FLAGS_INFO_KHX": 1000060000, 
                 "MEMORY_ALLOCATE_INFO": 5, 
                 "MEMORY_BARRIER": 46, 
-                "MEMORY_FD_PROPERTIES_KHX": 1000074001, 
-                "MEMORY_WIN32_HANDLE_PROPERTIES_KHX": 1000073002, 
+                "MEMORY_DEDICATED_ALLOCATE_INFO_KHR": 1000127001, 
+                "MEMORY_DEDICATED_REQUIREMENTS_KHR": 1000127000, 
+                "MEMORY_FD_PROPERTIES_KHR": 1000074001, 
+                "MEMORY_GET_FD_INFO_KHR": 1000074002, 
+                "MEMORY_GET_WIN32_HANDLE_INFO_KHR": 1000073003, 
+                "MEMORY_REQUIREMENTS_2_KHR": 1000146003, 
+                "MEMORY_WIN32_HANDLE_PROPERTIES_KHR": 1000073002, 
                 "MIR_SURFACE_CREATE_INFO_KHR": 1000007000, 
                 "OBJECT_TABLE_CREATE_INFO_NVX": 1000086000, 
+                "PHYSICAL_DEVICE_16BIT_STORAGE_FEATURES_KHR": 1000083000, 
+                "PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_FEATURES_EXT": 1000148000, 
+                "PHYSICAL_DEVICE_BLEND_OPERATION_ADVANCED_PROPERTIES_EXT": 1000148001, 
                 "PHYSICAL_DEVICE_DISCARD_RECTANGLE_PROPERTIES_EXT": 1000099000, 
-                "PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHX": 1000071002, 
-                "PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO_KHX": 1000071000, 
-                "PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO_KHX": 1000076000, 
+                "PHYSICAL_DEVICE_EXTERNAL_BUFFER_INFO_KHR": 1000071002, 
+                "PHYSICAL_DEVICE_EXTERNAL_FENCE_INFO_KHR": 1000112000, 
+                "PHYSICAL_DEVICE_EXTERNAL_IMAGE_FORMAT_INFO_KHR": 1000071000, 
+                "PHYSICAL_DEVICE_EXTERNAL_SEMAPHORE_INFO_KHR": 1000076000, 
                 "PHYSICAL_DEVICE_FEATURES_2_KHR": 1000059000, 
                 "PHYSICAL_DEVICE_GROUP_PROPERTIES_KHX": 1000070000, 
-                "PHYSICAL_DEVICE_ID_PROPERTIES_KHX": 1000071004, 
+                "PHYSICAL_DEVICE_ID_PROPERTIES_KHR": 1000071004, 
                 "PHYSICAL_DEVICE_IMAGE_FORMAT_INFO_2_KHR": 1000059004, 
                 "PHYSICAL_DEVICE_MEMORY_PROPERTIES_2_KHR": 1000059006, 
                 "PHYSICAL_DEVICE_MULTIVIEW_FEATURES_KHX": 1000053001, 
@@ -9796,9 +10816,15 @@
                 "PHYSICAL_DEVICE_MULTIVIEW_PROPERTIES_KHX": 1000053002, 
                 "PHYSICAL_DEVICE_PROPERTIES_2_KHR": 1000059001, 
                 "PHYSICAL_DEVICE_PUSH_DESCRIPTOR_PROPERTIES_KHR": 1000080000, 
+                "PHYSICAL_DEVICE_SAMPLER_FILTER_MINMAX_PROPERTIES_EXT": 1000130000, 
                 "PHYSICAL_DEVICE_SPARSE_IMAGE_FORMAT_INFO_2_KHR": 1000059008, 
+                "PHYSICAL_DEVICE_SURFACE_INFO_2_KHR": 1000119000, 
+                "PHYSICAL_DEVICE_VARIABLE_POINTER_FEATURES_KHR": 1000120000, 
                 "PIPELINE_CACHE_CREATE_INFO": 17, 
+                "PIPELINE_COLOR_BLEND_ADVANCED_STATE_CREATE_INFO_EXT": 1000148002, 
                 "PIPELINE_COLOR_BLEND_STATE_CREATE_INFO": 26, 
+                "PIPELINE_COVERAGE_MODULATION_STATE_CREATE_INFO_NV": 1000152000, 
+                "PIPELINE_COVERAGE_TO_COLOR_STATE_CREATE_INFO_NV": 1000149000, 
                 "PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO": 25, 
                 "PIPELINE_DISCARD_RECTANGLE_STATE_CREATE_INFO_EXT": 1000099001, 
                 "PIPELINE_DYNAMIC_STATE_CREATE_INFO": 27, 
@@ -9822,17 +10848,25 @@
                 "RENDER_PASS_CREATE_INFO": 38, 
                 "RENDER_PASS_MULTIVIEW_CREATE_INFO_KHX": 1000053000, 
                 "SAMPLER_CREATE_INFO": 31, 
+                "SAMPLER_REDUCTION_MODE_CREATE_INFO_EXT": 1000130001, 
                 "SEMAPHORE_CREATE_INFO": 9, 
+                "SEMAPHORE_GET_FD_INFO_KHR": 1000079001, 
+                "SEMAPHORE_GET_WIN32_HANDLE_INFO_KHR": 1000078003, 
                 "SHADER_MODULE_CREATE_INFO": 16, 
+                "SHARED_PRESENT_SURFACE_CAPABILITIES_KHR": 1000111000, 
                 "SPARSE_IMAGE_FORMAT_PROPERTIES_2_KHR": 1000059007, 
+                "SPARSE_IMAGE_MEMORY_REQUIREMENTS_2_KHR": 1000146004, 
                 "SUBMIT_INFO": 4, 
                 "SURFACE_CAPABILITIES2_EXT": 1000090000, 
+                "SURFACE_CAPABILITIES_2_KHR": 1000119001, 
+                "SURFACE_FORMAT_2_KHR": 1000119002, 
                 "SWAPCHAIN_COUNTER_CREATE_INFO_EXT": 1000091003, 
                 "SWAPCHAIN_CREATE_INFO_KHR": 1000001000, 
+                "TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD": 1000041000, 
                 "VALIDATION_FLAGS_EXT": 1000061000, 
                 "VI_SURFACE_CREATE_INFO_NN": 1000062000, 
                 "WAYLAND_SURFACE_CREATE_INFO_KHR": 1000006000, 
-                "WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHX": 1000075000, 
+                "WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR": 1000075000, 
                 "WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_NV": 1000058000, 
                 "WIN32_SURFACE_CREATE_INFO_KHR": 1000009000, 
                 "WRITE_DESCRIPTOR_SET": 35, 
@@ -10147,6 +11181,31 @@
             ], 
             "type": "struct"
         }, 
+        "SurfaceCapabilities2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "SURFACE_CAPABILITIES_2_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "surfaceCapabilities", 
+                    "SurfaceCapabilitiesKHR"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "SurfaceCapabilitiesKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -10202,6 +11261,31 @@
             "ctype": "i32", 
             "type": "bitmask"
         }, 
+        "SurfaceFormat2KHR": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "SURFACE_FORMAT_2_KHR"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "surfaceFormat", 
+                    "SurfaceFormatKHR"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "SurfaceFormatKHR": {
             "aliases": {}, 
             "autoarrays": {}, 
@@ -10219,11 +11303,8 @@
             "type": "struct"
         }, 
         "SurfaceKHR": {
-            "to": {
-                "name": "SurfaceKHR", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "SurfaceTransformFlagsKHR": {
             "constants": {
@@ -10366,11 +11447,8 @@
             "type": "struct"
         }, 
         "SwapchainKHR": {
-            "to": {
-                "name": "SwapchainKHR", 
-                "type": "opaque"
-            }, 
-            "type": "pointer"
+            "dispatchable": false, 
+            "type": "vulkan_handle"
         }, 
         "SystemAllocationScope": {
             "constants": {
@@ -10383,9 +11461,35 @@
             "ctype": "i32", 
             "type": "enum"
         }, 
+        "TextureLODGatherFormatPropertiesAMD": {
+            "aliases": {}, 
+            "autoarrays": {}, 
+            "defaults": {
+                "sType": "TEXTURE_LOD_GATHER_FORMAT_PROPERTIES_AMD"
+            }, 
+            "fields": [
+                [
+                    "sType", 
+                    "StructureType"
+                ], 
+                [
+                    "pNext", 
+                    {
+                        "to": "void", 
+                        "type": "pointer"
+                    }
+                ], 
+                [
+                    "supportsTextureGatherLODBiasAMD", 
+                    "u32"
+                ]
+            ], 
+            "type": "struct"
+        }, 
         "ValidationCheckEXT": {
             "constants": {
-                "ALL_EXT": 0
+                "ALL_EXT": 0, 
+                "SHADERS_EXT": 1
             }, 
             "ctype": "i32", 
             "type": "enum"
@@ -10638,7 +11742,7 @@
             ], 
             "type": "struct"
         }, 
-        "Win32KeyedMutexAcquireReleaseInfoKHX": {
+        "Win32KeyedMutexAcquireReleaseInfoKHR": {
             "aliases": {}, 
             "autoarrays": {
                 "acquireKeys": [
@@ -10663,7 +11767,7 @@
                 ]
             }, 
             "defaults": {
-                "sType": "WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHX"
+                "sType": "WIN32_KEYED_MUTEX_ACQUIRE_RELEASE_INFO_KHR"
             }, 
             "fields": [
                 [
@@ -13580,6 +14684,24 @@
                 "type": "cfunc"
             }
         }, 
+        "getBufferMemoryRequirements2KHR": {
+            "name": "vkGetBufferMemoryRequirements2KHR", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "BufferMemoryRequirementsInfo2KHR", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "MemoryRequirements2KHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
         "getDeviceGroupPeerMemoryFeaturesKHX": {
             "name": "vkGetDeviceGroupPeerMemoryFeaturesKHX", 
             "type": {
@@ -13736,12 +14858,48 @@
                 "type": "cfunc"
             }
         }, 
+        "getFenceFdKHR": {
+            "name": "vkGetFenceFdKHR", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "FenceGetFdInfoKHR", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "int", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "getFenceStatus": {
             "name": "vkGetFenceStatus", 
             "type": {
                 "argtypes": [
                     "Device", 
                     "Fence"
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "getFenceWin32HandleKHR": {
+            "name": "vkGetFenceWin32HandleKHR", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "FenceGetWin32HandleInfoKHR", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "void*", 
+                        "type": "pointer"
+                    }
                 ], 
                 "restype": "Result", 
                 "type": "cfunc"
@@ -13762,6 +14920,24 @@
                 "type": "cfunc"
             }
         }, 
+        "getImageMemoryRequirements2KHR": {
+            "name": "vkGetImageMemoryRequirements2KHR", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "ImageMemoryRequirementsInfo2KHR", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "MemoryRequirements2KHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
         "getImageSparseMemoryRequirements": {
             "name": "vkGetImageSparseMemoryRequirements", 
             "type": {
@@ -13774,6 +14950,28 @@
                     }, 
                     {
                         "to": "SparseImageMemoryRequirements", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getImageSparseMemoryRequirements2KHR": {
+            "name": "vkGetImageSparseMemoryRequirements2KHR", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "ImageSparseMemoryRequirementsInfo2KHR", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "SparseImageMemoryRequirements2KHR", 
                         "type": "pointer"
                     }
                 ], 
@@ -13814,13 +15012,15 @@
                 "type": "cfunc"
             }
         }, 
-        "getMemoryFdKHX": {
-            "name": "vkGetMemoryFdKHX", 
+        "getMemoryFdKHR": {
+            "name": "vkGetMemoryFdKHR", 
             "type": {
                 "argtypes": [
                     "Device", 
-                    "DeviceMemory", 
-                    "ExternalMemoryHandleTypeFlagsKHX", 
+                    {
+                        "to": "MemoryGetFdInfoKHR", 
+                        "type": "pointer"
+                    }, 
                     {
                         "to": "int", 
                         "type": "pointer"
@@ -13830,15 +15030,15 @@
                 "type": "cfunc"
             }
         }, 
-        "getMemoryFdPropertiesKHX": {
-            "name": "vkGetMemoryFdPropertiesKHX", 
+        "getMemoryFdPropertiesKHR": {
+            "name": "vkGetMemoryFdPropertiesKHR", 
             "type": {
                 "argtypes": [
                     "Device", 
-                    "ExternalMemoryHandleTypeFlagsKHX", 
+                    "ExternalMemoryHandleTypeFlagsKHR", 
                     "int", 
                     {
-                        "to": "MemoryFdPropertiesKHX", 
+                        "to": "MemoryFdPropertiesKHR", 
                         "type": "pointer"
                     }
                 ], 
@@ -13846,13 +15046,15 @@
                 "type": "cfunc"
             }
         }, 
-        "getMemoryWin32HandleKHX": {
-            "name": "vkGetMemoryWin32HandleKHX", 
+        "getMemoryWin32HandleKHR": {
+            "name": "vkGetMemoryWin32HandleKHR", 
             "type": {
                 "argtypes": [
                     "Device", 
-                    "DeviceMemory", 
-                    "ExternalMemoryHandleTypeFlagsKHX", 
+                    {
+                        "to": "MemoryGetWin32HandleInfoKHR", 
+                        "type": "pointer"
+                    }, 
                     {
                         "to": "void*", 
                         "type": "pointer"
@@ -13878,15 +15080,15 @@
                 "type": "cfunc"
             }
         }, 
-        "getMemoryWin32HandlePropertiesKHX": {
-            "name": "vkGetMemoryWin32HandlePropertiesKHX", 
+        "getMemoryWin32HandlePropertiesKHR": {
+            "name": "vkGetMemoryWin32HandlePropertiesKHR", 
             "type": {
                 "argtypes": [
                     "Device", 
-                    "ExternalMemoryHandleTypeFlagsKHX", 
+                    "ExternalMemoryHandleTypeFlagsKHR", 
                     "void*", 
                     {
-                        "to": "MemoryWin32HandlePropertiesKHX", 
+                        "to": "MemoryWin32HandlePropertiesKHR", 
                         "type": "pointer"
                     }
                 ], 
@@ -13949,17 +15151,35 @@
                 "type": "cfunc"
             }
         }, 
-        "getPhysicalDeviceExternalBufferPropertiesKHX": {
-            "name": "vkGetPhysicalDeviceExternalBufferPropertiesKHX", 
+        "getPhysicalDeviceExternalBufferPropertiesKHR": {
+            "name": "vkGetPhysicalDeviceExternalBufferPropertiesKHR", 
             "type": {
                 "argtypes": [
                     "PhysicalDevice", 
                     {
-                        "to": "PhysicalDeviceExternalBufferInfoKHX", 
+                        "to": "PhysicalDeviceExternalBufferInfoKHR", 
                         "type": "pointer"
                     }, 
                     {
-                        "to": "ExternalBufferPropertiesKHX", 
+                        "to": "ExternalBufferPropertiesKHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "void", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceExternalFencePropertiesKHR": {
+            "name": "vkGetPhysicalDeviceExternalFencePropertiesKHR", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "PhysicalDeviceExternalFenceInfoKHR", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "ExternalFencePropertiesKHR", 
                         "type": "pointer"
                     }
                 ], 
@@ -13987,17 +15207,17 @@
                 "type": "cfunc"
             }
         }, 
-        "getPhysicalDeviceExternalSemaphorePropertiesKHX": {
-            "name": "vkGetPhysicalDeviceExternalSemaphorePropertiesKHX", 
+        "getPhysicalDeviceExternalSemaphorePropertiesKHR": {
+            "name": "vkGetPhysicalDeviceExternalSemaphorePropertiesKHR", 
             "type": {
                 "argtypes": [
                     "PhysicalDevice", 
                     {
-                        "to": "PhysicalDeviceExternalSemaphoreInfoKHX", 
+                        "to": "PhysicalDeviceExternalSemaphoreInfoKHR", 
                         "type": "pointer"
                     }, 
                     {
-                        "to": "ExternalSemaphorePropertiesKHX", 
+                        "to": "ExternalSemaphorePropertiesKHR", 
                         "type": "pointer"
                     }
                 ], 
@@ -14304,6 +15524,24 @@
                 "type": "cfunc"
             }
         }, 
+        "getPhysicalDeviceSurfaceCapabilities2KHR": {
+            "name": "vkGetPhysicalDeviceSurfaceCapabilities2KHR", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "PhysicalDeviceSurfaceInfo2KHR", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "SurfaceCapabilities2KHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
         "getPhysicalDeviceSurfaceCapabilitiesKHR": {
             "name": "vkGetPhysicalDeviceSurfaceCapabilitiesKHR", 
             "type": {
@@ -14312,6 +15550,28 @@
                     "SurfaceKHR", 
                     {
                         "to": "SurfaceCapabilitiesKHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "getPhysicalDeviceSurfaceFormats2KHR": {
+            "name": "vkGetPhysicalDeviceSurfaceFormats2KHR", 
+            "type": {
+                "argtypes": [
+                    "PhysicalDevice", 
+                    {
+                        "to": "PhysicalDeviceSurfaceInfo2KHR", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "u32", 
+                        "type": "pointer"
+                    }, 
+                    {
+                        "to": "SurfaceFormat2KHR", 
                         "type": "pointer"
                     }
                 ], 
@@ -14519,13 +15779,15 @@
                 "type": "cfunc"
             }
         }, 
-        "getSemaphoreFdKHX": {
-            "name": "vkGetSemaphoreFdKHX", 
+        "getSemaphoreFdKHR": {
+            "name": "vkGetSemaphoreFdKHR", 
             "type": {
                 "argtypes": [
                     "Device", 
-                    "Semaphore", 
-                    "ExternalSemaphoreHandleTypeFlagsKHX", 
+                    {
+                        "to": "SemaphoreGetFdInfoKHR", 
+                        "type": "pointer"
+                    }, 
                     {
                         "to": "int", 
                         "type": "pointer"
@@ -14535,13 +15797,15 @@
                 "type": "cfunc"
             }
         }, 
-        "getSemaphoreWin32HandleKHX": {
-            "name": "vkGetSemaphoreWin32HandleKHX", 
+        "getSemaphoreWin32HandleKHR": {
+            "name": "vkGetSemaphoreWin32HandleKHR", 
             "type": {
                 "argtypes": [
                     "Device", 
-                    "Semaphore", 
-                    "ExternalSemaphoreHandleTypeFlagsKHX", 
+                    {
+                        "to": "SemaphoreGetWin32HandleInfoKHR", 
+                        "type": "pointer"
+                    }, 
                     {
                         "to": "void*", 
                         "type": "pointer"
@@ -14586,13 +15850,24 @@
                 "type": "cfunc"
             }
         }, 
-        "importSemaphoreFdKHX": {
-            "name": "vkImportSemaphoreFdKHX", 
+        "getSwapchainStatusKHR": {
+            "name": "vkGetSwapchainStatusKHR", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    "SwapchainKHR"
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "importFenceFdKHR": {
+            "name": "vkImportFenceFdKHR", 
             "type": {
                 "argtypes": [
                     "Device", 
                     {
-                        "to": "ImportSemaphoreFdInfoKHX", 
+                        "to": "ImportFenceFdInfoKHR", 
                         "type": "pointer"
                     }
                 ], 
@@ -14600,13 +15875,41 @@
                 "type": "cfunc"
             }
         }, 
-        "importSemaphoreWin32HandleKHX": {
-            "name": "vkImportSemaphoreWin32HandleKHX", 
+        "importFenceWin32HandleKHR": {
+            "name": "vkImportFenceWin32HandleKHR", 
             "type": {
                 "argtypes": [
                     "Device", 
                     {
-                        "to": "ImportSemaphoreWin32HandleInfoKHX", 
+                        "to": "ImportFenceWin32HandleInfoKHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "importSemaphoreFdKHR": {
+            "name": "vkImportSemaphoreFdKHR", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "ImportSemaphoreFdInfoKHR", 
+                        "type": "pointer"
+                    }
+                ], 
+                "restype": "Result", 
+                "type": "cfunc"
+            }
+        }, 
+        "importSemaphoreWin32HandleKHR": {
+            "name": "vkImportSemaphoreWin32HandleKHR", 
+            "type": {
+                "argtypes": [
+                    "Device", 
+                    {
+                        "to": "ImportSemaphoreWin32HandleInfoKHR", 
                         "type": "pointer"
                     }
                 ], 
