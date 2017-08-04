@@ -107,16 +107,18 @@ find_suitable_device = (vk, instance, sidekicks):
                 enable = list(enable)
     assert false, "Did not find a suitable GPU"
 
-create_swapchain = (device, wsi):
+create_swapchain = (gpu, wsi):
     surface = wsi.surface
-    extent  = wsi.extent
     imageUsage = "COLOR_ATTACHMENT_BIT"
-    gpu = device.physicalDevice
+    dev = gpu.physicalDevice
 
-    cap = gpu.getSurfaceCapabilities(surface)
-    # uint32_t                         minImageCount;
-    # uint32_t                         maxImageCount;
-    # VkExtent2D                       currentExtent;
+    cap = dev.getSurfaceCapabilities(surface)
+    extent = dict(wsi.extent)
+    if cap.currentExtent.width != 0xFFFFFFFF
+        extent['width'] = cap.currentExtent.width
+    if cap.currentExtent.height != 0xFFFFFFFF
+        extent['height'] = cap.currentExtent.height
+
     # VkExtent2D                       minImageExtent;
     # VkExtent2D                       maxImageExtent;
     # uint32_t                         maxImageArrayLayers;
@@ -128,23 +130,28 @@ create_swapchain = (device, wsi):
     assert cap.supportedUsageFlags.COLOR_ATTACHMENT_BIT
         "Surface does not support the desired usage"
 
+    #for prop in dev.listSurfaceFormats(surface)
+    #    print(prop.format)
+    #    print(prop.colorSpace)
+
     imageFormat = null
     colorSpace = null
-    for prop in gpu.listSurfaceFormats(surface)
-        print(prop)
+    for prop in dev.listSurfaceFormats(surface)
         imageFormat = prop.format
         colorSpace = prop.colorSpace
         break
 
     presentMode = "FIFO_KHR"
-    for mode in gpu.listSurfacePresentModes(surface)
-        continue
+    #for mode in dev.listSurfacePresentModes(surface)
+    #    # FIFO_RELAXED
+    #    #if mode == "IMMEDIATE_KHR"
+    #    #    presentMode = mode
+    #    continue
 
-    format = "B8G8R8A8_UNORM" # hack, should enumerate the damn surface caps already.
     # Fourth temporary measure, no idea where this works.
-    swapchain = vulkan.Swapchain(device, {
+    options = {
         surface = surface
-        minImageCount = 2
+        minImageCount = clamp(2, cap.minImageCount, cap.maxImageCount)
         imageFormat = imageFormat
         imageColorSpace = colorSpace
         imageExtent = extent
@@ -156,13 +163,13 @@ create_swapchain = (device, wsi):
         #queueFamilyIndexCount = 0
         #pQueueFamilyIndices = null
         presentMode = presentMode
-        #oldSwapchain = null
         clipped = true
-    })
-
+    }
+    swapchain = vulkan.Swapchain(gpu, options)
+    swapchain.options = options
     swapchain.extent = extent
     swapchain.rect   = Rect(0, 0, extent["width"], extent["height"])
-    swapchain.config = (format=format, samples="1_BIT")
+    swapchain.config = (format=imageFormat, samples="1_BIT")
     # use getImages() instead.
     # you can obtain surface other ways.
     swapchain.subresource_range = {
@@ -175,6 +182,24 @@ create_swapchain = (device, wsi):
     # config.format
     # config.samples
 
+    return swapchain
+
+resize_swapchain = (gpu, wsi, oldSwapchain):
+    dev = gpu.physicalDevice
+    cap = dev.getSurfaceCapabilities(wsi.surface)
+    extent = dict(wsi.extent)
+    if cap.currentExtent.width != 0xFFFFFFFF
+        extent['width'] = cap.currentExtent.width
+    if cap.currentExtent.height != 0xFFFFFFFF
+        extent['height'] = cap.currentExtent.height
+    oldSwapchain.options['imageExtent'] = extent
+    oldSwapchain.options['oldSwapchain'] = oldSwapchain
+    swapchain = vulkan.Swapchain(gpu, oldSwapchain.options)
+    swapchain.options = oldSwapchain.options
+    swapchain.extent = extent
+    swapchain.rect   = Rect(0, 0, extent["width"], extent["height"])
+    swapchain.config = oldSwapchain.config
+    swapchain.subresource_range = oldSwapchain.subresource_range
     return swapchain
 
 class Rect
@@ -274,8 +299,10 @@ class GPUMemory
             block = heap.alloc(req.alignment, req.size)
             if block
                 break
-        heap = self.new_chunk(req.size, req.memoryTypeBits)
-        block = heap.alloc(req.alignment, req.size)
+        if not block
+            heap = self.new_chunk(req.size, req.memoryTypeBits)
+            block = heap.alloc(req.alignment, req.size)
+        #print('allocator count', self.allocators.length)
         obj.bindMemory(heap.chunk, block.offset)
         return MemoryBlock(heap.chunk, block)
 
@@ -358,6 +385,9 @@ class Allocator
             self.free_blocks.remove(block.next)
             block = block.merge()
         self.free_blocks.append(block)
+        #if self.free_blocks.length == 1
+        #    if self.size == self.free_blocks[0].size
+        #        print('entirely free')
 
 class Block
     +init = (self, parent, offset, size, prev=null, next=null):
@@ -390,6 +420,8 @@ class Block
             right.next.prev = left
         right.prev = null
         right.next = null
+        left.size += right.size
+        return self
 
 align_offset = (x, a):
     return (a - x % a) % a

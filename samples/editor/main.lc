@@ -1,0 +1,314 @@
+import api, base, ffi, sdl, vulkan
+from warpgpu2 import *
+
+main = ():
+    window = sdl.Window(name, {
+        width = 640
+        height = 480
+        flags = sdl.sdl.WINDOW_RESIZABLE
+    })
+
+    gpu = GPU(window.wsi)
+    heap = object();
+        device_only = GPUMemory(gpu, device_flags)
+        readback    = GPUMemory(gpu, readback_flags)
+        upload      = GPUMemory(gpu, upload_flags)
+
+    R32G32B32_SFLOAT = VulkanType("R32G32B32_SFLOAT", ffi.array(ffi.float, 3))
+    vertex_struct = ffi.struct([
+        ["pos",   R32G32B32_SFLOAT],
+        ["color", R32G32B32_SFLOAT] ])
+    vxb0 = VertexBinding(0, vertex_struct, "VERTEX")
+
+    vertex_layout = VertexLayout("TRIANGLE_LIST", {
+        0: vxb0.pos
+        1: vxb0.color
+    })
+
+    vbo = object();
+        max_vertices = 1024
+        size = max_vertices * ffi.sizeof(vertex_struct)
+        buffer = heap.upload.createBuffer(size, "VERTEX_BUFFER_BIT")
+        data = buffer.mem.map(vertex_struct)
+        count = 0
+
+    vbo.data[0] = {pos = [0,0,0], color = [1,0,1]}
+    vbo.data[1] = {pos = [1,0,0], color = [0,1,1]}
+    vbo.data[2] = {pos = [0,1,0], color = [1,1,0]}
+    vbo.data[3] = {pos = [1,0,0], color = [0,1,1]}
+    vbo.data[4] = {pos = [1,1,0], color = [0,0,1]}
+    vbo.data[5] = {pos = [0,1,0], color = [1,1,0]}
+    vbo.count = 6
+
+    ubo_struct = ffi.struct([
+        ["view", ffi.array(ffi.float, 16)]
+    ])
+
+    ubo = object();
+        size = ffi.sizeof(ubo_struct)
+        buffer = heap.upload.createBuffer(size, "UNIFORM_BUFFER_BIT")
+        data = buffer.mem.map(ubo_struct)
+        i = 0
+        for v in [  2,   0, 0, 0,
+                    0,  -2, 0, 0,
+                    0,   0, 1, 0,
+                   -1,  +1, 0, 1]
+            data.view[i] = v
+            i += 1
+
+    # Ubo metrics
+    metrics = window.getDPI()
+    ubo.data.view[0] =  2 * metrics.xdpcm / window.width
+    ubo.data.view[5] = -2 * metrics.ydpcm / window.height
+
+
+    DSC0 = DescriptorSetLayout(gpu, {
+        "scene": {
+            binding = 0
+            descriptorType = "UNIFORM_BUFFER"
+            stageFlags = "VERTEX_BIT"
+        }
+    })
+
+    dsc0 = DSC0()
+    dsc0.scene = {
+        buffer = ubo.buffer
+        offset = 0
+        range = -1
+    }
+    gpu.update(dsc0)
+
+    pipeline_layout = vulkan.PipelineLayout(gpu, {
+        flags = 0
+        setLayouts = [DSC0]
+        pushConstantRanges = []
+    })
+
+    shaders = ShaderLoader(gpu, dir ++ "glsl")
+
+    swapchain = create_swapchain(gpu, window.wsi)
+    swapchain.finalLayout = "PRESENT_SRC_KHR"
+
+    renderer = Renderer(gpu, heap, swapchain, shaders, [
+        TriangleLayer(vbo, pipeline_layout, vertex_layout, dsc0)
+    ])
+
+    app = object()
+    app.update = ():
+        null
+
+    now = was = time()
+    game_step = 1 / 60
+    event = ffi.automem(sdl.sdl.Event)
+    running = true
+    while running
+        now = time()
+        if now - was > game_step
+            app.update(game_step)
+            was += ((now - was) // game_step) * game_step
+            renderer()
+        for event in sdl.poll()
+            if event.type == sdl.sdl.QUIT
+                running = false
+            if event.type == sdl.sdl.WINDOWEVENT
+                if event.window.event == sdl.sdl.WINDOWEVENT_RESIZED
+                    window.width = event.window.data1
+                    window.height = event.window.data2
+                    #print('resize event!') #print(event.window.data1, event.window.data2)
+                    swapchain = resize_swapchain(gpu, window.wsi, swapchain)
+                    swapchain.finalLayout = "PRESENT_SRC_KHR"
+                    renderer.resize(swapchain)
+
+                # Ubo metrics
+                metrics = window.getDPI()
+                ubo.data.view[0] =  2 * metrics.xdpcm / window.width
+                ubo.data.view[5] = -2 * metrics.ydpcm / window.height
+            # if event.type == sdl.sdl.MOUSEBUTTONDOWN
+            #     ndx = event.button.x / window.width
+            #     ndy = 1.0 - event.button.y / window.height
+            #     clicks.append(object();
+            #         t = 1.5
+            #         x = ndx * 2
+            #         y = ndy * 2)
+        sleep(0.001)
+
+    gpu.destroy()
+
+class TriangleLayer
+    +init = (self, vbo, pipeline_layout, vertex_layout, descset):
+        self.vbo = vbo
+        self.pipeline_layout = pipeline_layout
+        self.vertex_layout = vertex_layout
+        self.descset = descset
+
+    init = (self, renderer):
+        self.pipeline = renderer.pass.pass0(
+            renderer.shaders.fetch({
+                vertex = "main.vert.spv:main",
+                fragment = "main.frag.spv:main"}),
+            self.pipeline_layout,
+            self.vertex_layout,
+            {
+                viewportState = renderer.swapchain.rect.viewportState
+                dynamicState = {dynamicStates = [
+                    "VIEWPORT", "SCISSOR"
+                ]}
+            })
+        renderer.gpu.createPipelines([self.pipeline])
+
+    +call = (self, subpass, cmd):
+        if self.vbo.count > 0
+            cmd.bindPipeline("GRAPHICS", self.pipeline)
+            cmd.bindVertexBuffers(0, [self.vbo.buffer], [0])
+            cmd.bindDescriptorSets("GRAPHICS", self.pipeline_layout, 0,
+            [self.descset], [])
+            cmd.draw(self.vbo.count, 1, 0, 0)
+
+class Renderer
+    +init = (self, gpu, heap, swapchain, shaders, layers):
+        self.gpu = gpu
+        self.heap = heap
+        self.swapchain = swapchain
+        self.shaders = shaders
+        self.layers = layers
+
+        properties = gpu.physicalDevice.getProperties()
+        sampling = "8_BIT"
+        if sampling not in properties.limits.framebufferColorSampleCounts
+            sampling = "4_BIT"
+        if sampling not in properties.limits.framebufferColorSampleCounts
+            sampling = "2_BIT"
+        if sampling not in properties.limits.framebufferColorSampleCounts
+            sampling = "1_BIT"
+        self.sampling = sampling
+
+        pb = RenderPassBuilder()
+        pb.attachment('resolve0',
+            format = swapchain.config.format,
+            samples = swapchain.config.samples,
+            storeOp = "STORE",
+            finalLayout = swapchain.finalLayout)
+        pb.attachment('color0',
+            format = swapchain.config.format,
+            samples = self.sampling,
+            loadOp = "CLEAR",
+            finalLayout = "COLOR_ATTACHMENT_OPTIMAL")
+    
+        pb.subpass("pass0", "GRAPHICS",
+            colorAttachments = [pb.color0("COLOR_ATTACHMENT_OPTIMAL")],
+            resolveAttachments = [pb.resolve0("COLOR_ATTACHMENT_OPTIMAL")])
+
+        self.pass = pb.build(gpu, null, self.sampling)
+        self.target = new_target(gpu, heap, swapchain, self.pass, sampling)
+        self.portal = Portal(gpu, self.target)
+        self.cmd = gpu.queue.pool.allocate(
+            {level = "PRIMARY", commandBufferCount = 1})[0]
+
+        for layer in self.layers
+            layer.init(self)
+
+    resize = (self, swapchain):
+        old_target = self.target
+        self.swapchain = swapchain
+        self.target = new_target(self.gpu, self.heap, self.swapchain, self.pass, self.sampling)
+        self.portal.target = self.target
+        self.gpu.waitIdle()
+        old_target.destroy()
+
+    +call = (self):
+        gpu = self.gpu
+        cmd = self.cmd
+        if not self.portal.acquire().SUCCESS
+            return
+
+        cmd.begin({flags = "ONE_TIME_SUBMIT_BIT"})
+        cmd.beginRenderPass({
+            renderPass = self.pass
+            framebuffer = self.portal.framebuffer
+            renderArea =  self.portal.target.swapchain.rect.area
+            clearValues = [
+                {},#color = {float32 = [0.5, 0.5, 0.5, 1.0]}},
+                {color = {float32 = [0.5, 0.5, 0.5, 1.0]}}
+            ]}, "INLINE")
+        cmd.setViewport(0, [self.target.swapchain.rect.viewport])
+        cmd.setScissor(0, [self.target.swapchain.rect.area])
+
+        for layer in self.layers
+            layer(0, cmd)
+
+        cmd.endRenderPass()
+        cmd.end()
+        self.portal.present([cmd])
+
+new_target = (gpu, heap, swapchain, pass, sampling):
+    # Multisampling target
+    color0 = new_image(gpu, heap,
+        swapchain.config.format, sampling,
+        swapchain.rect.width, swapchain.rect.height,
+        ["COLOR_ATTACHMENT_BIT"],
+        ["COLOR_BIT"])
+
+    #depth_stencil = new_image(gpu, heap,
+    #    "D24_UNORM_S8_UINT", sampling,
+    #    swapchain.rect.width, swapchain.rect.height,
+    #    ["DEPTH_STENCIL_ATTACHMENT_BIT"],
+    #    ["DEPTH_BIT", "STENCIL_BIT"])
+
+    # The rendering target is described here. You define the
+    # images, framebuffers, views, etc. to be used during
+    # the rendering.
+    target = object()
+    target.swapchain = swapchain
+    target.images = swapchain.getImages()
+    target.views = []
+    target.framebuffers = []
+    target.extra_images = [color0]
+    for image in target.images
+        view = vulkan.ImageView(gpu, {
+            image = image
+            viewType = "2D"
+            format = swapchain.config.format
+            components = {r = "R", g = "G", b = "B", a = "A"}
+            subresourceRange = swapchain.subresource_range
+        })
+        target.views.append(view)
+        framebuffer = pass.Framebuffer({
+            color0 = color0.view
+            resolve0 = view
+            #depth_stencil0 = depth_stencil.view})
+        }, swapchain.rect)
+        target.framebuffers.append(framebuffer)
+    
+    target.destroy = ():
+        for obj in target.extra_images
+            obj.view.destroy()
+            obj.destroy()
+            obj.mem.free()
+        for view in target.views
+            view.destroy()
+        target.swapchain.destroy()
+    return target
+
+new_image = (gpu, heap, format, samples, width, height, usage, aspectMask):
+    image = vulkan.Image(gpu, {
+        imageType = "2D"
+        format = format
+        samples = samples
+        extent = { width = width, height = height, depth = 1 }
+        mipLevels = 1
+        arrayLayers = 1
+        tiling = "OPTIMAL"
+        usage = usage
+        sharingMode = "EXCLUSIVE"
+        initialLayout = "UNDEFINED"})
+    image.mem = heap.device_only.alloc(image)
+    image.view = vulkan.ImageView(gpu, {
+        image = image
+        viewType = "2D"
+        format = format
+        components = {r = "R", g = "G", b = "B", a = "A"}
+        subresourceRange = {
+            aspectMask = aspectMask
+            layerCount = 1
+            levelCount = 1}})
+    return image
