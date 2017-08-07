@@ -130,8 +130,9 @@ for py_module in stdlib.import_all_modules():
     assert isinstance(py_module.module, Module), "dependency cycle somewhere"
     p = pathobj.concat(root_module.local, pathobj.parse(py_module.module.name))
     py_module.module.setattr_force(u"doc", pathobj.parse(u"doc:/" + py_module.module.name))
-    importer_poststage(py_module.module)
     root_module.setcache(p, py_module.module, 0.0)
+    import naming
+    naming.breath_first_search(py_module.module, 1.0)
 
 base.module.setattr_force(u"doc", pathobj.parse(u"doc:/base"))
 root_module.setcache(pathobj.parse(u"builtin:/" + base.module.name), base.module, 0.0)
@@ -234,7 +235,6 @@ class ModuleInfo(Object):
             self.cb_present = True
         program = evaluator.loader.from_object(bon.open_file(self.cb_path), self.cb_path)
         res = program.call([module])
-        importer_poststage(module)
         return res
 
     def getattr(self, name):

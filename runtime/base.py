@@ -1,22 +1,23 @@
-from rpython.rlib.objectmodel import specialize, always_inline
-from rpython.rtyper.lltypesystem import rffi
-from rpython.rlib.rstring import UnicodeBuilder
-from space import *
-from space.customobject import CustomObject_instantiate
+from async_io import Event, Queue
 from evaluator.loader import from_object
 from evaluator.sourcemaps import TraceEntry
-from async_io import Event, Queue
+from rpython.rlib.objectmodel import specialize, always_inline
+from rpython.rlib.rstring import UnicodeBuilder
+from rpython.rtyper.lltypesystem import rffi
+from space.customobject import CustomObject_instantiate
+from space import *
 import core
+import naming
 import os
 import pathobj
 #import stdlib
 import sys
 import time
-import vectormath
-import uv_util
 import uv_handle
 import uv_stream
 import uv_timer
+import uv_util
+import vectormath
 
 # The base environment
 module = Module(u'base', {
@@ -48,7 +49,7 @@ module = Module(u'base', {
     u'schedule': Builtin(core.schedule, u'schedule'),
     u'set': Set.interface,
     u'slice': Slice.interface,
-    u'DocRef': DocRef.interface,
+    u'DocRef': naming.DocRef.interface,
     u'Event': Event.interface,
     u'Queue': Queue.interface,
     u'Timer': uv_timer.Timer.interface,
@@ -80,6 +81,18 @@ def builtin(fn):
     name = fn.__name__.rstrip('_').decode('utf-8')
     module.setattr_force(name, Builtin(fn, name))
     return fn
+
+@builtin
+@signature(Object, Float, optional=1)
+def get_name(obj, stale):
+    if stale is None:
+        name = naming.get_name(obj)
+    else:
+        name = naming.get_name(obj, stale.number)
+    if name is not None:
+        return String(name)
+    else:
+        return null
 
 @builtin
 @signature(Object, Object, optional=1)

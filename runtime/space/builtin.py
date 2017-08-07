@@ -70,6 +70,12 @@ class Builtin(Object):
         return listing
     
     def repr(self):
+        import naming #TODO: Consider options here.
+        doc = self.doc
+        if isinstance(doc, naming.DocRef):
+            name = naming.get_name(self)
+            if name is not None:
+                return u"<" + name + u" in " + doc.module.repr() + u">"
         return u"<builtin %s>" % self.name
 
 # Turns out signature would have been much better

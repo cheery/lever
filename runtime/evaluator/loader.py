@@ -6,6 +6,7 @@ from sourcemaps import TraceEntry, raw_pc_location
 import pathobj
 import optable
 import space
+import naming
 
 #u16_array = lltype.GcArray(rffi.USHORT)
 
@@ -78,7 +79,7 @@ class Closure(space.Object):
     def __init__(self, frame, function):
         self.frame = frame
         self.function = function
-        self.doc = space.null
+        self.doc = naming.DocRef(frame.module)
 
     def call(self, argv):
         frame = create_frame(self.frame, self.function, argv)
@@ -118,10 +119,21 @@ class Closure(space.Object):
     def listattr(self):
         listing = space.Object.listattr(self)
         listing.append(space.String(u"doc"))
-        listing.append(space.String(u"source_location"))
+        listing.append(space.String(u"loc"))
         listing.append(space.String(u"spec"))
         listing.append(space.String(u"code"))
         return listing
+
+    def repr(self):
+        import naming #TODO: Consider options here.
+        doc = self.doc
+        if isinstance(doc, naming.DocRef):
+            name = naming.get_name(self)
+            if name is not None:
+                return u"<" + name + u" in " + doc.module.repr() + u">"
+        index = self.frame.unit.functions.index(self.function)
+        id_s = u"%d" % index
+        return u"<function #" + id_s + u" in " + self.frame.module.repr() + u">"
 
 @jit.unroll_safe
 def create_frame(parent, function, argv):

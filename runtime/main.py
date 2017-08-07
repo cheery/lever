@@ -28,7 +28,8 @@ def wakeup_sleeper(handle):
 inf = float("inf")
 
 def new_entry_point(config, default_lever_path=u''):
-    space.importer_poststage(base.module)
+    import naming
+    naming.breath_first_search(base.module, 1.0)
     def entry_point(raw_argv):
         lever_path = os.environ.get('LEVER_PATH')
         if lever_path is None:

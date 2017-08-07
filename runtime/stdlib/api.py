@@ -182,7 +182,12 @@ class FuncLibrary(Object):
     def getattr(self, name):
         if name in self.namespace:
             return self.namespace[name]
-        c = self.api.getitem(String(name))
+        try:
+            c = self.api.getitem(String(name))
+        except Unwinder, uw:
+            if isinstance(uw.exception, LKeyError):
+                return Object.getattr(self, name)
+            raise uw
         if isinstance(c, ffi.Wrap):
             cname = c.cname
             ctype = c.ctype

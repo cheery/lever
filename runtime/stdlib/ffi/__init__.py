@@ -36,7 +36,12 @@ class Library(Object):
         cname = name.encode('utf-8')
         ctype = null
         if self.api is not null:
-            c = self.api.getitem(String(name))
+            try:
+                c = self.api.getitem(String(name))
+            except Unwinder, uw:
+                if isinstance(uw.exception, LKeyError):
+                    return Object.getattr(self, name)
+                raise uw
             if isinstance(c, Wrap):
                 cname = c.cname.encode('utf-8')
                 ctype = c.ctype

@@ -3,7 +3,7 @@ from interface import Object, Interface, null, cast, cast_n, cast_for
 from builtin import Builtin, signature
 from dictionary import Dict
 from listobject import List
-from module import Module, importer_poststage, DocRef
+from module import Module
 from multimethod import Multimethod
 from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean
 from string import String, string_upper, string_lower, StringBuilder_
