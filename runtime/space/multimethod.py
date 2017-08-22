@@ -5,7 +5,7 @@ from rpython.rlib import jit
 from rpython.rlib.objectmodel import compute_hash, r_dict
 from rpython.rlib.rarithmetic import intmask
 from errors import OldError
-import space
+import space, weakref
 
 def eq_fn(this, other):
     if len(this) != len(other):
@@ -28,12 +28,13 @@ def hash_fn(this):
     return intmask(x)
 
 class Multimethod(Object):
-    _immutable_fields_ = ['arity', 'multimethod_table', 'interface_table', 'default?', 'version?']
+    _immutable_fields_ = ['arity', 'multimethod_table', 'default?', 'version?']
     def __init__(self, arity, default=null, doc=null):
         self.arity = arity
         self.multimethod_table = r_dict(eq_fn, hash_fn, force_non_null=True)
-        self.interface_table = {}
-        self.version = VersionTag()
+        self.version = VersionTag() # The version tag is required because the result 'None'
+                                    # from the get_impl/get_method can be very useful due
+                                    # to the .default -function call behavior.
         self.default = default
         self.doc = doc
 
@@ -51,7 +52,7 @@ class Multimethod(Object):
     def get_impl(self, interface, version):
         impl = interface
         while impl is not null:
-            if impl in self.interface_table:
+            if self in impl.multimethod_index:
                 return impl
             if impl.parent is impl: # interface loop
                 return interface
@@ -60,7 +61,9 @@ class Multimethod(Object):
 
     @jit.elidable
     def get_method(self, version, *interface):
-        return self.multimethod_table.get(list(interface), None)
+        interface = list(interface)
+        face = [item.weakref for item in interface]
+        return self.multimethod_table.get(face, None)
 
     @jit.unroll_safe
     def invoke_method(self, argv, suppress_default):
@@ -103,22 +106,23 @@ class Multimethod(Object):
         else:
             vec = []
             for i in range(self.arity):
-                vec.append(self.get_interface(argv[i], v))
+                vec.append(self.get_interface(argv[i], v).weakref)
             method = self.multimethod_table.get(vec, None)
         if method is not None:
-            return method
+            method = method()
+            if method is not None:
+                return method
         if self.default is null or suppress_default:
             return method
         else:
             return self.default
 
     def multimethod(self, *spec):
-        vec = list(cls.interface for cls in spec)
+        vec = [cls.interface.weakref for cls in spec]
         def _impl_(fn):
-            self.multimethod_table[vec] = Builtin(fn)
-            for i in vec:
-                self.interface_table[i] = None
-            self.version = VersionTag()
+            bfn = Builtin(fn)
+            record = MultimethodRecord(self, vec, bfn)
+            self.register_record(record)
             return fn
         return _impl_
 
@@ -131,23 +135,25 @@ class Multimethod(Object):
     def getitem(self, index):
         index = space.cast(index, space.List, u"Multimethod.getitem")
         try:
-            return self.multimethod_table[index.contents]
+            vec = [cls.interface.weakref for cls in index.contents]
+            item = self.multimethod_table[vec]()
+            if item is not None:
+                return item
         except KeyError as _:
-            raise space.unwind(space.LKeyError(self, index))
+            pass
+        raise space.unwind(space.LKeyError(self, index))
 
     def setitem(self, index, value):
         index = space.cast(index, space.List, u"Multimethod.setitem")
         vec = [
             space.cast(item,
                 space.Interface,
-                u"Multimethod expects interface list")
+                u"Multimethod expects interface list").weakref
             for item in index.contents]
         if vec in self.multimethod_table:
             raise space.unwind(space.LError(u"Multimethod table is not overwritable."))
-        self.multimethod_table[vec] = value
-        for i in vec:
-            self.interface_table[i] = None
-        self.version = VersionTag()
+        record = MultimethodRecord(self, vec, value)
+        self.register_record(record)
         return value
 
     def getattr(self, index):
@@ -157,6 +163,9 @@ class Multimethod(Object):
             return self.default
         if index == u"doc":
             return self.doc
+        if index == u"size":                # Used for ensuring that the gc+sleep can
+            a = len(self.multimethod_table) # bite into the weak references.
+            return Integer(a)
         return Object.getattr(self, index)
 
     def setattr(self, index, value):
@@ -167,6 +176,35 @@ class Multimethod(Object):
             self.doc = value
             return value
         return Object.setattr(self, index, value)
+
+    def register_record(self, record):
+        self.multimethod_table[record.vec] = weakref.ref(record.function)
+        for i in record.vec:
+            interface = i.weakref()
+            interface.multimethods[record] = None
+            if self in interface.multimethod_index:
+                interface.multimethod_index[self] += 1
+            else:
+                interface.multimethod_index[self] = 1
+        self.version = VersionTag()
+
+    def unregister_record(self, record):
+        if record.vec not in self.multimethod_table:
+            return # Can be called many times.
+        self.multimethod_table.pop(record.vec)
+        for i in record.vec:
+            interface = i.weakref()
+            if interface is None: # If the interface is None, it means that it's
+                continue          # going to disappear soon and we don't care.
+            # Interface may appear many times in a single record.
+            interface.multimethods.pop(record, None)
+            # But the multimethod_index is updated for each occurrence.
+            interface.multimethod_index[self] -= 1
+            if interface.multimethod_index[self] == 0:
+                interface.multimethod_index.pop(self)
+                self.version = VersionTag() # In the rare case that the interface
+                                            # disappears and uncovers parent
+                                            # interface's methods.
 
 @Multimethod.instantiator
 @signature(Integer)
@@ -179,10 +217,25 @@ def Multimethod_call_suppressed(mm, args):
 
 @Multimethod.method(u"keys", signature(Multimethod))
 def Multimethod_keys(self):
-    return space.List([
-        space.List(list(vec))
-        for vec in self.multimethod_table
-    ])
+    out = []
+    for vec in self.multimethod_table:
+        argt = []
+        for w in vec:
+            item = w.weakref()
+            if item is None:
+                break
+            argt.append(item)
+        if len(argt) == len(vec):
+            out.append(space.List(argt))
+    return space.List(out)
 
 class VersionTag(object):
     pass
+
+# This is placed into the Interface.multimethods
+class MultimethodRecord(object):
+    _immutable_fields_ = ['multimethod', 'vec', 'function']
+    def __init__(self, multimethod, vec, function):
+        self.multimethod = multimethod
+        self.vec = vec
+        self.function = function

@@ -1,0 +1,27 @@
+import gc
+
+print('init size', %"+".size)
+
+testing = ():
+    foo = %"class"(object(), object, "foo")
+    bar = %"class"(object(), object, "bar")
+
+    %"+"[[foo, bar]] = (a, b):
+        return "c"
+    print('size after added method', %"+".size)
+
+for j in range(4)
+    testing()
+    gc.collect()
+    sleep(0.0)
+
+print('done size', %"+".size)
+
+print("type 'int' multimethods:")
+for record in list_multimethods(int)
+    print(" ", get_name(record.multimethod), record.types)
+print("type 'int' methods:")
+for methodname in list_methods(int)
+    print(" ", methodname)
+
+print(%"+".keys())

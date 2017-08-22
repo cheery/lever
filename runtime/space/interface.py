@@ -1,7 +1,7 @@
 import re
 from rpython.rlib.objectmodel import compute_hash, specialize, always_inline
-from rpython.rlib import jit
-import space
+from rpython.rlib import jit, rgc
+import space, weakref
 
 class Object:
     _immutable_fields_ = ['interface', 'custom_interface', 'flag', 'number', 'value', 'contents', 'data', 'string', 'iterator', 'arity', 'methods', 'default', 'cells']
@@ -116,6 +116,11 @@ class Interface(Object):
         self.instantiate = instantiate
         self.methods = methods
         self.doc = None
+        self.multimethods = {} # Describes which multimethods are defined for
+                               # this interface. The record is described in the
+                               # runtime/space/multimethod.py
+        self.multimethod_index = {}
+        self.weakref = WeakInterface(self)
 
     def call(self, argv):
         if self.instantiate is None:
@@ -160,6 +165,10 @@ class Interface(Object):
         for methodname in self.methods.keys():
             listing.append(space.String(methodname))
         return listing
+
+class WeakInterface(object):
+    def __init__(self, interface):
+        self.weakref = weakref.ref(interface)
 
 Interface.interface = Interface(None, u"interface", {})
 Interface.interface.parent = Interface.interface
@@ -292,3 +301,9 @@ def hate_them(argv):
 @Interface.instantiator2(builtin.signature(Object))
 def Interface_init_is_cast(obj):
     return space.get_interface(obj)
+
+# Only active with the user-defined interfaces that may be 'lost'.
+@Interface.method(u"+finalize", builtin.signature(Interface))
+def Interface_finalize(self):
+    for record in self.multimethods:
+        record.multimethod.unregister_record(record)

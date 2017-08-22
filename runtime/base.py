@@ -117,11 +117,13 @@ def class_(argv):
     methods = {}
     for key, index in exnihilo.map.attribute_indexes.items():
         methods[key] = exnihilo.storage[index]
-    return Interface(
+    interface = Interface(
         cast(parent, Interface, u"parent"),
         cast(name, String, u"name").string,
         methods,
         CustomObject_instantiate)
+    core.g.finalizer_queue.register_finalizer(interface)
+    return interface
 
 @builtin
 @signature(Object)
@@ -169,6 +171,32 @@ def setitem(obj, index, value):
 @signature(Object)
 def listattr(obj):
     return List(obj.listattr())
+
+## The interface for analysing the interface.
+@builtin
+@signature(Interface)
+def list_methods(interface):
+    out = []
+    for name in interface.methods:
+        out.append(String(name))
+    return List(out)
+
+@builtin
+@signature(Interface)
+def list_multimethods(interface):
+    out = []
+    for record in interface.multimethods:
+        types = []
+        for ref in record.vec:
+            interface = ref.weakref()
+            if interface is not None:
+                types.append(interface)
+        if len(types) == len(record.vec):
+            row = Exnihilo()
+            row.setattr(u'multimethod', record.multimethod)
+            row.setattr(u'types', List(types))
+            out.append(row)
+    return List(out)
 
 @builtin
 @signature(Object, String)
