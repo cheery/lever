@@ -1,0 +1,8 @@
+# This bug was detected when the uint8 builder was used
+# in a SPIR-V encoder. When there were few strings in our
+# builder, it used to work just fine.
+u = Uint8Builder()
+
+for i in range(1000)
+    xy = Uint8Array(4)
+    u.append(xy)

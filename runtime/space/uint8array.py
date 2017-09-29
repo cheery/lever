@@ -193,21 +193,21 @@ def Uint8Builder_init():
 def Uint8Builder_append(self, obj):
     data = rffi.cast(rffi.VOIDP, obj.uint8data)
     remaining = obj.length
-    if remaining > 0 and self.avail > 0:
-        count = min(remaining, self.avail)
-        rffi.c_memcpy(self.current, data, count)
-        remaining -= count
-        data = rffi.ptradd(data, count)
-        self.avail -= count
-        self.current = rffi.ptradd(self.current, count)
-    if remaining > 0: # self.avail == 0
+    if remaining > self.avail:
+        if self.avail > 0:
+            count = min(remaining, self.avail)
+            rffi.c_memcpy(self.current, data, count)
+            remaining -= count
+            data = rffi.ptradd(data, count)
+            self.avail = 0
+            self.current = rffi.ptradd(self.current, count)
         capacity = (remaining + 1023) & ~1023
-        base = lltype.malloc(rffi.VOIDP.TO, self.avail, flavor='raw')
+        base = lltype.malloc(rffi.VOIDP.TO, capacity, flavor='raw')
         self.avail = capacity
         self.current = rffi.cast(rffi.VOIDP, base)
         self.buffers.append((base, capacity))
         self.total_capacity += capacity
-    # remaining > avail
+        # no longer remaining > avail
     rffi.c_memcpy(self.current, data, remaining)
     self.avail -= remaining
     self.current = rffi.ptradd(self.current, remaining)
