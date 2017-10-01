@@ -1,0 +1,35 @@
+use alias(symbol)
+    on = ["test", "x", "y"]
+use indentation(indent, dedent, newline)
+    can_close = [",", "]", ")", "}"]
+
+file: addition
+
+file: string+
+
+big_expr:
+    expr
+    expr "if" expr / if(2, ..)
+    "fruit" "basket" sep(fruit, ",")
+    "fruit" "gasket" sep(fruit, ",")
+    many(fruit)
+
+expr:
+    addition
+ 
+addition:
+    addition "+" term / add
+    term
+
+fruit: ["apples", "bananas", "oranges"]
+
+term: int / int
+
+many(x):
+    / []
+    many(x) x / (1 append 2)
+
+constructive terminal foobar
+terminal string
+terminal symbol
+terminal int

@@ -1,0 +1,65 @@
+use alias()
+    a = [symbol]
+    on = ['constructive', 'use', 'terminal', 'append', 'concat']
+use indentation(indent, dedent, newline)
+    can_close = [')', ']', '}']
+
+file: sep(decl, newline)
+
+decl:
+    'use' symbol '(' sep(symbol, ',') ')' (indent join(option, newline) dedent)? / use
+    'constructive'? 'terminal' join(symbol, ',') / terminal
+    symbol '(' sep(symbol, ',') ')' ':' body / template
+    symbol ':' body / rule
+
+option: symbol '=' '[' sep(primitive, ',') ']'
+
+primitive:
+    symbol / symbol
+    string / string
+
+body:
+    prod / [.]
+    indent join(prod, newline) dedent
+
+prod: expr* ('/' [annotation, symbol / shorthand])? / prod 
+
+expr:
+    term
+    '(' arg_block(prod) ')' '+' / plus
+    '(' arg_block(prod) ')' '*' / star
+    '(' arg_block(prod) ')' '?' / opt
+    symbol '(' arg_block(prod) ')' / expand
+
+term:
+    term '+' / plus
+    term '*' / star
+    term '?' / opt
+    symbol / symbol
+    string / string
+    '[' arg_block(prod) ']' / prod_set
+
+annotation:
+    annotation_term
+    annotation 'append' annotation_term / append
+    annotation 'concat' annotation_term / concat
+
+annotation_term:
+    '(' annotation ')'
+    int / index
+    '.' / dot
+    '..' / dotdot
+    'null' / a_null
+
+    symbol '(' sep(annotation, ',') ')' / label
+    '[' sep(annotation, ',') ']' / a_list
+
+arg_block(x):
+    sep(x, ',', ',')
+    # TODO: consider
+    # sep(x, ',', ',') indent join_concat(x, newline) dedent / (. concat .)
+    indent sep_concat(x, newline) dedent
+
+sep_concat(x, y):
+    sep(x, ',', ',')
+    seq_b(x) y sep(x, ',', ',') / (. concat .)

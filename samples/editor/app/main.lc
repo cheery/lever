@@ -1,0 +1,200 @@
+import ttf, polygon
+
+assets = dir ++ "../../fonts/assets"
+
+font_file = assets ++ "sourcesanspro-regular.ttf"
+
+app.text_buffer ?= [
+    list("Hello world and lots of text"),
+    list("Hello again with lots more text!"),
+    list("Then some more and more"),
+    list("Then hello = some more and then hello again and some more hello"),
+    list("So more more hello"),
+    [] ]
+
+app.caret = (x=0, y=0)
+
+init = ():
+    print("hello, live edit scope")
+    was = time()
+    app.font = TriangleFont(ttf.read_file(font_file))
+    redraw_buffer()
+    bench = time() - was
+    print("took", bench, "seconds")
+
+    sdl.sdl.StartTextInput()
+    print("clipboard", sdl.sdl.HasClipboardText())
+
+    app.must_redraw = false
+
+    # Put into the SDL lib
+    #stuff = sdl.sdl.GetClipboardText()
+    #print(repr(stuff.str))
+    #sdl.sdl.free(stuff)
+    #sdl.sdl.SetClipboardText("")
+
+app.update = ():
+    if app.must_redraw
+        redraw_buffer()
+        app.must_redraw = false
+
+app.on_mouse_motion = (point):
+    return if not app.?metrics
+    y = int((point.y - app.line_y) // app.line_height)
+    y = clamp(y, 0, app.metrics.length - 1)
+    line_metric = app.metrics[y]
+
+    best_x = abs(line_metric[0].matrix[4] - point.x)
+    x = 0
+    i = 0
+    for metric in line_metric
+        candinate_x = abs(metric.matrix[4] - point.x)
+        if candinate_x < best_x
+            best_x = candinate_x
+            x = i
+        i += 1
+
+    app.caret.y = y
+    app.caret.x = x
+    app.must_redraw = true
+
+redraw_buffer = ():
+    font = app.font
+    vbo = app.vbo
+    vbo.count = 0
+
+    x_height_mm = 1.25 # nice
+    #x_height_mm = 3 # big, for starters
+
+    text_scale = x_height_mm / font.x_height
+
+    x = 10
+    y = 0 + (font.ascent * text_scale)
+
+    #for ch in "\n".join([
+    #        "Hello world and lots of text\nHello again with lots more text!\nThen some more and more",
+    #        "Then hello = some more and then hello again and some more hello\nSo more more hello" ])
+    #    if ch == "\n"
+    #        x = 10
+    #        y += font.line_height * text_scale
+    #        continue
+    #    glyph = font.getGlyph(ch)
+    #    metric = font.getMetric(glyph)
+    #    if ch != " "
+    #        matrix = [text_scale, 0, 0, -text_scale, x, y]
+    #        font.drawGlyph(draw_triangulated, glyph, matrix, [255, 255, 255, 255])
+    #    x += metric.advance / font.head.unitsPerEm * text_scale
+
+    #x = 10
+    #y += font.line_height * text_scale
+
+    app.line_y = y - font.ascent * text_scale
+    app.line_height = font.line_height * text_scale 
+    app.metrics = []
+
+    for line in app.text_buffer
+        line_metrics = []
+        for ch in line
+            glyph = font.getGlyph(ch)
+            metric = font.getMetric(glyph)
+            advance = metric.advance / font.head.unitsPerEm
+            matrix = [text_scale, 0, 0, -text_scale, x, y]
+            if ch != " "
+                font.drawGlyph(draw_triangulated, glyph, matrix, [255, 255, 255, 255])
+            line_metrics.append(matrix=matrix, advance=advance)
+            x += advance * text_scale
+        line_metrics.append(matrix=[text_scale, 0, 0, -text_scale, x, y], advance=0)
+        x = 10
+        y += font.line_height * text_scale
+        app.metrics.append(line_metrics)
+
+    color = [255, 100, 100, 255]
+    caret = app.metrics[app.caret.y][app.caret.x]
+    font.drawCaret(draw_triangulated, 0.4/text_scale, caret.matrix, color, 0.1)
+
+    color = [155, 255, 255, 255]
+    line_metrics = app.metrics[app.metrics.length - 1]
+
+    for i in clamp(5 .: 10, 0, line_metrics.length - 1)
+        metric = line_metrics[i]
+        font.drawCaret(draw_triangulated, metric.advance, metric.matrix, color, 0.1)
+
+
+    caret = line_metrics[line_metrics.length - 1]
+    font.drawCaret(draw_triangulated, 0.4/text_scale, caret.matrix, color, 0.1)
+
+class TriangleFont
+    +init = (self, font):
+        self.font = font
+        self.triangle_cache = {}
+        self.head = font.tables.head
+        self.hhea = font.tables.hhea
+        self.x_height = font.getGlyph('x').height
+        self.line_height = (self.hhea.ascent - self.hhea.descent + self.hhea.lineGap) / self.head.unitsPerEm
+        self.ascent = self.hhea.ascent / self.head.unitsPerEm
+        self.descent = self.hhea.descent / self.head.unitsPerEm
+
+    getGlyph = (self, ch):
+        return self.font.getGlyph(ch)
+
+    getMetric = (self, glyph):
+        return self.font.tables.hmtx.metrics[glyph.index]
+
+    drawCaret = (self, fn, n, matrix, args...):
+        a = self.ascent 
+        d = self.descent
+        caret_mesh = [
+            (x=0, y=d), (x=0, y=a), (x=n, y=a),
+            (x=0, y=d), (x=n, y=d), (x=n, y=a)]
+        fn(caret_mesh, matrix, args...)
+
+    drawGlyph = (self, fn, glyph, matrix, args...):
+        if glyph.type == "compound"
+            for compound in glyph.compounds
+                subglyph = self.font.tables.glyf.glyphs[compound.glyphIndex]
+
+                cmatrix = compound.matrix
+                a = matrix[0] * cmatrix[0] + matrix[2] * cmatrix[1]
+                b = matrix[1] * cmatrix[0] + matrix[3] * cmatrix[1]
+                c = matrix[0] * cmatrix[2] + matrix[2] * cmatrix[3]
+                d = matrix[1] * cmatrix[2] + matrix[3] * cmatrix[3]
+                x = matrix[0] * compound.x + matrix[2] * compound.y + matrix[4]
+                y = matrix[1] * compound.x + matrix[3] * compound.y + matrix[5]
+                submatrix = [a, b, c, d, x, y]
+                self.drawGlyph(fn, subglyph, submatrix, args...)
+        else
+            if glyph.index in self.triangle_cache
+                triangles = self.triangle_cache[glyph.index]
+            else
+                graph = polygon.contours_to_graph(glyph.contours)
+                triangles = polygon.triangulate(graph) #, x, y, scale) # coords for debug.
+                self.triangle_cache[glyph.index] = triangles
+            fn(triangles, matrix, args...)
+
+draw_triangulated = (triangles, matrix, color, z=0.0):
+    for v in triangles
+        x = matrix[0] * v.x + matrix[2] * v.y + matrix[4]
+        y = matrix[1] * v.x + matrix[3] * v.y + matrix[5]
+        app.vbo.data[app.vbo.count] = {pos=[x, y, z], color=color}
+        app.vbo.count += 1
+
+import sdl
+
+app.sdl_event = (event):
+    if event.type == sdl.sdl.KEYDOWN
+        name = sdl.sdl.GetKeyName(event.key.keysym.sym).str
+        if name == "Backspace"
+            line = app.text_buffer[app.text_buffer.length - 1]
+            line.pop() if line.length > 0
+            app.must_redraw = true
+        #if name == "Left"
+        #else
+        #    print(name, event.key.keysym.mod)
+    elif event.type == sdl.sdl.KEYUP
+        return null
+    elif event.type == sdl.sdl.TEXTINPUT
+        ch = event.text.text.str
+        line = app.text_buffer[app.text_buffer.length - 1]
+        line.extend(ch)
+        app.must_redraw = true
+        return null

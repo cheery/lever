@@ -1,0 +1,26 @@
+import sdl
+from dsp import saw, sqr, tri
+
+main = ():
+    audio = sdl.StereoAudio(sound_out)
+    audio.play()
+    schedule(random_tunes)
+
+voice = tri
+freq = 220
+dx   = 0
+
+random_tunes = ():
+    for i in range(100)
+        freq := random() * 500 + 220
+        dx := 0
+        voice := [sin, tri, sqr, saw][int((random()*3+0.5))]
+        sleep(0.5 + random())
+
+sound_out = (t, dt):
+    dx -= dt
+    value = voice(freq*t*tau) * exp(dx*10)
+    volume = pow(10, -0.9)
+    return object();
+        left = value * volume
+        right = value * volume

@@ -1,0 +1,52 @@
+
+# For now this is an illustration of how graphics programming
+# looks like, rather soon.
+from layers.flat import SpriteLayer
+from warpgpu import Rect
+import sdl
+import warpgpu
+
+main = :
+    # For the simplest applications, even these could be abstracted away
+    # But this is the absolute simplest mode.
+    # Perhaps I should produce "default application frames" that bunch
+    # this stuff together and take care of reloading and plugins.
+    window = sdl.Window("Hello!", {
+        width = 1024, height = 1024
+    })
+    gpu = warpgpu.GPU(window.wsi)
+    screen = Rect(0, 0, window.width, window.height)
+
+    # swapchain = window.wsi.create_swapchain()
+    # hm...hm.. ...
+    swapchain = warpgpu.get_swapchain(
+        gpu.device, window.wsi.surface, screen)
+
+    # The gist here, create bunch of layers, you can make more of
+    # these and customize them.
+    sprites = SpriteLayer(gpu)
+    sprites.load("greeting", "greeting.png")
+
+    # This renderer takes care of wiring the stuff together such
+    # that the sprite layer ends up to the rendering target.
+    render = warpgpu.Render(gpu, swapchain, [sprites])
+
+    running = true
+    while running
+        # I've been trying to abstract this one away for a
+        # long while, but it seems unavoidable.
+        running = sdl.process_events()
+
+        # Sprite layer cleared and rocket blitted on it.
+        # There are other ways to use this.
+        sprites.clear()
+        sprites.add("greeting", vec3(0, 0))
+
+        # Takes care about waiting, rendering, etc.. Everything
+        # required to get the stuff shown on the screen.
+        render()
+
+    # Finally, clean up the GPU properly and destroy the resource
+    # in order, so you are spared of the trouble from doing this
+    # yourself.
+    gpu.destroy()

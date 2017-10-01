@@ -1,0 +1,193 @@
+import api, ffi, fs, sdl, vulkan
+from warpgpu2 import *
+
+main = ():
+    window = sdl.Window(name, {width=512, height=512})
+    gpu = GPU(window.wsi)
+    swapchain = create_swapchain(gpu, window.wsi)
+
+    # device_only = GPUMemory(gpu, device_flags)
+    # readback = GPUMemory(gpu, readback_flags)
+    upload = GPUMemory(gpu, upload_flags)
+
+    R32G32B32_SFLOAT = VulkanType("R32G32B32_SFLOAT", ffi.array(ffi.float, 3))
+
+    vertex_struct = ffi.struct([
+        ["pos",   R32G32B32_SFLOAT],
+        ["color", R32G32B32_SFLOAT] ])
+    vxb0 = VertexBinding(0, vertex_struct, "VERTEX")
+
+    vertex_layout = VertexLayout("TRIANGLE_LIST", {
+        0: vxb0.pos,
+        1: vxb0.color
+    })
+
+    vbo = object();
+        size = 8 * 1024
+        buffer = upload.createBuffer(size, "VERTEX_BUFFER_BIT")
+        data = buffer.mem.map(vertex_struct)
+        data[0] = {pos=[0.0, 0.0, 0.0], color=[1.0, 0.5, 0.5]}
+        data[1] = {pos=[0.0, 1.0, 0.0], color=[0.5, 1.0, 0.5]}
+        data[2] = {pos=[1.0, 0.0, 0.0], color=[0.5, 0.5, 1.0]}
+        data[3] = {pos=[0.0, 1.0, 0.0], color=[0.5, 0.5, 1.0]}
+        data[4] = {pos=[1.0, 1.0, 0.0], color=[0.5, 1.0, 1.0]}
+        data[5] = {pos=[1.0, 0.0, 0.0], color=[1.0, 1.0, 0.5]}
+        buffer.mem.unmap()
+
+    ubo = object();
+        # TODO: fix such that we can do without the struct here.
+        layout = ffi.struct([
+            ["matrix", ffi.array(ffi.float, 16)] ])
+        size = 2 * ffi.sizeof(layout)
+        buffer = upload.createBuffer(size, "UNIFORM_BUFFER_BIT")
+        data = buffer.mem.map(layout)
+        data[0].matrix = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+           -0.2,-0.2, 0.0, 1.0 ]
+        data[1].matrix = [
+            1.0, 0.0, 0.0, 0.0,
+            0.0, 1.0, 0.0, 0.0,
+            0.0, 0.0, 1.0, 0.0,
+            0.0, 0.0, 0.0, 1.0 ]
+        buffer.mem.unmap()
+
+    # TODO: Consider an alternative approach on this one.
+    cbuf = gpu.queue.pool.allocate({
+        level = "PRIMARY",
+        commandBufferCount = 1})[0]
+
+    DSC0 = DescriptorSetLayout(gpu, {
+        "testbuffer": {
+            binding=0,
+            descriptorType = "UNIFORM_BUFFER",
+            stageFlags="VERTEX_BIT"
+        }
+    })
+
+    dsc0 = DSC0()
+    dsc0.testbuffer = {
+        buffer = ubo.buffer
+        offset = 0
+        range  = -1
+    }
+    gpu.update(dsc0)
+
+    pipeline_layout = vulkan.PipelineLayout(gpu, {
+        flags = 0
+        setLayouts = [DSC0]
+        pushConstantRanges = []
+    })
+
+    # attachments
+    # subpasses
+    # dependencies
+
+    pb = RenderPassBuilder()
+
+    pb.attachment("color0",
+        format = swapchain.config.format,
+        samples = swapchain.config.samples,
+        loadOp = "CLEAR",
+        storeOp = "STORE",
+        initialLayout = 0, # UNDEFINED
+        finalLayout   = "PRESENT_SRC_KHR")
+
+    pb.subpass("p0", "GRAPHICS",
+        colorAttachments = [
+            pb.color0("COLOR_ATTACHMENT_OPTIMAL")
+        ])
+    pass = pb.build(gpu, swapchain.rect)
+
+    target = object()
+    target.swapchain = swapchain
+    target.images = swapchain.getImages()
+    target.views = []
+    target.framebuffers = []
+    for image in target.images
+        view = vulkan.ImageView(gpu, {
+            image = image
+            viewType = "2D"
+            format = swapchain.config.format
+            components = {r = "R", g = "G", b = "B", a = "A"}
+            subresourceRange = swapchain.subresource_range
+        })
+        target.views.append(view)
+        # DEP: framebuffer
+
+        framebuffer = pass.Framebuffer(color0=view)
+        target.framebuffers.append(framebuffer)
+
+    shaders = ShaderLoader(gpu, dir ++ "glsl")
+
+    pipeline = pass.p0(
+        shaders.fetch({
+            vertex = "vertex_shader.vert.spv:main"
+            fragment = "fragment_shader.frag.spv:main"
+        }),
+        pipeline_layout,
+        vertex_layout)
+
+    gpu.createPipeline(pipeline) # or pipelines.
+
+    portal = Portal(gpu, target)
+
+    frame_statistics = []
+    frame_was = time()
+    render = ():
+        if not portal.acquire().SUCCESS
+            return
+
+        frame_now = time()
+        frame_statistics.append(frame_now - frame_was)
+        frame_was := frame_now
+
+        cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
+        cbuf.beginRenderPass({
+            renderPass = pass
+            framebuffer = portal.framebuffer
+            renderArea = swapchain.rect.area
+            clearValues = [
+                {color = {float32 = [
+                    sin(time()) * 0.5 + 0.5,
+                    sin(time() + 2*pi * 1 / 3) * 0.5 + 0.5,
+                    sin(time() + 2*pi * 2 / 3) * 0.5 + 0.5,
+                    1.0
+                ]}}]
+        }, "INLINE")
+        cbuf.bindPipeline("GRAPHICS", pipeline)
+        cbuf.bindDescriptorSets("GRAPHICS", pipeline_layout, 0, [dsc0], [])
+        cbuf.bindVertexBuffers(0, [vbo.buffer], [0])
+        cbuf.draw(6, 1, 0, 0)
+        cbuf.endRenderPass()
+        cbuf.end()
+        portal.present([cbuf])
+
+        if frame_statistics.length >= 1000
+            best  = 1.0
+            worst = 0.0
+            avg   = 0.0
+            for stat in frame_statistics
+                best = min(best, stat)
+                worst = max(worst, stat)
+                avg += stat
+            avg /= frame_statistics.length
+            print("best:", 1/best, "worst:", 1/worst, "avg:", 1/avg)
+            frame_statistics := []
+
+
+    app = object()
+
+    running = true
+    while running
+        render(app)
+        for event in sdl.poll()
+            if event.type == sdl.sdl.QUIT
+                running = false
+
+    gpu.destroy()
+    
+
+render = (app):
+    null

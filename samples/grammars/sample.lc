@@ -1,0 +1,8 @@
+import grammar
+
+main = :
+    sample_lang = grammar.read_file(dir ++ 'sample.grammar')
+
+    result = sample_lang.read_string("1 + 2")
+    result.traverse((rule, args, loc):
+        print(rule, args, loc.start, loc.stop))
