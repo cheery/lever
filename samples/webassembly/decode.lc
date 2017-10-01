@@ -1,0 +1,953 @@
+import webassembly
+import native
+import json
+
+x86_64_table = json.read_file(
+    runtime_path ++ "lib/x86_64.table.json")["instructions"]
+enc = {}
+for ins in x86_64_table
+    mnem = ins["vendor_syntax"]["mnemonic"].lower()
+    try
+        enc[mnem].append(ins)
+    except KeyError as ke
+        enc[mnem] = [ins]
+
+select_table = json.read_file(dir ++ "select.json")
+available_tiles = select_table["tiles"]
+
+main = ():
+    sections = webassembly.read_file(dir ++ "webdsp_c.wasm")
+    index_space = {
+        "global": [],
+        "function": [],
+        "memory": [],
+        "table": [],
+    }
+    for entry in sections["import"]
+        index_space[entry["kind"]].append(object();
+            kind = "import"
+            data = entry
+        )
+    i = 0
+    code = sections["code"]
+    type = sections["type"]
+    for entry in sections["function"]
+        index_space["function"].append(object();
+            kind = "function"
+            type = type[entry]
+            code = code[i])
+        i += 1
+
+    for entry in sections["global"]
+        index_space["global"].append(object(entry);
+            kind = "global")
+        #TODO: build the initializer routine for the module.
+        #for item in entry["init"]
+        #    print(item["name"], item.get("global_index"), item.get("value"))
+
+    challenges = []
+    for entry in sections["export"]
+        obj = index_space[entry["kind"]][entry["index"]]
+        histogram = set()
+        for op in obj.code["body"]
+            histogram.add(op["name"])
+        histogram = list(histogram)
+        histogram.sort()
+        challenges.append(object();
+            obj = obj
+            histogram = histogram
+            entry = entry)
+
+    challenges.sort((a, b):
+        return a.histogram.length < b.histogram.length)
+
+    environ = object();
+        index_space = index_space
+        type = type
+
+    #for n in challenges[8 .: 16]
+    #    func = translate_function(
+    #        n.entry["field"],
+    #        n.obj.code["locals"],
+    #        n.obj.code["body"],
+    #        n.obj.type["restype"],
+    #        n.obj.type["argtypes"],
+    #        environ)
+    #    native.print_function(func)
+    #    print("")
+    n = challenges[15]
+    func = translate_function(
+        n.entry["field"],
+        n.obj.code["locals"],
+        n.obj.code["body"],
+        n.obj.type["restype"],
+        n.obj.type["argtypes"],
+        environ)
+    func.sort_reverse_postorder()
+    native.print_function(func)
+    print("")
+    liveness_analysis(func)
+    native.print_function(func)
+    print("")
+
+    tiles = NOLTIS(func).select()
+
+    print("")
+    show_tiles(func, tiles)
+
+    color = IRC(func, tiles).work()
+    print("colors")
+    for var in color
+        print(" ", var, color[var])
+
+class Context
+    +init = (self, prev, entry, is_loop, sig):
+        self.is_loop = is_loop
+        self.prev  = prev
+        self.entry = entry
+        self.ebb   = entry
+        self.stack = []
+        self.changes = {}
+        self.top   = 0
+        self.sig   = sig  # The .sig of this block.
+        self.next  = null # Used on the if/else
+        if self.prev
+            self.top = self.prev.top + self.prev.stack.length
+
+    lookup = (self, label, sig):
+        try
+            return self.changes[label]
+        except KeyError as ke
+            self.changes[label] = arg = self.ebb.arg(label)
+            arg.t = sig
+            return arg
+
+    # The blocks may not consume outer operands. (CHECK)
+    transfer_stack = (self, sig):
+        if self.next
+            ebb = self.next
+        else
+            ebb = self.ebb
+        stack = []
+        for i in range(self.stack.length)
+            res = ebb.arg("a" ++ (self.top + i).to_string())
+            res.t = self.stack[i].t
+            stack.append(res)
+        if sig
+            res = ebb.arg("a" ++ (self.top + stack.length).to_string())
+            res.t = sig
+            stack.append(res)
+        self.stack = stack
+        self.changes = {}
+
+    freeze = (self): # The freeze is required for the system to remember changes.
+        out = dict(self.changes)
+        for i in range(self.stack.length)
+            out["a" ++ (self.top + i).to_string()] = self.stack[i]
+        return out
+
+    # The loop .sig is for situation where
+    # the loop is exited from the bottom. (CHECK)
+    terminate = (self, target):
+        out = dict(self.changes) 
+        if self.sig
+            res = typecheck(self.stack.pop(), self.sig)
+            out["a" ++ self.top.to_string()] = res
+        self.ebb.jump(target, out)
+
+    get_br_ebb = (self):
+        if self.is_loop
+            return self.entry
+        elif self.next
+            return self.next
+        else
+            return self.ebb
+
+    # Branches that target a loop do not yield a value; they pop any values pushed
+    # onto the stack since the start of the loop and set the program counter to the
+    # start of the loop.
+
+    # The blocks and functions may produce at most one value. (end is not allowed to have effect)
+    # Note that branch to loop cannot catch a value.
+    br_if = (self, ctx):
+        cond = typecheck(ctx.stack.pop(), 'i32')
+        out = dict(ctx.changes)
+        if self.sig and not self.is_loop
+            res = typecheck(ctx.stack[ctx.stack.length-1], self.sig)
+            out["a" ++ self.top.to_string()] = res
+        ctx.ebb.jcond(cond, self.get_br_ebb(), out)
+
+    br = (self, ctx):
+        out = dict(ctx.changes)
+        if self.sig and not self.is_loop
+            res = typecheck(ctx.stack.pop(), self.sig)
+            out["a" ++ self.top.to_string()] = res
+        ctx.ebb.jump(self.get_br_ebb(), out)
+
+# Executing a block or loop instruction has no effect on the value stack.
+# Executing the end of a block or loop (including implicit blocks such as in if or for a function body) has no effect on the value stack.
+
+# TODO: implicitly popping at 'end' as well now.
+# The implicit popping associated with explicit branches makes compiling
+# expression languages straightforward, even non-local control-flow transfer,
+# requiring fewer drops.
+
+# Executing the if instruction pops an i32 condition off the stack and either
+# falls through to the next instruction or sets the program counter to after
+# the else or end of the if. (CHECK)
+
+# Executing the else instruction of an if sets the program counter to after the
+# corresponding end of the if. (CHECK)
+
+# Branches that exit a block or if may yield value(s) for that construct.
+# Branches pop result value(s) off the stack which must be the same type as the
+# declared type of the construct which they target. If a conditional or
+# unconditional branch is taken, the values pushed onto the stack between the
+# beginning of the construct and the branch are discarded, the result value(s)
+# are pushed back onto the stack, and the program counter is updated to the end
+# of the construct.
+
+translate_function = (label, locals, body, restype, argtypes, environ):
+    func = native.Function(label, argtypes, restype)
+    ctx = Context(null, func.entry, false, restype)
+
+    # TODO: Going to fix this soon, but not right yet.
+    localtypes = list(argtypes)
+    for item in locals
+        for i in range(item["count"])
+            localtypes.append(item["type"])
+    print(localtypes)
+
+    for op in body
+        op = object(op)
+        if op.name == "block"
+            entry = func.new_ebb()
+            ctx = Context(ctx, entry, false, op.sig)
+            ctx.prev.ebb.jump(ctx.ebb, ctx.prev.freeze())
+            ctx.prev.ebb = func.new_ebb()
+            ctx.prev.transfer_stack(op.sig)
+        elif op.name == "loop"
+            entry = func.new_ebb()
+            ctx = Context(ctx, entry, true, op.sig)
+            ctx.prev.ebb.jump(ctx.ebb, ctx.prev.freeze())
+            ctx.prev.ebb = func.new_ebb()
+            ctx.prev.transfer_stack(op.sig)
+        elif op.name == "if"
+            cond = ctx.stack.pop()
+            entry = func.new_ebb()
+            ctx = Context(ctx, entry, false, op.sig)
+            ctx.prev.ebb.jcond(cond, entry, ctx.prev.freeze())
+            ctx.prev.next = func.new_ebb()
+            ctx.prev.transfer_stack(op.sig)
+        elif op.name == "else"
+            assert ctx.prev.next, "else out of 'if' block"
+            ctx.terminate(ctx.prev.next)
+            entry = func.new_ebb()
+            ctx.prev.ebb.jump(entry, ctx.prev.freeze())
+            ctx.prev.ebb = ctx.prev.next
+            ctx.prev.next = null
+            ctx.ebb = entry
+            ctx.stack = []
+        elif op.name == "end"
+            if ctx.prev.next
+                assert not ctx.sig, "sig without 'else'"
+                ctx.prev.ebb.jump(ctx.prev.next, ctx.prev.freeze())
+                ctx.prev.ebb = ctx.prev.next
+                ctx.prev.next = null
+            ctx.terminate(ctx.prev.ebb)
+            ctx = ctx.prev
+        elif op.name == "br_if"
+            rl = op.relative_depth
+            target = ctx
+            for i in range(rl)
+                target = target.prev
+            target.br_if(ctx)
+        elif op.name == "br"
+            rl = op.relative_depth
+            target = ctx
+            for i in range(rl)
+                target = target.prev
+            target.br(ctx)
+        elif op.name == "get_global"
+            res = ctx.ebb.op("get_global", [op.global_index], true)
+            g = environ.index_space["global"][op.global_index]
+            if g.kind == "import"
+                assert false, "implement 'import' globals"
+                #res.t = "any" # TODO: typecheck this properly.
+            elif g.kind == "global"
+                res.t = g.content_type
+            else
+                assert false, g.kind
+            ctx.stack.append(res)
+        elif op.name == "set_global"
+            g = environ.index_space["global"][op.global_index]
+            if g.kind == "import"
+                assert false, "implement 'import' globals"
+            elif g.kind == "global"
+                sig = g.content_type
+            else
+                assert false, g.kind
+            arg = typecheck(ctx.stack.pop(), sig)
+            ctx.ebb.op("set_global", [op.global_index, arg], true)
+        elif op.name == "get_local"
+            index = op.local_index
+            label = "k" ++ index.to_string()
+            res = ctx.lookup(label, localtypes[index])
+            res.t = localtypes[index]
+            ctx.stack.append(res)
+        elif op.name == "tee_local"
+            index = op.local_index
+            label = "k" ++ index.to_string()
+            res = ctx.lookup(label, localtypes[index])
+            res.t = localtypes[index]
+            arg = typecheck(ctx.stack.pop(), localtypes[index])
+            ctx.changes[label] = arg
+            ctx.stack.append(res)
+        elif op.name == "set_local"
+            index = op.local_index
+            label = "k" ++ index.to_string()
+            arg = typecheck(ctx.stack.pop(), localtypes[index])
+            ctx.changes[label] = arg
+        elif op.name == "i32.const"
+            res = ctx.ebb.op("const", [op.value])
+            res.t = "i32"
+            ctx.stack.append(res)
+        elif op.name == "grow_memory"
+            arg = ctx.stack.pop()
+            res = ctx.ebb.op("grow_memory", [arg])
+            res.t = "i32"
+            ctx.stack.append(res)
+        elif op.name == "call"
+            index = op.function_index
+            obj = environ.index_space["function"][index]
+            if obj.kind == "import"
+                type = environ.type[obj.data["index"]]
+            else
+                assert obj.kind == "function", obj.kind
+                type = obj.type
+            assert type["form"] == "func", type["form"]
+            fn = ctx.ebb.op("function", [index])
+            args = []
+            for t in reversed(type["argtypes"])
+                args.append(typecheck(ctx.stack.pop(), t))
+            args.reverse()
+            res = ctx.ebb.op("call", [fn] ++ args, true)
+            res.t = type["restype"]
+            if res.t
+                ctx.stack.append(res)
+        elif op.name == "call_indirect"
+            index = op.type_index
+            type = environ.type[index]
+            assert type["form"] == "func", type.type["form"]
+            args = []
+            for t in reversed(type["argtypes"])
+                args.append(typecheck(ctx.stack.pop(), t))
+            args.append(typecheck(ctx.stack.pop(), 'i32')) # TODO: figure this out?
+            args.reverse()
+            res = ctx.ebb.op("call_indirect", args, true)
+            res.t = type["restype"]
+            if res.t
+                ctx.stack.append(res)
+        elif op.meta["category"] in ["conversion", "arithmetic", "comparison", "memory"]
+            args = []
+            for t in reversed(op.meta["parameter"])
+                args.append(typecheck(ctx.stack.pop(), t))
+            args.reverse()
+            res = ctx.ebb.op(op.meta.get("name", op.name), args)
+            res.t = one_ret(op.meta["return"])
+            if res.t
+                ctx.stack.append(res)
+        elif op.name == "return"
+            # Executing a return pops a return value(s) off the stack
+            # and returns from the current function (CHECK)
+            if func.restype
+                ctx.ebb.ret(typecheck(ctx.stack.pop(), restype))
+            else
+                ctx.ebb.ret()
+        elif op.name == "drop" # The drop operator can be used to explicitly
+            ctx.stack.pop()    # pop a value from the stack.
+        elif op.name == "unreachable"
+            ctx.ebb.unreachable()
+        elif op.name == "nop"
+            ctx.ebb.op("nop", [])
+        else
+            assert false, op.name
+
+    # Executing the end of the implicit block for a function body pops the
+    # return value(s) (if any) off the stack and returns from the function. (CHECK)
+    if ctx.sig
+        ctx.ebb.ret(typecheck(ctx.stack.pop(), ctx.sig))
+    else
+        ctx.ebb.ret()
+
+    return func
+
+freeze_stack = (sp):
+    out = {}
+    for i in range(sp.length)
+        out[i] = sp
+    return out
+
+transform_stack = (ebb, sp):
+    new_sp = []
+    for i in range(sp.length)
+        a = ebb.arg(i)
+        a.tp = sp[i].t
+        new_sp.append(a)
+    return new_sp
+
+typecheck = (op, t):
+    if t == "addr" and op.t == "i32"
+        return op
+    if t == "i32" and op.t == "bool"
+        return op
+    assert op.t == t
+        " ".join([
+            "typecheck failure",
+            reprs(op.t), reprs(t)])
+    return op
+
+reprs = (obj):
+    if isinstance(obj, str)
+        return obj
+    return repr(obj)
+
+one_ret = (params):
+    if params.length == 1
+        return params[0]
+    elif params.length == 0
+        return null
+    else
+        assert false
+            "instructions retuning multiple args not supported now"
+
+# The sort of global liveness analysis as here happens
+# separately from the iterated register coalescing algorithm.
+
+liveness_analysis = (func):
+    # TODO: we may also want to drop out false uses here later?
+    ebb_edges = {}
+    for ebb in func.ebbs
+        edges = []
+        for op in ebb.code
+            for arg in op.args
+                if isinstance(arg, native.Exit)
+                    edges.append(arg)
+        if ebb.exit
+            for arg in ebb.exit.args
+                if isinstance(arg, native.Exit)
+                    edges.append(arg)
+        ebb_edges[ebb] = edges
+
+    changed = true
+    while changed
+        changed = false
+        for ebb in reversed(func.ebbs)
+            N = ebb.input.length
+            for edge in ebb_edges[ebb]
+                for var in set(edge.ebb.input)
+                    if var not in edge.output
+                        edge.output[var] = ebb.arg(var)
+            if N != ebb.input.length
+                changed = true
+
+    # The variables that do not have output are safe to drop.
+    for ebb in func.ebbs
+        for edge in ebb_edges[ebb]
+            new_output = {}
+            for var in edge.output
+                if var in edge.ebb.input
+                    new_output[var] = edge.output[var]
+            edge.output = new_output
+
+## NOLTIS: http://llvm.org/pubs/2008-CGO-DagISel.pdf
+class NOLTIS
+    +init = (self, func):
+        self.func = func # expression DAG
+        self.best_choice_for_node = {} # Node -> (Tile x int)
+        self.fixed_nodes = set() # Node
+        self.matched_tiles = set() # Tile
+        self.covering_tiles = {} # Node -> set of Tile
+        self.roots = set()
+
+    select = (self):
+        self.fixed_nodes.clear()
+        bottom_up_dp(self)          # initializes best_choice_for_node
+        top_down_select(self)       # initializes covering_tiles
+        improve_CSE_decisions(self) # initializes fixed_nodes
+        bottom_up_dp(self)          # uses fixed_nodes
+        top_down_select(self)       # puts final tiling to matchedTiles
+        ebb_tiles = {}
+        for ebb in self.func.ebbs
+            tiles = []
+            for op in ebb.code
+                t = self.best_choice_for_node[op]
+                if t in self.matched_tiles
+                    tiles.append(t)
+            if ebb.exit
+                t = self.best_choice_for_node[ebb.exit]
+                assert t in self.matched_tiles
+                tiles.append(t)
+            ebb_tiles[ebb] = tiles
+        return ebb_tiles
+
+# reverse topological sort: such that use comes after def.
+# roots(DAG) .. the nodes that are sinks, and not used in the graph.
+
+bottom_up_dp = (st):
+    st.roots.clear()
+    for op in iter_func_ops(st.func)
+        tile = null
+        for tn in matching_tiles(op)
+            if not has_interior_fixed_node(tn, st.fixed_nodes)
+                for edge in tn.edge_nodes
+                    tn.cost += st.best_choice_for_node[edge].cost
+                if (not tile) or tn.cost < tile.cost
+                    tile = tn
+        if not tile
+            print("no tile", op.name, op.args...)
+        st.best_choice_for_node[op] = tile
+        st.roots.difference_update(op.args)
+        st.roots.add(op)
+
+iter_func_ops = (func):
+    for ebb in func.ebbs
+        for op in ebb.code
+            yield op
+        if ebb.exit
+            yield ebb.exit
+
+matching_tiles = (op):
+    for spec in available_tiles.get(op.name, [])
+        edges = []
+        argv = []
+        pat = spec.get("pattern", {})
+        args = pat.get("args")
+        if args
+            if op.args.length != args.length
+                continue
+            for i in range(args.length)
+                if args[i] in ["r/m64", "r/32", "r32", "r64"]
+                    a = op.args[i]
+                    if isinstance(a, native.Op)
+                        edges.append(a)
+                    argv.append(op.args[i])
+                elif args[i] == "block" and isinstance(op.args[i], native.Exit)
+                    argv.append(op.args[i])
+                elif args[i] == "const" and isinstance(op.args[i], [int, float])
+                    argv.append(op.args[i])
+                else
+                    assert false, args[i]
+        yield object();
+            cost = spec.get("cost", 0)
+            root = op
+            edges = edges
+            edge_nodes = set(edges)
+            cover = set([op])
+            interior = set()
+            spec = spec
+            argv = argv
+
+has_interior_fixed_node = (tn, fixed_nodes):
+    for n in tn.interior
+        if n in fixed_nodes
+            return true
+    return false
+
+# So we select the best tiles and check which ones are covered
+#   many times.
+
+top_down_select = (st):
+    st.matched_tiles.clear()
+    st.covering_tiles = {}
+    q = list(st.roots)
+    while q.length > 0
+        n = q.pop()
+        best_tile = st.best_choice_for_node[n]
+        if not best_tile
+            raise Error("no tile for: " ++ n.name
+                ++ native.iter_repr(n.args))
+        st.matched_tiles.add(best_tile)
+        for nt in best_tile.cover
+            try
+                st.covering_tiles[nt].add(best_tile)
+            except KeyError as ke
+                st.covering_tiles[nt] = set([best_tile])
+        for nx in best_tile.edge_nodes
+            q.append(nx)
+
+
+improve_CSE_decisions = (st):
+    for n in iter_func_ops(st.func)
+        if st.covering_tiles[n].length > 1
+            overlap_cost = get_overlap_cost(n, st)
+            cse_cost = st.best_choice_for_node[n].cost
+            for tn in st.covering_tiles
+                cse_cost = cse_cost + get_tile_cut_cost(tn, n)
+            if cse_cost < overlap_cost
+                st.fixed_nodes.add(n)
+
+get_overlap_cost = (n, st):
+    cost = 0
+    seen = set()
+    q = []
+    for t in st.covering_tiles[n]
+        q.append(t)
+        seen.add(t)
+    while q.length > 0
+        t = q.pop()
+        cost = cost + t.cost
+        for nx in t.edge_nodes
+            if is_reachable_from(nx, n, t.cover)
+                tx = st.best_choice_for_node[nx].tile # there was tx here, but didn't made sense
+                                                      # so changed it to nx
+                if st.covering_tiles[nx].length == 1
+                    cost = cost + st.best_choice_for_node[nx].cost
+                elif tx not in seen
+                    seen.add(tx)
+                    q.append(tx)
+    return cost
+
+is_reachable_from = (nx, n, cover): # TODO: Not sure if nx can be n, find out
+    for arg in n.args
+        if arg == nx
+            return true
+        if arg in cover and is_reachable_from(nx, arg, cover)
+            return true
+    return false
+
+get_tile_cut_cost = (t, n):
+    best_cost = null
+    r = t.root
+    for tx in matching_tiles(r)
+        if n in tx.edge_nodes
+            cost = tx.cost
+            for nx in tx.edge_nodes
+                if nx != n
+                    cost = cost + st.best_choice_for_node[nx].cost
+            if (not best_cost) or cost < best_cost
+                best_cost = cost
+    for nx in t.edge_nodes
+        if path_does_not_contain(r, nx, n, t.cover)
+            best_cost = best_cost - st.best_choice_for_node[nx].cost
+    return best_cost
+
+path_does_not_contain = (root, to, n, cover):
+    if n in cover
+        return not is_reachable_from(to, n, cover)
+    return true
+
+show_tiles = (func, ebb_tiles):
+    for ebb in func.ebbs
+        tiles = ebb_tiles[ebb]
+        print(ebb.label ++ ":")
+        for t in tiles
+            print("   ", t.root, t.argv)
+            for row in t.spec["template"]
+                print("   ", json.write_string(row))
+
+
+## IRC: https://www.cs.princeton.edu/research/techreps/TR-498-95
+class IRC
+    +init = (self, func, ebb_tiles):
+        self.func = func
+        self.ebb_tiles = ebb_tiles
+        self.simplify_work = set()
+        self.coalesce_work = set()
+        self.freeze_work = set()
+        self.spill_work = set()
+        # adjacency data
+        self.adj_set = set()
+        self.adj_list = {}
+        self.degree = {}
+        #
+        self.active_moves = set()
+        self.coalesced_moves = set()
+        self.move_list = {}
+        self.precolored = set()
+        self.constrained_moves = set()
+        self.frozen_moves = set()
+        #
+        self.select_stack = []
+        self.coalesced_nodes = []
+        self.alias = {}
+        #
+        self.K = 16 # Lets try others later.
+        self.spilled_nodes = set()
+        self.colored_nodes = set()
+        self.color = {}
+
+    work = (self):
+        # liveness_analysis() # Actually the IRC algorithm doesn't need to do full analysis.
+        build_graph(self)
+        mk_worklist(self)
+        while (self.simplify_work.length +
+               self.coalesce_work.length +
+               self.freeze_work.length +
+               self.spill_work.length) > 0
+            if self.simplify_work.length > 0
+                simplify(self)
+            elif self.coalesce_work.length > 0
+                coalesce(self)
+            elif self.freeze_work.length > 0
+                freeze(self)
+            elif self.spill_work.length > 0
+                select_spill(self)
+        assign_colors(self)
+        if self.spilled_nodes.length > 0
+            rewrite_program(self.spilled_nodes)
+            return self.work()
+        return self.color
+
+build_graph = (st): # procedure Build
+    for ebb in st.func.ebbs
+        live = set()
+        for tile in reversed(st.ebb_tiles[ebb])
+            if tile.spec.get("result", false)
+                live.discard(tile.root)
+                for l in live
+                    add_edge(st, l, tile.root)
+            for arg in tile.argv
+                if isinstance(arg, native.Exit)
+                    for val in arg.output.values()
+                        live.add(val)
+                elif isinstance(arg, [native.Op, native.Arg])
+                    live.add(arg)
+            for move in tile.spec.get("moves", [])
+                dst = resolve_move(st, tile, move[0])
+                src = resolve_move(st, tile, move[1])
+                move = [dst,src]
+                st.coalesce_work.add(move)
+                try
+                    st.move_list[dst].add(move)
+                except KeyError as ke
+                    st.move_list[dst] = set([move])
+                try
+                    st.move_list[src].add(move)
+                except KeyError as ke
+                    st.move_list[src] = set([move])
+    args = list(st.func.entry.input.values())
+    for i in range(1, args.length)
+        for j in range(i)
+            add_edge(st, args[i], args[j])
+
+resolve_move = (st, tile, motion):
+    if motion.startswith('i')
+        return tile.argv[ parse_int(motion[1 .:]) ]
+    elif motion == "result"
+        return tile.root
+    else # TODO: should not have to care about register size,
+         #       only about the register class.
+        arg = motion
+        st.color[arg] = parse_int(motion[1 .:])
+        st.precolored.add(arg) 
+        return arg
+
+add_edge = (st, u, v):
+    lhs = [u, v]
+    if lhs not in st.adj_set
+        st.adj_set.add(lhs)
+        st.adj_set.add([v, u])
+        add_half_edge(st, u, v)
+        add_half_edge(st, v, u)
+
+add_half_edge = (st, u, v):
+    if isinstance(u, [native.Arg, native.Op]) # not precolored if it's variable
+        degree = st.degree.get(u, 0)
+        if degree == 0
+            st.degree[u] = 1
+            st.adj_list[u] = [v]
+        else
+            st.degree[u] = degree + 1
+            st.adj_list[u].append(v)
+
+mk_worklist = (st):
+    initial = st.adj_list.keys() # for now...
+    for n in initial
+        if st.degree[n] >= st.K
+            st.spill_work.add(n)
+        elif move_related(st, n)
+            st.freeze_work.add(n)
+        else
+            st.simplify_work.add(n)
+    # st.initial = set()
+
+move_related = (st, n):
+    return node_moves(st, n).length > 0
+
+node_moves = (st, n):
+    moves = st.move_list.get(n)
+    if moves
+        moves -= st.active_moves
+        moves -= st.coalesce_work
+        return moves
+    else
+        return set()
+
+simplify = (st):
+    n = st.simplify_work.pop()
+    st.select_stack.append(n)
+    for m in adjacent(st, n)
+        decrement_degree(st, m)
+
+decrement_degree = (st, m):
+    d = st.degree[m]
+    st.degree[m] = d - 1
+    if d == st.K
+        enable_moves(st, adjacent(st, m) ++ [m])
+        st.spill_work.discard(m)
+        if move_related(st, m)
+            st.freeze_work.add(m)
+        else
+            st.simplify_work.add(m)
+
+enable_moves = (st, nodes):
+    for n in nodes
+        for m in node_moves(st, n)
+            if m in st.active_moves
+                st.active_moves.pop(m)
+                st.coalesce_work.add(m)
+
+coalesce = (st):
+    m = st.coalesce_work.pop()
+    x = get_alias(st, m[0])
+    y = get_alias(st, m[1])
+    if y in st.precolored
+        u = y
+        v = x
+    else
+        u = x
+        v = y
+    if u == v
+        st.coalesced_moves.add(m)
+        add_worklist(st, u)
+    elif v in st.precolored or [u,v] in st.adj_set
+        st.constrained_moves.add(m)
+        add_worklist(st, u)
+        add_worklist(st, v)
+    else
+        coalesce = false
+        if u in st.precolored
+            for t in adjacent(v)
+                if st.degree.get(t,0) < st.K
+                    coalesce = true
+                elif t in st.precolored
+                    coalesce = true
+                elif [t,u] in st.adj_set
+                    coalesce = true
+        else
+            coalesce = conservative(st, adjacent(st, u) ++ adjacent(st, v))
+        if coalesce
+            st.coalesced_moves.add(m)
+            combine(st, u,v)
+        else
+            st.active_moves.add(m)
+
+add_worklist = (st, u):
+    if (u not in st.precolored) and (not move_related(st, u)) and st.degree.get(u, 0) < st.K
+        st.freeze_work.discard(u)
+        st.simplify_work.add(u)
+
+conservative = (st, nodes):
+    k = 0
+    for n in nodes
+        if st.degree.get(n,0) >= st.K
+            k += 1
+    return k < st.K
+
+get_alias = (st, n):
+    while n in st.coalesced_nodes
+        n = get_alias(st, st.alias[n])
+    return n
+
+combine = (st, u, v):
+    st.freeze_work.discard(v)
+    st.spill_work.discard(v)
+    st.alias[v] = u
+    for t in adjacent(st, v)
+        decrement_degree(st, t)
+        add_edge(st, t, u)
+
+freeze = (st):
+    u = st.freeze_work.pop()
+    st.simplify_work.add(u)
+    for m in node_moves(st, u)
+        if m[0] == u
+            v = m[1]
+        else
+            v = m[0]
+        if m in st.active_moves
+            st.active_moves.discard(m)
+        else
+            st.coalesce_work.discard(m)
+        st.frozen_moves.add(m)
+        if node_moves(st, v).length == 0 and st.degree.get(v,0) < st.K
+            st.freeze_work.discard(v)
+            st.simplify_work.add(v)
+
+select_spill = (st):
+    # selected using favorite heuristic
+    # Note: avoid choosing nodes that are the tiny live ranges
+    #       resulting from the fetches of previously spilled registers
+    m = st.spill_work.pop()
+    st.simplify_work.add(m)
+
+assign_colors = (st):
+    while st.select_stack.length > 0
+        n = st.select_stack.pop()
+        ok_colors = set()
+        for i in range(st.K)
+            ok_colors.add(st.K - i - 1)
+        for w in adjacent(st, n) # nU (coloredNodes U precolored)
+            if w in st.colored_nodes
+                ok_colors.discard(st.color[w])
+        if ok_colors.length == 0
+            st.spilled_nodes.add(n)
+        else
+            st.colored_nodes.add(n)
+            st.color[n] = ok_colors.pop() # TODO: select the "lowest color"
+    for n in st.coalesced_nodes
+        st.color[n] = st.color.get(get_alias(st, n))
+
+adjacent = (st, n):
+    adj = []
+    for a in st.adj_list[n]
+        if a in st.select_stack
+            continue
+        if a in st.coalesced_nodes
+            continue
+        adj.append(a)
+    return adj
+
+# Spill operation is done on the function objects..
+# We go through the function with our spilled variables.
+# Whenever a spilled variable is defined, we add:
+# x = spill v 
+# When there is an occurrence of 'v', we will insert
+# z = unspill x
+# and replace the 'v' with 'z'
+
+# Not that on every 'Exit' we have to reorganize
+# the variables to fit the 'jump-site'.
+# With tight constraints, this can be done
+# with series of 'xchg' and 'mov' commands.
+
+
+
+
+# We check the program through in reverse:
+#   If there is an output with spilled variable, we replace
+#     the output with variable from the spill scope.
+#   If the variable 
+
+
+# procedure RewriteProgram()
+#   allocate memory locations for each v in spilledNodes
+#   create a new temporary v for each definiton and each use
+#   in the program (instructions), insert a store after each
+#   definition of a v[i], a fetch before each use of a v[i].
+#   put all the v[i] into a set newTemps
+#   spilledNodes = {}
+#   initial = coloredNodes U coalescedNodes U newtemsp
+#   coloredNodes = {}
+#   coalescedNodes = {}

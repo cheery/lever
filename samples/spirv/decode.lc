@@ -1,0 +1,8 @@
+# Moved to lib/spirv.lc
+import fs, json
+import spirv
+
+main = ():
+    data = fs.read_file(dir ++ "../warpgpu/glsl/fragment_shader.frag.spv", 'b')
+    for ins in spirv.read_buffer(data).instructions
+        print(ins)

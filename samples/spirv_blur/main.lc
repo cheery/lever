@@ -1,0 +1,139 @@
+import ffi, fs, spirv
+from warpgpu2 import *
+import translator, spirv_target
+
+#main = ():
+#    t = translator.Translator()
+#    t.add(compute_main)
+#    t.run()
+#    t.print_state()
+#
+#gl = object();
+#    name = "gl scope"
+#
+#result = object();
+#    name = "STORAGE_BUFFER"
+#    
+#compute_main = ():
+#    i = gl.invocation_id.x
+#    result[i] = i
+
+main = ():
+    unit = spirv_target.build()
+
+    shader_data = spirv.write_buffer(unit)
+
+    unit = spirv.read_buffer(shader_data)
+    print(unit.generator)
+    print(unit.bound)
+    for ins in unit.instructions
+        print(ins)
+
+    fd = fs.open(dir ++ "glsl_blur.comp.spv.ref", fs.CREAT | fs.WRONLY | fs.TRUNC)
+    fd.pwrite(shader_data, 0)
+    fd.close()
+
+    #shader_data = fs.read_file(dir ++ "glsl_blur.comp.spv", 'b')
+
+    # We are going to output raw, so
+    # this is going to be enough.
+    gpu = GPU()
+
+    module = vulkan.ShaderModule(gpu, {
+        codeSize = shader_data.length
+        pCode = shader_data
+    })
+
+    custom_shader_stage = {
+        stage = "COMPUTE_BIT"
+        module = module
+        name = "main"
+    }
+
+    # Use sine & checkerboard pattern, add blur.
+
+    # Several heaps created for various purposes
+    device_only = GPUMemory(gpu, device_flags)
+    readback    = GPUMemory(gpu, readback_flags)
+    upload      = GPUMemory(gpu, upload_flags)
+
+    output_data = object();
+        width = 512
+        height = 512
+        size = width * height * 4
+        buffer = readback.createBuffer(size, "STORAGE_BUFFER_BIT")
+        data = buffer.mem.map(ffi.byte)
+
+    DSC0 = DescriptorSetLayout(gpu, {
+        "output_data": {
+            binding = 0
+            descriptorType = "STORAGE_BUFFER"
+            stageFlags = "COMPUTE_BIT"
+        }
+    })
+
+    dsc0 = DSC0()
+
+    dsc0.output_data = {
+        buffer = output_data.buffer
+        offset = 0
+        range = -1
+    }
+    gpu.update(dsc0)
+
+    pipeline_layout = vulkan.PipelineLayout(gpu, {
+        flags = 0
+        setLayouts = [DSC0]
+        pushConstantRanges = []})
+
+    shaders = ShaderLoader(gpu, dir)
+
+    pipeline = gpu.createComputePipelines(gpu.pipeline_cache, [{
+        #stage = shaders.fetch_one("compute", "glsl_blur.comp.spv:main")
+        stage = custom_shader_stage
+        layout = pipeline_layout
+    }])[0]
+
+    cbuf = gpu.queue.pool.allocate({
+        level = "PRIMARY",
+        commandBufferCount = 1})[0]
+    cbuf.begin({flags = "ONE_TIME_SUBMIT_BIT"})
+    cbuf.bindPipeline("COMPUTE", pipeline)
+    cbuf.bindDescriptorSets("COMPUTE", pipeline_layout, 0,
+        [dsc0], [])
+    cbuf.dispatch(output_data.width * output_data.height, 1, 1)
+    cbuf.end()
+
+    fence = vulkan.Fence(gpu, {})
+
+    gpu.queue.submit([{
+        waitSemaphores = []
+        waitDstStageMask = []
+        commandBuffers = [cbuf]
+        signalSemaphores = []
+    }], fence)
+
+    status = gpu.waitForFences([fence], true, -1)
+    print(status)
+    #while not status.SUCCESS
+    #    sleep(0.1)
+    #    status = gpu.waitForFences([fence], true, 200000)
+    #    print(status)
+
+    header = "P6\n" ++
+        (output_data.width).to_string() ++ " " ++
+        (output_data.height).to_string() ++ "\n255\n"
+
+    output = []
+    for y in range(output_data.height)
+        k = y * output_data.width * 4
+        for x in range(output_data.width)
+            output.append(output_data.data[k+x*4+0])
+            output.append(output_data.data[k+x*4+1])
+            output.append(output_data.data[k+x*4+2])
+
+    fd = fs.open(dir ++ "output.ppm", fs.CREAT | fs.WRONLY)
+    ws = fs.WriteStream(fd)
+    ws.write(header.utf8)
+    ws.write(Uint8Array(output))
+    fd.close()

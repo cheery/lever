@@ -1,0 +1,134 @@
+{
+    "tiles": {
+        "add": [
+            {
+                "cost": 1,
+                "pattern": {"args": ["r/m64", "r/m64"]},
+                "moves": [["result", "i0"]],
+                "template": [
+                    {"op":"add", "args":["result", "i1"]}
+                ],
+                "result": true
+            }
+        ],
+        "const": [
+            {
+                "cost": 1,
+                "pattern": {"args": ["const"]},
+                "template": [
+                    {"op":"mov", "args":["result", "i0"]}
+                ],
+                "result": true
+            }
+        ],
+        "gt_s": [
+            {
+                "cost": 1,
+                "pattern": {"args": ["r64", "r/m64"]},
+                "template": [
+                    {"op":"xor", "args":["result", "result"]},
+                    {"op":"cmp", "args":["i0", "i1"]},
+                    {"op":"setg", "args":["result"]}
+                ],
+                "result": true
+            }
+        ],
+        "jcond": [
+            {
+                "cost": 1,
+                "pattern": {"args": ["r64", "block"]},
+                "template": [
+                    {"op":"test", "args":["i0", "i0"]},
+                    {"op":"jump", "args":["i1"]}
+                ]
+            }
+        ],
+        "jump": [
+            {
+                "cost": 1,
+                "pattern": {"args": ["block"]},
+                "template": [
+                    {"op":"jump", "args":["i0"]}
+                ]
+            }
+        ],
+        "load8_s": [
+            {
+                "cost": 1,
+                "pattern": {"args": ["r64"]},
+                "template": [
+                    {"op":"movsx", "args":["result", {"base":"i0"}]}
+                ],
+                "result": true
+            }
+        ],
+        "lt_s": [
+            {
+                "cost": 1,
+                "pattern": {"args": ["r64", "r/m64"]},
+                "template": [
+                    {"op":"xor", "args":["result", "result"]},
+                    {"op":"cmp", "args":["i0", "i1"]},
+                    {"op":"setl", "args":["result"]}
+                ],
+                "result": true
+            }
+        ],
+        "or": [
+            {
+                "cost": 1,
+                "pattern": {"args": ["r/m64", "r/m64"]},
+                "moves": [["result", "i0"]],
+                "template": [
+                    {"op":"or", "args":["result", "i1"]}
+                ],
+                "result": true
+            }
+        ],
+        "return": [
+            {
+                "cost": 1,
+                "pattern": {"args": []},
+                "template": [
+                    {"op":"ret"}
+                ]
+            },
+            {
+                "cost": 1,
+                "pattern": {"args": ["r/m64"]},
+                "moves": [["r0", "i0"]],
+                "template": [
+                    {"op":"ret"}
+                ]
+            },
+            {
+                "cost": 1,
+                "pattern": {"args": ["r/m32"]},
+                "moves": [["r0", "i0"]],
+                "template": [
+                    {"op":"ret"}
+                ]
+            }
+        ],
+        "store8": [
+            {
+                "cost": 1,
+                "pattern": {"args": ["r64", "r/m64"]},
+                "template": [
+                    {"op":"mov", "args":[{"base":"i0"}, "i1"]}
+                ]
+            }
+        ],
+        "xor": [
+            {
+                "cost": 1,
+                "pattern": {"args": ["r/m64", "r/m64"]},
+                "moves": [["result", "i0"]],
+                "template": [
+                    {"op":"xor", "args":["result", "i1"]}
+                ],
+                "result": true
+            }
+        ]
+    }
+}
