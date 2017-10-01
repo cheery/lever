@@ -8,3 +8,5 @@ doc/source_index.json
 .idea/
 lever
 local
+.vscode
+vk_layer_settings.txt
