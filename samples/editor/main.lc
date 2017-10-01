@@ -15,9 +15,12 @@ main = ():
         upload      = GPUMemory(gpu, upload_flags)
 
     R32G32B32_SFLOAT = VulkanType("R32G32B32_SFLOAT", ffi.array(ffi.float, 3))
+    R32G32_SFLOAT    = VulkanType("R32G32_SFLOAT",    ffi.array(ffi.float, 2))
+    R8G8B8A8_UNORM   = VulkanType("R8G8B8A8_UNORM",   ffi.array(ffi.byte,  4))
+
     vertex_struct = ffi.struct([
         ["pos",   R32G32B32_SFLOAT],
-        ["color", R32G32B32_SFLOAT] ])
+        ["color", R8G8B8A8_UNORM] ])
     vxb0 = VertexBinding(0, vertex_struct, "VERTEX")
 
     vertex_layout = VertexLayout("TRIANGLE_LIST", {
@@ -26,19 +29,24 @@ main = ():
     })
 
     vbo = object();
-        max_vertices = 1024
+        max_vertices = 1024*1024*8 // ffi.sizeof(vertex_struct) # 1MB buffer, gives us roughly 300k primitives.
         size = max_vertices * ffi.sizeof(vertex_struct)
         buffer = heap.upload.createBuffer(size, "VERTEX_BUFFER_BIT")
         data = buffer.mem.map(vertex_struct)
         count = 0
 
-    vbo.data[0] = {pos = [0,0,0], color = [1,0,1]}
-    vbo.data[1] = {pos = [1,0,0], color = [0,1,1]}
-    vbo.data[2] = {pos = [0,1,0], color = [1,1,0]}
-    vbo.data[3] = {pos = [1,0,0], color = [0,1,1]}
-    vbo.data[4] = {pos = [1,1,0], color = [0,0,1]}
-    vbo.data[5] = {pos = [0,1,0], color = [1,1,0]}
-    vbo.count = 6
+    for i in range(20)
+        for j in range(20)
+            continue if (i + j) % 2 == 0
+            x = i * 1 + 10
+            y = j * 1 + 10
+            vbo.data[vbo.count+0] = {pos = [x+0,y+0, 0], color = [255,   0, 255, 255]}
+            vbo.data[vbo.count+1] = {pos = [x+1,y+0, 0], color = [0,   255, 255, 255]}
+            vbo.data[vbo.count+2] = {pos = [x+0,y+1, 0], color = [255, 255,   0, 255]}
+            vbo.data[vbo.count+3] = {pos = [x+1,y+0, 0], color = [0,   255, 255, 255]}
+            vbo.data[vbo.count+4] = {pos = [x+1,y+1, 0], color = [0,     0, 255, 255]}
+            vbo.data[vbo.count+5] = {pos = [x+0,y+1, 0], color = [255, 255,   0, 255]}
+            vbo.count += 6
 
     ubo_struct = ffi.struct([
         ["view", ffi.array(ffi.float, 16)]
@@ -50,17 +58,27 @@ main = ():
         data = buffer.mem.map(ubo_struct)
         i = 0
         for v in [  2,   0, 0, 0,
-                    0,  -2, 0, 0,
+                    0,   2, 0, 0,
                     0,   0, 1, 0,
-                   -1,  +1, 0, 1]
+                   -1,  -1, 0, 1]
             data.view[i] = v
             i += 1
 
     # Ubo metrics
     metrics = window.getDPI()
-    ubo.data.view[0] =  2 * metrics.xdpcm / window.width
-    ubo.data.view[5] = -2 * metrics.ydpcm / window.height
+    scale = 0.1 # mm
+    ubo.data.view[0] =  2 * scale * metrics.xdpcm / window.width
+    ubo.data.view[5] =  2 * scale * metrics.ydpcm / window.height
+    view_size = vec3(
+        window.width / metrics.xdpcm / scale,
+        window.height / metrics.ydpcm / scale, 0)
 
+    ndc_to_view = (x, y):
+        a = []
+        for i in range(16)
+            a.append(ubo.data.view[i])
+        m = mat4(a...).invert()
+        return m * vec3(x,y,0)
 
     DSC0 = DescriptorSetLayout(gpu, {
         "scene": {
@@ -94,8 +112,15 @@ main = ():
     ])
 
     app = object()
+    app.view_size = view_size
+    app.window = window
+    app.vbo = vbo
+
     app.update = ():
         null
+
+    live_edit_scope(app, true)
+
 
     now = was = time()
     game_step = 1 / 60
@@ -121,15 +146,33 @@ main = ():
 
                 # Ubo metrics
                 metrics = window.getDPI()
-                ubo.data.view[0] =  2 * metrics.xdpcm / window.width
-                ubo.data.view[5] = -2 * metrics.ydpcm / window.height
-            # if event.type == sdl.sdl.MOUSEBUTTONDOWN
-            #     ndx = event.button.x / window.width
-            #     ndy = 1.0 - event.button.y / window.height
-            #     clicks.append(object();
-            #         t = 1.5
-            #         x = ndx * 2
-            #         y = ndy * 2)
+                scale = 0.1 # mm
+                ubo.data.view[0] =  2 * scale * metrics.xdpcm / window.width
+                ubo.data.view[5] =  2 * scale * metrics.ydpcm / window.height
+                view_size = vec3(
+                    window.width / metrics.xdpcm / scale,
+                    window.height / metrics.ydpcm / scale, 0)
+                app.view_size = view_size
+            if event.type == sdl.sdl.MOUSEMOTION
+                on_mmotion = app.?on_mouse_motion
+                if on_mmotion
+                    ndx = 2 * event.button.x / window.width - 1
+                    ndy = 2 * event.button.y / window.height - 1
+                    on_mmotion(ndc_to_view(ndx, ndy))
+            if event.type == sdl.sdl.MOUSEBUTTONDOWN
+                on_mbd = app.?on_mouse_button_down
+                if on_mbd
+                    ndx = 2 * event.button.x / window.width - 1
+                    ndy = 2 * event.button.y / window.height - 1
+                    on_mbd(ndc_to_view(ndx, ndy))
+            if event.type == sdl.sdl.MOUSEBUTTONUP
+                on_mbu = app.?on_mouse_button_up
+                if on_mbu
+                    ndx = 2 * event.button.x / window.width - 1
+                    ndy = 2 * event.button.y / window.height - 1
+                    on_mbu(ndc_to_view(ndx, ndy))
+            if app.?sdl_event
+                app.sdl_event(event)
         sleep(0.001)
 
     gpu.destroy()
@@ -153,6 +196,15 @@ class TriangleLayer
                 dynamicState = {dynamicStates = [
                     "VIEWPORT", "SCISSOR"
                 ]}
+                depthStencilState = {
+                    depthTestEnable = true
+                    depthWriteEnable = true
+                    depthCompareOp = "LESS_OR_EQUAL"
+                    depthBoundsTestEnable = false
+                    minDepthBounds = 0.0
+                    maxDepthBounds = 1.0
+                }
+
             })
         renderer.gpu.createPipelines([self.pipeline])
 
@@ -193,10 +245,16 @@ class Renderer
             samples = self.sampling,
             loadOp = "CLEAR",
             finalLayout = "COLOR_ATTACHMENT_OPTIMAL")
+        pb.attachment('depth_stencil0',
+            format = "D24_UNORM_S8_UINT",
+            samples = self.sampling,
+            loadOp = "CLEAR",
+            finalLayout = "DEPTH_STENCIL_ATTACHMENT_OPTIMAL")
     
         pb.subpass("pass0", "GRAPHICS",
             colorAttachments = [pb.color0("COLOR_ATTACHMENT_OPTIMAL")],
-            resolveAttachments = [pb.resolve0("COLOR_ATTACHMENT_OPTIMAL")])
+            resolveAttachments = [pb.resolve0("COLOR_ATTACHMENT_OPTIMAL")],
+            depthStencilAttachment = pb.depth_stencil0("DEPTH_STENCIL_ATTACHMENT_OPTIMAL"))
 
         self.pass = pb.build(gpu, null, self.sampling)
         self.target = new_target(gpu, heap, swapchain, self.pass, sampling)
@@ -228,7 +286,8 @@ class Renderer
             renderArea =  self.portal.target.swapchain.rect.area
             clearValues = [
                 {},#color = {float32 = [0.5, 0.5, 0.5, 1.0]}},
-                {color = {float32 = [0.5, 0.5, 0.5, 1.0]}}
+                {color = {float32 = [0.5, 0.5, 0.5, 1.0]}},
+                {depthStencil = {depth=1.0, stencil=0.0}}
             ]}, "INLINE")
         cmd.setViewport(0, [self.target.swapchain.rect.viewport])
         cmd.setScissor(0, [self.target.swapchain.rect.area])
@@ -248,11 +307,11 @@ new_target = (gpu, heap, swapchain, pass, sampling):
         ["COLOR_ATTACHMENT_BIT"],
         ["COLOR_BIT"])
 
-    #depth_stencil = new_image(gpu, heap,
-    #    "D24_UNORM_S8_UINT", sampling,
-    #    swapchain.rect.width, swapchain.rect.height,
-    #    ["DEPTH_STENCIL_ATTACHMENT_BIT"],
-    #    ["DEPTH_BIT", "STENCIL_BIT"])
+    depth_stencil0 = new_image(gpu, heap,
+        "D24_UNORM_S8_UINT", sampling,
+        swapchain.rect.width, swapchain.rect.height,
+        ["DEPTH_STENCIL_ATTACHMENT_BIT"],
+        ["DEPTH_BIT", "STENCIL_BIT"])
 
     # The rendering target is described here. You define the
     # images, framebuffers, views, etc. to be used during
@@ -262,7 +321,7 @@ new_target = (gpu, heap, swapchain, pass, sampling):
     target.images = swapchain.getImages()
     target.views = []
     target.framebuffers = []
-    target.extra_images = [color0]
+    target.extra_images = [color0, depth_stencil0]
     for image in target.images
         view = vulkan.ImageView(gpu, {
             image = image
@@ -275,7 +334,7 @@ new_target = (gpu, heap, swapchain, pass, sampling):
         framebuffer = pass.Framebuffer({
             color0 = color0.view
             resolve0 = view
-            #depth_stencil0 = depth_stencil.view})
+            depth_stencil0 = depth_stencil0.view
         }, swapchain.rect)
         target.framebuffers.append(framebuffer)
     
@@ -312,3 +371,31 @@ new_image = (gpu, heap, format, samples, width, height, usage, aspectMask):
             layerCount = 1
             levelCount = 1}})
     return image
+
+# This live reloader feels more crude, longer I keep using it.
+live_edit_scope = (env, live_editing, keep_alive=false):
+    reloading = true
+    do_reload = ():
+        try
+            env.scope = ModuleScope(dir ++ "app", %"import".scope)
+            env.scope.base_module = Module("middle", base)
+            env.scope.base_module.app = env
+            env.plugin_import = Import(env.scope.local, env.scope)
+            env.code = env.plugin_import("main")
+            init = env.code.?init
+            if init
+                init()
+        finally
+            reloading := false
+    schedule(do_reload)
+    watch_edits = ():
+        watcher = fs.watch(env.scope.local)
+        watcher.ref = keep_alive
+        for event in watcher
+            s = str(event.path)
+            if s.endswith(".lc") and not s.startswith(".")
+                if not reloading
+                    reloading := true
+                    sleep(0.5, do_reload)
+    schedule(watch_edits) if live_editing
+    return env

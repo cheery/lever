@@ -20,10 +20,10 @@ main = ():
             width = width, height = height,
             minDepth = 0.0, maxDepth = 1.0}
 
-    assert(sdl.Init(sdl.INIT_VIDEO) == 0, "SDL Init")
+    assert sdl.Init(sdl.INIT_VIDEO) == 0, "SDL Init"
     win = sdl.CreateWindow("Hello", 0, 0,
         screen.width, screen.height, sdl.WINDOW_SHOWN)
-    assert(win, "SDL CreateWindow")
+    assert win, "SDL CreateWindow"
     surface = sdl2_wsi.create_surface(vulkan, sdl, instance, win)
 
     gpu = null
@@ -522,11 +522,6 @@ get_swapchain = (device, surface, screen):
             baseArrayLayer = 0
             layerCount = 1
         }
-
-assert = (condition, message="assert"):
-    if not condition
-        print(message)
-        exit(1)
 
 load_shader = (device, path):
     blob = fs.read_file(path, "b")

@@ -25,6 +25,7 @@ main = ():
     window = sdl.Window(name, {
         width = 512
         height = 512
+        flags = sdl.sdl.WINDOW_RESIZABLE
     })
 
     # In future the windowing library may provide parameters
@@ -243,95 +244,15 @@ main = ():
     # passed into it here. There is no automation on
     # handling them present.
 
-    # The attachments describe a depth stencil image
-    # although we are not using it right now. (The
-    # validation layer moans about this one)
-
-    multisample_color = vulkan.Image(gpu, {
-        imageType = "2D"
-        format = swapchain.config.format
-        extent = {
-            width = swapchain.rect.width
-            height = swapchain.rect.height
-            depth = 1
-        }
-        mipLevels = 1
-        arrayLayers = 1
-        samples = sampling
-        tiling = "OPTIMAL"
-        usage = ["COLOR_ATTACHMENT_BIT"]
-        sharingMode = "EXCLUSIVE"
-        initialLayout = "UNDEFINED"
-    })
-    multisample_color_data = device_only.alloc(multisample_color)
-    multisample_color_view = vulkan.ImageView(gpu, {
-        image = multisample_color
-        viewType = "2D"
-        format = swapchain.config.format
-        components = {r = "R", g = "G", b = "B", a = "A"}
-        subresourceRange = swapchain.subresource_range
-    })
-
-    # If you use a depth buffer, you allocate it like this,
-    # with an image view.
-    #depth_stencil = vulkan.Image(gpu, {
-    #    imageType = "2D"
-    #    format = "D24_UNORM_S8_UINT"
-    #    extent = {
-    #        width = swapchain.rect.width
-    #        height = swapchain.rect.height
-    #        depth = 1
-    #    }
-    #    mipLevels = 1
-    #    arrayLayers = 1
-    #    samples = swapchain.config.samples
-    #    tiling = "OPTIMAL"
-    #    usage = ["DEPTH_STENCIL_ATTACHMENT_BIT"]
-    #    sharingMode = "EXCLUSIVE"
-    #    initialLayout = "UNDEFINED"
-    #})
-    #depth_stencil_data = device_only.alloc(depth_stencil)
-    #depth_stencil_view = vulkan.ImageView(gpu, {
-    #    image = depth_stencil
-    #    viewType = "2D"
-    #    format = "D24_UNORM_S8_UINT"
-    #    components = {r = "R", g = "G", b = "B", a = "A"}
-    #    subresourceRange = {
-    #        aspectMask = ["DEPTH_BIT", "STENCIL_BIT"]
-    #        layerCount = 1
-    #        levelCount = 1
-    #    }
-    #})
 
     # Here the pass is finally built, the rectangle
     # describing dimensions of the swapchain is passed, so
     # that it doesn't need to be passed during pipeline and
     # framebuffer creation, it is optional here though.
-    pass = pb.build(gpu, swapchain.rect, sampling)
+    pass = pb.build(gpu, null, sampling)
 
-    # The rendering target is described here. You define the
-    # images, framebuffers, views, etc. to be used during
-    # the rendering.
-    target = object()
-    target.swapchain = swapchain
-    target.images = swapchain.getImages()
-    target.views = []
-    target.framebuffers = []
-    for image in target.images
-        view = vulkan.ImageView(gpu, {
-            image = image
-            viewType = "2D"
-            format = swapchain.config.format
-            components = {r = "R", g = "G", b = "B", a = "A"}
-            subresourceRange = swapchain.subresource_range
-        })
-        target.views.append(view)
-        framebuffer = pass.Framebuffer({
-            color0 = view
-            mcolor0 = multisample_color_view
-        })
-            #depth_stencil0 = depth_stencil_view})
-        target.framebuffers.append(framebuffer)
+    target = new_target(gpu, device_only, swapchain, pass, sampling)
+
 
     # The shader loader keeps a cache from the shaders that
     # have been loaded, so that the same shader is not
@@ -350,7 +271,13 @@ main = ():
             fragment = "main.frag.spv:main"
         }),
         pipeline_layout,
-        vertex_layout_tri)
+        vertex_layout_tri,
+        {
+            viewportState = swapchain.rect.viewportState
+            dynamicState = {dynamicStates = [
+                "VIEWPORT", "SCISSOR"
+            ]}
+        })
 
     pipeline = pass.p0(
         shaders.fetch({
@@ -358,7 +285,13 @@ main = ():
             fragment = "main.frag.spv:main"
         }),
         pipeline_layout,
-        vertex_layout_line)
+        vertex_layout_line,
+        {
+            viewportState = swapchain.rect.viewportState
+            dynamicState = {dynamicStates = [
+                "VIEWPORT", "SCISSOR"
+            ]}
+        })
         #,
         #{
         #    # colorBlendState = {
@@ -429,7 +362,7 @@ main = ():
         cbuf.beginRenderPass({
             renderPass = pass
             framebuffer = portal.framebuffer
-            renderArea = swapchain.rect.area
+            renderArea = target.swapchain.rect.area
             clearValues = [
                 {color = {float32 = app.background_color}},
                 {color = {float32 = app.background_color}},
@@ -437,6 +370,8 @@ main = ():
                 #{depthStencil = {depth=1.0, stencil=0}}
             ]},
             "INLINE")
+        cbuf.setViewport(0, [target.swapchain.rect.viewport])
+        cbuf.setScissor(0, [target.swapchain.rect.area])
 
         # Binding each pipeline with associated vertex
         # buffers, then issuing the specific draw for them.
@@ -485,6 +420,15 @@ main = ():
         for event in sdl.poll()
             if event.type == sdl.sdl.QUIT
                 running = false
+            if event.type == sdl.sdl.WINDOWEVENT
+                if event.window.event == sdl.sdl.WINDOWEVENT_RESIZED
+                    #print('resize event!') #print(event.window.data1, event.window.data2)
+                    swapchain = resize_swapchain(gpu, window.wsi, swapchain)
+                    old_target = target
+                    target = new_target(gpu, device_only, swapchain, pass, sampling)
+                    portal.target = target
+                    gpu.waitIdle()
+                    old_target.destroy()
             # if event.type == sdl.sdl.MOUSEBUTTONDOWN
             #     ndx = event.button.x / window.width
             #     ndy = 1.0 - event.button.y / window.height
@@ -530,3 +474,104 @@ live_edit_scope = (env, live_editing, keep_alive=false):
                     sleep(0.2, do_reload)
     schedule(watch_edits) if live_editing
     return env
+
+
+new_target = (gpu, device_only, swapchain, pass, sampling):
+    # Multisampling target
+    multisample_color = vulkan.Image(gpu, {
+        imageType = "2D"
+        format = swapchain.config.format
+        extent = {
+            width = swapchain.rect.width
+            height = swapchain.rect.height
+            depth = 1
+        }
+        mipLevels = 1
+        arrayLayers = 1
+        samples = sampling
+        tiling = "OPTIMAL"
+        usage = ["COLOR_ATTACHMENT_BIT"]
+        sharingMode = "EXCLUSIVE"
+        initialLayout = "UNDEFINED"
+    })
+    multisample_color.mem = device_only.alloc(multisample_color)
+    multisample_color.view = vulkan.ImageView(gpu, {
+        image = multisample_color
+        viewType = "2D"
+        format = swapchain.config.format
+        components = {r = "R", g = "G", b = "B", a = "A"}
+        subresourceRange = {
+            aspectMask = ["COLOR_BIT"]
+            layerCount = 1
+            levelCount = 1
+        }
+    })
+
+    # The attachments describe a depth stencil image
+    # although we are not using it right now. (The
+    # validation layer moans about this one)
+    # If you use a depth buffer, you allocate it like this,
+    # with an image view.
+    #depth_stencil = vulkan.Image(gpu, {
+    #    imageType = "2D"
+    #    format = "D24_UNORM_S8_UINT"
+    #    extent = {
+    #        width = swapchain.rect.width
+    #        height = swapchain.rect.height
+    #        depth = 1
+    #    }
+    #    mipLevels = 1
+    #    arrayLayers = 1
+    #    samples = swapchain.config.samples
+    #    tiling = "OPTIMAL"
+    #    usage = ["DEPTH_STENCIL_ATTACHMENT_BIT"]
+    #    sharingMode = "EXCLUSIVE"
+    #    initialLayout = "UNDEFINED"
+    #})
+    #depth_stencil_data = device_only.alloc(depth_stencil)
+    #depth_stencil_view = vulkan.ImageView(gpu, {
+    #    image = depth_stencil
+    #    viewType = "2D"
+    #    format = "D24_UNORM_S8_UINT"
+    #    components = {r = "R", g = "G", b = "B", a = "A"}
+    #    subresourceRange = {
+    #        aspectMask = ["DEPTH_BIT", "STENCIL_BIT"]
+    #        layerCount = 1
+    #        levelCount = 1
+    #    }
+    #})
+
+    # The rendering target is described here. You define the
+    # images, framebuffers, views, etc. to be used during
+    # the rendering.
+    target = object()
+    target.swapchain = swapchain
+    target.images = swapchain.getImages()
+    target.views = []
+    target.framebuffers = []
+    target.extra_images = [multisample_color]
+    for image in target.images
+        view = vulkan.ImageView(gpu, {
+            image = image
+            viewType = "2D"
+            format = swapchain.config.format
+            components = {r = "R", g = "G", b = "B", a = "A"}
+            subresourceRange = swapchain.subresource_range
+        })
+        target.views.append(view)
+        framebuffer = pass.Framebuffer({
+            color0 = view
+            mcolor0 = multisample_color.view
+            #depth_stencil0 = depth_stencil.view})
+        }, swapchain.rect)
+        target.framebuffers.append(framebuffer)
+    
+    target.destroy = ():
+        for obj in target.extra_images
+            obj.view.destroy()
+            obj.destroy()
+            obj.mem.free()
+        for view in target.views
+            view.destroy()
+        target.swapchain.destroy()
+    return target

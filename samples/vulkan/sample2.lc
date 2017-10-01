@@ -6,7 +6,7 @@ main = ():
     orchid_model = load_model(dir ++ "orchid/orchid")
     print(orchid_model.header)
     print("model length", orchid_model.vbo.length)
-    vertex_count = int(orchid_model.vbo.length / orchid_model.header["vertexBindingDescriptions"][0]["stride"])
+    vertex_count = orchid_model.vbo.length // orchid_model.header["vertexBindingDescriptions"][0]["stride"]
     print("vertices", vertex_count)
 
     extensions = vulkan.listInstanceExtensions()
@@ -26,10 +26,10 @@ main = ():
             width = width, height = height,
             minDepth = 0.0, maxDepth = 1.0}
 
-    assert(sdl.Init(sdl.INIT_VIDEO) == 0, "SDL Init")
+    assert sdl.Init(sdl.INIT_VIDEO) == 0, "SDL Init"
     win = sdl.CreateWindow("Hello", 0, 0,
         screen.width, screen.height, sdl.WINDOW_SHOWN)
-    assert(win, "SDL CreateWindow")
+    assert win, "SDL CreateWindow"
     surface = sdl2_wsi.create_surface(vulkan, sdl, instance, win)
 
     gpu = null
@@ -539,11 +539,6 @@ get_swapchain = (device, surface, screen):
             layerCount = 1
         }
 
-assert = (condition, message="assert"):
-    if not condition
-        print(message)
-        exit(1)
-
 import json, process, platform
 
 config = {run_blender = true}
@@ -562,9 +557,9 @@ load_model = (pathname):
         
 make_blend = (pathname, exporter_script):
     header_path = path(pathname)
-    header_path.basename = header_path.basename ++ ".json"
+    header_path = header_path.dirname ++ (header_path.basename ++ ".json")
     blend_path = path(pathname)
-    blend_path.basename = blend_path.basename ++ ".blend"
+    blend_path = blend_path.dirname ++ (blend_path.basename ++ ".blend")
     if needs_update(header_path, blend_path)
         args = ["blender", blend_path, "--background",
             "--python", exporter_script,

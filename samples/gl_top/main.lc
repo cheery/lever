@@ -305,7 +305,7 @@ load_model = (pathname):
     model = object()
     model.mode = gl.TRIANGLES
     model.stride = header["stride"]
-    model.vertex_count = int(bin.length / model.stride)
+    model.vertex_count = bin.length // model.stride
     model.vbo = vbo
     model.format = header["format"]
     return model
