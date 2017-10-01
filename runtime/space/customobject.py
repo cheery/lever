@@ -172,6 +172,11 @@ class Id(Object):
     def hash(self):
         return compute_hash(self.ref)
 
+    def eq(self, other):
+        if not isinstance(other, Id):
+            return False
+        return self.ref is other.ref
+
 # TODO: add iteration through 'keys'
 # TODO: add conversion to dict.
 # TODO: add +contains -method.
