@@ -266,6 +266,18 @@ class Register extends Operand
         self.type = type
         self.index = index
 
+    +repr = (self):
+        return "Register(" ++ repr(self.type) ++ ", " ++
+            repr(self.index) ++ ")"
+
+    +hash = (self):
+        return hash([self.type, self.index])
+
+# The hash and comparison on Register helps the register
+# allocator to operate on them.
+%"=="[[Register, Register]] = (a, b):
+    return a.type == b.type and a.index == b.index
+
 class Relative extends Operand
     +init = (self, offset):
         self.offset = offset

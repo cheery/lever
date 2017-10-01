@@ -646,24 +646,27 @@ class ShaderLoader
     fetch = (self, description):
         stages = []
         for item in description.items()
-            stage = item[0]
-            info = item[1].rsplit(":")
-            path = self.local ++ info[0]
-            try
-                module = self.cache[path]
-            except KeyError as e
-                data = fs.read_file(path, "b")
-                module = vulkan.ShaderModule(self.device, {
-                    codeSize = data.length
-                    pCode = data
-                })
-                self.cache[path] = module
-            stages.append({
-                stage = stage.upper() ++ "_BIT"
-                module = module
-                name = info[1]
-            })
+            stages.append(fetch_one(item[0], item[1]))
         return stages
+
+    fetch_one = (self, stage, item_line):
+        info = item_line.rsplit(":")
+        path = self.local ++ info[0]
+        try
+            module = self.cache[path]
+        except KeyError as e
+            data = fs.read_file(path, "b")
+            module = vulkan.ShaderModule(self.device, {
+                codeSize = data.length
+                pCode = data
+            })
+            self.cache[path] = module
+        return {
+            stage = stage.upper() ++ "_BIT"
+            module = module
+            name = info[1]
+        }
+        
 
     destroy = (self):
         for module in self.cache.values()

@@ -1,0 +1,249 @@
+import native
+import subtyping
+from subtyping import Group, Type
+
+class Translator
+    +init = (self):
+        self.functions = []
+        self.t_env = TypeEnvironment()
+        self.phi_visited = set()
+
+    # You add several functions in.
+    add = (self, func):
+        func = native.export(func)
+        self.functions.append(func)
+        # The initial setup for every function.
+        for block in func.blocks
+            for ins in block.code
+                for arg in ins.args
+                    self.visit_phi(block, arg)
+
+    # Then you let it run.
+    run = (self):
+        changed = true
+        while changed
+            n = self.t_env.visited.length
+            for func in self.functions
+                for block in func.blocks
+                    for ins in block.code
+                        self.visit(ins)
+            changed = (n < self.t_env.visited.length)
+
+    visit = (self, ins):
+        print(ins.name)
+        #if ins.name == "call"
+        #    arg0 = ins.args[0]
+        #    # The information presented here should be wrapped into
+        #    # a type engine or something like that.
+        #    # The technique presented here is generalizable for
+        #    # wide uses and applications though.
+        #    if isinstance(arg0, native.Const) and arg0.value == %"<"
+        #        a = visit_phi(block, ins.args[1])
+        #        b = visit_phi(block, ins.args[2])
+        #        b1 = subtyping.subsume(some_int[0], a[0], set())
+        #        b2 = subtyping.subsume(some_int[0], b[0], set())
+        #        if b1 and b2
+        #            ins.args.pop(0)
+        #            ins.name = "lt"
+        #            dst = read_type(block, ins)
+        #            subtyping.biunify(dst[1], some_bool[0], st_visited)
+
+        #    if isinstance(arg0, native.Const) and arg0.value == %"+"
+        #        a = visit_phi(block, ins.args[1])
+        #        b = visit_phi(block, ins.args[2])
+        #        b1 = subtyping.subsume(some_int[0], a[0], set())
+        #        b2 = subtyping.subsume(some_int[0], b[0], set())
+        #        if b1 and b2
+        #            ins.args.pop(0)
+        #            ins.name = "add"
+        #            dst = read_type(block, ins)
+        #            subtyping.biunify(dst[1], some_int[0], st_visited)
+
+        #    if isinstance(arg0, native.Const) and arg0.value == %"*"
+        #        a = visit_phi(block, ins.args[1])
+        #        b = visit_phi(block, ins.args[2])
+        #        b1 = subtyping.subsume(some_int[0], a[0], set())
+        #        b2 = subtyping.subsume(some_int[0], b[0], set())
+        #        if b1 and b2
+        #            ins.args.pop(0)
+        #            ins.name = "mul"
+        #            dst = read_type(block, ins)
+        #            subtyping.biunify(dst[1], some_int[0], st_visited)
+
+    visit_phi = (self, block, arg):
+        if isinstance(arg, native.Local)
+            return self.t_env.get(null, arg)
+        if isinstance(arg, native.Const)
+            if isinstance(arg.value, int)
+                return some_int
+            return subtyping.flow_pair()
+        if not isinstance(arg, native.Phi)
+            return self.t_env.get(block, arg)
+        if arg in phi_visited
+            return self.t_env.get(arg.block, arg)
+        phi_visited.add(arg)
+        dst = self.t_env.get(arg.block, arg)
+        for blk in arg.input
+            src = self.visit_phi(blk, arg.input[blk])
+            subtyping.biunify(dst[1], src[0], st_visited)
+        return dst
+
+    # As an optional step you may want to print the
+    # result once it's done.
+    print_state = (self):
+        for func in self.functions
+            visual = native.print_blocks(func.blocks)
+            print()
+            phi_sets = visual[0]
+            names    = visual[1]
+            for arg in func.args
+                print( arg.name, "->", self.t_env.get(null, arg) )
+            for block in func.blocks
+                print( names[block] ++ ":" )
+                for phi in phi_sets[block]
+                    print( " ", names[phi], "->", self.t_env.get(block, phi) )
+                for op in block.code
+                    if not op.stmt
+                        print( " ", names[op], "->", self.t_env.get(block, op) )
+
+            print()
+
+
+    # Could use this one on printing later on.. But it's only really
+    # interesting if the subtypes are more complicated than here.
+
+    # native.print_function(func)
+    # print()
+    # types = []
+    # for item in type_env.items()
+    #     ebb = item[0][0]
+    #     var = item[0][1]
+    #     vneg = item[1][0]
+    #     #vpos = item[1][1]
+    #     types.append(vneg)
+    #     #types.append(vpos)
+
+    # types = iter(subtyping.deconstruct(types))
+    # for item in type_env.items()
+    #     ebb = item[0][0]
+    #     var = item[0][1]
+    #     vneg = types.next()
+    #     #vpos = types.next()
+    #     print((ebb.label ++ "." ++ repr(var)).rjust(10), "->", vneg)#, vpos)
+
+    #g1 = Group([
+    #    BoolRepr(),
+    #    FuncRepr(
+    #        Group(),
+    #        Group())
+    #], +1)
+    #print(g1)
+    #r = subtyping.construct([g1])[0]
+    #print(r)
+    #g2 = subtyping.deconstruct([r])[0]
+    #print(g2)
+
+
+
+class TypeEnvironment
+    +init = (self):
+        self.some_int = subtyping.flow_pair(
+            Type(-1, {Int: Int()}),
+            Type(+1, {Int: Int()}))
+
+        self.some_bool = subtyping.flow_pair(
+            Type(-1, {Bool: Bool()}),
+            Type(+1, {Bool: Bool()}))
+
+        self.visited = set()
+        self.types = {}
+
+    # function arguments to some_int
+    #for i in range(func.args.length)
+    #    self.types[[null, func.args[i]]] = some_int
+
+    # was read_type
+    get = (self, block, var):
+        key = [block, var]
+        if key in self.types
+            return self.types[key]
+        else
+            self.types[key] = pair = subtyping.flow_pair()
+            return pair
+
+
+
+# Add the types, some_float(size), some_int, some_bool
+
+# The subtyping module is customizable, so I'm not sure where these
+# nuggets should go.
+class Int extends subtyping.Term
+    deconstruct = (self, pos, neg):
+        return IntRepr()
+
+class IntRepr
+    +init = (self):
+        self.order = 1
+
+    +repr = (self):
+        return "some int"
+
+    construct = (self, pos, neg):
+        return Int()
+
+class Bool extends subtyping.Term
+    deconstruct = (self, pos, neg):
+        return BoolRepr()
+
+class BoolRepr
+    +init = (self):
+        self.order = 1
+
+    +repr = (self):
+        return "bool"
+
+    construct = (self, pos, neg):
+        return Bool()
+
+class Func extends subtyping.Term
+    +init = (self, arg, res):
+        self.arg = arg
+        self.res = res
+
+    pairs = (self, other):
+        for a in self.arg
+            for b in other.arg
+                yield [b, a]
+        for a in self.res
+            for b in other.res
+                yield [a, b]
+
+    merge = (self, other, pol):
+        self.arg.update(other.arg)
+        self.res.update(other.res)
+
+    construct = (self, pos, neg):
+        return func_cons(self, pos, neg, Func)
+
+    deconstruct = (self, pos, neg):
+        return func_cons(self, pos, neg, FuncRepr)
+
+class FuncRepr
+    +init = (self, arg, res):
+        self.order = 0
+        self.arg = arg
+        self.res = res
+
+    +repr = (self):
+        return "(" ++
+            repr(self.arg) ++
+            " -> " ++
+            repr(self.res) ++ ")"
+
+    construct = (self, pos, neg):
+        return func_cons(self, pos, neg, Func)
+
+func_cons = (func, pos, neg, cons):
+    return cons(
+        neg(func.arg),
+        pos(func.res))

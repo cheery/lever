@@ -1,0 +1,426 @@
+import json
+
+spirv_core_path = runtime_path ++ "lib/spirv.core.grammar.json"
+spirv_glsl_path = runtime_path ++ "lib/extinst.glsl.std.450.grammar.json"
+spirv_opencl_path = runtime_path ++ "lib/extinst.opencl.std.100.grammar.json"
+
+spirv_core = json.read_file(spirv_core_path)
+spirv_glsl = json.read_file(spirv_glsl_path)
+spirv_opencl = json.read_file(spirv_opencl_path)
+
+# Encoder/decoder setup
+enc = {}
+dec = {}
+kind_table = {}
+for ins in spirv_core["instructions"]
+    enc[ins["opname"]] = ins
+    dec[ins["opcode"]] = ins
+
+for operand in spirv_core["operand_kinds"]
+    kind_table[operand["kind"]] = operand
+
+write_buffer = (obj):
+    out = Uint8Builder()
+    if obj.?endian == null or obj.endian == "little"
+        i32 = encode_le32
+    elif obj.endian == "big"
+        i32 = encode_be32
+    else
+        assert false, obj.endian
+    version = obj.?version
+    if version == null
+        version = major_version << 16 | minor_version
+
+    out.append(i32(magic_number))
+    out.append(i32(version))
+    out.append(i32(obj.generator))
+    out.append(i32(obj.bound))
+    out.append(i32(0)) # Reserved for an instruction schema
+
+    for ins in obj.instructions
+        spec = enc[ins.name]
+        data = encode_instruction(ins.args, spec.get("operands", [])) 
+        out.append(i32(spec["opcode"] | (1+data.length) << 16))
+        for value in data
+            out.append(i32(value))
+    return out.build()
+
+read_buffer = (data):
+    obj = object()
+    if decode_le32(data, 0) == magic_number
+        i32 = decode_le32
+        obj.endian = "little"
+    elif decode_be32(data, 0) == magic_number
+        i32 = decode_be32
+        obj.endian = "big"
+    else
+        assert false, "not a spirv"
+    obj.version = i32(data, 1)
+    obj.generator = i32(data, 2)
+    obj.bound = i32(data, 3)
+    obj.instructions = instructions = []
+    assert i32(data, 4) == 0 # Reserved for an instruction schema
+    assert obj.version >> 16 == major_version
+        "version conflict: " ++ repr([major_version, obj.version >> 16])
+
+    start = 5
+    while start*4 < data.length
+        byte = i32(data, start)
+        opcode = byte & 0xFFFF
+        length = byte >> 16
+        assert length != 0
+        args = []
+        for i in range(1, length)
+            args.append(i32(data, start+i))
+        spec = dec[opcode]
+        result = decode_instruction(args, spec.get("operands", []))
+        instructions.append(Tag(spec["opname"], result))
+        start += length
+    return obj
+
+encode_instruction = (args, operands):
+    result = []
+    i = encode_operands(operands, args, 0, result)
+    assert i == args.length, "not all was encoded: " ++ repr([result, args[i .:]])
+    return result
+
+decode_instruction = (args, operands):
+    result = []
+    i = decode_operands(operands, args, 0, result)
+    if i < args.length
+        print(json.write_string(operand, {indent=2}))
+    assert i == args.length, "not all was decoded: " ++ repr([result, args[i .:]])
+    return result
+
+encode_operands = (operands, args, i, result):
+    for operand in operands
+        qty = operand.get("quantifier")
+        if qty == "*"
+            for arg in args[i]
+                encode_operand(operand, arg, result)
+        elif qty == "?"
+            if args[i] != null
+                encode_operand(operand, args[i], result)
+        else
+            encode_operand(operand, args[i], result)
+        i += 1
+    return i
+
+decode_operands = (operands, args, i, result):
+    for operand in operands
+        qty = operand.get("quantifier")
+        if qty == "*"
+            arg = []
+            while i < args.length
+                i = decode_operand(operand, args, i, arg)
+            result.append(arg)
+        elif qty == "?"
+            if i < args.length
+                i = decode_operand(operand, args, i, result)
+            else
+                result.append(null)
+        else
+            assert not qty, [qty, operand["kind"]]
+            i = decode_operand(operand, args, i, result)
+    return i
+
+encode_operand = (operand, arg, result):
+    if arg.?to_spirv_operand         # TODO: see if this helped on building the instructions.
+        arg = arg.to_spirv_operand()
+    kind = operand["kind"]
+    spec = kind_table[kind]
+    if spec["category"] == "ValueEnum"
+        this = get_enumerant(spec, arg)
+        if isinstance(arg, Tag)
+            result.append(this["value"])
+            i = encode_operands(this["parameters"], arg.args, 0, result)
+            assert i == arg.args.length, "not all was encoded: " ++ repr([result, arg.args[i .:]])
+        else
+            result.append(this["value"])
+    elif spec["category"] == "BitEnum"
+        val = 0
+        enc = []
+        for a in arg
+            this = get_enumerant(spec, a)
+            val |= this["value"]
+            if isinstance(a, Tag)
+                enc.append([this["parameters"], a.args, 0, result])
+        result.append(val)
+        for e in enc
+            encode_operands(e...)
+    elif spec["category"] == "Id"
+        assert arg.name == kind, [arg.name, kind]
+        result.append(arg.args[0])
+    elif kind == "LiteralString"
+        bytes = encode_utf8(arg)
+        for k in range(0, bytes.length + 1, 4)
+            val = 0
+            n = 0
+            for byte in bytes[k .: k + 4]
+                val |= byte << n
+                n += 8
+            result.append(val)
+    elif kind == "LiteralInteger" # TODO: the spec says that this consumes
+                                  #       one or more words.
+        assert isinstance(arg, int), "must be integer"
+        result.append(arg)
+    elif kind == "LiteralContextDependentNumber"
+        result.extend(arg) # TODO: Consider what to do for this.
+    else
+        assert false, [kind, spec["category"], arg, result]
+
+get_enumerant = (spec, arg):
+    if isinstance(arg, Tag)
+        for item in spec["enumerants"]
+            if item["enumerant"] == arg.name and "parameters" in item
+                return item
+    else
+        for item in spec["enumerants"]
+            if item["enumerant"] == arg and "parameters" not in item
+                return item
+    assert false, "no enumerant found for: " ++ repr(arg)
+
+
+decode_operand = (operand, args, i, result):
+    kind = operand["kind"]
+    spec = kind_table[kind]
+    if spec["category"] == "ValueEnum"
+        value = args[i]
+        i += 1
+        enumerant = null
+        for item in spec["enumerants"]
+            if item["value"] == value
+                enumerant = item
+        assert enumerant, "value not found in table: " ++ repr([kind, value])
+        if "parameters" in enumerant
+            argl = []
+            i = decode_operands(enumerant["parameters"], args, i, argl)
+            result.append(Tag(enumerant["enumerant"], argl))
+        else
+            result.append(enumerant["enumerant"])
+    elif spec["category"] == "BitEnum"
+        value = args[i]
+        i += 1
+        res = []
+        for enumerant in spec["enumerants"]
+            if parse_jnum(enumerant["value"]) & value != 0
+                if "parameters" in enumerant
+                    argl = []
+                    i = decode_operands(enumerant["parameters"], args, i, argl)
+                    res.append(Tag(enumerant["enumerant"], argl))
+                else
+                    res.append(enumerant["enumerant"])
+        result.append(res)
+    elif spec["category"] == "Id"
+        result.append(Tag(kind, [args[i]]))
+        i += 1
+    elif kind == "LiteralString"
+        bytes = []
+        octets = true
+        while octets
+            value = args[i]
+            i += 1
+            for j in range(4)
+                byte = value >> (8*j) & 255
+                if byte == 0
+                    octets = false
+                    break
+                else
+                    bytes.append(byte)
+        result.append(decode_utf8(Uint8Array(bytes)))
+    elif kind == "LiteralInteger" # TODO: the spec says that it consumes
+                                  #       one or more words.
+        result.append(args[i])
+        i += 1
+    elif kind == "LiteralContextDependentNumber"
+        result.append(args[i .: args.length]) # TODO: Consider what to do for this.
+        i = args.length
+    else
+        print(json.write_string(operand, {indent=2}))
+        print(json.write_string(spec, {indent=2}))
+        assert false, kind
+    return i
+
+decode_le32 = (data, i):
+    return ( data[i*4]
+           | data[i*4+1] << 8
+           | data[i*4+2] << 16
+           | data[i*4+3] << 24 )
+
+decode_be32 = (data, i):
+    return ( data[i*4+3]
+           | data[i*4+2] << 8
+           | data[i*4+1] << 16
+           | data[i*4]   << 24 )
+
+encode_le32 = (value):
+    result = Uint8Array(4)
+    result[0] = (value >> 0) & 255
+    result[1] = (value >> 8) & 255
+    result[2] = (value >> 16) & 255
+    result[3] = (value >> 24) & 255
+    return result
+
+encode_be32 = (value):
+    result = Uint8Array(4)
+    result[0] = (value >> 24) & 255
+    result[1] = (value >> 16) & 255
+    result[2] = (value >> 8) & 255
+    result[3] = (value >> 0) & 255
+    return result
+
+parse_jnum = (jnum):
+    if isinstance(jnum, int)
+        return jnum
+    elif jnum.startswith("0x")
+        return parse_int(jnum[2 .:], 16)
+    elif magic_number.startswith("0")
+        return parse_int(jnum, 8)
+    else
+        return parse_int(jnum)
+
+magic_number = parse_jnum(spirv_core["magic_number"])
+major_version = parse_jnum(spirv_core["major_version"])
+minor_version = parse_jnum(spirv_core["minor_version"])
+
+#def decode_instruction(opcode, data):
+#    if opcode not in opcode_table:
+#        return UnknownInstruction(opcode, data, None)
+#    try:
+#        fmt = opcode_table[opcode]
+#        it = iter(data)
+#        type_id = 0
+#        if fmt['type']:
+#            type_id = it.next()
+#        result_id = 0
+#        if fmt['result']:
+#            result_id = it.next()
+#        args = []
+#        for operand in fmt['operands']:
+#            if operand in const_table:
+#                args.append(const_table[operand][it.next()])
+#            elif operand in bitmask_table:
+#                flag = it.next()
+#                mask = set()
+#                cover = 0
+#                for name, value in bitmask_table[operand].items():
+#                    if flag & value != 0:
+#                        mask.add(name)
+#                        cover |= value
+#                if flag & ~cover != 0:
+#                    mask.add(flag & ~cover)
+#                args.append(mask)
+#            elif operand == 'LiteralNumber':
+#                args.append(it.next())
+#            elif operand == 'LiteralString':
+#                args.append(decode_literal_string(it))
+#            elif operand == 'Id':
+#                args.append(Id(it.next()))
+#            elif operand == 'VariableLiteralId':
+#                lit_ids = []
+#                seq = list(it)         # Verify literals form pairs like
+#                assert len(seq)%2 == 0 # they should.
+#                it = iter(seq)
+#                for literal in it:
+#                    lit_ids.append((literal, Id(it.next())))
+#                args.append(lit_ids)
+#            elif operand == 'VariableLiterals':
+#                args.append(list(it))
+#            elif operand == 'VariableIds':
+#                args.append(map(Id, it))
+#            elif operand == 'OptionalId':
+#                opt = map(Id, it)
+#                assert len(opt) <= 1
+#                args.append(None if len(opt) == 0 else opt[0])
+#        assert len(fmt['operands']) == len(args)
+#        assert tuple(it) == ()
+#        return Instruction(fmt['name'], type_id, result_id, args)
+#    except:
+#        return UnknownInstruction(opcode, data, traceback.format_exc())
+#
+## Literal string parsing, as it appears in the SPIR-V specification
+#def decode_literal_string(it):
+#    result = []
+#    for word in it:
+#        for _ in range(4):
+#            octet = word & 255
+#            if octet == 0:
+#                assert word == 0
+#                return ''.join(result).decode('utf-8')
+#            result.append(chr(octet))
+#            word >>= 8
+#    raise Exception("bad encoding")
+#
+#def encode_spirv(instructions, bound, generator_id=0, schema_id=0):
+#    result = [magic, version, generator_id, bound, schema_id]
+#    for instruction in instructions:
+#        if isinstance(instruction, UnknownInstruction):
+#            opcode = instruction.opcode
+#            data = instruction.data
+#        elif instruction.name not in opname_table:
+#            raise Exception("cannot encode {}, unknown opname".format(instruction))
+#        else:
+#            fmt = opname_table[instruction.name]
+#            opcode = fmt['opcode']
+#            data = list(encode_instruction(fmt, instruction))
+#        assert len(data) <= 0xFFFF
+#        result.append(len(data)+1 << 16 | opcode & 0xFFFF)
+#        result.extend(data)
+#    return result
+#
+#def encode_instruction(fmt, instruction):
+#    if fmt['type']:
+#        yield instruction.type_id
+#    if fmt['result']:
+#        yield instruction.result_id
+#    assert len(fmt['operands']) == len(instruction.args)
+#    for operand, field in zip(fmt['operands'], instruction.args):
+#        if operand == 'LiteralNumber':
+#            yield field
+#        elif operand == 'LiteralString':
+#            for data in encode_literal_string(field):
+#                yield data
+#        elif operand == 'Id':
+#            yield field.result_id
+#        elif operand == 'VariableLiteralId':
+#            for literal, item in field:
+#                yield literal
+#                yield item.result_id
+#        elif operand == 'VariableLiterals':
+#            for literal in field:
+#                yield literal
+#        elif operand == 'VariableIds':
+#            for item in field:
+#                yield item.result_id
+#        elif operand == 'OptionalId':
+#            if field is not None:
+#                yield field.result_id
+#        elif operand in const_table:
+#            yield const_name_table[operand][field]
+#        elif operand in bitmask_table:
+#            masks = bitmask_table[operand]
+#            flag = 0
+#            for name in field:
+#                flag |= masks[name]
+#            yield flag
+#        else:
+#            assert False, (operand, instructions)
+#
+#def encode_literal_string(string):
+#    string = string.encode('utf-8') + '\x00'
+#    for i in range(0, len(string), 4):
+#        word = 0
+#        for ch in reversed(string[i:i+4]):
+#            word = word << 8 | ord(ch)
+#        yield word
+
+class Tag
+    +init = (self, name, args):
+        self.name = name
+        self.args = args
+
+    +repr = (self):
+        argl = []
+        for arg in self.args
+            argl.append(repr(arg))
+        return self.name ++ "(" ++ ", ".join(argl) ++ ")"

@@ -92,7 +92,12 @@ export = (fn):
         elif name == "constant"
             ins = ssa.constant(args[0])
         else
-            ins = block.expr(name, args...)
+            group = []
+            for a in args
+                if isinstance(a, [str, int])
+                    a = ssa.constant(a)
+                group.append(a)
+            ins = block.expr(name, group...)
         if retv
             ssa.writevar(block, code.localc + code[pc+1], ins)
         pc += cc
