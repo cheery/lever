@@ -1,0 +1,10 @@
+import fs, vmprof
+import nbody
+
+main = :
+    profile = fs.open(dir ++ "stuff.vmprof",
+        fs.WRONLY | fs.TRUNC | fs.CREAT)
+    vmprof.enable(profile, 0.0001)
+    nbody.main()
+    vmprof.disable()
+    profile.close()
