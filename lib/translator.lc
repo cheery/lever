@@ -1,36 +1,104 @@
 import native
 import subtyping
-from subtyping import Group, Type
+from subtyping import Port, flow_pair
+
 
 class Translator
     +init = (self):
         self.functions = []
-        self.t_env = TypeEnvironment()
+        self.type_env = subtyping.TypeEngine(is_subtype)
+        self.typelabels = subtyping.LabelSet()
         self.phi_visited = set()
+        self.prim_types = {}
 
     # You add several functions in.
     add = (self, func):
         func = native.export(func)
         self.functions.append(func)
         # The initial setup for every function.
+        assert func.args.length == 0, "TODO: fix"
         for block in func.blocks
             for ins in block.code
+                ins.type ?= flow_pair()
                 for arg in ins.args
                     self.visit_phi(block, arg)
+
+    visit_phi = (self, block, arg):
+        if isinstance(arg, native.Local)
+            arg.type ?= flow_pair()
+            return arg.type
+        if isinstance(arg, native.Const)
+            arg.type ?= (neg=Port(-1), pos=Port(+1))
+            # TODO: add 'int' heads.
+            return arg
+        if not isinstance(arg, native.Phi)
+            arg.type ?= flow_pair()
+            return arg.type
+        assert false # TODO: The rest of this stuff is broken anyway.
+        if arg in phi_visited
+            return self.type_env.get(arg.block, arg)
+        phi_visited.add(arg)
+        dst = self.type_env.get(arg.block, arg)
+        for blk in arg.input
+            src = self.visit_phi(blk, arg.input[blk])
+            subtyping.biunify(dst[1], src[0], st_visited)
+        return dst
+
 
     # Then you let it run.
     run = (self):
         changed = true
         while changed
-            n = self.t_env.visited.length
+            n = self.type_env.visited.length
             for func in self.functions
                 for block in func.blocks
                     for ins in block.code
-                        self.visit(ins)
-            changed = (n < self.t_env.visited.length)
+                        self.visit(func, block, ins)
+            changed = (n < self.type_env.visited.length)
 
-    visit = (self, ins):
-        print(ins.name)
+    visit = (self, func, block, ins):
+        if ins.name == "getattr"
+            a_base, a_name = ins.args
+            return if not isinstance(a_base, native.Const)
+            return if not isinstance(a_name, native.Const)
+            base = a_base.value
+            name = a_name.value
+            assert base.?parteval_getattr
+            base.parteval_getattr(self, func, block, ins, name)
+        if ins.name == "setitem"
+            return if not isinstance(ins.args[0], native.Op)
+            return if not ins.args[0].name == "access"
+            a, b, c = ins.args
+            i = block.code.index(ins)
+
+        #    return if not ins.args[1].name == "access"
+        #    op1 = native.Op("load", [ins.args[1]], false, false)
+        #    block.code.insert(i, op1)
+
+        #    return if not ins.args[2].name == "access"
+        #    op2 = native.Op("load", [ins.args[2]], false, false)
+        #    block.code.insert(i+1, op2)
+
+            ac = native.Op("access", [a, b], false, false)
+            ac.type = flow_pair()
+
+            h_int = self.get_strict_int(32, false)
+            h_ptr_int = self.get_pointer(h_int, "Uniform") # Hax.
+            out_ptr_int = Port(+1)
+            out_ptr_int.heads.add(h_ptr_int)
+            self.type_env.biunify(out_ptr_int, ac.type.neg)
+
+        #    op3 = native.Op("access", ins.args[0].args ++ [op1], false, false)
+        #    block.code.insert(i+2, op3)
+            op = native.Op("store", [ac, c], true, false)
+            ins.replace_by(c)
+
+            block.code[i] = op
+            block.code.insert(i, ac)
+        #    block.code[i+3] = op4
+
+        return
+        #assert false, ins.name ++ " not defined in partial evaluator"
         #if ins.name == "call"
         #    arg0 = ins.args[0]
         #    # The information presented here should be wrapped into
@@ -70,24 +138,6 @@ class Translator
         #            dst = read_type(block, ins)
         #            subtyping.biunify(dst[1], some_int[0], st_visited)
 
-    visit_phi = (self, block, arg):
-        if isinstance(arg, native.Local)
-            return self.t_env.get(null, arg)
-        if isinstance(arg, native.Const)
-            if isinstance(arg.value, int)
-                return some_int
-            return subtyping.flow_pair()
-        if not isinstance(arg, native.Phi)
-            return self.t_env.get(block, arg)
-        if arg in phi_visited
-            return self.t_env.get(arg.block, arg)
-        phi_visited.add(arg)
-        dst = self.t_env.get(arg.block, arg)
-        for blk in arg.input
-            src = self.visit_phi(blk, arg.input[blk])
-            subtyping.biunify(dst[1], src[0], st_visited)
-        return dst
-
     # As an optional step you may want to print the
     # result once it's done.
     print_state = (self):
@@ -97,17 +147,29 @@ class Translator
             phi_sets = visual[0]
             names    = visual[1]
             for arg in func.args
-                print( arg.name, "->", self.t_env.get(null, arg) )
+                print( arg.name, "->", arg.type.neg, arg.type.pos )
             for block in func.blocks
                 print( names[block] ++ ":" )
                 for phi in phi_sets[block]
-                    print( " ", names[phi], "->", self.t_env.get(block, phi) )
+                    print( " ", names[phi], "->", phi.type.neg, phi.type.pos )
                 for op in block.code
                     if not op.stmt
-                        print( " ", names[op], "->", self.t_env.get(block, op) )
+                        print( " ", names[op], "->", op.type.neg, op.type.pos )
 
             print()
 
+    get_strict_int = (self, bits, signed):
+        key = ["int", bits, signed]
+        if key in self.prim_types
+            return self.prim_types[key]
+        else
+            type = StrictInt(bits, signed)
+            self.prim_types[key] = type
+            return type
+
+    # TODO: improve
+    get_pointer = (self, type, storage):
+        return Pointer(type, storage)
 
     # Could use this one on printing later on.. But it's only really
     # interesting if the subtypes are more complicated than here.
@@ -143,107 +205,232 @@ class Translator
     #g2 = subtyping.deconstruct([r])[0]
     #print(g2)
 
+##main = ():
+##    # A simple test for the engine.
+##    engine = subtyping.TypeEngine(is_subtype)
+##    typelabels = subtyping.LabelSet()
+##
+##    i32 = Strict("i32")
+##    in_i32 = subtyping.Port(-1)
+##    in_i32.heads.add(i32)
+##
+##    out_i32 = subtyping.Port(+1)
+##    out_i32.heads.add(i32)
+##
+##    label_n = typelabels.get(["attr", "n"])
+##    h_struct = Struct(set(["n"]))
+##
+##    # The code that we  pretend to type-inference.
+##    # x = {n: z}
+##    # y = x.n + 1
+##    # input z, output x, y
+##
+##    z = engine.flow_pair()
+##    x = engine.flow_pair()
+##    g = engine.flow_pair()
+##    y = engine.flow_pair()
+##
+##    # This kind of a structure is created and given as x
+##    # {n: +z} <= -x
+##    a = subtyping.Port(+1)
+##    a.heads.add(h_struct)
+##    a.add_transition(label_n, z.pos)
+##    engine.biunify(a, x.neg)
+##
+##    # The attribute is extracted, extracted attribute is g
+##    # +x <= {n: -g}
+##    b = subtyping.Port(-1)
+##    b.heads.add(h_struct)
+##    b.add_transition(label_n, g.neg)
+##    engine.biunify(x.pos, b)
+##
+##    # The 'int' treated as i32, it is most likely we would
+##    # do it with a type that allows the integer to be demoted.
+##    # +g <= int
+##    engine.biunify(g.pos, in_i32)
+##
+##    # Then out we go..
+##    # +g <= -y
+##    engine.biunify(g.pos, y.neg)
+##
+##    print("all variables")
+##    print(z.neg, z.pos)
+##    print(x.neg, x.pos)
+##    print(g.neg, g.pos)
+##    print(y.neg, y.pos)
+##
+##    print("result")
+##    print(z.neg)
+##    print(x.pos, y.pos)
 
 
-class TypeEnvironment
-    +init = (self):
-        self.some_int = subtyping.flow_pair(
-            Type(-1, {Int: Int()}),
-            Type(+1, {Int: Int()}))
+is_subtype = multimethod(2)
+is_subtype.default = (a, b):
+    return false
 
-        self.some_bool = subtyping.flow_pair(
-            Type(-1, {Bool: Bool()}),
-            Type(+1, {Bool: Bool()}))
+class StrictInt
+    +init = (self, bits, signed):
+        self.bits = bits
+        self.signed = signed
 
-        self.visited = set()
-        self.types = {}
+    merge_to = (self, group, pol):
+        group.add(self)
 
-    # function arguments to some_int
-    #for i in range(func.args.length)
-    #    self.types[[null, func.args[i]]] = some_int
-
-    # was read_type
-    get = (self, block, var):
-        key = [block, var]
-        if key in self.types
-            return self.types[key]
+    +repr = (self):
+        if self.signed
+            prefix = "i"
         else
-            self.types[key] = pair = subtyping.flow_pair()
-            return pair
+            prefix = "u"
+        return prefix ++ self.bits.to_string()
 
+is_subtype[[StrictInt, StrictInt]] = (a, b):
+    return a == b
 
+# This is an incorrect implementation because the 'type'
+# should reside behind a label in transition chain.
+class Pointer
+    +init = (self, type, storage):
+        self.type = type
+        self.storage = storage
 
-# Add the types, some_float(size), some_int, some_bool
-
-# The subtyping module is customizable, so I'm not sure where these
-# nuggets should go.
-class Int extends subtyping.Term
-    deconstruct = (self, pos, neg):
-        return IntRepr()
-
-class IntRepr
-    +init = (self):
-        self.order = 1
-
-    +repr = (self):
-        return "some int"
-
-    construct = (self, pos, neg):
-        return Int()
-
-class Bool extends subtyping.Term
-    deconstruct = (self, pos, neg):
-        return BoolRepr()
-
-class BoolRepr
-    +init = (self):
-        self.order = 1
+    merge_to = (self, group, pol):
+        group.add(self)
 
     +repr = (self):
-        return "bool"
+        return repr(self.type) ++ "*(" ++ self.storage ++ ")"
 
-    construct = (self, pos, neg):
-        return Bool()
+is_subtype[[Pointer, Pointer]] = (a, b):
+    return is_subtype(a.type, b.type) and a.storage == b.storage
 
-class Func extends subtyping.Term
-    +init = (self, arg, res):
-        self.arg = arg
-        self.res = res
+## # The idea that the value must be strictly this,
+## # nothing else is accepted.
+## class Strict
+##     +init = (self, name):
+##         self.name = name
+## 
+##     merge_to = (self, group, pol):
+##         group.add(self)
+## 
+##     +repr = (self):
+##         return self.name
+## 
+## is_subtype[[Strict, Strict]] = (a, b):
+##     return a == b
+## 
+## # Structures that conform to the subtyping rule.
+## class Struct
+##     +init = (self, attrs = set()):
+##         self.attrs = attrs
+## 
+##     merge_to = (self, group, pol):
+##         group.add(self)
+## 
+##     +repr = (self):
+##         return 'struct'
+## 
+## is_subtype[[Struct, Struct]] = (a, b):
+##     return a.attrs >= b.attrs
 
-    pairs = (self, other):
-        for a in self.arg
-            for b in other.arg
-                yield [b, a]
-        for a in self.res
-            for b in other.res
-                yield [a, b]
 
-    merge = (self, other, pol):
-        self.arg.update(other.arg)
-        self.res.update(other.res)
-
-    construct = (self, pos, neg):
-        return func_cons(self, pos, neg, Func)
-
-    deconstruct = (self, pos, neg):
-        return func_cons(self, pos, neg, FuncRepr)
-
-class FuncRepr
-    +init = (self, arg, res):
-        self.order = 0
-        self.arg = arg
-        self.res = res
-
-    +repr = (self):
-        return "(" ++
-            repr(self.arg) ++
-            " -> " ++
-            repr(self.res) ++ ")"
-
-    construct = (self, pos, neg):
-        return func_cons(self, pos, neg, Func)
-
-func_cons = (func, pos, neg, cons):
-    return cons(
-        neg(func.arg),
-        pos(func.res))
+#class TypeEnvironment
+#    +init = (self):
+#        self.some_int = subtyping.flow_pair(
+#            Type(-1, {Int: Int()}),
+#            Type(+1, {Int: Int()}))
+#
+#        self.some_bool = subtyping.flow_pair(
+#            Type(-1, {Bool: Bool()}),
+#            Type(+1, {Bool: Bool()}))
+#
+#        self.visited = set()
+#        self.types = {}
+#
+#    # function arguments to some_int
+#    #for i in range(func.args.length)
+#    #    self.types[[null, func.args[i]]] = some_int
+#
+#    # was read_type
+#    get = (self, block, var):
+#        key = [block, var]
+#        if key in self.types
+#            return self.types[key]
+#        else
+#            self.types[key] = pair = subtyping.flow_pair()
+#            return pair
+#
+#
+#
+## Add the types, some_float(size), some_int, some_bool
+#
+## The subtyping module is customizable, so I'm not sure where these
+## nuggets should go.
+#class Int extends subtyping.Term
+#    deconstruct = (self, pos, neg):
+#        return IntRepr()
+#
+#class IntRepr
+#    +init = (self):
+#        self.order = 1
+#
+#    +repr = (self):
+#        return "some int"
+#
+#    construct = (self, pos, neg):
+#        return Int()
+#
+#class Bool extends subtyping.Term
+#    deconstruct = (self, pos, neg):
+#        return BoolRepr()
+#
+#class BoolRepr
+#    +init = (self):
+#        self.order = 1
+#
+#    +repr = (self):
+#        return "bool"
+#
+#    construct = (self, pos, neg):
+#        return Bool()
+#
+#class Func extends subtyping.Term
+#    +init = (self, arg, res):
+#        self.arg = arg
+#        self.res = res
+#
+#    pairs = (self, other):
+#        for a in self.arg
+#            for b in other.arg
+#                yield [b, a]
+#        for a in self.res
+#            for b in other.res
+#                yield [a, b]
+#
+#    merge = (self, other, pol):
+#        self.arg.update(other.arg)
+#        self.res.update(other.res)
+#
+#    construct = (self, pos, neg):
+#        return func_cons(self, pos, neg, Func)
+#
+#    deconstruct = (self, pos, neg):
+#        return func_cons(self, pos, neg, FuncRepr)
+#
+#class FuncRepr
+#    +init = (self, arg, res):
+#        self.order = 0
+#        self.arg = arg
+#        self.res = res
+#
+#    +repr = (self):
+#        return "(" ++
+#            repr(self.arg) ++
+#            " -> " ++
+#            repr(self.res) ++ ")"
+#
+#    construct = (self, pos, neg):
+#        return func_cons(self, pos, neg, Func)
+#
+#func_cons = (func, pos, neg, cons):
+#    return cons(
+#        neg(func.arg),
+#        pos(func.res))

@@ -1,37 +1,115 @@
 import ffi, fs, spirv
 from warpgpu2 import *
 import translator, spirv_target
+from spirv_target import OpTypeVoid, OpTypeFloat, OpTypeInt,
+    OpTypeVector, OpTypePointer,
+    OpTypeRuntimeArray, OpTypeStruct, OpTypeFunction, OpVariable, OpConstant,
+    OpFunction, Tag, Member
 
-#main = ():
-#    t = translator.Translator()
-#    t.add(compute_main)
-#    t.run()
-#    t.print_state()
-#
-#gl = object();
-#    name = "gl scope"
-#
-#result = object();
-#    name = "STORAGE_BUFFER"
-#    
-#compute_main = ():
-#    i = gl.invocation_id.x
-#    result[i] = i
+# The stuff for translator.
+void_type = OpTypeVoid()
+int_type  = OpTypeInt(32, true)
+uint_type = OpTypeInt(32, false)
+
+vec3_uint_type = OpTypeVector(uint_type, 3)
+
+ptr_uniform_uint    = OpTypePointer("Uniform", uint_type)
+ptr_input_uint      = OpTypePointer("Input", uint_type)
+ptr_input_vec3_uint = OpTypePointer("Input", vec3_uint_type)
+
+# The size of the RuntimeArray is not known before the runtime.
+runtime_array_type = OpTypeRuntimeArray(uint_type)
+runtime_array_type.decorate = [
+    Tag("ArrayStride", [4])
+]
+
+# The buffer block in the program
+struct_type = OpTypeStruct([
+    Member("result", runtime_array_type);
+        decorate = [ Tag("Offset", [0]) ] # Offset of this member.
+])
+struct_type.decorate = [
+    "BufferBlock" # Tells that it's a shader interface block
+]
+
+uniform_type        = OpTypePointer("Uniform", struct_type)
+
+uniform_var = OpVariable(uniform_type, "Uniform")
+uniform_var.name = "uniform_var"
+uniform_var.decorate = [
+    Tag("DescriptorSet", [0]),
+    Tag("Binding", [0])
+]
+
+global_invocation_id = OpVariable(ptr_input_vec3_uint, "Input")
+global_invocation_id.name = "global_invocation_id"
+global_invocation_id.decorate = [
+    Tag("BuiltIn", ["GlobalInvocationId"])
+]
+func_type = OpTypeFunction([], void_type)
+
 
 main = ():
-    unit = spirv_target.build()
+    t = translator.Translator()
+    t.add(compute_main)
+    t.run()
+    t.print_state()
 
-    shader_data = spirv.write_buffer(unit)
+compute_main = ():
+    i = global_invocation_id.x
+    uniform_var.result[i] = i
 
-    unit = spirv.read_buffer(shader_data)
-    print(unit.generator)
-    print(unit.bound)
-    for ins in unit.instructions
-        print(ins)
+main2 = ():
+    glsl_std_450 = object();
+        name = "GLSL.std.450"
 
-    fd = fs.open(dir ++ "glsl_blur.comp.spv.ref", fs.CREAT | fs.WRONLY | fs.TRUNC)
-    fd.pwrite(shader_data, 0)
-    fd.close()
+    # double_type = OpTypeFloat(64)
+    # block = ffi.automem(ffi.int, 2)
+    # d8 = ffi.cast(block, ffi.pointer(ffi.double))
+    # d8[0] = 123.0
+    # double_1 = OpConstant([block[0], block[1]], double_type)
+
+    uint_0 = OpConstant([0], uint_type)
+    int_0 = OpConstant([0], int_type)
+
+    main_func = OpFunction(func_type)
+    main_func.name = "main"
+    entry = main_func.new_block()
+    ins_0 = entry.op("OpAccessChain", [global_invocation_id, [uint_0]], ptr_input_uint)
+    ins_1 = entry.op("OpLoad", [ins_0, null], uint_type)
+    ins_2 = entry.op("OpAccessChain", [global_invocation_id, [uint_0]], ptr_input_uint)
+    ins_3 = entry.op("OpLoad", [ins_2, null], uint_type)
+    ins_4 = entry.op("OpAccessChain", [uniform_var, [int_0, ins_1]], ptr_uniform_uint)
+    entry.op("OpStore", [ins_4, ins_3, null])
+    entry.op("OpReturn", [])
+
+    compute_entry = object();
+        exec_model = "GLCompute" # Vertex, TessellationControl, TessellationEvaluation, Geometry, Fragment, GLCompute, Kernel
+        func = main_func
+        interface = [global_invocation_id]
+        execution_modes = [
+            Tag("LocalSize", [1, 1, 1])
+        ]
+
+    unit = object();
+        capabilities = [ "Shader" ]
+        externals = [ glsl_std_450 ]
+        addressing_model = "Logical"
+        memory_model = "GLSL450"
+        entries = [ compute_entry ]
+        functions = [ main_func ]
+
+    shader_data = spirv_target.build(unit)
+
+    #unit = spirv.read_buffer(shader_data)
+    #print(unit.generator)
+    #print(unit.bound)
+    #for ins in unit.instructions
+    #    print(ins)
+
+    # fd = fs.open(dir ++ "glsl_blur.comp.spv.ref", fs.CREAT | fs.WRONLY | fs.TRUNC)
+    # fd.pwrite(shader_data, 0)
+    # fd.close()
 
     #shader_data = fs.read_file(dir ++ "glsl_blur.comp.spv", 'b')
 
