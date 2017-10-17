@@ -218,11 +218,204 @@ format of one kind. Designed to be easy to edit by an
 editor, have dense representation for the information and
 allow a good diff algorithm to be implemented on the contents.
 
-#section TODO: Setup script functionality
+#section Setup script functionality
+
+When you do 'python setup.py -h' you get...
+
+##
+    usage: setup.py [-h]
+                    {build-local,compile,compile-lib,win32-dist,refresh-docs,stub,update-html-docs}
+                    ...
+
+    positional arguments:
+      {build-local,compile,compile-lib,win32-dist,refresh-docs,stub,update-html-docs}
+        build-local         Compile the statically linked third party dependencies
+                            for Lever
+        compile             Compile the lever runtime
+        compile-lib         Compile lib/ contents
+        win32-dist          Create win32 distribution
+        refresh-docs        Refresh the source index and then update all
+                            documentation
+        stub                Produce documentation stub for an item in the source
+                            index
+        update-html-docs    Update HTML documentation
+
+    optional arguments:
+      -h, --help            show this help message and exit
 
 
+'python setup.py build-local' downloads and builds the
+dependencies needed on Windows. If you don't have zlib or
+libuv or you're unsure whether they're new enough on your
+system, you may want to run this on Linux as well.
 
-#section TODO: When Lever starts up...
+'python setup.py compile' runs little bit of dependency
+checking/troubleshooting and retrieves pypy into it's own
+path, so that it would be really easy to build this project.
+I've tried to make it sure that the program does one of:
+nags, attempts to get the dependencies, lists out the
+missing dependencies rather than that it would go into
+compiling and fail sometime during the compiling wasting
+your time.
 
-#section TODO: Runtime structure.
+Sometimes there can still be a hitch in the compiling, but
+it's not the default behavior here.
+
+'python setup.py compile-lib' is run implicitly after
+compile. It uses the python compiler to compile bytecode for
+as many files in lib/ as it can. Because it is slightly out
+of sync it won't succeed with all of them, but it should
+succeed just enough that the lib/compiler.lc is able to run.
+
+'python setup.py win32-dist' some long time ago this built
+the 0.8.0 win32 standalone distribution. Maybe it'll build
+the 0.9.0 standalone at some point!
+
+'python setup.py refresh-docs' prints the module index into
+'doc/source_index.json'. It probably doesn't work all the
+time, but when it's time to use it we'll fix it. It collects
+all the modules and functions so that we can quickly
+generate documentation stubs for them.
+
+I don't like yet how this works when it comes to updating
+the documentation, so it'll change eventually.
+
+'python setup.py update-html-docs' builds the HTML
+documentation in the www/. Everything in that directory
+isn't build, but the stuff that comes from the doc/ is
+rewritten. Lets see when it needs to be improved.
+
+#section When Lever starts
+
+Lever has two modes of startup. If you pass in a script, it
+runs that script. If no script is given the interpreter runs
+the 'app/main.lc' which provides a read-eval-print-loop.
+
+When the runtime starts up, it inserts some initial tasks
+into a queue and then starts up an eventloop. The eventloop
+is provided by the library libuv. The whole system
+implements co-operative task switching with greenlets.
+
+Thread spawning in Lever is not complete, but the multiple
+threads are supported. This means that we have both
+in-thread and between-threads concurrency present in our
+runtime. I know that this isn't potentially very ideal in
+every situation. Later, we will probably try to solve some of the
+problems with write access control or such.
+
+After the event loop is loaded, the runtime sets up a module
+scope, importing routines, some basic I/O utilities and
+starts up the main script. Libuv handling of
+stdin/stdout/stderr can be a nuisance quite too often, so
+we'll have to change some of that eventually.
+
+The scoping in Lever does not have an idea of a mutable
+global space. It can be illustrated by the following script:
+
+##
+    scope = %"import".scope # Get the scope of this module.
+    while scope
+        print(scope.local)
+        scope = scope.parent
+
+The 'import' and .scope within it are ordinary variables
+that can be found from the module that is given. They are
+also not mandatory in a module, but without them the import
+clauses do not work, of course.
+
+It prints out the following kind of a hierarchy:
+
+##
+    path("module's directory")
+    path("${lever_path}/lib")
+    path("builtin:/")
+
+This points out where the modules are searched from. These
+are the directories assigned for our module scopes and they
+form a hierarchy.
+
+The topmost module scope is always created when the Lever starts
+up. It loads modules from the same directory where the
+starting script is.
+
+Currently the '/lib' scope is also created at startup. It
+points out where to search the system libraries from that
+have been written in lever.
+
+The 'builtin://' is pointing to the modules implemented by
+the runtime. Most of it comes from the runtime/stdlib/
+-directory. The contents of this scope are immutable.
+
+Each scope object memoizes the modules that are already
+loaded and attempts to fetch the memoized module. Explicit
+reload command needs to be called if it is desirable to
+reload the module.
+
+Solving the module system without having mutable globals was
+proposed by the maintainer of Python's module system. I
+think it is nearly just like I want it.
+
+You can create new scopes yourself and discard them when you
+no longer need them. It makes it very easy to implement
+a plugin framework for your application.
+
+Modules themselves can take a parent module. The variable is
+fetched from the parent module if it isn't present in the
+module itself. The 'base' module is used as a base by
+default, but you can change that too when you introduce a
+new module scope.
+
+#section Runtime structure
+
+Lever's runtime builds hierarchically.
+
+On the lowest layer we have runtime/continuations.py and
+runtime/core.py. These parts define interactions between
+event loop and continuations, and those interactions
+sometimes spread far into the remaining parts of the
+runtime because they allow tasks to wait asynchronously.
+
+The runtime/space/ -directory describes our object system.
+It contains most primitive objects and containers that we
+happen to have in the system.
+
+The runtime/base/ describes the base module in our system.
+Although some of the values in that base module are filled
+up in all around the runtime/ -directory.
+
+The runtime/evaluator/ contains the interpreter. It is
+loading the module from json-like objects that are
+defined by 'runtime/bon.py' -module. This is a custom format
+specific to Lever and it may need much more work before
+it is satisfying enough.
+
+The runtime/stdlib/ contains the 'standard modules' that
+are defined by the runtime. They provide functionality that
+could not be provided otherwise. They are gathered in the
+runtime/module_resolution.py which defines the module scopes
+and import mechanisms.
+
+The uv_ -prefixed files are all libuv related helpers and
+utilities. There is a still mix of two interfaces there, one
+that I started with and another iteration of it. It is in
+the 'proof of concept' -phase. Once it matters a bit more,
+we should move on to building good I/O streaming primitives
+around the features of the libuv. Lets hope that we won't
+depend too much on the kinks of that API.
+
+The runtime/vectormath.py provides some vector, matrix,
+quaternion arithmetic along trigonometric functionality.
+Some of the operations there belongs into the stdlib, though
+I would prefer to provide 'pi', 'tau', 'sin', 'cos' so on..
+in the base module because they are very useful functions
+and variables.
+
+pathobj.py is provides a layer to transform windows paths to
+POSIX and HTML paths. This is used implicitly in lot of
+places of our runtime because it's nice if every file path
+is in a consistent format. Additionally these paths are
+all wrapped into path -object that makes it easy to work on
+them. On the retrospect the important thing is consistent
+path handling, not hiding of Windows-style paths. We may
+adjust the design to that direction later on.
 
