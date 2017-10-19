@@ -24,10 +24,20 @@
     "Button_VolUp": 4194304, 
     "Button_X": 256, 
     "Button_Y": 512, 
-    "ControllerType_Active": 255, 
+    "CameraStatus_Calibrated": 8, 
+    "CameraStatus_Calibrating": 2, 
+    "CameraStatus_CalibrationFailed": 4, 
+    "CameraStatus_Connected": 1, 
+    "CameraStatus_EnumSize": 2147483647, 
+    "CameraStatus_None": 0, 
+    "ControllerType_Active": 4294967295, 
     "ControllerType_EnumSize": 2147483647, 
     "ControllerType_LTouch": 1, 
     "ControllerType_None": 0, 
+    "ControllerType_Object0": 256, 
+    "ControllerType_Object1": 512, 
+    "ControllerType_Object2": 1024, 
+    "ControllerType_Object3": 2048, 
     "ControllerType_RTouch": 2, 
     "ControllerType_Remote": 4, 
     "ControllerType_Touch": 3, 
@@ -46,6 +56,7 @@
     "DebugHudStereo_Off": 0, 
     "DebugHudStereo_Quad": 1, 
     "DebugHudStereo_QuadWithCrosshair": 2, 
+    "EXTERNAL_CAMERA_NAME_SIZE": 32, 
     "Error_ApplicationInvisible": -6006, 
     "Error_AudioComError": -2002, 
     "Error_AudioDeviceNotFound": -2001, 
@@ -66,6 +77,8 @@
     "Error_IncompatibleGPU": -3014, 
     "Error_IncompatibleOS": -3005, 
     "Error_Initialize": -3000, 
+    "Error_InitializeVulkan": -3025, 
+    "Error_InsufficientArraySize": -1016, 
     "Error_InvalidHeadsetOrientation": -1011, 
     "Error_InvalidOperation": -1015, 
     "Error_InvalidParameter": -1005, 
@@ -76,10 +89,12 @@
     "Error_LibSignCheck": -3021, 
     "Error_LibSymbols": -3023, 
     "Error_LibVersion": -3002, 
+    "Error_LostTracking": -1018, 
     "Error_MemoryAllocationFailure": -1000, 
     "Error_MisformattedBlock": -9002, 
     "Error_MismatchedAdapters": -3009, 
     "Error_NoCalibration": -9000, 
+    "Error_NoExternalCameraInfo": -1017, 
     "Error_NoHmd": -1007, 
     "Error_NoValidVRDisplaySystem": -3015, 
     "Error_NotInitialized": -1004, 
@@ -134,6 +149,7 @@
     "FORMAT_R8G8B8A8_UNORM_SRGB": 5, 
     "FORMAT_UNKNOWN": 0, 
     "False": 0, 
+    "HAPTICS_BUFFER_SAMPLES_MAX": 256, 
     "Hand_Count": 2, 
     "Hand_EnumSize": 2147483647, 
     "Hand_Left": 0, 
@@ -157,6 +173,8 @@
     "Hmd_Other": 9, 
     "Init_Debug": 1, 
     "Init_EnumSize": 2147483647, 
+    "Init_Invisible": 16, 
+    "Init_MixedRendering": 32, 
     "Init_RequestVersion": 4, 
     "KEY_EYE_HEIGHT": "EyeHeight", 
     "KEY_EYE_TO_NOSE_DISTANCE": "EyeToNoseDist", 
@@ -184,16 +202,18 @@
     "LogLevel_Error": 2, 
     "LogLevel_Info": 1, 
     "MAJOR_VERSION": 1, 
-    "MINOR_VERSION": 10, 
+    "MINOR_VERSION": 18, 
+    "MIN_REQUESTABLE_MINOR_VERSION": 17, 
     "MaxLayerCount": 16, 
     "MaxProvidedFrameStats": 5, 
-    "PATCH_VERSION": 1, 
+    "PATCH_VERSION": 0, 
     "PERF_HUD_MODE": "PerfHudMode", 
     "PRODUCT_VERSION": 1, 
     "PTR_SIZE": 4, 
     "PerfHud_AppRenderTiming": 3, 
+    "PerfHud_AswStats": 6, 
     "PerfHud_CompRenderTiming": 4, 
-    "PerfHud_Count": 6, 
+    "PerfHud_Count": 7, 
     "PerfHud_EnumSize": 2147483647, 
     "PerfHud_LatencyTiming": 2, 
     "PerfHud_Off": 0, 
@@ -248,6 +268,11 @@
     "TrackedDevice_All": 65535, 
     "TrackedDevice_HMD": 1, 
     "TrackedDevice_LTouch": 2, 
+    "TrackedDevice_None": 0, 
+    "TrackedDevice_Object0": 16, 
+    "TrackedDevice_Object1": 32, 
+    "TrackedDevice_Object2": 64, 
+    "TrackedDevice_Object3": 128, 
     "TrackedDevice_RTouch": 4, 
     "TrackedDevice_Touch": 6, 
     "Tracker_Connected": 32, 
@@ -311,6 +336,76 @@
       ], 
       "type": "struct"
     }, 
+    "CameraExtrinsics": {
+      "fields": [
+        [
+          "LastChangedTimeSeconds", 
+          "double"
+        ], 
+        [
+          "CameraStatusFlags", 
+          "uint"
+        ], 
+        [
+          "AttachedToDevice", 
+          "int"
+        ], 
+        [
+          "RelativePose", 
+          "Posef"
+        ], 
+        [
+          "LastExposureTimeSeconds", 
+          "double"
+        ], 
+        [
+          "ExposureLatencySeconds", 
+          "double"
+        ], 
+        [
+          "AdditionalLatencySeconds", 
+          "double"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "CameraIntrinsics": {
+      "fields": [
+        [
+          "LastChangedTime", 
+          "double"
+        ], 
+        [
+          "FOVPort", 
+          "FovPort"
+        ], 
+        [
+          "VirtualNearPlaneDistanceMeters", 
+          "float"
+        ], 
+        [
+          "VirtualFarPlaneDistanceMeters", 
+          "float"
+        ], 
+        [
+          "ImageSensorPixelResolution", 
+          "Sizei"
+        ], 
+        [
+          "LensDistortionMatrix", 
+          "Matrix4f"
+        ], 
+        [
+          "ExposurePeriodSeconds", 
+          "double"
+        ], 
+        [
+          "ExposureDurationSeconds", 
+          "double"
+        ]
+      ], 
+      "type": "struct"
+    }, 
     "Colorf": {
       "fields": [
         [
@@ -370,6 +465,27 @@
       ], 
       "type": "struct"
     }, 
+    "ExternalCamera": {
+      "fields": [
+        [
+          "Name", 
+          {
+            "ctype": "ubyte", 
+            "length": 32, 
+            "type": "array"
+          }
+        ], 
+        [
+          "Intrinsics", 
+          "CameraIntrinsics"
+        ], 
+        [
+          "Extrinsics", 
+          "CameraExtrinsics"
+        ]
+      ], 
+      "type": "struct"
+    }, 
     "EyeRenderDesc": {
       "fields": [
         [
@@ -389,8 +505,8 @@
           "Vector2f"
         ], 
         [
-          "HmdToEyeOffset", 
-          "Vector3f"
+          "HmdToEyePose", 
+          "Posef"
         ]
       ], 
       "type": "struct"
@@ -651,6 +767,30 @@
             "length": 2, 
             "type": "array"
           }
+        ], 
+        [
+          "IndexTriggerRaw", 
+          {
+            "ctype": "float", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "HandTriggerRaw", 
+          {
+            "ctype": "float", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "ThumbstickRaw", 
+          {
+            "ctype": "Vector2f", 
+            "length": 2, 
+            "type": "array"
+          }
         ]
       ], 
       "type": "struct"
@@ -768,6 +908,23 @@
       }, 
       "type": "pointer"
     }, 
+    "Matrix4f": {
+      "fields": [
+        [
+          "M", 
+          {
+            "ctype": {
+              "ctype": "float", 
+              "length": 4, 
+              "type": "array"
+            }, 
+            "length": 4, 
+            "type": "array"
+          }
+        ]
+      ], 
+      "type": "struct"
+    }, 
     "MirrorTexture": {
       "to": {
         "type": "opaque"
@@ -790,6 +947,10 @@
         ], 
         [
           "MiscFlags", 
+          "uint"
+        ], 
+        [
+          "MirrorOptions", 
           "uint"
         ]
       ], 
@@ -816,6 +977,14 @@
         [
           "AdaptiveGpuPerformanceScale", 
           "float"
+        ], 
+        [
+          "AswIsAvailable", 
+          "ubyte"
+        ], 
+        [
+          "VisibleProcessId", 
+          "void*"
         ]
       ], 
       "type": "struct"
@@ -877,6 +1046,22 @@
         [
           "CompositorGpuEndToVsyncElapsedTime", 
           "float"
+        ], 
+        [
+          "AswIsActive", 
+          "ubyte"
+        ], 
+        [
+          "AswActivatedToggleCount", 
+          "int"
+        ], 
+        [
+          "AswPresentedFrameCount", 
+          "int"
+        ], 
+        [
+          "AswFailedFrameCount", 
+          "int"
         ]
       ], 
       "type": "struct"
@@ -996,6 +1181,14 @@
         [
           "ShouldRecenter", 
           "ubyte"
+        ], 
+        [
+          "Internal", 
+          {
+            "ctype": "ubyte", 
+            "length": 2, 
+            "type": "array"
+          }
         ]
       ], 
       "type": "struct"
@@ -1218,9 +1411,9 @@
     "ViewScaleDesc": {
       "fields": [
         [
-          "HmdToEyeOffset", 
+          "HmdToEyePose", 
           {
-            "ctype": "Vector3f", 
+            "ctype": "Posef", 
             "length": 2, 
             "type": "array"
           }
@@ -1231,6 +1424,30 @@
         ]
       ], 
       "type": "struct"
+    }, 
+    "VkDevice": {
+      "to": {
+        "type": "opaque"
+      }, 
+      "type": "pointer"
+    }, 
+    "VkInstance": {
+      "to": {
+        "type": "opaque"
+      }, 
+      "type": "pointer"
+    }, 
+    "VkPhysicalDevice": {
+      "to": {
+        "type": "opaque"
+      }, 
+      "type": "pointer"
+    }, 
+    "VkQueue": {
+      "to": {
+        "type": "opaque"
+      }, 
+      "type": "pointer"
     }
   }, 
   "variables": {
@@ -1241,6 +1458,27 @@
           "Posef", 
           {
             "ctype": "Vector3f", 
+            "length": 2, 
+            "type": "array"
+          }, 
+          {
+            "ctype": "Posef", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CalcEyePoses2": {
+      "name": "ovr_CalcEyePoses2", 
+      "type": {
+        "argtypes": [
+          "Posef", 
+          {
+            "ctype": "Posef", 
             "length": 2, 
             "type": "array"
           }, 
@@ -1303,11 +1541,39 @@
         "vararg": false
       }
     }, 
+    "CreateMirrorTextureWithOptionsVk": {
+      "name": "ovr_CreateMirrorTextureWithOptionsVk", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "VkDevice", 
+          "MirrorTextureDesc*", 
+          "MirrorTexture*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "CreateTextureSwapChainGL": {
       "name": "ovr_CreateTextureSwapChainGL", 
       "type": {
         "argtypes": [
           "Session", 
+          "TextureSwapChainDesc*", 
+          "TextureSwapChain*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "CreateTextureSwapChainVk": {
+      "name": "ovr_CreateTextureSwapChainVk", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "VkDevice", 
           "TextureSwapChainDesc*", 
           "TextureSwapChain*"
         ], 
@@ -1451,6 +1717,47 @@
         "vararg": false
       }
     }, 
+    "GetDeviceExtensionsVk": {
+      "name": "ovr_GetDeviceExtensionsVk", 
+      "type": {
+        "argtypes": [
+          "GraphicsLuid", 
+          "ubyte*", 
+          "uint*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetDevicePoses": {
+      "name": "ovr_GetDevicePoses", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "int*", 
+          "int", 
+          "double", 
+          "PoseStatef*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetExternalCameras": {
+      "name": "ovr_GetExternalCameras", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "ExternalCamera*", 
+          "uint*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "GetEyePoses": {
       "name": "ovr_GetEyePoses", 
       "type": {
@@ -1460,6 +1767,30 @@
           "ubyte", 
           {
             "ctype": "Vector3f", 
+            "length": 2, 
+            "type": "array"
+          }, 
+          {
+            "ctype": "Posef", 
+            "length": 2, 
+            "type": "array"
+          }, 
+          "double*"
+        ], 
+        "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetEyePoses2": {
+      "name": "ovr_GetEyePoses2", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "llong", 
+          "ubyte", 
+          {
+            "ctype": "Posef", 
             "length": 2, 
             "type": "array"
           }, 
@@ -1544,6 +1875,19 @@
         "vararg": false
       }
     }, 
+    "GetInstanceExtensionsVk": {
+      "name": "ovr_GetInstanceExtensionsVk", 
+      "type": {
+        "argtypes": [
+          "GraphicsLuid", 
+          "ubyte*", 
+          "uint*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "GetInt": {
       "name": "ovr_GetInt", 
       "type": {
@@ -1575,6 +1919,19 @@
           "Session", 
           "MirrorTexture", 
           "uint*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetMirrorTextureBufferVk": {
+      "name": "ovr_GetMirrorTextureBufferVk", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "MirrorTexture", 
+          "ullong*"
         ], 
         "restype": "int", 
         "type": "cfunc", 
@@ -1618,6 +1975,20 @@
         "vararg": false
       }
     }, 
+    "GetSessionPhysicalDeviceVk": {
+      "name": "ovr_GetSessionPhysicalDeviceVk", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "GraphicsLuid", 
+          "VkInstance", 
+          "VkPhysicalDevice*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "GetSessionStatus": {
       "name": "ovr_GetSessionStatus", 
       "type": {
@@ -1651,6 +2022,20 @@
           "TextureSwapChain", 
           "int", 
           "uint*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "GetTextureSwapChainBufferVk": {
+      "name": "ovr_GetTextureSwapChainBufferVk", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "TextureSwapChain", 
+          "int", 
+          "ullong*"
         ], 
         "restype": "int", 
         "type": "cfunc", 
@@ -1927,6 +2312,20 @@
         "vararg": false
       }
     }, 
+    "SetExternalCameraProperties": {
+      "name": "ovr_SetExternalCameraProperties", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "ubyte*", 
+          "CameraIntrinsics*", 
+          "CameraExtrinsics*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "SetFloat": {
       "name": "ovr_SetFloat", 
       "type": {
@@ -1984,6 +2383,18 @@
         "vararg": false
       }
     }, 
+    "SetSynchonizationQueueVk": {
+      "name": "ovr_SetSynchonizationQueueVk", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "VkQueue"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "SetTrackingOriginType": {
       "name": "ovr_SetTrackingOriginType", 
       "type": {
@@ -2001,6 +2412,18 @@
       "type": {
         "argtypes": [], 
         "restype": "void", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "SpecifyTrackingOrigin": {
+      "name": "ovr_SpecifyTrackingOrigin", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "Posef"
+        ], 
+        "restype": "int", 
         "type": "cfunc", 
         "vararg": false
       }
