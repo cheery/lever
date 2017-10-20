@@ -115,6 +115,9 @@
     "Error_Timeout": -1003, 
     "Error_TrackerDriverInit": -3020, 
     "Error_Unsupported": -1009, 
+    "Extension_Count": 1, 
+    "Extension_EnumSize": 2147483647, 
+    "Extension_TextureLayout_Octilinear": 0, 
     "Eye_Count": 2, 
     "Eye_EnumSize": 2147483647, 
     "Eye_Left": 0, 
@@ -173,6 +176,7 @@
     "Hmd_Other": 9, 
     "Init_Debug": 1, 
     "Init_EnumSize": 2147483647, 
+    "Init_FocusAware": 64, 
     "Init_Invisible": 16, 
     "Init_MixedRendering": 32, 
     "Init_RequestVersion": 4, 
@@ -192,9 +196,11 @@
     "LayerHud_EnumSize": 2147483647, 
     "LayerHud_Info": 1, 
     "LayerHud_Off": 0, 
+    "LayerType_Cube": 10, 
     "LayerType_Disabled": 0, 
     "LayerType_EnumSize": 2147483647, 
     "LayerType_EyeFov": 1, 
+    "LayerType_EyeFovMultires": 7, 
     "LayerType_EyeMatrix": 5, 
     "LayerType_Quad": 3, 
     "LogLevel_Debug": 0, 
@@ -202,7 +208,7 @@
     "LogLevel_Error": 2, 
     "LogLevel_Info": 1, 
     "MAJOR_VERSION": 1, 
-    "MINOR_VERSION": 18, 
+    "MINOR_VERSION": 19, 
     "MIN_REQUESTABLE_MINOR_VERSION": 17, 
     "MaxLayerCount": 16, 
     "MaxProvidedFrameStats": 5, 
@@ -236,7 +242,11 @@
     "TextureBind_DX_UnorderedAccess": 2, 
     "TextureBind_EnumSize": 2147483647, 
     "TextureBind_None": 0, 
+    "TextureLayout_EnumSize": 2147483647, 
+    "TextureLayout_Octilinear": 1, 
+    "TextureLayout_Rectilinear": 0, 
     "TextureMisc_AllowGenerateMips": 2, 
+    "TextureMisc_AutoGenerateMips": 8, 
     "TextureMisc_DX_Typeless": 1, 
     "TextureMisc_EnumSize": 2147483647, 
     "TextureMisc_None": 0, 
@@ -795,6 +805,23 @@
       ], 
       "type": "struct"
     }, 
+    "LayerCube": {
+      "fields": [
+        [
+          "Header", 
+          "LayerHeader"
+        ], 
+        [
+          "Orientation", 
+          "Quatf"
+        ], 
+        [
+          "CubeMapTexture", 
+          "TextureSwapChain"
+        ]
+      ], 
+      "type": "struct"
+    }, 
     "LayerEyeFov": {
       "fields": [
         [
@@ -836,6 +863,59 @@
         [
           "SensorSampleTime", 
           "double"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "LayerEyeFovMultires": {
+      "fields": [
+        [
+          "Header", 
+          "LayerHeader"
+        ], 
+        [
+          "ColorTexture", 
+          {
+            "ctype": "TextureSwapChain", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "Viewport", 
+          {
+            "ctype": "Recti", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "Fov", 
+          {
+            "ctype": "FovPort", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "RenderPose", 
+          {
+            "ctype": "Posef", 
+            "length": 2, 
+            "type": "array"
+          }
+        ], 
+        [
+          "SensorSampleTime", 
+          "double"
+        ], 
+        [
+          "TextureLayout", 
+          "int"
+        ], 
+        [
+          "TextureLayoutDesc", 
+          "TextureLayoutDesc_Union"
         ]
       ], 
       "type": "struct"
@@ -891,6 +971,14 @@
         [
           "Quad", 
           "LayerQuad"
+        ], 
+        [
+          "Multires", 
+          "LayerEyeFovMultires"
+        ], 
+        [
+          "Cube", 
+          "LayerCube"
         ]
       ], 
       "type": "union"
@@ -1183,12 +1271,12 @@
           "ubyte"
         ], 
         [
-          "Internal", 
-          {
-            "ctype": "ubyte", 
-            "length": 2, 
-            "type": "array"
-          }
+          "HasInputFocus", 
+          "ubyte"
+        ], 
+        [
+          "OverlayPresent", 
+          "ubyte"
         ]
       ], 
       "type": "struct"
@@ -1202,6 +1290,56 @@
         [
           "h", 
           "int"
+        ]
+      ], 
+      "type": "struct"
+    }, 
+    "TextureLayoutDesc_Union": {
+      "fields": [
+        [
+          "Octilinear", 
+          {
+            "ctype": "TextureLayoutOctilinear", 
+            "length": 2, 
+            "type": "array"
+          }
+        ]
+      ], 
+      "type": "union"
+    }, 
+    "TextureLayoutOctilinear": {
+      "fields": [
+        [
+          "WarpLeft", 
+          "float"
+        ], 
+        [
+          "WarpRight", 
+          "float"
+        ], 
+        [
+          "WarpUp", 
+          "float"
+        ], 
+        [
+          "WarpDown", 
+          "float"
+        ], 
+        [
+          "SizeLeft", 
+          "float"
+        ], 
+        [
+          "SizeRight", 
+          "float"
+        ], 
+        [
+          "SizeUp", 
+          "float"
+        ], 
+        [
+          "SizeDown", 
+          "float"
         ]
       ], 
       "type": "struct"
@@ -1451,6 +1589,18 @@
     }
   }, 
   "variables": {
+    "BeginFrame": {
+      "name": "ovr_BeginFrame", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "llong"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "CalcEyePoses": {
       "name": "ovr_CalcEyePoses", 
       "type": {
@@ -1624,6 +1774,33 @@
           "int"
         ], 
         "restype": "DetectResult", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "EnableExtension": {
+      "name": "ovr_EnableExtension", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "int"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "EndFrame": {
+      "name": "ovr_EndFrame", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "llong", 
+          "ViewScaleDesc*", 
+          "LayerHeader**", 
+          "uint"
+        ], 
+        "restype": "int", 
         "type": "cfunc", 
         "vararg": false
       }
@@ -2192,6 +2369,19 @@
         "vararg": false
       }
     }, 
+    "IsExtensionSupported": {
+      "name": "ovr_IsExtensionSupported", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "int", 
+          "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
     "ReadWavFromBuffer": {
       "name": "ovr_ReadWavFromBuffer", 
       "type": {
@@ -2490,6 +2680,18 @@
         "argtypes": [
           "int", 
           "ubyte*"
+        ], 
+        "restype": "int", 
+        "type": "cfunc", 
+        "vararg": false
+      }
+    }, 
+    "WaitToBeginFrame": {
+      "name": "ovr_WaitToBeginFrame", 
+      "type": {
+        "argtypes": [
+          "Session", 
+          "llong"
         ], 
         "restype": "int", 
         "type": "cfunc", 
