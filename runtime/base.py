@@ -18,6 +18,7 @@ import uv_stream
 import uv_timer
 import uv_util
 import vectormath
+import vector
 
 # The base environment
 module = Module(u'base', {
@@ -57,6 +58,7 @@ module = Module(u'base', {
     u'Stream': uv_stream.Stream.interface,
     u'TTY': uv_stream.TTY.interface,
     u'Pipe': uv_stream.Pipe.interface,
+    u'vec': vector.Vec.interface,
 }, frozen=True)
 
 @Module.instantiator

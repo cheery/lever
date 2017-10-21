@@ -221,6 +221,7 @@ def _(self, other):
         az * bw + aw * bz + ax * by - ay * bx,
         aw * bw - ax * bx - ay * by - az * bz)
 
+# This is probably properly treated as a transform instead?
 @operators.mul.multimethod_s(Quat, Vec3)
 def _(self, other):
     qx, qy, qz, qw = self.x, self.y, self.z, self.w
