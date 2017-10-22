@@ -25,6 +25,13 @@ class Vec(Object):
         assert False, "abstract method"
         return null
 
+    def match_type(self, other):
+        i1 = self.get_item_type()
+        i2 = other.get_item_type()
+        if i1 is i2:
+            return i1
+        raise OldError(u"vector element type mismatch")
+
     def getattr(self, name):
         if name == u"x":
             return self.fetch(0)
@@ -199,12 +206,13 @@ def letter_swizzle(self, name):
             result[i] = self.fetch(3)
         else:
             return Object.getattr(self, name)
-    return compact(result, isinstance(self, FVec))
+    return compact(result)
 
 @operators.add.multimethod_s(Vec, Vec)
 @jit.unroll_safe
 def Vec_add(self, other):
     L = self.match_length(other)
+    interface = self.match_interface(other)
     if isinstance(self, FVec) and isinstance(other, FVec):
         f_result = [0.0] * L
         for i in range(L):
@@ -213,12 +221,13 @@ def Vec_add(self, other):
     result = [null] * L
     for i in range(L):
         result[i] = operators.add.call([self.fetch(i), other.fetch(i)])
-    return GVec(result)
+    return GVec(result, interface)
 
 @operators.sub.multimethod_s(Vec, Vec)
 @jit.unroll_safe
 def Vec_sub(self, other):
     L = self.match_length(other)
+    interface = self.match_interface(other)
     if isinstance(self, FVec) and isinstance(other, FVec):
         f_result = [0.0] * L
         for i in range(L):
@@ -227,12 +236,13 @@ def Vec_sub(self, other):
     result = [null] * L
     for i in range(L):
         result[i] = operators.sub.call([self.fetch(i), other.fetch(i)])
-    return GVec(result)
+    return GVec(result, interface)
 
 @operators.mul.multimethod_s(Vec, Vec)
 @jit.unroll_safe
 def Vec_mul(self, other):
     L = self.match_length(other)
+    interface = self.match_interface(other)
     if isinstance(self, FVec) and isinstance(other, FVec):
         f_result = [0.0] * L
         for i in range(L):
@@ -241,11 +251,12 @@ def Vec_mul(self, other):
     result = [null] * L
     for i in range(L):
         result[i] = operators.mul.call([self.fetch(i), other.fetch(i)])
-    return GVec(result)
+    return GVec(result, interface)
 
 @operators.div.multimethod_s(Vec, Vec)
 @jit.unroll_safe
 def Vec_div(self, other):
+    interface = self.match_interface(other)
     L = self.match_length(other)
     if isinstance(self, FVec) and isinstance(other, FVec):
         f_result = [0.0] * L
@@ -255,7 +266,7 @@ def Vec_div(self, other):
     result = [null] * L
     for i in range(L):
         result[i] = operators.div.call([self.fetch(i), other.fetch(i)])
-    return GVec(result)
+    return GVec(result, interface)
 
 @vectormath.length.multimethod_s(Vec)
 @jit.unroll_safe
