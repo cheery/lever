@@ -223,6 +223,36 @@ def Vec_add(self, other):
         result[i] = operators.add.call([self.fetch(i), other.fetch(i)])
     return GVec(result, interface)
 
+@operators.add.multimethod_s(Float, Vec)
+@jit.unroll_safe
+def Vec_add(s, self):
+    L = self.get_length()
+    if isinstance(self, FVec):
+        f_result = [0.0] * L
+        for i in range(L):
+            f_result[i] = self.fetch_f(i) + s.number
+        return compact_f(f_result)
+    result = [null] * L
+    interface = get_interface(self)
+    for i in range(L):
+        result[i] = operators.add.call([self.fetch(i), s])
+    return GVec(result, interface)
+
+@operators.add.multimethod_s(Vec, Float)
+@jit.unroll_safe
+def Vec_add(self, s):
+    L = self.get_length()
+    if isinstance(self, FVec):
+        f_result = [0.0] * L
+        for i in range(L):
+            f_result[i] = self.fetch_f(i) + s.number
+        return compact_f(f_result)
+    result = [null] * L
+    interface = get_interface(self)
+    for i in range(L):
+        result[i] = operators.add.call([self.fetch(i), s])
+    return GVec(result, interface)
+
 @operators.sub.multimethod_s(Vec, Vec)
 @jit.unroll_safe
 def Vec_sub(self, other):
@@ -236,6 +266,36 @@ def Vec_sub(self, other):
     result = [null] * L
     for i in range(L):
         result[i] = operators.sub.call([self.fetch(i), other.fetch(i)])
+    return GVec(result, interface)
+
+@operators.sub.multimethod_s(Float, Vec)
+@jit.unroll_safe
+def Vec_sub(s, self):
+    L = self.get_length()
+    if isinstance(self, FVec):
+        f_result = [0.0] * L
+        for i in range(L):
+            f_result[i] = self.fetch_f(i) - s.number
+        return compact_f(f_result)
+    result = [null] * L
+    interface = get_interface(self)
+    for i in range(L):
+        result[i] = operators.sub.call([self.fetch(i), s])
+    return GVec(result, interface)
+
+@operators.sub.multimethod_s(Vec, Float)
+@jit.unroll_safe
+def Vec_sub(self, s):
+    L = self.get_length()
+    if isinstance(self, FVec):
+        f_result = [0.0] * L
+        for i in range(L):
+            f_result[i] = self.fetch_f(i) - s.number
+        return compact_f(f_result)
+    result = [null] * L
+    interface = get_interface(self)
+    for i in range(L):
+        result[i] = operators.sub.call([self.fetch(i), s])
     return GVec(result, interface)
 
 @operators.mul.multimethod_s(Vec, Vec)
@@ -253,6 +313,36 @@ def Vec_mul(self, other):
         result[i] = operators.mul.call([self.fetch(i), other.fetch(i)])
     return GVec(result, interface)
 
+@operators.mul.multimethod_s(Float, Vec)
+@jit.unroll_safe
+def Vec_mul(s, self):
+    L = self.get_length()
+    if isinstance(self, FVec):
+        f_result = [0.0] * L
+        for i in range(L):
+            f_result[i] = self.fetch_f(i) * s.number
+        return compact_f(f_result)
+    result = [null] * L
+    interface = get_interface(self)
+    for i in range(L):
+        result[i] = operators.mul.call([self.fetch(i), s])
+    return GVec(result, interface)
+
+@operators.mul.multimethod_s(Vec, Float)
+@jit.unroll_safe
+def Vec_mul(self, s):
+    L = self.get_length()
+    if isinstance(self, FVec):
+        f_result = [0.0] * L
+        for i in range(L):
+            f_result[i] = self.fetch_f(i) * s.number
+        return compact_f(f_result)
+    result = [null] * L
+    interface = get_interface(self)
+    for i in range(L):
+        result[i] = operators.mul.call([self.fetch(i), s])
+    return GVec(result, interface)
+
 @operators.div.multimethod_s(Vec, Vec)
 @jit.unroll_safe
 def Vec_div(self, other):
@@ -266,6 +356,36 @@ def Vec_div(self, other):
     result = [null] * L
     for i in range(L):
         result[i] = operators.div.call([self.fetch(i), other.fetch(i)])
+    return GVec(result, interface)
+
+@operators.div.multimethod_s(Float, Vec)
+@jit.unroll_safe
+def Vec_div(s, self):
+    L = self.get_length()
+    if isinstance(self, FVec):
+        f_result = [0.0] * L
+        for i in range(L):
+            f_result[i] = self.fetch_f(i) / s.number
+        return compact_f(f_result)
+    result = [null] * L
+    interface = get_interface(self)
+    for i in range(L):
+        result[i] = operators.div.call([self.fetch(i), s])
+    return GVec(result, interface)
+
+@operators.div.multimethod_s(Vec, Float)
+@jit.unroll_safe
+def Vec_div(self, s):
+    L = self.get_length()
+    if isinstance(self, FVec):
+        f_result = [0.0] * L
+        for i in range(L):
+            f_result[i] = self.fetch_f(i) / s.number
+        return compact_f(f_result)
+    result = [null] * L
+    interface = get_interface(self)
+    for i in range(L):
+        result[i] = operators.div.call([self.fetch(i), s])
     return GVec(result, interface)
 
 @vectormath.length.multimethod_s(Vec)
