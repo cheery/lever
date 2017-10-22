@@ -25,7 +25,7 @@ class Vec(Object):
         assert False, "abstract method"
         return null
 
-    def match_type(self, other):
+    def match_interface(self, other):
         i1 = self.get_item_type()
         i2 = other.get_item_type()
         if i1 is i2:
