@@ -208,6 +208,20 @@ def letter_swizzle(self, name):
             return Object.getattr(self, name)
     return compact(result)
 
+@jit.unroll_safe
+def Vec_arithmetic(self, s, op, lam):
+    L = self.get_length()
+    if isinstance(self, FVec):
+        f_result = [0.0] * L
+        for i in range(L):
+            f_result[i] = lam(self.fetch_f(i), s.number)
+        return compact_f(f_result)
+    result = [null] * L
+    interface = get_interface(self)
+    for i in range(L):
+        result[i] = op.call([self.fetch(i), s])
+    return GVec(result, interface)
+
 @operators.add.multimethod_s(Vec, Vec)
 @jit.unroll_safe
 def Vec_add(self, other):
@@ -226,32 +240,12 @@ def Vec_add(self, other):
 @operators.add.multimethod_s(Float, Vec)
 @jit.unroll_safe
 def Vec_add(s, self):
-    L = self.get_length()
-    if isinstance(self, FVec):
-        f_result = [0.0] * L
-        for i in range(L):
-            f_result[i] = self.fetch_f(i) + s.number
-        return compact_f(f_result)
-    result = [null] * L
-    interface = get_interface(self)
-    for i in range(L):
-        result[i] = operators.add.call([self.fetch(i), s])
-    return GVec(result, interface)
+    return Vec_arithmetic(self, s, operators.add, lambda l, r: l + r)
 
 @operators.add.multimethod_s(Vec, Float)
 @jit.unroll_safe
 def Vec_add(self, s):
-    L = self.get_length()
-    if isinstance(self, FVec):
-        f_result = [0.0] * L
-        for i in range(L):
-            f_result[i] = self.fetch_f(i) + s.number
-        return compact_f(f_result)
-    result = [null] * L
-    interface = get_interface(self)
-    for i in range(L):
-        result[i] = operators.add.call([self.fetch(i), s])
-    return GVec(result, interface)
+    return Vec_arithmetic(self, s, operators.add, lambda l, r: l + r)
 
 @operators.sub.multimethod_s(Vec, Vec)
 @jit.unroll_safe
@@ -271,32 +265,12 @@ def Vec_sub(self, other):
 @operators.sub.multimethod_s(Float, Vec)
 @jit.unroll_safe
 def Vec_sub(s, self):
-    L = self.get_length()
-    if isinstance(self, FVec):
-        f_result = [0.0] * L
-        for i in range(L):
-            f_result[i] = self.fetch_f(i) - s.number
-        return compact_f(f_result)
-    result = [null] * L
-    interface = get_interface(self)
-    for i in range(L):
-        result[i] = operators.sub.call([self.fetch(i), s])
-    return GVec(result, interface)
+    return Vec_arithmetic(self, s, operators.sub, lambda l, r: l - r)
 
 @operators.sub.multimethod_s(Vec, Float)
 @jit.unroll_safe
 def Vec_sub(self, s):
-    L = self.get_length()
-    if isinstance(self, FVec):
-        f_result = [0.0] * L
-        for i in range(L):
-            f_result[i] = self.fetch_f(i) - s.number
-        return compact_f(f_result)
-    result = [null] * L
-    interface = get_interface(self)
-    for i in range(L):
-        result[i] = operators.sub.call([self.fetch(i), s])
-    return GVec(result, interface)
+    return Vec_arithmetic(self, s, operators.sub, lambda l, r: l - r)
 
 @operators.mul.multimethod_s(Vec, Vec)
 @jit.unroll_safe
@@ -316,32 +290,12 @@ def Vec_mul(self, other):
 @operators.mul.multimethod_s(Float, Vec)
 @jit.unroll_safe
 def Vec_mul(s, self):
-    L = self.get_length()
-    if isinstance(self, FVec):
-        f_result = [0.0] * L
-        for i in range(L):
-            f_result[i] = self.fetch_f(i) * s.number
-        return compact_f(f_result)
-    result = [null] * L
-    interface = get_interface(self)
-    for i in range(L):
-        result[i] = operators.mul.call([self.fetch(i), s])
-    return GVec(result, interface)
+    return Vec_arithmetic(self, s, operators.mul, lambda l, r: l * r)
 
 @operators.mul.multimethod_s(Vec, Float)
 @jit.unroll_safe
 def Vec_mul(self, s):
-    L = self.get_length()
-    if isinstance(self, FVec):
-        f_result = [0.0] * L
-        for i in range(L):
-            f_result[i] = self.fetch_f(i) * s.number
-        return compact_f(f_result)
-    result = [null] * L
-    interface = get_interface(self)
-    for i in range(L):
-        result[i] = operators.mul.call([self.fetch(i), s])
-    return GVec(result, interface)
+    return Vec_arithmetic(self, s, operators.mul, lambda l, r: l * r)
 
 @operators.div.multimethod_s(Vec, Vec)
 @jit.unroll_safe
@@ -361,32 +315,12 @@ def Vec_div(self, other):
 @operators.div.multimethod_s(Float, Vec)
 @jit.unroll_safe
 def Vec_div(s, self):
-    L = self.get_length()
-    if isinstance(self, FVec):
-        f_result = [0.0] * L
-        for i in range(L):
-            f_result[i] = self.fetch_f(i) / s.number
-        return compact_f(f_result)
-    result = [null] * L
-    interface = get_interface(self)
-    for i in range(L):
-        result[i] = operators.div.call([self.fetch(i), s])
-    return GVec(result, interface)
+    return Vec_arithmetic(self, s, operators.div, lambda l, r: l / r)
 
 @operators.div.multimethod_s(Vec, Float)
 @jit.unroll_safe
 def Vec_div(self, s):
-    L = self.get_length()
-    if isinstance(self, FVec):
-        f_result = [0.0] * L
-        for i in range(L):
-            f_result[i] = self.fetch_f(i) / s.number
-        return compact_f(f_result)
-    result = [null] * L
-    interface = get_interface(self)
-    for i in range(L):
-        result[i] = operators.div.call([self.fetch(i), s])
-    return GVec(result, interface)
+    return Vec_arithmetic(self, s, operators.div, lambda l, r: l / r)
 
 @vectormath.length.multimethod_s(Vec)
 @jit.unroll_safe
@@ -411,7 +345,7 @@ def Vec_dot(self, other):
         ])
     return result
 
-# improve to include Int,Float X Vec
+# improve to include Int X Vec
 # you can wrap the stuff into a function, then implement lots of scalar behavior at once, eg.
 # binary_arithmetic(Vec, operators.div, (lambda a, b: a / b))
 # There's an example of that in runtime/space/operators.py
