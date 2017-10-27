@@ -57,11 +57,6 @@ class FMatrix(Matrix):
     def get_item_type(self):
         return Float.interface
 
-@FMatrix.builtin_method
-@signature(FMatrix, Integer, Integer)
-def get_element(self, x, y):
-    return Float(self.fetch_f(x.value, y.value))
-
 class FMatrix22(FMatrix):
     _immutable_fields_ = ['f00', 'f01', 'f10', 'f11']
     interface = Matrix.interface
@@ -230,6 +225,14 @@ class GMatrix(Matrix):
     def get_dimensions(self):
         return [self.rows, self.cols]
 
+@FMatrix.method(u"get_element", signature(FMatrix, Integer, Integer))
+def FMatrix_get_element(self, x, y):
+    return Float(self.fetch_f(y.value, x.value))
+
+@GMatrix.method(u"get_element", signature(GMatrix, Integer, Integer))
+def GMatrix_get_element(self, x, y):
+    return self.fetch(y.value, x.value)
+
 @jit.unroll_safe
 def compact(g_scalars, rows, cols):
     if isinstance(g_scalars[0], Float):
@@ -263,7 +266,7 @@ def Matrix_init(argv):
         if isinstance(argv[a], List):
             rows.append(argv[a])
         else:
-            raise OldError(u"bad")
+            raise OldError(u"matrix requires args of list")
     if len(rows) < 2:
         raise OldError(u"should never happen")
     for row in rows:
