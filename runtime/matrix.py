@@ -243,13 +243,13 @@ class GMatrix(Matrix):
     def get_dimensions(self):
         return [self.rows, self.cols]
 
-@Matrix.method(u"get_element", signature(FMatrix, Integer, Integer))
-def FMatrix_get_element(self, x, y):
-    return Float(self.fetch_f(y.value, x.value))
-
-@Matrix.method(u"get_element", signature(GMatrix, Integer, Integer))
-def GMatrix_get_element(self, x, y):
-    return self.fetch(y.value, x.value)
+@Matrix.method(u"get_element", signature(Matrix, Integer, Integer))
+def Matrix_get_element(self, x, y):
+    if isinstance(self, FMatrix):
+        return Float(self.fetch_f(y.value, x.value))
+    if isinstance(self, GMatrix):
+        return self.fetch(y.value, x.value)
+    raise OldError(u"get element does not work on this matrix type")
 
 @jit.unroll_safe
 def compact(g_scalars, rows, cols):
