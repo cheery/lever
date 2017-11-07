@@ -82,6 +82,11 @@ class FMatrix22(FMatrix):
     def get_dimensions(self):
         return [2, 2]
 
+    # def repr(self):
+    #     a = u"[%f %f]" % (self.f00, self.f01)
+    #     b = u"[%f %f]" % (self.f10, self.f11)
+    #     return u"%s\n%s\n" % (a, b)
+
 class FMatrix33(FMatrix):
     _immutable_fields_ = ['f00', 'f01', 'f02', 'f10', 'f11', 'f12', 'f20', 'f21', 'f22']
     interface = Matrix.interface
@@ -123,10 +128,16 @@ class FMatrix33(FMatrix):
     def get_dimensions(self):
         return [3, 3]
     
+    # def repr(self):
+    #     a = u"[%f %f %f]" % (self.f00, self.f01, self.f02)
+    #     b = u"[%f %f %f]" % (self.f10, self.f11, self.f12)
+    #     c = u"[%f %f %f]" % (self.f20, self.f21, self.f22)
+    #     return u"%s\n%s\n%s\n" % (a, b, c)
+
 class FMatrix44(FMatrix):
     _immutable_fields_ = ['f00', 'f01', 'f02', 'f03', 'f10', 'f11', 'f12', 'f13', 'f20', 'f21', 'f22', 'f23', 'f30', 'f31', 'f32', 'f33']
     interface = Matrix.interface
-    def __init__(self, f00, f01, f02, f03, f10, f11, f13, f12, f20, f21, f22, f23, f30, f31, f32, f33):
+    def __init__(self, f00, f01, f02, f03, f10, f11, f12, f13, f20, f21, f22, f23, f30, f31, f32, f33):
         self.f00 = f00
         self.f01 = f01
         self.f02 = f02
@@ -185,6 +196,13 @@ class FMatrix44(FMatrix):
 
     def get_dimensions(self):
         return [4, 4]
+
+    # def repr(self):
+    #     a = u"[%f %f %f %f]" % (self.f00, self.f01, self.f02, self.f03)
+    #     b = u"[%f %f %f %f]" % (self.f10, self.f11, self.f12, self.f13)
+    #     c = u"[%f %f %f %f]" % (self.f20, self.f21, self.f22, self.f23)
+    #     d = u"[%f %f %f %f]" % (self.f30, self.f31, self.f32, self.f33)
+    #     return u"%s\n%s\n%s\n%s\n" % (a, b, c, d)
 
 class FMatrixNN(FMatrix):
     _immutable_fields_ = ['f_scalars[*]', 'rows', 'cols']
@@ -325,3 +343,28 @@ def FMatrix44_determinant(self):
     d1 = FMatrix33_determinant(m4).number * d.number
 
     return Float((a1-b1+c1-d1) / 2)
+
+@Matrix.method(u"transpose", signature(Matrix))
+def Matrix_transpose(self):
+    if isinstance(self, FMatrix22):
+        return FMatrix22_transpose(self)
+    if isinstance(self, FMatrix33):
+        return FMatrix33_transpose(self)
+    if isinstance(self, FMatrix44):
+        return FMatrix44_transpose(self)
+    raise OldError(u"can only transpose known square matrices currently")
+
+def FMatrix22_transpose(self):
+    return FMatrix22(self.f00, self.f10,
+                     self.f01, self.f11)
+
+def FMatrix33_transpose(self):
+    return FMatrix33(self.f00, self.f10, self.f20,
+                     self.f01, self.f11, self.f21,
+                     self.f02, self.f12, self.f22)
+
+def FMatrix44_transpose(self):
+    return FMatrix44(self.f00, self.f10, self.f20, self.f30, 
+                     self.f01, self.f11, self.f21, self.f31, 
+                     self.f02, self.f12, self.f22, self.f32, 
+                     self.f03, self.f13, self.f23, self.f33)
