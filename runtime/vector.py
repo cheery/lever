@@ -247,6 +247,16 @@ def Vec_add(s, self):
 def Vec_add(self, s):
     return Vec_arithmetic(self, s, operators.add, lambda l, r: l + r)
 
+@operators.add.multimethod_s(Vec, Integer)
+@jit.unroll_safe
+def Vec_add(self, s):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l + r)
+
+@operators.add.multimethod_s(Integer, Vec)
+@jit.unroll_safe
+def Vec_add(s, self):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l + r)
+
 @operators.sub.multimethod_s(Vec, Vec)
 @jit.unroll_safe
 def Vec_sub(self, other):
@@ -271,6 +281,16 @@ def Vec_sub(s, self):
 @jit.unroll_safe
 def Vec_sub(self, s):
     return Vec_arithmetic(self, s, operators.sub, lambda l, r: l - r)
+
+@operators.sub.multimethod_s(Vec, Integer)
+@jit.unroll_safe
+def Vec_add(self, s):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l - r)
+
+@operators.sub.multimethod_s(Integer, Vec)
+@jit.unroll_safe
+def Vec_add(s, self):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l - r)
 
 @operators.mul.multimethod_s(Vec, Vec)
 @jit.unroll_safe
@@ -297,6 +317,16 @@ def Vec_mul(s, self):
 def Vec_mul(self, s):
     return Vec_arithmetic(self, s, operators.mul, lambda l, r: l * r)
 
+@operators.mul.multimethod_s(Vec, Integer)
+@jit.unroll_safe
+def Vec_add(self, s):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l * r)
+
+@operators.mul.multimethod_s(Integer, Vec)
+@jit.unroll_safe
+def Vec_add(s, self):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l * r)
+
 @operators.div.multimethod_s(Vec, Vec)
 @jit.unroll_safe
 def Vec_div(self, other):
@@ -322,6 +352,16 @@ def Vec_div(s, self):
 def Vec_div(self, s):
     return Vec_arithmetic(self, s, operators.div, lambda l, r: l / r)
 
+@operators.div.multimethod_s(Vec, Integer)
+@jit.unroll_safe
+def Vec_add(self, s):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l / r)
+
+@operators.div.multimethod_s(Integer, Vec)
+@jit.unroll_safe
+def Vec_add(s, self):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l / r)
+
 @vectormath.length.multimethod_s(Vec)
 @jit.unroll_safe
 def Vec_length(self):
@@ -337,7 +377,7 @@ def Vec_length(self):
 @jit.unroll_safe
 def Vec_dot(self, other):
     L = self.match_length(other)
-    result = operators.mul.call([self.fetch(0), self.fetch(0)])
+    result = operators.mul.call([self.fetch(0), other.fetch(0)])
     for i in range(1, L):
         result = operators.add.call([
             result,
@@ -345,13 +385,24 @@ def Vec_dot(self, other):
         ])
     return result
 
-# improve to include Int X Vec
+@vectormath.normalize.multimethod_s(Vec)
+@jit.unroll_safe
+def Vec_normalize(self):
+    tosqrt = operators.mul.call([self.fetch(0), self.fetch(0)])
+    for i in range(1, self.get_length()):
+        tosqrt = operators.add.call([
+            tosqrt, 
+            operators.mul.call([self.fetch(i), self.fetch(i)])
+        ])
+    mag = vectormath.sqrt_.call([tosqrt])
+    assert isinstance(mag, Float)
+    return Vec_arithmetic(self, mag, operators.div, lambda l, r: l / r)
+
 # you can wrap the stuff into a function, then implement lots of scalar behavior at once, eg.
 # binary_arithmetic(Vec, operators.div, (lambda a, b: a / b))
 # There's an example of that in runtime/space/operators.py
 
 # improve to cross product (2D, 3D)
-# improve to include normalize
 # improve to include reflect, refract
 # neg
 # pos
