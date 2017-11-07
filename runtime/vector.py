@@ -398,6 +398,25 @@ def Vec_normalize(self):
     assert isinstance(mag, Float)
     return Vec_arithmetic(self, mag, operators.div, lambda l, r: l / r)
 
+# @vectormath.reflect.multimethod_s(Vec, Vec)
+# def Vec_reflect(i, n):
+#     return operators.sub.call([
+#                 i, 
+#                 operators.mul.call([operators.mul.call([
+#                     Float(2.0), 
+#                     Vec_dot(n, i)])]),
+#                 n
+#             ])
+
+# @vectormath.refract.multimethod_s(Vec, Vec, Float)
+# def refract(i, n, eta):
+#     ni = Vec_dot(n, i)
+#     k = 1.0 - eta * eta * (1.0 - ni*ni)
+#     if k < 0.0:
+#         return Float(0.0)
+#     else:
+#         return eta * i - (eta * ni + sqrt(k)) * n
+
 # you can wrap the stuff into a function, then implement lots of scalar behavior at once, eg.
 # binary_arithmetic(Vec, operators.div, (lambda a, b: a / b))
 # There's an example of that in runtime/space/operators.py
