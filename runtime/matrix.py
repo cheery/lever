@@ -363,3 +363,59 @@ def FMatrix44_transpose(self):
                      self.f01, self.f11, self.f21, self.f31, 
                      self.f02, self.f12, self.f22, self.f32, 
                      self.f03, self.f13, self.f23, self.f33)
+
+@operators.add.multimethod_s(Matrix, Matrix)
+def Matrix_add(self, other):
+    if isinstance(self, FMatrix22) and isinstance(other, FMatrix22):
+        return FMatrix22_add(List([self, other]))
+    if isinstance(self, FMatrix33) and isinstance(other, FMatrix33):
+        return FMatrix33_add(List([self, other]))
+    if isinstance(self, FMatrix44) and isinstance(other, FMatrix44):
+        return FMatrix44_add(List([self, other]))
+    raise OldError(u"matrix addition not supported for arguments")
+
+@signature(FMatrix22, FMatrix22)
+def FMatrix22_add(self, other):
+    return FMatrix22(self.f00 + other.f00, self.f01 + other.f01,
+                     self.f10 + other.f10, self.f11 + other.f11)
+
+@signature(FMatrix33, FMatrix33)
+def FMatrix33_add(self, other):
+    return FMatrix33(self.f00 + other.f00, self.f01 + other.f01, self.f02 + other.f02,
+                     self.f10 + other.f10, self.f11 + other.f11, self.f12 + other.f12,
+                     self.f20 + other.f20, self.f21 + other.f21, self.f22 + other.f22)
+
+@signature(FMatrix44, FMatrix44)
+def FMatrix44_add(self, other):
+    return FMatrix44(self.f00 + other.f00, self.f01 + other.f01, self.f02 + other.f02, self.f03 + other.f03, 
+                     self.f10 + other.f10, self.f11 + other.f11, self.f12 + other.f12, self.f13 + other.f13, 
+                     self.f20 + other.f20, self.f21 + other.f21, self.f22 + other.f22, self.f23 + other.f23, 
+                     self.f30 + other.f30, self.f31 + other.f31, self.f32 + other.f32, self.f33 + other.f33)
+
+@operators.sub.multimethod_s(Matrix, Matrix)
+def Matrix_sub(self, other):
+    if isinstance(self, FMatrix22) and isinstance(other, FMatrix22):
+        return FMatrix22_sub(List([self, other]))
+    if isinstance(self, FMatrix33) and isinstance(other, FMatrix33):
+        return FMatrix33_sub(List([self, other]))
+    if isinstance(self, FMatrix44) and isinstance(other, FMatrix44):
+        return FMatrix44_sub(List([self, other]))
+    raise OldError(u"matrix subtraction not supported for arguments")
+
+@signature(FMatrix22, FMatrix22)
+def FMatrix22_sub(self, other):
+    return FMatrix22(self.f00 - other.f00, self.f01 - other.f01,
+                     self.f10 - other.f10, self.f11 - other.f11)
+
+@signature(FMatrix33, FMatrix33)
+def FMatrix33_sub(self, other):
+    return FMatrix33(self.f00 - other.f00, self.f01 - other.f01, self.f02 - other.f02,
+                     self.f10 - other.f10, self.f11 - other.f11, self.f12 - other.f12,
+                     self.f20 - other.f20, self.f21 - other.f21, self.f22 - other.f22)
+
+@signature(FMatrix44, FMatrix44)
+def FMatrix44_sub(self, other):
+    return FMatrix44(self.f00 - other.f00, self.f01 - other.f01, self.f02 - other.f02, self.f03 - other.f03, 
+                     self.f10 - other.f10, self.f11 - other.f11, self.f12 - other.f12, self.f13 - other.f13, 
+                     self.f20 - other.f20, self.f21 - other.f21, self.f22 - other.f22, self.f23 - other.f23, 
+                     self.f30 - other.f30, self.f31 - other.f31, self.f32 - other.f32, self.f33 - other.f33)
