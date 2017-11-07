@@ -324,22 +324,20 @@ def FMatrix33_determinant(self):
     return Float(x - y + z)
 
 def FMatrix44_determinant(self):
-    a = Float(self.f00); b = Float(self.f01); c = Float(self.f02); d = Float(self.f03);
-    e = Float(self.f10); f = Float(self.f11); g = Float(self.f12); h = Float(self.f13);
-    i = Float(self.f20); j = Float(self.f21); k = Float(self.f22); l = Float(self.f23);
-    m = Float(self.f30); n = Float(self.f31); o = Float(self.f32); p = Float(self.f33);
+    a00 = self.f00 * self.f11 - self.f01 * self.f10
+    a01 = self.f00 * self.f12 - self.f02 * self.f10
+    a02 = self.f00 * self.f13 - self.f03 * self.f10
+    a03 = self.f01 * self.f12 - self.f02 * self.f11
+    a04 = self.f01 * self.f13 - self.f03 * self.f11
+    a05 = self.f02 * self.f13 - self.f03 * self.f12
+    a06 = self.f20 * self.f31 - self.f21 * self.f30
+    a07 = self.f20 * self.f32 - self.f22 * self.f30
+    a08 = self.f20 * self.f33 - self.f23 * self.f30
+    a09 = self.f21 * self.f32 - self.f22 * self.f31
+    a10 = self.f21 * self.f33 - self.f23 * self.f31
+    a11 = self.f22 * self.f33 - self.f23 * self.f32
 
-    m1 = Matrix_init(List([List([f, g, h]), List([j, k, l]), List([n, o, p])]))
-    m2 = Matrix_init(List([List([e, g, h]), List([i, k, l]), List([m, o, p])]))
-    m3 = Matrix_init(List([List([e, f, h]), List([i, j, l]), List([m, n, p])]))
-    m4 = Matrix_init(List([List([e, f, g]), List([i, j, k]), List([m, n, o])]))
-
-    a1 = FMatrix33_determinant(m1).number * a.number
-    b1 = FMatrix33_determinant(m2).number * b.number
-    c1 = FMatrix33_determinant(m3).number * c.number
-    d1 = FMatrix33_determinant(m4).number * d.number
-
-    return Float(a1-b1+c1-d1)
+    return Float(a00 * a11 - a01 * a10 + a02 * a09 + a03 * a08 - a04 * a07 + a05 * a06)
 
 @Matrix.method(u"transpose", signature(Matrix))
 def Matrix_transpose(self):
