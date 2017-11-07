@@ -122,7 +122,7 @@ class FMatrix33(FMatrix):
 
     def get_dimensions(self):
         return [3, 3]
-
+    
 class FMatrix44(FMatrix):
     _immutable_fields_ = ['f00', 'f01', 'f02', 'f03', 'f10', 'f11', 'f12', 'f13', 'f20', 'f21', 'f22', 'f23', 'f30', 'f31', 'f32', 'f33']
     interface = Matrix.interface
@@ -184,7 +184,7 @@ class FMatrix44(FMatrix):
         raise OldError(u"float matrix access out of bounds")
 
     def get_dimensions(self):
-        return [3, 3]
+        return [4, 4]
 
 class FMatrixNN(FMatrix):
     _immutable_fields_ = ['f_scalars[*]', 'rows', 'cols']
@@ -225,11 +225,11 @@ class GMatrix(Matrix):
     def get_dimensions(self):
         return [self.rows, self.cols]
 
-@FMatrix.method(u"get_element", signature(FMatrix, Integer, Integer))
+@Matrix.method(u"get_element", signature(FMatrix, Integer, Integer))
 def FMatrix_get_element(self, x, y):
     return Float(self.fetch_f(y.value, x.value))
 
-@GMatrix.method(u"get_element", signature(GMatrix, Integer, Integer))
+@Matrix.method(u"get_element", signature(GMatrix, Integer, Integer))
 def GMatrix_get_element(self, x, y):
     return self.fetch(y.value, x.value)
 
@@ -281,3 +281,47 @@ def Matrix_init(argv):
     rows_len = len(rows)
     cols_len = len(rows[0])
     return compact(scalars, rows_len, cols_len)
+
+@Matrix.method(u"determinant", signature(Matrix))
+def Matrix_determinant(self):
+    if isinstance(self, FMatrix22):
+        return FMatrix22_determinant(self)
+    if isinstance(self, FMatrix33):
+        return FMatrix33_determinant(self)
+    if isinstance(self, FMatrix44):
+        return FMatrix44_determinant(self)
+    raise OldError(u"can only take the determinant of known square matrices")
+
+def FMatrix22_determinant(self):
+    return Float(self.f00 * self.f11 - self.f10 * self.f01)
+
+def FMatrix33_determinant(self):
+    a = self.f00; b = self.f01; c = self.f02
+    d = self.f10; e = self.f11; f = self.f12
+    g = self.f20; h = self.f21; i = self.f22
+
+    x = a * (e * i - f * h)
+    y = b * (d * i - f * g)
+    z = c * (d * h - e * g)
+    return Float(x - y + z)
+
+# TODO: This seems really janky. I have no idea what I was doing wrong, but it
+#       seems fixed now. Cheery, mind taking a look? I've tried everything. I
+#       know I'm going wrong somewhere but I can't figure it out for the life of me.
+def FMatrix44_determinant(self):
+    a = Float(self.f00); b = Float(self.f01); c = Float(self.f02); d = Float(self.f03);
+    e = Float(self.f10); f = Float(self.f11); g = Float(self.f12); h = Float(self.f13);
+    i = Float(self.f20); j = Float(self.f21); k = Float(self.f22); l = Float(self.f23);
+    m = Float(self.f30); n = Float(self.f31); o = Float(self.f32); p = Float(self.f33);
+
+    m1 = Matrix_init(List([List([f, g, h]), List([j, k, l]), List([n, o, p])]))
+    m2 = Matrix_init(List([List([e, g, h]), List([i, k, l]), List([m, o, p])]))
+    m3 = Matrix_init(List([List([e, f, h]), List([i, j, l]), List([m, n, p])]))
+    m4 = Matrix_init(List([List([e, f, g]), List([i, j, k]), List([m, n, o])]))
+
+    a1 = FMatrix33_determinant(m1).number * a.number
+    b1 = FMatrix33_determinant(m2).number * b.number
+    c1 = FMatrix33_determinant(m3).number * c.number
+    d1 = FMatrix33_determinant(m4).number * d.number
+
+    return Float((a1-b1+c1-d1) / 2)
