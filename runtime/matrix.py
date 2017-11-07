@@ -323,9 +323,6 @@ def FMatrix33_determinant(self):
     z = c * (d * h - e * g)
     return Float(x - y + z)
 
-# TODO: This seems really janky. I have no idea what I was doing wrong, but it
-#       seems fixed now. Cheery, mind taking a look? I've tried everything. I
-#       know I'm going wrong somewhere but I can't figure it out for the life of me.
 def FMatrix44_determinant(self):
     a = Float(self.f00); b = Float(self.f01); c = Float(self.f02); d = Float(self.f03);
     e = Float(self.f10); f = Float(self.f11); g = Float(self.f12); h = Float(self.f13);
@@ -342,7 +339,7 @@ def FMatrix44_determinant(self):
     c1 = FMatrix33_determinant(m3).number * c.number
     d1 = FMatrix33_determinant(m4).number * d.number
 
-    return Float((a1-b1+c1-d1) / 2)
+    return Float(a1-b1+c1-d1)
 
 @Matrix.method(u"transpose", signature(Matrix))
 def Matrix_transpose(self):
