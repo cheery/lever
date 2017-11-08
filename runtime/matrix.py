@@ -419,3 +419,65 @@ def FMatrix44_sub(self, other):
                      self.f10 - other.f10, self.f11 - other.f11, self.f12 - other.f12, self.f13 - other.f13, 
                      self.f20 - other.f20, self.f21 - other.f21, self.f22 - other.f22, self.f23 - other.f23, 
                      self.f30 - other.f30, self.f31 - other.f31, self.f32 - other.f32, self.f33 - other.f33)
+
+@operators.mul.multimethod_s(Matrix, Float)
+def Matrix_smul(self, s):
+    if isinstance(self, FMatrix22):
+        return FMatrix22_smul(List([self, s]))
+    if isinstance(self, FMatrix33):
+        return FMatrix33_smul(List([self, s]))
+    if isinstance(self, FMatrix44):
+        return FMatrix44_smul(List([self, s]))
+    raise OldError(u"cant matrix-scalar multiply on unsupported matrix")
+
+@operators.mul.multimethod_s(Float, Matrix)
+def Matrix_smul(self, s):
+    if isinstance(self, FMatrix22):
+        return FMatrix22_smul(List([self, s]))
+    if isinstance(self, FMatrix33):
+        return FMatrix33_smul(List([self, s]))
+    if isinstance(self, FMatrix44):
+        return FMatrix44_smul(List([self, s]))
+    raise OldError(u"cant matrix-scalar multiply on unsupported matrix")
+
+@signature(FMatrix22, Float)
+def FMatrix22_smul(self, k):
+    s = k.number
+    return FMatrix22(self.f00 * s, self.f01 * s,
+                     self.f10 * s, self.f11 * s)
+
+@signature(FMatrix33, Float)
+def FMatrix33_smul(self, k):
+    s = k.number
+    return FMatrix33(self.f00 * s, self.f01 * s, self.f02 * s,
+                     self.f10 * s, self.f11 * s, self.f12 * s,
+                     self.f20 * s, self.f21 * s, self.f22 * s)
+
+@signature(FMatrix44, Float)
+def FMatrix44_smul(self, k):
+    s = k.number
+    return FMatrix44(self.f00 * s, self.f01 * s, self.f02 * s, self.f03 * s, 
+                     self.f10 * s, self.f11 * s, self.f12 * s, self.f13 * s, 
+                     self.f20 * s, self.f21 * s, self.f22 * s, self.f23 * s, 
+                     self.f30 * s, self.f31 * s, self.f32 * s, self.f33 * s)
+
+@signature(FMatrix22, Float)
+def FMatrix22_sdiv(self, k):
+    s = k.number
+    return FMatrix22(self.f00 / s, self.f01 / s,
+                     self.f10 / s, self.f11 / s)
+
+@signature(FMatrix33, Float)
+def FMatrix33_sdiv(self, k):
+    s = k.number
+    return FMatrix33(self.f00 / s, self.f01 / s, self.f02 / s,
+                     self.f10 / s, self.f11 / s, self.f12 / s,
+                     self.f20 / s, self.f21 / s, self.f22 / s)
+
+@signature(FMatrix44, Float)
+def FMatrix44_sdiv(self, k):
+    s = k.number
+    return FMatrix44(self.f00 / s, self.f01 / s, self.f02 / s, self.f03 / s, 
+                     self.f10 / s, self.f11 / s, self.f12 / s, self.f13 / s, 
+                     self.f20 / s, self.f21 / s, self.f22 / s, self.f23 / s, 
+                     self.f30 / s, self.f31 / s, self.f32 / s, self.f33 / s)
