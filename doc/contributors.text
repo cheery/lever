@@ -1,0 +1,93 @@
+#manual{_}{700}{contributors}
+Listing contributors of this language
+
+#toc
+
+#section External
+
+#subsection PyPy/RPython community & staff
+
+These people have created invaluable tools for creating new
+interpreters.
+
+The RPython lays out the foundations for the Lever language.
+
+#subsection Laurence Tratt
+
+Wrote the blog posts that led me to try out RPython.
+"Fast Enough VMs in Fast Enough Time"
+
+#subsection LLVM community
+
+A source to many useful compiler-related papers. The
+community has been surprisingly helpful even if we have not
+used the LLVM compiler directly in this project.
+
+#subsection Jeffrey Keggler
+
+The author for the Marpa parsing algorithm. His website and
+papers collect up bunch of improvements into Earley parser
+that make it much more useful and easier to implement.
+
+Context-free grammars are an important human-interfacing
+element these days. The resulting tools I wrote based on
+Jeffrey's papers were incredibly valuable for the
+development of my language.
+
+#subsection r/programminglanguages and #;proglangdesign
+
+A programming language community sitting in reddit and IRC.
+This community has provided an useful reflection surface.
+Once in a while I throw them with ideas and get some useful
+insights that led to better choices.
+
+#subsection Stackless Python
+
+The Stackless Python is worth mentioning here because they
+provided green threads into Python, and continuations to
+RPython. This work allows us to skip all the stupid and
+non-working "solutions" and concentrate on the difficult
+problems at asynchronous concurrency.
+
+#subsection Libuv
+
+Libuv lacks features, but for now this library has helped me
+out a lot. Although this library isn't perfect by any count,
+it has provided cross-platform features I haven't had to
+implement myself.
+
+
+
+#section Internal
+
+#subsection Alexander Higgins
+
+The first person who contributed significant code to the
+project and learnt how the runtime is put together.
+
+
+
+#subsection Robert Kiraly
+
+Helped me with the documentation, provided advice and
+support.
+
+#subsection Domantas Mauruča
+
+Wrote a superfluous len(x) -function when we have x.length
+to retrieve length from a container. The guy contributed
+early on and provided motivation for improving
+the documentation.
+
+
+#subsection Henri Tuhola
+
+I started this project. I am leading the maintenance and
+development.
+
+
+#section You're not on the list?
+
+If you think someone or you should be on this list, send a
+message to the maintainers which explains why you should be
+on the contributors list.

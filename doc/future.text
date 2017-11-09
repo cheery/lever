@@ -1,0 +1,184 @@
+#manual{_}{501}{future}
+Long term goals & strategies
+
+
+Having more than one contributor, it is time to write out
+clear goals for Lever.
+
+Communication of goals and strategies is important for
+meaningful movement as a group. This page is the place for
+that communication. The contents are revised every once in a
+while.
+
+
+#toc
+
+
+#section Exploration
+
+People did a lot of computer science related discoveries
+prior 1990s. A recurring theme was to make the machine assist
+the user in programming. For a long time it was impractical
+to implement such tools because computers were unfortunately
+too slow for computer assisted work.
+
+A lot of programming language implementations exist in a
+calcified state. The internals that are deliberately left
+undocumented discourage any significant changes to them. The
+user is not supposed to change the implementation even if
+the source code is available.
+
+This means that our programming tools have advanced by
+revolution rather than evolution. The possibility for a real
+revolution shrinks every year a little bit. You just can't
+throw everything away once in a decade.
+
+The internals of our language are highly developable. Our
+goal is to retain this plasticity through the lifetime of
+the programming language.
+
+
+#subsection Standardization
+
+Having seen how node.js software breaks despite version
+numbering makes us skeptical that the version numbering
+would be good for communicating compatibility.
+
+In short: It is likely that semantic versioning does not
+solve the problems of changing APIs and dependency hells.
+Node.js follows semver and is constantly messed down on
+a regular basis.
+
+As the result, we're picking up something that has been
+proven to communicate compatibility. We will establish a
+standards board for our language. The standards established
+by this board are used for communicating compatibility.
+
+Version numbers will be still used, but only for identifying
+releases of software.
+
+
+#section Practicality
+
+We strive to create a practical tool for solving difficult
+problems.
+
+Often happens that we need the optimized version of a
+software during the design phase. Very abstract and
+sophisticated programming languages usually perform very
+badly. For this reason the practical code is usually written
+in very crappy programming languages.
+
+#subsection Code manipulation / analysis framework
+
+We are designing a framework to allow manipulation and
+analysis of source code after it has been compiled into a
+bytecode or loaded into the runtime environment.
+
+This framework will be supplied with optimization, partial
+evaluation, static analysis, symbolic execution, theorem
+proving, validation, formal verification tools and libraries.  
+
+#subsection Improved intermediate-results/module code memoization
+
+Once we have software with very good runtime behavior, we do
+not want to compile it every time when a program is loaded.
+We require user-accessible intermediate formats to make most
+out of machine code that is produced.
+
+On GPUs some of this has been already solved for us, in form
+of the SPIR-V binaries. So we need to come up with something
+that works with CPUs as well.
+
+#subsection Extensible abstract arithmetic
+
+We want the arithmetic to be extensible from the user side,
+but it is not very usable if you have to worry about whether
+you just broke half of your language by introducing a bad
+implicit conversion.
+
+More about the subject in the #href
+{http://boxbase.org/entries/2017/nov/6/addition-expression/}
+{"How should the addition -expression behave?"}
+
+#subsection Live editing
+
+Smalltalk demonstrated functionality where you could edit
+your software while it was running. This is an incredibly
+powerful tool for design of software that is highly
+interactive.
+
+Today live programming only exists under special conditions.
+It is perceived to be too volatile for real-world use. While
+it allows software to be developed quickly, it is also
+really easy to write the kind of programs that never start
+again if you attempt to reset them.
+
+#subsection Concurrency
+
+We have great tools for implementing concurrency inside a
+single thread.
+
+There are concerns that the provided
+concurrency is too much and leads people to writing
+unreliable software. We need to study these ideas formally
+and see what kind of conclusions we get. It is possible
+there is something we would have to consider even if our
+approach worked out apparently well.
+
+The paper "Concurrency Among Strangers" will be used as a
+starting point.
+
+#subsection Custom formats and protobuf
+
+Machine-readable logs and how the data is stored are going to
+be more important in the future.
+
+I think that protobuf got some of the details right, mainly
+by selecting good design goals. But the resulting tools were
+clumsy and difficult to use with dynamically typed
+languages.
+
+Protobuf also ignores the fact that sometimes we want to
+observe and modify the data directly. The text editing was
+perfected through efficient data structures such as the
+piece tables, those could be also used here. There are more
+ways to diff tree-structured data than there are ways to
+diff plain text, which also could be useful with tightly
+packed non-compressed persistent log data that protobuf
+attempts to cater for.
+
+We are going to need much better tools for handling binary
+data. Also need to decide on formats. Likely we would like
+to derive something from protobuf that's better for the kind
+of persistent storage needs that arise in the runtime.
+
+
+#subsection Pretty printing
+
+Debugging a program often involves observing a state. To
+allow this we could use really good set of tools for pretty
+printing. Since we have environments where we can show
+3D graphics, it would be preferable that our pretty printing
+would match with this environment while being backwards
+compatible with terminal views.
+
+We would somehow need to handle both passive and interactive
+forms of prints. The interactive prints do not necessarily
+need to be terminal-friendly.
+
+
+#section Penetration
+
+Since we have a really nice language, we want to use it for
+something and see how it fares.
+
+Our current focus is on the graphics related programming. To
+find a bit stronger niche we focus to software that runs in
+Virtual Reality.
+
+Ultimately we would like to develop software in virtual
+reality and produce all assets while we are "in
+the program" ourselves.
+
+
