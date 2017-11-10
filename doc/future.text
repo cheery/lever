@@ -17,42 +17,42 @@ while.
 #section Exploration
 
 People did a lot of computer science related discoveries
-prior 1990s. A recurring theme was to make the machine assist
-the user in programming. For a long time it was impractical
-to implement such tools because computers were unfortunately
-too slow for computer assisted work.
+prior to the 1990s. A recurring theme was to make the
+machine assist the user in programming. For a long time it
+was impractical to implement such tools because computers
+were simply too slow.
 
 A lot of programming language implementations exist in a
-calcified state. The internals that are deliberately left
-undocumented discourage any significant changes to them. The
-user is not supposed to change the implementation even if
-the source code is available.
+calcified state. The internals that are left
+undocumented, as if deliberately to discourage any
+significant changes to them. The user is not supposed to
+change the implementation even if the source code is available.
 
 This means that our programming tools have advanced by
 revolution rather than evolution. The possibility for a real
 revolution shrinks every year a little bit. You just can't
 throw everything away once in a decade.
 
-The internals of our language are highly developable. Our
+The internals of Lever are highly flexible. Our
 goal is to retain this plasticity through the lifetime of
-the programming language.
+the language.
 
 
 #subsection Standardization
 
 Having seen how node.js software breaks despite version
-numbering makes us skeptical that the version numbering
-would be good for communicating compatibility.
+numbering makes us skeptical that version numbering
+is sufficient to ensure compatibility.
 
-In short: It is likely that semantic versioning does not
-solve the problems of changing APIs and dependency hells.
-Node.js follows semver and is constantly messed down on
-a regular basis.
+In short: It is likely that semantic versioning doesn't
+really address issues related to changing APIs. Node.js, as
+an example, follows semver but is messed up on a regular
+basis.
 
 As the result, we're picking up something that has been
 proven to communicate compatibility. We will establish a
 standards board for our language. The standards established
-by this board are used for communicating compatibility.
+by the board are used to ensure compatibility.
 
 Version numbers will be still used, but only for identifying
 releases of software.
@@ -61,13 +61,10 @@ releases of software.
 #section Practicality
 
 We strive to create a practical tool for solving difficult
-problems.
-
-Often happens that we need the optimized version of a
-software during the design phase. Very abstract and
-sophisticated programming languages usually perform very
-badly. For this reason the practical code is usually written
-in very crappy programming languages.
+problems. Supremely abstract and sophisticated programming
+languages usually perform badly. For this reason the
+practical code is frequently written in crappy programming
+languages.
 
 #subsection Code manipulation / analysis framework
 
@@ -108,11 +105,12 @@ your software while it was running. This is an incredibly
 powerful tool for design of software that is highly
 interactive.
 
-Today live programming only exists under special conditions.
-It is perceived to be too volatile for real-world use. While
-it allows software to be developed quickly, it is also
-really easy to write the kind of programs that never start
-again if you attempt to reset them.
+Today live programming doesn't appear to be supported on
+programming languages or their implementations. Perhaps
+perceived to be too volatile for real-world use? While it
+allows software to be developed quickly, it also allows
+to write the kind of programs that never start again if you
+attempt to reset them.
 
 #subsection Concurrency
 
@@ -126,10 +124,14 @@ and see what kind of conclusions we get. It is possible
 there is something we would have to consider even if our
 approach worked out apparently well.
 
-The paper "Concurrency Among Strangers" will be used as a
+The paper #href
+{http://www.erights.org/talks/promises/}
+{"Concurrency Among Strangers"} will be used as a
 starting point.
 
-#subsection Custom formats and protobuf
+#subsection Custom formats and #href
+{https://developers.google.com/protocol-buffers/}
+{protobuf}
 
 Machine-readable logs and how the data is stored are going to
 be more important in the future.
