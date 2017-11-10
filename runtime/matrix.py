@@ -2,6 +2,7 @@ from rpython.rtyper.lltypesystem import rffi
 from rpython.rlib.debug import make_sure_not_resized
 from rpython.rlib import jit
 from space import *
+from vector import *
 from rpython.rlib.rarithmetic import r_uint, r_ulonglong
 
 class Matrix(Object):
@@ -82,10 +83,10 @@ class FMatrix22(FMatrix):
     def get_dimensions(self):
         return [2, 2]
 
-    # def repr(self):
-    #     a = u"[%f %f]" % (self.f00, self.f01)
-    #     b = u"[%f %f]" % (self.f10, self.f11)
-    #     return u"%s\n%s\n" % (a, b)
+    def repr(self):
+        a = u"mat22 [%f %f]" % (self.f00, self.f01)
+        b = u"      [%f %f]" % (self.f10, self.f11)
+        return u"%s\n%s\n" % (a, b)
 
 class FMatrix33(FMatrix):
     _immutable_fields_ = ['f00', 'f01', 'f02', 'f10', 'f11', 'f12', 'f20', 'f21', 'f22']
@@ -128,11 +129,11 @@ class FMatrix33(FMatrix):
     def get_dimensions(self):
         return [3, 3]
     
-    # def repr(self):
-    #     a = u"[%f %f %f]" % (self.f00, self.f01, self.f02)
-    #     b = u"[%f %f %f]" % (self.f10, self.f11, self.f12)
-    #     c = u"[%f %f %f]" % (self.f20, self.f21, self.f22)
-    #     return u"%s\n%s\n%s\n" % (a, b, c)
+    def repr(self):
+        a = u"mat33 [%f %f %f]" % (self.f00, self.f01, self.f02)
+        b = u"      [%f %f %f]" % (self.f10, self.f11, self.f12)
+        c = u"      [%f %f %f]" % (self.f20, self.f21, self.f22)
+        return u"%s\n%s\n%s\n" % (a, b, c)
 
 class FMatrix44(FMatrix):
     _immutable_fields_ = ['f00', 'f01', 'f02', 'f03', 'f10', 'f11', 'f12', 'f13', 'f20', 'f21', 'f22', 'f23', 'f30', 'f31', 'f32', 'f33']
@@ -197,12 +198,12 @@ class FMatrix44(FMatrix):
     def get_dimensions(self):
         return [4, 4]
 
-    # def repr(self):
-    #     a = u"[%f %f %f %f]" % (self.f00, self.f01, self.f02, self.f03)
-    #     b = u"[%f %f %f %f]" % (self.f10, self.f11, self.f12, self.f13)
-    #     c = u"[%f %f %f %f]" % (self.f20, self.f21, self.f22, self.f23)
-    #     d = u"[%f %f %f %f]" % (self.f30, self.f31, self.f32, self.f33)
-    #     return u"%s\n%s\n%s\n%s\n" % (a, b, c, d)
+    def repr(self):
+        a = u"mat44 [%f %f %f %f]" % (self.f00, self.f01, self.f02, self.f03)
+        b = u"      [%f %f %f %f]" % (self.f10, self.f11, self.f12, self.f13)
+        c = u"      [%f %f %f %f]" % (self.f20, self.f21, self.f22, self.f23)
+        d = u"      [%f %f %f %f]" % (self.f30, self.f31, self.f32, self.f33)
+        return u"%s\n%s\n%s\n%s\n" % (a, b, c, d)
 
 class FMatrixNN(FMatrix):
     _immutable_fields_ = ['f_scalars[*]', 'rows', 'cols']
@@ -430,16 +431,6 @@ def Matrix_smul(self, s):
         return FMatrix44_smul(List([self, s]))
     raise OldError(u"cant matrix-scalar multiply on unsupported matrix")
 
-@operators.mul.multimethod_s(Float, Matrix)
-def Matrix_smul(self, s):
-    if isinstance(self, FMatrix22):
-        return FMatrix22_smul(List([self, s]))
-    if isinstance(self, FMatrix33):
-        return FMatrix33_smul(List([self, s]))
-    if isinstance(self, FMatrix44):
-        return FMatrix44_smul(List([self, s]))
-    raise OldError(u"cant matrix-scalar multiply on unsupported matrix")
-
 @signature(FMatrix22, Float)
 def FMatrix22_smul(self, k):
     s = k.number
@@ -481,3 +472,42 @@ def FMatrix44_sdiv(self, k):
                      self.f10 / s, self.f11 / s, self.f12 / s, self.f13 / s, 
                      self.f20 / s, self.f21 / s, self.f22 / s, self.f23 / s, 
                      self.f30 / s, self.f31 / s, self.f32 / s, self.f33 / s)
+
+# Matrix Vector Operations
+
+@operators.mul.multimethod_s(Matrix, Vec)
+def Matrix_Vec_mul(self, v):
+    if isinstance(self, FMatrix22) and v.get_length() == 2:
+        return FMatrix22_Vec_mul(List([self, v]))
+    if isinstance(self, FMatrix33) and v.get_length() == 3:
+        return FMatrix44_Vec3_mul(List([self, v]))
+    if isinstance(self, FMatrix44) and v.get_length() == 4:
+        return FMatrix44_Vec_mul(List([self, v]))
+    raise OldError(u"cant matrix-vector multiply on unsupported matrix")
+
+@signature(FMatrix22, FVec2)
+def FMatrix22_Vec_mul(self, v):
+    a = v.fetch_f(0)
+    b = v.fetch_f(1)
+    return FVec2(self.f00 * a + self.f01 * b,
+                 self.f10 * a + self.f11 * b)
+
+@signature(FMatrix33, FVec3)
+def FMatrix33_Vec_mul(self, v):
+    a = v.fetch_f(0)
+    b = v.fetch_f(1)
+    c = v.fetch_f(2)
+    return FVec3(self.f00 * a + self.f01 * b + self.f02 * c,
+                 self.f10 * a + self.f11 * b + self.f12 * c,
+                 self.f20 * a + self.f21 * b + self.f22 * c)
+
+@signature(FMatrix44, FVec4)
+def FMatrix44_Vec_mul(self, v):
+    a = v.fetch_f(0)
+    b = v.fetch_f(1)
+    c = v.fetch_f(2)
+    d = v.fetch_f(3)
+    return FVec4(self.f00 * a + self.f01 * b + self.f02 * c + self.f03 * d, 
+                 self.f10 * a + self.f11 * b + self.f12 * c + self.f13 * d, 
+                 self.f20 * a + self.f21 * b + self.f22 * c + self.f23 * d, 
+                 self.f30 * a + self.f31 * b + self.f32 * c + self.f33 * d)
