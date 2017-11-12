@@ -646,7 +646,7 @@ class ShaderLoader
     fetch = (self, description):
         stages = []
         for item in description.items()
-            stages.append(fetch_one(item[0], item[1]))
+            stages.append(self.fetch_one(item[0], item[1]))
         return stages
 
     fetch_one = (self, stage, item_line):
