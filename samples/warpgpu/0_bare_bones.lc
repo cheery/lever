@@ -110,6 +110,26 @@ main = ():
         ]
     })
 
+    # When the external pass dependencies are not provided, they should be inserted
+    # implicitly. Added here for completeness.
+    external_pass = (subpass=gpu.vk.SUBPASS_EXTERNAL)
+    pb.dependency(external_pass, pb.p0, {
+        srcStageMask = "COLOR_ATTACHMENT_OUTPUT_BIT" # default would be "TOP_OF_PIPE_BIT"
+        dstStageMask = "COLOR_ATTACHMENT_OUTPUT_BIT" # default would be "ALL_COMMANDS_BIT"
+        srcAccessMask = []
+        dstAccessMask = [
+            "COLOR_ATTACHMENT_READ_BIT",   # default would contain: INPUT/COLOR/DEPTH_ATTACHMENT_READ_BIT
+            "COLOR_ATTACHMENT_WRITE_BIT" ] #                              COLOR/DEPTH_ATTACHMENT_WRITE_BIT
+    })
+    pb.dependency(pb.p0, external_pass, {
+        srcStageMask = "ALL_COMMANDS_BIT"   # default
+        dstStageMask = "BOTTOM_OF_PIPE_BIT" # default
+        srcAccessMask = [
+            "COLOR_ATTACHMENT_READ_BIT",   # default would again contain lot more than this.
+            "COLOR_ATTACHMENT_WRITE_BIT" ]
+        dstAccessMask = []
+    })
+
     pass = pb.build(gpu.device, screen)
     # DEP: framebuffer, pipeline, cbuf
 
