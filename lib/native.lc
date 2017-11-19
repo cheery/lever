@@ -88,7 +88,11 @@ export = (fn):
         elif name == "setloc"
             ssa.writevar(block, args[0], args[1])
         elif name == "getglob"
-            ins = ssa.constant(getattr(code.module, args[0]))
+            #ins = ssa.constant(getattr(code.module, args[0]))
+            ins = block.expr("getattr", 
+                ssa.constant(code.module),
+                ssa.constant(args[0]))
+
         elif name == "constant"
             ins = ssa.constant(args[0])
         else
@@ -244,12 +248,14 @@ class Block extends Operand
         if self.closed
             return
         op = Op(name, args, true, false)
+        op.attach(self)
         self.code.append(op)
 
     expr = (self, name, args...):
         if self.closed
             return
         op = Op(name, args, false, false)
+        op.attach(self)
         self.code.append(op)
         return op
 
@@ -257,21 +263,26 @@ class Const extends Operand
     +init = (self, value):
         self.value = value
         self.users = set()
+        self.type = null
 
 class Local extends Operand
     +init = (self, name):
         self.name = name
         self.users = set()
+        self.type = null
 
 class Op extends Operand
-    +init = (self, name, args, stmt, br):
+    +init = (self, name, args, stmt=false, br=false):
         self.name = name
         self.args = args
         self.stmt = stmt
         self.br = br
         self.users = set()
+        self.type = null
         for arg in args
             arg.users.add(self)
+
+        self.block = null
 
     rewrite = (self, this, that):
         for i in range(self.args.length)
@@ -280,11 +291,51 @@ class Op extends Operand
                 that.users.add(self)
                 self.args[i] = that
 
+    match_partial = (self, name, argt):
+        return false if argt.length > self.args.length
+        return false if self.name != name
+        for i in range(argt.length)
+            if not isinstance(self.args[i], argt[i])
+                return false
+        return true
+
+    match = (self, name, argt):
+        return false if argt.length != self.args.length
+        return false if self.name != name
+        for i in range(self.args.length)
+            if not isinstance(self.args[i], argt[i])
+                return false
+        return true
+
+    attach = (self, block):
+        assert not self.block, "op already used in a block"
+        for arg in self.args
+            arg.users.add(self)
+        self.block = block
+
+    detach = (self):
+        assert self.block, "op not present in any block"
+        for arg in self.args
+            arg.users.discard(self)
+        block = self.block
+        self.block = null
+        return block
+
+    expand = (self, expansion, result=null):
+        self.replace_by(result)
+        block = self.detach()
+
+        index = block.code.index(self)
+        block.code = block.code[.: index] ++ expansion ++ block.code[index + 1 .:]
+        for op in expansion
+            op.attach(block)
+
 class Phi extends Operand
     +init = (self, block, input):
         self.block = block
         self.input = input
         self.users = set()
+        self.type = null
         for val in input.values()
             val.users.add(self)
 
