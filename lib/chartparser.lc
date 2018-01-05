@@ -2,33 +2,30 @@ import tokenizer
 
 doc = path("doc:/chartparser")
 
+# The upgraded chart parser is layout sensitive without
+# needing preprocessing in the token stream.
+# Therefore the tokenizer no longer needs any feedback
+# from the parser to parse these languages.
+
+# This example is too simple to trigger any of the potential
+# bugs in the grammar, but it's enough to give an idea of the usage.
 main = ():
-    s = Nonterminal('s')
-    a = Nonterminal('a')
-    b = Nonterminal('b')
-    x = Terminal('x')
-
-    terminals = {
-        "h": x,
-        "i": x,
-        "j": x,
-        "k": x,
-        "l": x,
-        "m": x,
-        "n": x
-    }
-
-    accept = s
+    file = Nonterminal('file')
+    symbol = Terminal('symbol')
+    on_indent = (bb, cc):
+        return bb.indent < cc.start.col and cc.start.col == cc.indent
+    on_newline = (bb, cc):
+        return bb.indent == cc.start.col and cc.start.col == cc.indent
     user_grammar = [
-        Rule(s, [a, s]),
-        Rule(s, []),
-        Rule(a, [x]) ]
+        Rule(file, [symbol, Condition(symbol, [on_indent])]),
+        Rule(file, [symbol, Condition(symbol, [on_newline])]),
+    ]
 
-    parser = preprocess(user_grammar, accept)()
-    input_string = "hijklmn"
-    for token in input_string
-        parser.step(terminals[token], token)
+    parsergen = preprocess(user_grammar, file)
+    parser = parsergen()
 
+    parser.step(symbol, "hello", (lno=0, col=0), (lno=0, col=5))
+    parser.step(symbol, "world", (lno=1, col=2), (lno=1, col=7))
     print("accepted?", parser.accepted)
     print(repr(parser.traverse(
         (x, a):
@@ -36,7 +33,11 @@ main = ():
         (x):
             return "")))
 
-# Main interface to the chart parser are the rules, terminals and nonterminals.
+# The interface to construct a grammar consists of
+# rules, terminals, nonterminals and conditions.
+# Rules have a nonterminal on the left side and
+# list of nonterminals, terminals on the right side.
+# The rules may be annotated to help reading parse trees.
 class Rule
     +init = (self, lhs, rhs, annotation=null):
         self.lhs = lhs
@@ -44,16 +45,12 @@ class Rule
         self.annotation = annotation
 
     +repr = (self):
-        out = repr(self.lhs) ++ " -> " ++ repr_spaces(self.rhs)
+        rhs = []
+        for item in self.rhs
+            rhs.append(repr(item))
+        out = repr(self.lhs) ++ " -> " ++ " ".join(rhs)
         return out
 
-repr_spaces = (seq, space=" "):
-    out = ""
-    for item in seq
-        if out.length > 0
-            out ++= space
-        out ++= repr(item)
-    return out
 
 # Earlier I did not separate terminals from
 # non-terminals because it was not strictly
@@ -68,6 +65,10 @@ class Terminal
             return "@" ++ self.name
         return "<Terminal>"
 
+    # .getsym makes it easier to extract the symbol from rhs item.
+    getsym = (self):
+        return self
+
 class Nonterminal
     +init = (self, name):
         self.name = name
@@ -77,12 +78,31 @@ class Nonterminal
             return self.name
         return "<Nonterminal>"
 
-# The NNF grammar is divided into null rules and non-null rules.
-# The null rules are unnecessary for the actual parsing engine,
-# yet they are useful when interpreting the parse results.
+    getsym = (self):
+        return self
 
-# The user of the parsing library shouldn't have to worry about
-# the detail that the grammar is processed.
+class Condition
+    +init = (self, symbol, constraints):
+        self.symbol = symbol
+        self.constraints = constraints
+
+    getsym = (self):
+        return self.symbol
+
+
+# To reduce the work during parsing the grammar is preprocessed.
+# the user calls preprocess(user_grammar, accept_symbol)
+# and gets an initiator back. The initiator can be used to
+# init parsers.
+
+# The preprocessing transforms the grammar into NNF, which
+# divides the grammar into null and non-null rules.
+# The null rules are not used in middle of parsing, but
+# they are useful when interpreting the parse tree.
+
+# TODO: It would be preferable to allow serialization of the
+# preprocessed grammar and the annotations attached to it.
+
 preprocess = (user_grammar, default_accept):
     nullable = find_nullable(user_grammar)
     grammar = {}
@@ -100,16 +120,17 @@ preprocess = (user_grammar, default_accept):
             except KeyError as _
                 grammar[rule.lhs] = [rule]
     right_recursive = find_right_recursive(rules)
-    return Initiator(grammar, blankset, right_recursive, default_accept)
+    return Initiator(grammar, blankset,
+        right_recursive, default_accept)
 
-# Earley-style parsing would suffer from nullable rules, so in
-# the marpa-style parsing we get rid of the nullable rules.
+# Earley based parsing would suffer from nullable rules.
+# The parsing step ends up being simple when grammar
+# does not contain any of them, so they are rewritten away.
 
 # The result is a "nihilist normal form"
 # Further reasoning about this can be found in the paper
 # "Practical Earley Parsing" by Aycock & Horspool
 
-# First we have to discover the nullable rules
 find_nullable = (grammar):
     nullable = set()
     queue = []
@@ -131,6 +152,7 @@ find_nullable = (grammar):
         elif all_nonterminals(rule.rhs)
             index = nonnullables.length
             for x in rule.rhs
+                x = x.getsym()
                 if x != rule.lhs
                     new_lookup(index, x)
             nonterminals.append(rule.lhs)
@@ -144,20 +166,20 @@ find_nullable = (grammar):
 
 all_nonterminals = (rhs):
     for x in rhs
-        if not isinstance(x, Nonterminal)
+        if not isinstance(x.getsym(), Nonterminal)
             return false
     return true
 
 all_nullable = (rhs, nullable):
     for x in rhs
-        if x not in nullable
+        if x.getsym() not in nullable
             return false
     return true
 
 count_nonrec = (rule):
     s = 0
     for x in rule.rhs
-        s += int(x != rule.lhs)
+        s += int(x.getsym() != rule.lhs)
     return s
 
 # Going through n bits in binary produces all possible permutations
@@ -167,7 +189,7 @@ build_nnf = (grammar, nullable):
     for rule in grammar
         order = 0
         for x in rule.rhs
-            order += int(x in nullable)
+            order += int(x.getsym() in nullable)
         for i in range(1 << order)
             result.append(nihilist_rule(rule, i, nullable))
     return result
@@ -175,15 +197,15 @@ build_nnf = (grammar, nullable):
 nihilist_rule = (rule, index, nullable):
     present = []
     rhs = []
-    for symbol in rule.rhs
+    for x in rule.rhs
         shift = true
-        if symbol in nullable
+        if x.getsym() in nullable
             if index & 1 == 0
                 shift = false
             index >>= 1
         present.append(shift)
         if shift
-            rhs.append(symbol)
+            rhs.append(x)
     return Rule(rule.lhs, rhs, NNF(rule, present))
 
 # The nihilist normal form rules are annotated with NNF nodes.
@@ -203,7 +225,7 @@ find_right_recursive = (grammar):
             right = rule.rhs[rule.rhs.length - 1]
             row = []
             for other in grammar
-                row.append(other.lhs == right)
+                row.append(other.lhs == right.getsym())
             edges.append(row)
         else
             row = []
@@ -231,7 +253,6 @@ warshall_transitive_closure = (a):
                 a[i][j] = true
     return a
 
-
 # The nullable set presents the same information as the blankset
 # so we can discard it.
 class Initiator
@@ -247,7 +268,7 @@ class Initiator
         parser = Parser(self, accept, [])
         # In an earley parser that uses NNF, empty input is a special case, that is taken care of here.
         if accept in self.blankset
-            parser.output.append(SPPF(null, null, null, null))
+            parser.output.append(SPPF(null, null, null, null, 0))
         # The first chart column
         nodes = {}
         current = []
@@ -256,6 +277,8 @@ class Initiator
         for eim in current
             prediction(current, nodes, self.grammar, parser.chart, eim.postdot())
             cache_transitions(parser.chart, eim, null, leims)
+            if isinstance(eim.postdot(), Nonterminal) and eim.postdot_constraint()
+                parser.must_check_layout = true
         return parser
 
 class Parser
@@ -264,18 +287,32 @@ class Parser
         self.init = init
         self.accept = accept
         self.output = output
+        self.lno = null # Previous lno
+        self.indent = 0
+        self.must_check_layout = false
 
     step = (self, term, token, start=null, stop=null):
+        if self.lno != start.lno # Record indentation level
+            self.lno = start.lno
+            self.indent = start.col
         init = self.init
-        # completions proceed in non-deterministic manner,
-        # until everything has been completed.
         current = []
         leims = {}
         transitions = {}
         nodes = {}
         output = []
-        bottom = SPPF(start, stop, token, null)
-        shift_eims(current, nodes, self.chart[term], bottom, init.right_recursive, leims)
+        bottom = SPPF(start, stop, token, null, self.indent)
+        # If layout check is necessary, it happens here.
+        # (self.chart[term]), do a DFS through the chart trying
+        # to find a position where the layout is satisfied.
+        # completions proceed in non-deterministic manner,
+        # until everything has been completed.
+        edges = self.chart[term]
+        if self.must_check_layout
+            assert check_layout(edges, term, bottom)
+                "layout violation, come up with error message"
+        self.must_check_layout = false
+        shift_eims(current, nodes, edges, bottom, init.right_recursive, leims)
         for eim in current
             # reduction
             cc = nodes[eim]
@@ -285,6 +322,8 @@ class Parser
                     output.append(cc)
             prediction(current, nodes, init.grammar, transitions, eim.postdot())
             cache_transitions(transitions, eim, cc, leims)
+            if isinstance(eim.postdot(), Nonterminal) and eim.postdot_constraint()
+                self.must_check_layout = true
         self.chart = transitions
         self.output = output
 
@@ -333,7 +372,7 @@ prediction = (current, nodes, grammar, transitions, postdot):
             if eim not in nodes
                 nodes[eim] = null
                 current.append(eim)
-
+ 
 cache_transitions = (transitions, eim, cc, leims):
     if not eim.is_completed()
         postdot = eim.postdot()
@@ -348,19 +387,35 @@ cache_transitions = (transitions, eim, cc, leims):
                 trans.leo = leims[eim.rule]
             transitions[postdot] = [trans]
 
+check_layout = (edges, symbol, cc, visited=set()):
+    return if symbol in visited
+    visited.add(symbol)
+    return true if edges.length == 0 # Should only happen if we reach accept symbol at the beginning.
+    for trans in edges
+        if trans.eim.pos > 0
+            if trans.eim.check_postdot_constraint(trans.cc, cc)
+                return true
+        else
+            lhs = trans.eim.rule.lhs
+            lhs_edges = trans.eim.origin.get(lhs, [])
+            if check_layout(lhs_edges, lhs, cc, visited)
+                return true
+    return false
+
 shift_eims = (current, nodes, edges, cc, right_recursive, leims):
     if is_leo_eligible(edges, right_recursive)
         trans = edges[0]
         if trans.leo
-            link = LEOLink(trans.leo.link, trans.eim.rule, trans.cc)
-            leims[trans.eim.rule] = object();
-                trans = trans.leo.trans
-                link = link
-            eim = trans.leo.trans.eim.next()
-            assert eim not in nodes
-                "assumption that a postdot unique eim does not appear twice"
-            nodes[eim] = LEO(link, cc)
-            current.append(eim)
+            if trans.eim.check_postdot_constraint(trans.cc, cc)
+                link = LEOLink(trans.leo.link, trans.eim.rule, trans.cc)
+                leims[trans.eim.rule] = object();
+                    trans = trans.leo.trans
+                    link = link
+                eim = trans.leo.trans.eim.next()
+                assert eim not in nodes
+                    "assumption that a postdot unique eim does not appear twice"
+                nodes[eim] = LEO(link, cc)
+                current.append(eim)
         else
             leims[trans.eim.rule] = object();
                 trans = trans
@@ -377,6 +432,8 @@ is_leo_eligible = (edges, right_recursive):
     return eim.rule in right_recursive and eim.pos == eim.rule.rhs.length - 1 #quasi-complete
 
 shift_eim = (current, nodes, eim, bb, cc):
+    # We have to prevent Link buildup if the condition is unsatisfied.
+    return if not eim.check_postdot_constraint(bb, cc)
     eim = eim.next()
     try
         sppf = nodes[eim]
@@ -384,9 +441,11 @@ shift_eim = (current, nodes, eim, bb, cc):
     except KeyError as _
         if bb
             start = bb.start
+            indent = bb.indent
         else
             start = cc.start
-        nodes[eim] = sppf = SPPF(start, cc.stop, eim.rule, Link(bb, cc))
+            indent = cc.indent
+        nodes[eim] = sppf = SPPF(start, cc.stop, eim.rule, Link(bb, cc), indent)
         current.append(eim)
 
 class EIM
@@ -398,8 +457,22 @@ class EIM
 
     postdot = (self):
         if self.pos < self.rule.rhs.length
-            return self.rule.rhs[self.pos]
+            return self.rule.rhs[self.pos].getsym()
         return null
+
+    postdot_constraint = (self):
+        if self.pos < self.rule.rhs.length
+            x = self.rule.rhs[self.pos]
+            if isinstance(x, Condition)
+                return x.constraints
+        return null
+
+    check_postdot_constraint = (self, bb, cc):
+        constraints = self.postdot_constraint()
+        if constraints
+            for fn in constraints
+                return false if not fn(bb, cc)
+        return true
 
     next = (self):
         if self.postdot()
@@ -461,9 +534,11 @@ class LEO
             bb = left.sppf
             if bb
                 start = bb.start
+                indent = bb.indent
             else
                 start = cc.start
-            cc = SPPF(start, cc.stop, left.rule, Link(bb, cc))
+                indent = cc.indent
+            cc = SPPF(start, cc.stop, left.rule, Link(bb, cc), indent)
             left = left.left
         return cc
 
@@ -474,11 +549,12 @@ class LEOLink
         self.sppf = sppf
 
 class SPPF # Shared packed parse forest
-    +init = (self, start, stop, cell, link):
+    +init = (self, start, stop, cell, link, indent):
         self.start = start
         self.stop = stop
         self.cell = cell
         self.link = link
+        self.indent = indent # TODO: consider whether this belongs into the location data.
 
     to_sppf = (self):
         return self
@@ -694,12 +770,10 @@ symbol_lt[[Nonterminal, Nonterminal]] = (a, b):
 symbol_lt[[Terminal, Terminal]] = (a, b):
     return a.name < b.name
 
+# There used to be indent parser here, it was removed
+# because it was no longer needed.
 
-# TODO: There's no certain place where this should sit,
-# but it currently depends on .col, .lno -detail.
-
-# There's no certain place where this should sit. But
-# it's relevant with chartparser so it sits here now.
+# TODO: Remove this once grammar.lc doesn't need it anymore.
 class IndentParser
     +init = (self, pos=tokenizer.Position(0, 1), indent=null, dedent=null, newline=null):
         self.stack = []

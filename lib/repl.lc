@@ -9,6 +9,8 @@ class REPL
         self.console = console.attach(self)
         self.editor = LineEditor()
         self.buffer = []
+        self.read_string = compiler.read_string
+        self.SyntaxError = compiler.SyntaxError
 
     process = (self, ch):
 #             term_completion_apropos := null
@@ -97,12 +99,12 @@ class REPL
     try_eval = (self):
         source = "\n".join(self.buffer)
         try
-            code = compiler.read_string(source, "console")
+            code = self.read_string(source, "console")
             self.console.log("info", "\033[32;1m"++source++"\033[0m")
             program = load(code)
             result = "\033[33;1m"++repr(program(self.module))++"\033[0m"
             self.console.log("info", result)
-        except compiler.SyntaxError as syn
+        except self.SyntaxError as syn
             if syn.at_eof
                 return
             self.console.log("info", "\033[31;1m"++source++"\033[0m")

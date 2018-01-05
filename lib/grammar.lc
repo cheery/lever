@@ -3,6 +3,7 @@ import chartparser, tokenizer
 doc = path("doc:/grammar")
 
 # TODO: implement post_from_import in compiler/
+Condition = chartparser.Condition
 Nonterminal = chartparser.Nonterminal
 Terminal = chartparser.Terminal
 Rule = chartparser.Rule
@@ -230,6 +231,9 @@ build_grammar_language = ():
     prod_seq = Nonterminal('prod_seq')
     annotation      = Nonterminal('annotation')
     annotation_term = Nonterminal('annotation_term')
+    condition = Nonterminal('condition')
+    suffix = Nonterminal('suffix')
+    composite = Nonterminal('composite')
 
     # Helper nonterminals
     s_decl_nl = Nonterminal('0')
@@ -246,6 +250,7 @@ build_grammar_language = ():
     prod_seq_a = Nonterminal('11')
     prod_seq_b = Nonterminal('12')
     prod_seq_c = Nonterminal('13')
+    conditions = Nonterminal('conditions')
 
     # Terminals
     colon = Terminal(':')
@@ -263,7 +268,10 @@ build_grammar_language = ():
     star = Terminal("*")
     plus = Terminal("+")
     question = Terminal("?")
-    percent  = Terminal("!")
+    percent  = Terminal("%")
+    greater = Terminal('>')
+    exclamation = Terminal('!')
+    caret = Terminal('^')
 
     symbol = Terminal("symbol")
     string = Terminal("string")
@@ -276,6 +284,10 @@ build_grammar_language = ():
     kw_terminal = Terminal('terminal')
     kw_null = Terminal('null')
 
+    kw_indent = Terminal('kw_indent')
+    kw_no_break = Terminal('kw_no_break')
+    kw_begin_line = Terminal('kw_begin_line')
+
     language = object()
     language.keywords = { ":": colon,
         "=": equal, "/": slash,
@@ -283,6 +295,7 @@ build_grammar_language = ():
         "(": lp, ")": rp, "[": lb, "]": rb, "{": lc, "}": rc,
         "*": star, "+": plus,
         "?": question, "%": percent,
+        ">": greater, "!": exclamation, "^": caret,
         "use": kw_use,
         "append": kw_append,
         "concat": kw_concat,
@@ -318,21 +331,35 @@ build_grammar_language = ():
         Rule(prod, [m_expr, slash, annotation], Label("prod", [Get(0), Get(2)])),
         Rule(prod, [m_expr, slash, symbol], Label("prod", [Get(0), Label("shorthand", [Get(2)])])),
 
-        Rule(expr, [term], Get(0)),
-        Rule(expr, [lp, prod_seq, rp, plus],     Label('plus', [Get(0)])),
-        Rule(expr, [lp, prod_seq, rp, star],     Label('star', [Get(0)])),
-        Rule(expr, [lp, prod_seq, rp, question], Label('opt', [Get(0)])),
-        Rule(expr, [symbol, lp, prod_seq, rp], Label('expand', [Get(0), Get(2)])),
+        Rule(expr, [suffix], Get(0)),
+        Rule(expr, [composite], Get(0)),
+        Rule(expr, [conditions, composite], Label('condition', [Get(0), Get(1)])),
+
+        Rule(composite, [lp, prod_seq, rp, plus],     Label('plus', [Get(1)])),
+        Rule(composite, [lp, prod_seq, rp, star],     Label('star', [Get(1)])),
+        Rule(composite, [lp, prod_seq, rp, question], Label('opt', [Get(1)])),
+        Rule(composite, [symbol, lp, prod_seq, rp], Label('expand', [Get(0), Get(2)])),
 
         Rule(prod_seq, [indent, prod_seq_b, dedent], Get(1)),
         Rule(prod_seq, [prod_seq_c], Get(0)),
 
-        Rule(term, [term, plus],       Label('plus', [Get(0)])),
-        Rule(term, [term, star],       Label('star', [Get(0)])),
-        Rule(term, [term, question],   Label('opt', [Get(0)])),
+        Rule(suffix, [term], Get(0)),
+        Rule(suffix, [conditions, term],   Label('condition', [Get(0), Get(1)])),
+        Rule(suffix, [suffix, plus],       Label('plus', [List([Get(0)])])),
+        Rule(suffix, [suffix, star],       Label('star', [List([Get(0)])])),
+        Rule(suffix, [suffix, question],   Label('opt', [List([Get(0)])])),
+
         Rule(term, [symbol],           Label('symbol', [Get(0)])),
         Rule(term, [string],           Label('string', [Get(0)])),
         Rule(term, [lb, prod_seq, rb], Label('prod_set', [Get(1)])),
+
+        Rule(conditions, [condition], List([Get(0)])),
+        Rule(conditions, [conditions, condition], Append(Get(0), Get(1))),
+
+        Rule(condition, [equal], Get(0)),
+        Rule(condition, [greater], Get(0)),
+        Rule(condition, [exclamation], Get(0)),
+        Rule(condition, [caret], Get(0)),
 
         Rule(annotation, [annotation_term],                        Get(0)),
         Rule(annotation, [annotation, kw_append, annotation_term], Label("append", [Get(0), Get(2)])),
@@ -477,7 +504,17 @@ actions = object();
             if sym in sub_env
                 return sub_env[sym]
             else
+                assert sym in env.symbols
+                    sym ++ " < not described in grammar"
                 return Sym(env.symbols[sym], sym not in env.constructives)
+    condition = (args):
+        return (env, sub_env):
+            arg = args[1](env, sub_env)
+            conds = []
+            for sym in args[0]
+                cond = valid_conditions[sym.string]
+                conds.append(cond)
+            return Cond(arg, conds)
     string = (args):
         return (env):
             kw = args[0].string
@@ -488,7 +525,9 @@ actions = object();
             return Sym(sym, false)
     plus = (args):
         return (env, sub_env):
-            arg = args[0](env, sub_env)
+            if args[0].length != 1
+                assert false, ["macro not found", "+/" ++ args[0].length.to_string()]
+            arg = args[0][0](env, sub_env)
             key = ["+", arg]
             sym = env.template_memo.get(key)
             if not sym
@@ -501,7 +540,9 @@ actions = object();
             return sym
     star = (args):
         return (env, sub_env):
-            arg = args[0](env, sub_env)
+            if args[0].length != 1
+                assert false, ["macro not found", "+/" ++ args[0].length.to_string()]
+            arg = args[0][0](env, sub_env)
             key = ["*", arg]
             sym = env.template_memo.get(key)
             if not sym
@@ -514,7 +555,9 @@ actions = object();
             return sym
     opt = (args):
         return (env, sub_env):
-            arg = args[0](env, sub_env)
+            if args[0].length != 1
+                assert false, ["macro not found", "+/" ++ args[0].length.to_string()]
+            arg = args[0][0](env, sub_env)
             key = ["?", arg]
             sym = env.template_memo.get(key)
             if not sym
@@ -707,6 +750,19 @@ class Arg
         self.marks.add(key)
         return true
 
+class Cond
+    +init = (self, ref, conds):
+        self.is_sym = ref.is_sym
+        self.value = Condition(ref.value, conds)
+        self.gather = ref.gather
+        self.ref = ref
+
+    get_marks = (self, marks):
+        return self.ref.get_marks(marks)
+
+    +hash = (self):
+        return hash([self.value])
+
 class Sym
     +init = (self, value, gather):
         self.is_sym = true
@@ -744,6 +800,9 @@ class Expr
 
     +call = (self, stage, xenv):
         return self.fn(stage, xenv, self.args)
+
+%"=="[[Cond, Cond]] = (a, b):
+    return a.ref == b.ref
 
 %"=="[[Sym, Sym]] = (a, b):
     return a.value == b.value
@@ -915,4 +974,27 @@ default_smear = (keyword):
         result.append("".join(prefix))
     return result
 
+# All conditions accepted for now, with their respective symbols.
+eq_col = (bb, cc):
+    return true if not bb
+    return bb.start.col == cc.start.col
+
+indent = (bb, cc):
+    return true if not bb
+    return bb.indent < cc.start.col
+
+no_brk = (bb, cc):
+    return cc.indent != cc.start.col
+
+line_begin = (bb, cc):
+    return cc.indent == cc.start.col
+
+valid_conditions = {
+    '=': eq_col,
+    '>': indent,
+    '!': no_brk,
+    '^': line_begin
+}
+
 language = build_grammar_language()
+

@@ -355,11 +355,13 @@ def label_this_point(loc, context, block):
     block.op(loc, 'jump', [label])
     return label
 
-def post_if(env, loc, cond, body, otherwise):
+def post_if(env, loc, cond, body, otherwise=None):
+    otherwise = post_done(env, loc) if otherwise is None else otherwise
     otherwise[0].insert(0, [loc, cond, body])
     return Cond(*otherwise)
 
-def post_elif(env, loc, cond, body, otherwise):
+def post_elif(env, loc, cond, body, otherwise=None):
+    otherwise = post_done(env, loc) if otherwise is None else otherwise
     otherwise[0].insert(0, [loc, cond, body])
     return otherwise
 
@@ -602,6 +604,10 @@ def post_dict(env, loc, pairs):
     return CodeGroup(loc, 'setitem',
         Code(loc, "call", Getvar(loc, u"dict")), pairs)
 
+def post_record(env, loc, pairs):
+    return CodeGroup(loc, "setattr",
+        Code(loc, "call", Getvar(loc, u"object")), pairs)
+
 def post_empty_list(env, loc):
     return []
 
@@ -669,7 +675,11 @@ class CodeGroup(Cell):
         prefix = self.prefix.visit(context)
         for seq in self.groups:
             argv = [prefix]
-            argv.extend(item.visit(context) for item in seq)
+            for item in seq:
+                if isinstance(item, Cell):
+                    argv.append(item.visit(context))
+                else:
+                    argv.append(item.value) # Hax
             context.block.op(self.loc, self.name, argv)
         return prefix
 
