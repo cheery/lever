@@ -12,7 +12,7 @@ SyntaxError = chartparser.SyntaxError
 SyntaxErrorExpected = chartparser.SyntaxErrorExpected
 
 # TODO: You could shave away 300ms by serializing the preprocessed grammar here.
-language = grammar.read_file(dir ++ "../lever-0.9.0.grammar")
+language = grammar.read_file(dir ++ "../lever-A.grammar")
 
 # language.new_parser = chartparser.preprocess(
 #     language.grammar,

@@ -232,7 +232,6 @@ build_grammar_language = ():
     annotation      = Nonterminal('annotation')
     annotation_term = Nonterminal('annotation_term')
     condition = Nonterminal('condition')
-    suffix = Nonterminal('suffix')
     composite = Nonterminal('composite')
 
     # Helper nonterminals
@@ -331,9 +330,10 @@ build_grammar_language = ():
         Rule(prod, [m_expr, slash, annotation], Label("prod", [Get(0), Get(2)])),
         Rule(prod, [m_expr, slash, symbol], Label("prod", [Get(0), Label("shorthand", [Get(2)])])),
 
-        Rule(expr, [suffix], Get(0)),
+        Rule(expr, [term], Get(0)),
         Rule(expr, [composite], Get(0)),
         Rule(expr, [conditions, composite], Label('condition', [Get(0), Get(1)])),
+        Rule(expr, [conditions, term],   Label('condition', [Get(0), Get(1)])),
 
         Rule(composite, [lp, prod_seq, rp, plus],     Label('plus', [Get(1)])),
         Rule(composite, [lp, prod_seq, rp, star],     Label('star', [Get(1)])),
@@ -343,11 +343,9 @@ build_grammar_language = ():
         Rule(prod_seq, [indent, prod_seq_b, dedent], Get(1)),
         Rule(prod_seq, [prod_seq_c], Get(0)),
 
-        Rule(suffix, [term], Get(0)),
-        Rule(suffix, [conditions, term],   Label('condition', [Get(0), Get(1)])),
-        Rule(suffix, [suffix, plus],       Label('plus', [List([Get(0)])])),
-        Rule(suffix, [suffix, star],       Label('star', [List([Get(0)])])),
-        Rule(suffix, [suffix, question],   Label('opt', [List([Get(0)])])),
+        Rule(term, [term, plus],       Label('plus', [List([Get(0)])])),
+        Rule(term, [term, star],       Label('star', [List([Get(0)])])),
+        Rule(term, [term, question],   Label('opt', [List([Get(0)])])),
 
         Rule(term, [symbol],           Label('symbol', [Get(0)])),
         Rule(term, [string],           Label('string', [Get(0)])),
@@ -752,16 +750,15 @@ class Arg
 
 class Cond
     +init = (self, ref, conds):
-        self.is_sym = ref.is_sym
-        self.value = Condition(ref.value, conds)
         self.gather = ref.gather
+        self.conds = conds
         self.ref = ref
 
     get_marks = (self, marks):
         return self.ref.get_marks(marks)
 
     +hash = (self):
-        return hash([self.value])
+        return hash([self.ref, self.conds])
 
 class Sym
     +init = (self, value, gather):
@@ -802,7 +799,7 @@ class Expr
         return self.fn(stage, xenv, self.args)
 
 %"=="[[Cond, Cond]] = (a, b):
-    return a.ref == b.ref
+    return a.ref == b.ref and a.conds == b.conds
 
 %"=="[[Sym, Sym]] = (a, b):
     return a.value == b.value
@@ -823,24 +820,33 @@ class Expr
 make_rule = (lhs, rhs, fn):
     assert isinstance(lhs, Nonterminal)
     syms = []
-    build_rhs = (rhs, fn):
+    build_rhs = (rhs, fn, conds=null):
         args = []
         for node in rhs
             gather = node.gather
-            while isinstance(node, Arg)
-                node = node.value
-            if node.is_sym
-                syms.append(node.value)
-                args.append(object();
-                    value = Get(syms.length - 1)
-                    gather = gather
-                )
-            else
-                args.append(object();
-                    value = build_rhs(node.value, node.annotation)
-                    gather = gather
-                )
+            build_node(gather, node, conds, args)
+            conds = null
         return extract_annotation(fn, args)
+    build_node = (gather, node, conds, args):
+        if isinstance(node, Arg)
+            build_node(gather, node.value, conds, args)
+        elif isinstance(node, Cond)
+            conds = [] if not conds
+            build_node(gather, node.ref, conds ++ node.conds, args)
+        elif node.is_sym
+            if conds
+                syms.append(Condition(node.value, conds))
+            else
+                syms.append(node.value)
+            args.append(object();
+                value = Get(syms.length - 1)
+                gather = gather
+            )
+        else
+            args.append(object();
+                value = build_rhs(node.value, node.annotation, conds)
+                gather = gather
+            )
     return Rule(lhs, syms, build_rhs(rhs, fn))
 
 extract_annotation = (expr, args):

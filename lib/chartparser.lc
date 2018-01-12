@@ -28,8 +28,8 @@ main = ():
     parser.step(symbol, "world", (lno=1, col=2), (lno=1, col=7))
     print("accepted?", parser.accepted)
     print(repr(parser.traverse(
-        (x, a):
-            return a,
+        ((x, a):
+            return a),
         (x):
             return "")))
 
@@ -88,6 +88,12 @@ class Condition
 
     getsym = (self):
         return self.symbol
+
+    +repr = (self):
+        cons = []
+        for c in self.constraints
+            cons.append(repr(c))
+        return "{" ++ ", ".join(cons) ++ "}" ++ repr(self.symbol)
 
 
 # To reduce the work during parsing the grammar is preprocessed.
@@ -236,8 +242,8 @@ find_right_recursive = (grammar):
     right_recursive = set()
     i = 0
     for rule in grammar
-        if edges[i][i]
-            right_recursive.add(rule)
+        if edges[i][i] and rule.rhs.length >= 2 # Excluding rules that have only one rhs symbol.
+            right_recursive.add(rule)           # Leo items caused problems if the rule was a prediction.
         i += 1
     return right_recursive
 
@@ -260,6 +266,7 @@ class Initiator
         self.grammar = grammar
         self.blankset = blankset
         self.right_recursive = right_recursive
+        self.right_recursive = set() # disable LEO
         self.default_accept = default_accept
 
     # TODO: Fix up the performance issue in REPR startup by allowing the
@@ -309,8 +316,9 @@ class Parser
         # until everything has been completed.
         edges = self.chart[term]
         if self.must_check_layout
-            assert check_layout(edges, term, bottom)
-                "layout violation, come up with error message"
+            edges = filter_by_layout(edges, term, bottom)
+            assert edges.length > 0
+                "layout violation at line " ++ start.lno.to_string() ++ ", come up with better error message"
         self.must_check_layout = false
         shift_eims(current, nodes, edges, bottom, init.right_recursive, leims)
         for eim in current
@@ -348,13 +356,13 @@ class Parser
         else
             sppf = self.output[0]
             if isinstance(sppf, SPPF) and sppf.cell == null
-                return blank_cb(self.accept)
+                return blank_cb(self.accept.getsym())
         res = traverse_sppf([sppf], postorder_cb, blank_cb, resolve_ambiguity)
         assert res.length == 1, "broken parse traverse"
         return res[0]
 
     default_ambiguity_resolution = (self, sppf):
-        raise Error(repr(sppf))
+        raise Ambiguity(sppf)
 
 make_default_blank = (parser, postorder_cb):
     blank_cb = (symbol):
@@ -383,25 +391,32 @@ cache_transitions = (transitions, eim, cc, leims):
         try
             transitions[postdot].append(trans)
         except KeyError as _
-            if eim.rule in leims
-                trans.leo = leims[eim.rule]
+            if eim.rule in leims            # If the item is not postdot unique, then
+                trans.leo = leims[eim.rule] # .leo is never read anyway.
             transitions[postdot] = [trans]
 
-check_layout = (edges, symbol, cc, visited=set()):
-    return if symbol in visited
-    visited.add(symbol)
-    return true if edges.length == 0 # Should only happen if we reach accept symbol at the beginning.
+filter_by_layout = (edges, symbol, cc):
+    out = []
     for trans in edges
-        if trans.eim.pos > 0
-            if trans.eim.check_postdot_constraint(trans.cc, cc)
-                return true
-        else
-            lhs = trans.eim.rule.lhs
-            lhs_edges = trans.eim.origin.get(lhs, [])
-            if check_layout(lhs_edges, lhs, cc, visited)
-                return true
-    return false
+        if check_layout(trans, cc, set([symbol]))
+            out.append(trans)
+    return out
 
+check_layout = (trans, cc, visited):
+    if trans.eim.is_confirmed()
+        return trans.eim.check_postdot_constraint(trans.cc, cc)
+    else
+        lhs = trans.eim.rule.lhs
+        return false if lhs in visited
+        visited.add(lhs)
+        edges = trans.eim.origin.get(lhs, [])
+        for trans in edges
+            return true if check_layout(trans, cc, visited)
+        return edges.length == 0 # Includes condition that there is no edges for transition.
+                                 # Should only happen if we reach accept symbol
+
+# TODO: The ideas and the approach we take with LEO items should be
+#       reviewed again, so that we can confirm there are no bugs there.
 shift_eims = (current, nodes, edges, cc, right_recursive, leims):
     if is_leo_eligible(edges, right_recursive)
         trans = edges[0]
@@ -414,7 +429,7 @@ shift_eims = (current, nodes, edges, cc, right_recursive, leims):
                 eim = trans.leo.trans.eim.next()
                 assert eim not in nodes
                     "assumption that a postdot unique eim does not appear twice"
-                nodes[eim] = LEO(link, cc)
+                nodes[eim] = LEO(link, cc, trans.cc.start, trans.cc.indent)
                 current.append(eim)
         else
             leims[trans.eim.rule] = object();
@@ -437,6 +452,12 @@ shift_eim = (current, nodes, eim, bb, cc):
     eim = eim.next()
     try
         sppf = nodes[eim]
+        if bb
+            start = bb.start
+        else
+            start = cc.start
+        assert start == sppf.start
+            "sppf tree corruption (parsing bug)"
         sppf.insert(bb, cc)
     except KeyError as _
         if bb
@@ -471,7 +492,8 @@ class EIM
         constraints = self.postdot_constraint()
         if constraints
             for fn in constraints
-                return false if not fn(bb, cc)
+                if not fn(bb, cc)
+                    return false 
         return true
 
     next = (self):
@@ -519,9 +541,11 @@ class EIM
     return true
 
 class LEO
-    +init = (self, left, cc):
+    +init = (self, left, cc, start, indent):
         self.left = left
         self.cc = cc
+        self.start = start
+        self.indent = indent
 
     stop = property();
         get = (self):
@@ -683,7 +707,7 @@ expand = (start, stop, cell, blank_callback, seq):
             if p
                 result.append(seq.next())
             else
-                result.append(blank_callback(nnf.rule.rhs[i]))
+                result.append(blank_callback(nnf.rule.rhs[i].getsym()))
             i += 1
         return [nnf.rule, result, start, stop]
     return [cell, list(seq), start, stop]
@@ -703,6 +727,49 @@ class SyntaxError extends Exception
 
     +repr = (self):
         return format_origin(self.source, self.location, self.message)
+
+class Ambiguity extends SyntaxError
+    +init = (self, sppf):
+        self.sppf = sppf
+        self.traceback = null
+
+    +repr = (self):
+        start = self.sppf.start
+        stop = self.sppf.stop
+        msg = ["Ambiguity in " ++ format_loc(start) ++ "-" ++ format_loc(stop)]
+
+        sppf_group = set([self.sppf])
+        while sppf_group.length == 1
+            sppf = sppf_group.pop()
+            rows = list(sppf)
+            col_count = null
+            col_count = min(col_count, row.length) for row in rows
+
+            for j in range(col_count)
+                items = set()
+                items.add(rows[i][j]) for i in range(rows.length)
+                if items.length > 1
+                    sppf_group = items
+                    break
+
+        if sppf_group.length == 0
+            sppf_group.add(sppf)
+
+        for sppf in sppf_group
+            for row in sppf
+                cols = []
+                for item in row
+                    item = item.to_sppf()
+                    start = item.start
+                    stop = item.stop
+                    if isinstance(item.cell, Rule)
+                        cols.append("(" ++ format_loc(start) ++ "-" ++ format_loc(stop) ++ ")")
+                        cols.append(repr(item.cell.lhs))
+                    else
+                        cols.append(repr(item.cell))
+                msg.append(" ".join(cols))
+
+        return "\n".join(msg)
 
 class SyntaxErrorExpected extends SyntaxError
     +init = (self, expect, location, source, at_eof=false):
@@ -756,6 +823,9 @@ format_origin = (source, location, message=null):
     else
         loc.insert(0, "")
     return ":".join(loc)
+
+format_loc = (location):
+    return repr(location.lno) ++ ":" ++ repr(location.col)
 
 symbol_lt = multimethod(2)
 symbol_lt[[Terminal, Nonterminal]] = (a, b):

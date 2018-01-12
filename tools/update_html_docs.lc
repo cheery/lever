@@ -334,21 +334,23 @@ html_env.groups["multimethod/2"] = (group, context, out):
     check_ignored(context, true)
 
 html_env.groups["method/0"] = (group, p_context, out):
-    context = p_context.push(object();
-        type = "function"
-        name = p_context.card.name
-        sub = p_context.card.sub
-        anchor = p_context.card.anchor
-        prefix = null
-        arglist = html.Node("span", [])
-        argref  = html.Node("table", [], {"class": "arg-ref"})
-        postfix = html.Node("span", ["(", arglist, ")"])
-        heading = html.Node("details", [
-            html.Node("summary", [postfix]),
-            argref
-        ])
-        source = source_method_check()
-        summary = null, false)
+    context = p_context.push(
+        object();
+            type = "function"
+            name = p_context.card.name
+            sub = p_context.card.sub
+            anchor = p_context.card.anchor
+            prefix = null
+            arglist = html.Node("span", [])
+            argref  = html.Node("table", [], {"class": "arg-ref"})
+            postfix = html.Node("span", ["(", arglist, ")"])
+            heading = html.Node("details", [
+                html.Node("summary", [postfix]),
+                argref
+            ])
+            source = source_method_check()
+            summary = null
+        false)
     fill_card(group, context, context.card.heading.data)
     out.append(context.card.heading)
 
@@ -368,22 +370,24 @@ html_env.groups["method/0"] = (group, p_context, out):
                 p_context.card.anchor ++ " ".join(tt), "missing")
 
 html_env.groups["default/0"] = (group, p_context, out):
-    context = p_context.push(object();
-        type = "function"
-        name = p_context.card.name
-        sub = p_context.card.sub
-        anchor = p_context.card.anchor
-        prefix = null
-        arglist = html.Node("span", [])
-        argref  = html.Node("table", [], {"class": "arg-ref"})
-        postfix = html.Node("span", ["(", arglist, ")"])
-        heading = html.Node("details", [
-            html.Node("summary", [
-                "default", postfix]),
-            argref
-        ])
-        source = source_method_check()
-        summary = null, false)
+    context = p_context.push(
+        object();
+            type = "function"
+            name = p_context.card.name
+            sub = p_context.card.sub
+            anchor = p_context.card.anchor
+            prefix = null
+            arglist = html.Node("span", [])
+            argref  = html.Node("table", [], {"class": "arg-ref"})
+            postfix = html.Node("span", ["(", arglist, ")"])
+            heading = html.Node("details", [
+                html.Node("summary", [
+                    "default", postfix]),
+                argref
+            ])
+            source = source_method_check()
+            summary = null
+        false)
     fill_card(group, context, context.card.heading.data)
     out.append(context.card.heading)
 

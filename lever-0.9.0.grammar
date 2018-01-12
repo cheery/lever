@@ -1,7 +1,6 @@
-# This file describes & implements the syntax for the
-# lever 0.9.0, the syntax of this file is not simple
-# but it is documented in the
-# https://leverlanguage.com/doc/latest/grammar.html
+# This file is outdated and here for the compiler/
+#
+# The new file is in the lever-A.grammar
 use indentation(indent, dedent, newline)
     can_close = [")", "]", "}", ","]
 

@@ -72,7 +72,7 @@ main = ():
     entry.code = [
         Entry([r_points, r_count, r_x, r_y, r_r]),
         Operation(5973, [v_i, v_i]); # It is important to point out we are doing a clear here.
-            operand_usages = ["USAGE_WRITE", null],
+            operand_usages = ["USAGE_WRITE", null]
         Jump(jmp, loop, [v_i, r_points, r_count, r_x, r_y, r_r])
     ]
 
@@ -129,7 +129,7 @@ main = ():
     no_collision.code = [
         # XOR m64 r64
         Operation(5973, [Register(i64, 0), Register(i64, 0)]);
-            operand_usages = ["USAGE_WRITE", null],
+            operand_usages = ["USAGE_WRITE", null]
         Operation(1901, []) # RET NEAR
     ]
 
@@ -137,7 +137,7 @@ main = ():
     collision.code = [
         # XOR m64 r64
         Operation(5973, [Register(i64, 0), Register(i64, 0)]);
-            operand_usages = ["USAGE_WRITE", null],
+            operand_usages = ["USAGE_WRITE", null]
         # MOV m8, imm8
         Operation(1128, [Register(i8, 0), Immediate(i8, 1)]),
         Operation(1901, []) # RET NEAR
