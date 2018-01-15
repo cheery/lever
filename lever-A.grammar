@@ -134,7 +134,16 @@ expr10:
 
 expr20:
     expr30
-    expr20 >["^"] expr30 / binary
+    # There is plenty of evidence that the ^ as XOR
+    # operation confuses beginners because they think it is an exponentiation.
+    #
+    # I did a temporary measure to disable the ^, the idea is that
+    # eventually this symbol will take the place of ** and we'll
+    # figure out an another place for the xor.
+    #expr20 >["^"] expr30 / binary
+    #
+    # The temporary disable ensures that we will get to
+    # purge the xor '^' out of the code before switching.
 
 expr30:
     expr50
