@@ -5,7 +5,7 @@ from dictionary import Dict
 from listobject import List
 from module import Module
 from multimethod import Multimethod
-from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean
+from numbers import Float, Integer, Boolean, to_float, to_int, true, false, is_true, is_false, boolean, FloatRepr, parse_int_, parse_float_
 from string import String, string_upper, string_lower, StringBuilder_
 from uint8array import Uint8Array, Uint8Data, Uint8Slice, to_uint8array, Utf8Decoder, Uint8Builder, alloc_uint8array
 from exnihilo import Exnihilo

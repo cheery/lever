@@ -33,6 +33,7 @@ module = Module(u'base', {
     u'list': List.interface,
     u'multimethod': Multimethod.interface,
     u'float': Float.interface,
+    u'float_repr': FloatRepr.interface,
     u'int': Integer.interface,
     u'bool': Boolean.interface,
     u'str': String.interface,
@@ -245,6 +246,16 @@ def isinstance_(value, which_list):
             return false
         interface = interface.parent
     return false
+
+@builtin
+@signature(String, Integer, optional=1)
+def parse_int(string, base):
+    return Integer(parse_int_(string, base))
+
+@builtin
+@signature(String)
+def parse_float(string):
+    return FloatRepr(string)
   
 # And and or are macros in the compiler. These are
 # convenience functions, likely not often used.
@@ -333,67 +344,6 @@ def Range_next(self):
         self.current += self.step
         return Integer(i)
     raise StopIteration()
-
-# These two functions are used by the lever compiler, so changing
-# them will change the language. Take care..
-@builtin
-@signature(String, Integer, optional=1)
-def parse_int(string, base):
-    base = 10 if base is None else base.value
-    value = 0
-    for ch in string.string:
-        if u'0' <= ch and ch <= u'9':
-            digit = ord(ch) - ord('0')
-        elif u'a' <= ch and ch <= u'z':
-            digit = ord(ch) - ord('a') + 10
-        elif u'A' <= ch and ch <= u'Z':
-            digit = ord(ch) - ord('A') + 10
-        else:
-            raise unwind(LError(u"invalid digit char: " + ch))
-        if digit >= base:
-            raise unwind(LError(u"invalid digit char: " + ch))
-        value = value * base + digit
-    return Integer(value)
-
-import math
-# This needs to be extended. I would prefer partial or whole C-compatibility.
-@builtin
-@signature(String)
-def parse_float(string):
-    value = 0.0
-    inv_scale = 1
-    divider = 1
-    exponent = 0.0
-    exponent_sign = +1.0
-    mode = 0
-    for ch in string.string:
-        if mode == 0:
-            if u'0' <= ch and ch <= u'9':
-                digit = ord(ch) - ord(u'0')
-                value = value * 10.0 + digit
-                inv_scale *= divider
-            elif u'.' == ch:
-                divider = 10
-            elif u'e' == ch or u'E' == ch:
-                mode = 1
-            else:
-                raise unwind(LError(u"invalid digit char: " + ch))
-        elif mode == 1:
-            mode = 2
-            if u'+' == ch:
-                exponent_sign = +1.0
-                continue
-            if u'-' == ch:
-                exponent_sign = -1.0
-                continue
-        else: # mode == 2
-            if u'0' <= ch and ch <= u'9':
-                digit = ord(ch) - ord(u'0')
-                exponent = exponent * 10.0 + digit
-            else:
-                raise unwind(LError(u"invalid digit char: " + ch))
-    exponent = exponent_sign * exponent
-    return Float((value / inv_scale) * math.pow(10.0, exponent))
 
 @builtin
 @signature(Interface)

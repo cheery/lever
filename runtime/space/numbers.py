@@ -4,6 +4,7 @@ from rpython.rlib.rfloat import (
 from interface import Object, null, cast_for
 from rpython.rlib.objectmodel import compute_hash
 from builtin import signature
+import math
 import space
 
 class Float(Object):
@@ -166,3 +167,78 @@ def instantiate(obj):
 @cast_for(Boolean)
 def instantiate(obj):
     return boolean(is_true(obj))
+
+
+## Representational values
+
+# Aaron Meurer, lead developer of Sympy, proposed that
+# it would be useful to be able of recover the float number as user typed it.
+
+# I made this subtypes for floats, the idea is that if you
+# convert this to a string before you do arithmetic on them, you're going to
+# recover the number representation like the user typed it.
+
+class FloatRepr(Float):
+    def __init__(self, string):
+        Float.__init__(self, parse_float_(string))
+        self.string = string
+
+@FloatRepr.method(u"to_string", signature(FloatRepr))
+def FloatRepr_to_string(self):
+    return self.string
+
+# These two functions are used by the lever compiler, so changing
+# them will change the language. Take care..
+def parse_int_(string, base):
+    base = 10 if base is None else base.value
+    value = 0
+    for ch in string.string:
+        if u'0' <= ch and ch <= u'9':
+            digit = ord(ch) - ord('0')
+        elif u'a' <= ch and ch <= u'z':
+            digit = ord(ch) - ord('a') + 10
+        elif u'A' <= ch and ch <= u'Z':
+            digit = ord(ch) - ord('A') + 10
+        else:
+            raise space.unwind(space.LError(u"invalid digit char: " + ch))
+        if digit >= base:
+            raise space.unwind(space.LError(u"invalid digit char: " + ch))
+        value = value * base + digit
+    return value
+
+# This needs to be extended. I would prefer partial or whole C-compatibility.
+def parse_float_(string):
+    value = 0.0
+    inv_scale = 1
+    divider = 1
+    exponent = 0.0
+    exponent_sign = +1.0
+    mode = 0
+    for ch in string.string:
+        if mode == 0:
+            if u'0' <= ch and ch <= u'9':
+                digit = ord(ch) - ord(u'0')
+                value = value * 10.0 + digit
+                inv_scale *= divider
+            elif u'.' == ch:
+                divider = 10
+            elif u'e' == ch or u'E' == ch:
+                mode = 1
+            else:
+                raise space.unwind(space.LError(u"invalid digit char: " + ch))
+        elif mode == 1:
+            mode = 2
+            if u'+' == ch:
+                exponent_sign = +1.0
+                continue
+            if u'-' == ch:
+                exponent_sign = -1.0
+                continue
+        else: # mode == 2
+            if u'0' <= ch and ch <= u'9':
+                digit = ord(ch) - ord(u'0')
+                exponent = exponent * 10.0 + digit
+            else:
+                raise space.unwind(space.LError(u"invalid digit char: " + ch))
+    exponent = exponent_sign * exponent
+    return (value / inv_scale) * math.pow(10.0, exponent)

@@ -573,4 +573,4 @@ class BufferStream
 
 sign_extend = (x, bits):
     m = 1 << bits - 1
-    return (x ^ m) - m
+    return xor(x, m) - m

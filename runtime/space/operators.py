@@ -74,7 +74,7 @@ mul  = arithmetic_multimethod(u'*',   (lambda a, b: a * b), flo=True)
 or_  = arithmetic_multimethod(u'|',   (lambda a, b: a | b))
 mod  = arithmetic_multimethod(u'%',   (lambda a, b: a % b))
 and_ = arithmetic_multimethod(u'&',   (lambda a, b: a & b))
-xor  = arithmetic_multimethod(u'^',   (lambda a, b: a ^ b))
+xor  = arithmetic_multimethod(u'xor', (lambda a, b: a ^ b))
 min_ = arithmetic_multimethod(u'min', (lambda a, b: min(a, b)), flo=True)
 max_ = arithmetic_multimethod(u'max', (lambda a, b: max(a, b)), flo=True)
 # min default and max default redefined below.

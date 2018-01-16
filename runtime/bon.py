@@ -103,3 +103,9 @@ def rnull(fd):
     return null
 
 decoder[7] = rnull
+
+def rdouble_repr(fd):
+    string = rstring(fd)
+    return FloatRepr(string)
+
+decoder[8] = rdouble_repr
