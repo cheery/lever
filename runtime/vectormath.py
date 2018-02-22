@@ -12,8 +12,8 @@ length = Multimethod(1)
 dot = Multimethod(2)
 cross = Multimethod(2)
 normalize = Multimethod(1)
-#reflect = Multimethod(2)
-#refract = Multimethod(3)
+reflect = Multimethod(2)
+refract = Multimethod(3)
 pow_ = Multimethod(2)
 operators.coerce_by_default(pow_)
 
@@ -649,6 +649,8 @@ by_symbol = {
     u"dot":       dot,
     u"cross":     cross,
     u"normalize": normalize,
+    u"reflect":   reflect,
+    u"refract":   refract,
     u"sin":       sin_,
     u"cos":       cos_,
     u"tan":       tan_,

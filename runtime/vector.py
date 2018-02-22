@@ -208,6 +208,20 @@ def letter_swizzle(self, name):
             return Object.getattr(self, name)
     return compact(result)
 
+@jit.unroll_safe
+def Vec_arithmetic(self, s, op, lam):
+    L = self.get_length()
+    if isinstance(self, FVec):
+        f_result = [0.0] * L
+        for i in range(L):
+            f_result[i] = lam(self.fetch_f(i), s.number)
+        return compact_f(f_result)
+    result = [null] * L
+    interface = get_interface(self)
+    for i in range(L):
+        result[i] = op.call([self.fetch(i), s])
+    return GVec(result, interface)
+
 @operators.add.multimethod_s(Vec, Vec)
 @jit.unroll_safe
 def Vec_add(self, other):
@@ -222,6 +236,26 @@ def Vec_add(self, other):
     for i in range(L):
         result[i] = operators.add.call([self.fetch(i), other.fetch(i)])
     return GVec(result, interface)
+
+@operators.add.multimethod_s(Float, Vec)
+@jit.unroll_safe
+def Vec_add(s, self):
+    return Vec_arithmetic(self, s, operators.add, lambda l, r: l + r)
+
+@operators.add.multimethod_s(Vec, Float)
+@jit.unroll_safe
+def Vec_add(self, s):
+    return Vec_arithmetic(self, s, operators.add, lambda l, r: l + r)
+
+@operators.add.multimethod_s(Vec, Integer)
+@jit.unroll_safe
+def Vec_add(self, s):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l + r)
+
+@operators.add.multimethod_s(Integer, Vec)
+@jit.unroll_safe
+def Vec_add(s, self):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l + r)
 
 @operators.sub.multimethod_s(Vec, Vec)
 @jit.unroll_safe
@@ -238,6 +272,26 @@ def Vec_sub(self, other):
         result[i] = operators.sub.call([self.fetch(i), other.fetch(i)])
     return GVec(result, interface)
 
+@operators.sub.multimethod_s(Float, Vec)
+@jit.unroll_safe
+def Vec_sub(s, self):
+    return Vec_arithmetic(self, s, operators.sub, lambda l, r: l - r)
+
+@operators.sub.multimethod_s(Vec, Float)
+@jit.unroll_safe
+def Vec_sub(self, s):
+    return Vec_arithmetic(self, s, operators.sub, lambda l, r: l - r)
+
+@operators.sub.multimethod_s(Vec, Integer)
+@jit.unroll_safe
+def Vec_add(self, s):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l - r)
+
+@operators.sub.multimethod_s(Integer, Vec)
+@jit.unroll_safe
+def Vec_add(s, self):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l - r)
+
 @operators.mul.multimethod_s(Vec, Vec)
 @jit.unroll_safe
 def Vec_mul(self, other):
@@ -252,6 +306,26 @@ def Vec_mul(self, other):
     for i in range(L):
         result[i] = operators.mul.call([self.fetch(i), other.fetch(i)])
     return GVec(result, interface)
+
+@operators.mul.multimethod_s(Float, Vec)
+@jit.unroll_safe
+def Vec_mul(s, self):
+    return Vec_arithmetic(self, s, operators.mul, lambda l, r: l * r)
+
+@operators.mul.multimethod_s(Vec, Float)
+@jit.unroll_safe
+def Vec_mul(self, s):
+    return Vec_arithmetic(self, s, operators.mul, lambda l, r: l * r)
+
+@operators.mul.multimethod_s(Vec, Integer)
+@jit.unroll_safe
+def Vec_add(self, s):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l * r)
+
+@operators.mul.multimethod_s(Integer, Vec)
+@jit.unroll_safe
+def Vec_add(s, self):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l * r)
 
 @operators.div.multimethod_s(Vec, Vec)
 @jit.unroll_safe
@@ -268,6 +342,26 @@ def Vec_div(self, other):
         result[i] = operators.div.call([self.fetch(i), other.fetch(i)])
     return GVec(result, interface)
 
+@operators.div.multimethod_s(Float, Vec)
+@jit.unroll_safe
+def Vec_div(s, self):
+    return Vec_arithmetic(self, s, operators.div, lambda l, r: l / r)
+
+@operators.div.multimethod_s(Vec, Float)
+@jit.unroll_safe
+def Vec_div(self, s):
+    return Vec_arithmetic(self, s, operators.div, lambda l, r: l / r)
+
+@operators.div.multimethod_s(Vec, Integer)
+@jit.unroll_safe
+def Vec_add(self, s):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l / r)
+
+@operators.div.multimethod_s(Integer, Vec)
+@jit.unroll_safe
+def Vec_add(s, self):
+    return Vec_arithmetic(self, Float(float(s.value)), operators.add, lambda l, r: l / r)
+
 @vectormath.length.multimethod_s(Vec)
 @jit.unroll_safe
 def Vec_length(self):
@@ -283,7 +377,7 @@ def Vec_length(self):
 @jit.unroll_safe
 def Vec_dot(self, other):
     L = self.match_length(other)
-    result = operators.mul.call([self.fetch(0), self.fetch(0)])
+    result = operators.mul.call([self.fetch(0), other.fetch(0)])
     for i in range(1, L):
         result = operators.add.call([
             result,
@@ -291,13 +385,43 @@ def Vec_dot(self, other):
         ])
     return result
 
-# improve to include Int,Float X Vec
+@vectormath.normalize.multimethod_s(Vec)
+@jit.unroll_safe
+def Vec_normalize(self):
+    tosqrt = operators.mul.call([self.fetch(0), self.fetch(0)])
+    for i in range(1, self.get_length()):
+        tosqrt = operators.add.call([
+            tosqrt, 
+            operators.mul.call([self.fetch(i), self.fetch(i)])
+        ])
+    mag = vectormath.sqrt_.call([tosqrt])
+    assert isinstance(mag, Float)
+    return Vec_arithmetic(self, mag, operators.div, lambda l, r: l / r)
+
+# @vectormath.reflect.multimethod_s(Vec, Vec)
+# def Vec_reflect(i, n):
+#     return operators.sub.call([
+#                 i, 
+#                 operators.mul.call([operators.mul.call([
+#                     Float(2.0), 
+#                     Vec_dot(n, i)])]),
+#                 n
+#             ])
+
+# @vectormath.refract.multimethod_s(Vec, Vec, Float)
+# def refract(i, n, eta):
+#     ni = Vec_dot(n, i)
+#     k = 1.0 - eta * eta * (1.0 - ni*ni)
+#     if k < 0.0:
+#         return Float(0.0)
+#     else:
+#         return eta * i - (eta * ni + sqrt(k)) * n
+
 # you can wrap the stuff into a function, then implement lots of scalar behavior at once, eg.
 # binary_arithmetic(Vec, operators.div, (lambda a, b: a / b))
 # There's an example of that in runtime/space/operators.py
 
 # improve to cross product (2D, 3D)
-# improve to include normalize
 # improve to include reflect, refract
 # neg
 # pos
