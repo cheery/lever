@@ -59,7 +59,9 @@ module = Module(u'base', {
     u'Stream': uv_stream.Stream.interface,
     u'TTY': uv_stream.TTY.interface,
     u'Pipe': uv_stream.Pipe.interface,
-    u'vec': vector.Vec.interface,
+
+    # The new vector interface, lets see how it fares.
+    u'Numeric': vector.Numeric.interface,
 }, frozen=True)
 
 @Module.instantiator

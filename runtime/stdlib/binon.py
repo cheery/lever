@@ -44,8 +44,9 @@ def dump(fd, data):
     elif tp is null:
         fd.write(chr(7))
     elif tp is FloatRepr.interface:
+        assert isinstance(data, FloatRepr)
         fd.write(chr(8))
-        wstring(fd, data)
+        wstring(fd, data.string)
     else:
         raise OldError(u"no binon encoding found for an object: " + data.repr())
 
