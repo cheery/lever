@@ -1,9 +1,0 @@
-intro_set = set(["hello", "world"])
-print(intro_set...)
-
-print(intro_set.union(["foo", "world"])...)
-print(intro_set.difference(["foo", "world"])...)
-print(intro_set.intersection(["foo", "world"])...)
-print(intro_set.symmetric_difference(["foo", "world"])...)
-print(intro_set.pop())
-print(intro_set...)

@@ -1,9 +1,0 @@
-import binon
-
-# Note this thing reads its own bytecode and writes it over.
-# If it fails you'll end up with corrupted bytecode file that
-# prevents the example from running a second time.
-data = binon.read_file(dir ++ "binon_hello.lc.cb")
-for cell in data
-    print(cell)
-binon.write_file(dir ++ "binon_hello.lc.cb", data)

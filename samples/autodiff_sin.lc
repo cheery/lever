@@ -1,8 +1,0 @@
-import autodiff
-
-x = autodiff.var()
-for i in range(10)
-    y = autodiff.ad_sin(x(i) * 2)
-    print("x:",    i,
-          "y:",    (y.real).to_string().rjust(16),
-          "y/dx:", (y.d(x)).to_string().rjust(16))

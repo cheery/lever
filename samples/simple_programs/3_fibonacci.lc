@@ -1,7 +1,0 @@
-parents = 1
-babies = 1
-while babies < 100
-    print("This generation has", babies, "babies")
-    parents_ = babies
-    babies = parents + babies
-    parents = parents_
