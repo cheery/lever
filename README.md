@@ -1,8 +1,21 @@
 # Next-generation Lever
 
-The type inferencing required me to reconsider the object
-system in Lever. Since everything changes due to how your
-object system changes this motivated a rewrite.
+The rewrite improves on...
+
+ * type inferencing
+ * computer algebra
+ * documentation/structure
+
+Object system is changed to provide subtyping type inference
+and provide more invariants for the system to function.
+ 
+Behavior of operators and coercion is changed to provide
+computer algebra utilities that are easier to configure and
+use.
+
+Documentation is partially implemented with comments and
+XML-formatted files along the source code. Inspired by
+literal programming.
 
 ## Project contents
 
@@ -32,12 +45,21 @@ the project references this file for parsing Lever code.
 
 ### Runtime
 
-The runtime and prelude contents will be described as they
-are written. I committed this for overnight sleep.
+`runtime/goal_standalone.py` configures the RPython to
+compile Lever.
+
+`runtime/intro.py` describes how the runtime is built and
+which steps are taken before any user program is executed,
+also tells how the process is terminated.
+
+`runtime/objects/` defines the type and object system. All
+datatypes that are accessible from the `base` -module are
+described here along their operations.
 
 ### Prelude
 
-
+ TODO: Object system has to be there before we are ready to
+ run prelude.
 
 
  [AttributeGrammar]: https://en.wikipedia.org/wiki/Attribute_grammar
