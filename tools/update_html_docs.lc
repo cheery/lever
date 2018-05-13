@@ -235,6 +235,9 @@ html_env.segments[null] = (segment, context, out):
         horizontal_html(segment.data, context)))
     if segment.pre
         out.append(html.Node('pre', [segment.pre.text]))
+
+html_env.macros["br/0"] = (macro, context, out):
+    out.append(html.Node('br', null, {}, {slash=true}))
  
 html_env.macros["i/1"] = (macro, context, out):
     out.append(html.Node('i',
