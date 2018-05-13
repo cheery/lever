@@ -28,6 +28,12 @@ def main():
     cmd.add_argument("--use-pypy", action="store_true",
         help="Use pypy for compiling")
 
+    cmd = subparsers.add_parser('interpret',
+        help="Interpret the runtime slowly")
+    cmd.set_defaults(func=interpret_lever)
+    cmd.add_argument("--use-pypy", action="store_true",
+        help="Use pypy for interpretation")
+
     # TODO: Provide remaining helpers for maintaining the project.
 
     args = parser.parse_args()
@@ -78,13 +84,31 @@ def compile_lever(args):
     #build_flags.append('--opt=2')
     if args.lldebug:
         build_flags.append('--lldebug')
-    
+
     if args.use_pypy:
         cmd = 'pypy'
     else:
         cmd = 'python'
+    for key, value in config.get('env', {}).items():
+        os.environ[key] = value
     check_call([cmd, rpython_bin] + build_flags
         + ["runtime/goal_standalone.py"])
+
+# In the early phase of development it was pleasing to check
+# results by running the interpreter interpreted.
+def interpret_lever(args):
+    config = config_read()
+    rpython_bin = config.get('rpython_bin')
+    if rpython_bin is None:
+        print("error: build environment has not been properly setup")
+        return 1
+    if args.use_pypy:
+        cmd = 'pypy'
+    else:
+        cmd = 'python'
+    for key, value in config.get('env', {}).items():
+        os.environ[key] = value
+    check_call([cmd, "runtime/goal_standalone.py"])
 
 # There's a build-time configuration file in build/config.json
 # It contains some variables you may change to adjust your build.
@@ -99,7 +123,7 @@ def config_read():
 
 def config_write(config):
     with open('build/config.json', 'w') as fd:
-        json.dump(config, fd)
+        json.dump(config, fd, sort_keys=True, indent=4)
 
 # For now, the build script fetches the latest PyPy source package
 # to retrieve the RPython translator.

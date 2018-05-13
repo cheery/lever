@@ -56,6 +56,14 @@ also tells how the process is terminated.
 datatypes that are accessible from the `base` -module are
 described here along their operations.
 
+### Runtime objects
+
+`runtime/objects/__init__.py` collects runtime objects
+together into a single module that can be imported.
+
+`runtime/objects/common.py` constructs the foundations for
+the type and object space.
+
 ### Prelude
 
  TODO: Object system has to be there before we are ready to
