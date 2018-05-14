@@ -298,3 +298,8 @@ table.index-toc tr > td:first-child {
 table.index-toc tr > td + td{
     padding-left: 1ex;
 }
+
+/* color for the poem on the docs */
+em {
+    color: #000088;
+}

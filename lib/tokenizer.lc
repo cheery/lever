@@ -22,14 +22,16 @@ default_symtab = object();
     float = 'float'
 
 next_token = (stream, table, symtab=default_symtab):
-    while stream.filled and stream.current.is_space()
-        stream.advance()
-    if not stream.filled
-        return null
-    if stream.current == "#"
-        while stream.filled and stream.current != "\n"
+    while true
+        while stream.filled and stream.current.is_space()
             stream.advance()
-        return next_token(stream, table, symtab)
+        if not stream.filled
+            return null
+        if stream.current == "#"
+            while stream.filled and stream.current != "\n"
+                stream.advance()
+            continue # prevents the tail-call issues on long
+        break        # blocks of comments.
     start = stream.position
     if stream.is_sym()
         string = stream.advance()

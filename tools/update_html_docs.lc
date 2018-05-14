@@ -238,6 +238,10 @@ html_env.segments[null] = (segment, context, out):
 
 html_env.macros["br/0"] = (macro, context, out):
     out.append(html.Node('br', null, {}, {slash=true}))
+
+html_env.macros["em/1"] = (macro, context, out):
+    out.append(html.Node('em',
+        horizontal_html(macro.args[0], context)))
  
 html_env.macros["i/1"] = (macro, context, out):
     out.append(html.Node('i',
