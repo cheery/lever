@@ -1,0 +1,282 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta
+  content="width=device-width, initial-scale=1"
+  name="viewport"/>
+<title>Lever manual: good code</title><link
+  rel="stylesheet"
+  href="../../stylesheet.css">
+<!-- Generated from 'doc/good_code.text' in github.com/cheery/lever --></head><body><ul
+  class="nav"><li><a href="../../"><img
+  src="../../logo.png"
+  alt="LEVER">
+</a></li><li><a
+  href="https://github.com/cheery/lever/"
+  class="nav_button">repository</a></li><li><a
+  href="../../index.html#download"
+  class="nav_button">download</a></li><li><a
+  href="./"
+  class="nav_button">documentation index</a></li></ul><article><h1
+  class="embed-header">Manual: good code</h1><p>Good coding practices
+and tips that apply on Lever. Short page but extended over time. Learn
+to write dynamically typed code that is safer, more maintainable and
+more reliable than most statically typed code. </p><a
+  id="toc-link"
+  href="#-toc">Table of contents ↑</a><fieldset class="toc"
+  id="-toc"><legend>Table of contents</legend><div>01. <a
+  href="#01">Top-down, Most relevant&#x2F;Most interesting first
+</a></div><div>02. <a href="#02">The semantic meaning of code
+</a></div><div>03. <a href="#03">Reliability through crashing
+</a></div><div>03.1. <a href="#03.1">Multiple-dispatch errors
+</a></div><div>04. <a href="#04">Premature everything
+</a></div><div>04.1. <a href="#04.1">Premature generalization
+</a></div><div>04.2. <a href="#04.2">Premature perfection
+</a></div></fieldset><script src="../../toc-helper.js"></script><h2
+  id="01">01. Top-down, Most relevant&#x2F;Most interesting first
+</h2><p>I used to explain context-free grammars to my dad. started by
+showing something like this:
+</p><pre>expr_bot -&gt; term
+          | &#x27;(&#x27; expr_top &#x27;)&#x27;
+addition -&gt; addition &#x27;+&#x27; expr_bot
+expr_top -&gt; addition
+statement -&gt; expr_top &#x27;;&#x27;
+file -&gt; statement
+      | file statement 
+</pre><p>He
+explained it was hard to understand because it was written all upside
+down. The highest thing in the hierarcy, largest piece forming up from
+the other pieces was on the bottom. </p><p>He proposed the following
+would be much cleaner:
+</p><pre>file -&gt; statement
+      | file statement 
+statement -&gt; expr_top &#x27;;&#x27;
+expr_top -&gt; addition
+addition -&gt; addition &#x27;+&#x27; expr_bot
+expr_bot -&gt; term
+          | &#x27;(&#x27; expr_top &#x27;)&#x27;
+</pre><p>I
+had written the earlier program as I had because the evaluation flow
+often forces you to put things that come first on the top because you
+have to instantiate something before you have a reference to it, like
+below:
+</p><pre>pack1 = Packet(&quot;1&quot;)
+pack2 = Packet(&quot;2&quot;)
+platform1 = Platform(pack1, pack2)
+platform2 = Platform(platform1)
+</pre><p>I
+kind of understood that this was an important point and tried out
+writing some programs top-down, such that the entry point would end up
+first. This is how I write code today:
+</p><pre>main = ():
+    window = open_window()
+    rc = load_resources(resources)
+    init(window)
+    render(window, rc)
+
+resources = {
+    a = &quot;a.jpg&quot;
+    b = &quot;b.jpg&quot;
+}
+
+init = (window):
+    ... # not revelant on illustration
+
+render = (window, rc):
+    blit_texture(window, rc.a)
+    blit_texture(window, rc.b)
+
+blit_texture = (window, texture):
+    ... # omitted
+</pre><p>I
+realised this way of ordering the hierarchy in a program this way was
+immensely valuable. If you scroll into the text you would find out
+immediately the overall idea of what the program is doing and have a
+context to understand what comes next. </p><p>Sometimes I would even
+do this on constants, that is position the constant lower into a file
+and use it first. The reason being that the value of the constant
+isn&#x27;t often interesting before it is used. </p><h2
+  id="02">02. The semantic meaning of code </h2><p>When writing code
+that is correct, the data types aren&#x27;t important. What is
+important is the semantic meaning of the code. </p><p>For example lets
+consider that we want to know an arithmetic mean value for a set of
+values. A simple implementation of such program in Lever would be:
+</p><pre>total = 0
+for value in sequence
+    total += value
+return total &#x2F; sequence.length
+</pre><p>The
+above program relies on lot of facts: </p><ol><li>The sequence is
+iterable </li><li>The values returned by iterating a sequence can be
+added to &#x27;0&#x27; </li><li>The subsequent values can be divided
+with their count </li><li>The sequence has a length and it reports it
+correctly </li></ol><p>The elements the program has been made of
+preserve their semantic meaning, eg. The addition doesn&#x27;t become
+exponentiation </p><p>The program could be written like this as well:
+</p><pre>it = iter(sequence)
+count = 1
+total = it.next()
+for value in it
+    total += value
+    count += 1
+return total &#x2F; count
+</pre><p>This
+program relies on different set of facts to be &#x27;correct&#x27;:
+</p><ol><li>The sequence is iterable and not empty </li><li>The values
+returned by sequence can be added with each other </li><li>The sum of
+values can be divided by their count </li></ol><p>Both programs are
+incorrect if you pass in an infinite sequence. If you do so, they also
+do attempt to calculate the value and never recover from it on their
+own. </p><p>Both programs are incorrect if you give them values that
+do not correctly add up. </p><p>Also the correctness of the output is
+bound to the correctness of the input. The program turns into giving
+approximate values if you give them floating point values that are
+approximate by their nature. </p><p>Since Lever doesn&#x27;t have full
+numeric stack right yet, if you give the above program too big
+integers, the integers will overflow and the program gives the wrong
+result. </p><p>But for surprisingly many inputs, the both above
+programs are perfectly valid. </p><p>You could try to argue the below
+program is less correct because it fails on empty sequences. It really
+depends on the context though. If the input sequence is not supposed
+to be empty, the lower program would enforce the rule and therefore be
+much more desirable to use. </p><p>The important thing to notice is
+that static type systems, often advertised with safety, fail to
+represent all the invariants of the above programs. Even if you did
+dependent typing, there would be problems to represent everything that
+the above program relies on to function in terms of type systems.
+</p><p>Often type systems resort to overconstraining the programs. For
+example you can guarantee that the sequence is not infinite and that
+the values can be added together if you force the sequence to be an
+array that contains integers. Forced correctness like this
+doesn&#x27;t come for free. </p><p>If you later decide that instead of
+arrays or integers you need lists and floats, you really have to work
+through every definition that treats with the data before the program
+can be compiled and tested again. A hefty price to pay for local
+correctness. If you use automatic refactoring techniques, the
+refactoring program isn&#x27;t aware about the constraints subjected
+to the type anyway, so you may introduce an error unknowingly even if
+everything was fully typed. </p><p>The efforts for perfection and
+ultimate correctness in statically typed languages is left as an
+exercise for academics who do not care about delivering or maintaining
+software. </p><h2 id="03">03. Reliability through crashing
+</h2><p>When a program encounters a condition it has not been designed
+to handle, it should crash. A good crash is always the better option
+when the another option is a good state corruption. </p><p>The origin
+of this concept traces back to Erlang where programs have been
+isolated from each other and monitored by other programs that restart
+them if they happen to go down. </p><p>With dynamic typing you are
+very likely to compose complex objects from simpler ones and then
+there comes a time to take them apart. You will likely end up with the
+following code:
+</p><pre>if isinstance(a, str)
+    str things
+elif isinstance(a, int)
+    int things
+else
+    assert false, repr(a)
+</pre><p>The
+&#x27;else&#x27; with an assert clause such as described here should
+be very common occurrence in code that branches by type. </p><p>It is
+likely that the language will get some syntax for dispatching from
+types and patterns, for now such trivial improvements have to wait.
+</p><h3 id="03.1">03.1. Multiple-dispatch errors </h3><p>The Texopic
+HTML generator had this kind of code:
+</p><pre>try
+    html_env(node, context, out)
+except KeyError as ke
+    out.append(html.Node(&quot;pre&quot;, [texopic.stringify([node])]))
+</pre><p>The
+html_env dispatched code depending on which node type is being used.
+Probably needless to say, this code also catched every single key
+set&#x2F;get error in the generator and suspended them. </p><p>The
+solution in this case was to add a default dispatch into texopic Scope
+objects and use them instead. Catching errors originating from such
+dispatch situations are problematic because they can very well cause
+surprising situations during recursion. </p><h2 id="04">04. Premature
+everything </h2><p>Some people like to watch the world burn. Then
+there are people who like to create a new class, new file and a new
+function every time they spot a task that might be separate or
+reusable. </p><p>Seemingly it&#x27;s harmless to divide something into
+its own function. Especially when you saw something similar earlier on
+this very same page. Above the reason for additional functions was
+that we needed functions to illustrate hierarchy and I didn&#x27;t
+pick up a real example because I might not find something that would
+exactly illustrate the point as well as an invented example.
+</p><p>The problem in building up a new function when you see an
+opportunity is that in any program there can be only that many
+indirections before it becomes garbled for the person reading the
+code. If you are eager to abstract things it means you&#x27;re almost
+always losing the opportunity for the best abstraction you can make.
+</p><h3 id="04.1">04.1. Premature generalization </h3><p>Lever has 2-4
+implementations of the same pretty printing algorithm. It is not an
+ideal situation. Usually you&#x27;d want just one implementation.
+There is a reason they haven&#x27;t been unified yet. They are all
+slightly different and I haven&#x27;t come up with the best design.
+</p><p>Only lately I&#x27;ve come up to understand the problem and
+aspects of it better to consider that I would be confident to design
+something that works for all the cases I have had. But I&#x27;m still
+postponing it until I need to pretty print things again and observe
+how the various printers behave. </p><h3 id="04.2">04.2. Premature
+perfection </h3><p>Everybody approves finished designs. Many would
+prefer to have a full design up-front before they get to create
+anything at all. </p><p>I used to erase my drawing if it doesn&#x27;t
+turn out right. If the stroke wouldn&#x27;t come out right I would
+press CTRL+Z and erase the stroke. Later I got some help by a
+stranger. He taught me to leave the flawed stroke there. He told me
+that&#x27;s how they used to do it when drawing on the paper. By
+leaving the flawed stroke in you could draw more and then you would
+see where the right stroke should go to. </p><p>Also I vividly
+remember the lesson about &quot;drawing the space around the
+subject&quot; rather than the subject itself, that was fairly helpful
+advice too. </p><p>Achieving one failure can take a weekend, yet you
+can learn from it more than from two months of up-front design work.
+Also, they tend to say that couple of months in the laboratory can
+frequently save a couple of hours in the library. So there is a sort
+of hierarchy there. </p><p>So it&#x27;s great if you can learn from
+your failures, even greater if you can learn from the failure of
+others. </p><p>It&#x27;s weird that I had to be taught that thing
+during drawing, because by then I was already using dynamically typed
+languages all the time. These tools are designed for getting the first
+stroke on the paper as quickly as it is possible. The obvious end
+result is that at the first time you get something quickly that fails
+to attain all or some of your objectives. Then you figure out what
+went wrong and refine the solution until the problem gets solved.
+</p><p>Mastering this aspect in your workflow makes the dynamic
+programming languages a powerful tool in your repertuare.
+</p></article><div style="text-align: center"><span
+  style="background-color: #85818e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #df7120; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a7341c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #5c231c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a39ea4; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #312334; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #44588e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #4679b8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #79bbe8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #d7d2d7; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #785d9a; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #949e85; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #2e170e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #7b3c16; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #c86f31; width: 1em; height: 1em; display: inline-block">
+</span></div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script></body></html>

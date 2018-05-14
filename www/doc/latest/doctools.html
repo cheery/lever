@@ -1,0 +1,201 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta
+  content="width=device-width, initial-scale=1"
+  name="viewport"/>
+<title>Lever manual: doctools</title><link
+  rel="stylesheet"
+  href="../../stylesheet.css">
+<!-- Generated from 'doc/doctools.text' in github.com/cheery/lever --></head><body><ul
+  class="nav"><li><a href="../../"><img
+  src="../../logo.png"
+  alt="LEVER">
+</a></li><li><a
+  href="https://github.com/cheery/lever/"
+  class="nav_button">repository</a></li><li><a
+  href="../../index.html#download"
+  class="nav_button">download</a></li><li><a
+  href="./"
+  class="nav_button">documentation index</a></li></ul><article><h1
+  class="embed-header">Manual: doctools</h1><p>Describes how the
+documentation tools work in Lever. Not complete or comprehensive
+description. </p><p>Lever&#x27;s documentation tools supports an
+upwards workflow where the documentation follows the source code. This
+helps to ensure that the documentation is indeed accurate
+documentation and not merely good wishes. </p><p>Comprehensive and
+good documentation is a very different thing than the source code,
+therefore the source code and documentation remain in different files.
+The documentation is contained in the &#x27;doc&#x27; -directory that
+is copied along into the runtime distribution. </p><p>The
+documentation is accessible to runtime, although the tools to retrieve
+and read documentation in REPL do not currently exist.
+</p><p>Documentation is written in texopic -language. The language is
+remotely similar with XML or HTML but has an exception that it
+differentiates between vertical and horizontal elements in the text.
+The details about the language will appear in the texopic module docs.
+</p><p>A single documentation file functions as both a manual and a
+reference. It is usable as both with searching, indexing and filtering
+tools. </p><p>The appropriate reference cards are pointed out by
+groups within the text. The cards contain lot of information that is
+treated appropriately. </p><p>The description of all fields is not
+completed. </p><div id="macros" class="reference-box"><div><a
+  href="#macros"
+  class="name reference">macros</a><span> : <a
+  href="base.html#dict"
+  class="reference">dict</a> </span></div>JSON-compatible structure
+that contains a listing about all the Texopic segments and groups
+recognized by doctools. <p>Is not containing the recognized macros.
+This is useful in combination with the texopic.read_file. </p><div
+  class="status">volatile </div></div><p>Since Lever is a very
+amenable language for change it is important to communicate when
+things may change. Sometimes it may even require that we know how and
+why things change. For this reason we have a &#x27;status&#x2F;0&#x27;
+group separator that is present in all reference card groups.
+</p><p>If the status field is missing, it means that the details of
+the object described in the reference are highly stable. The changes
+of such function are only allowed after a major version change.
+Changes into such details may require a transition time to be
+scheduled. </p><p>The documentation generator automatically adds
+#status volatile into every reference card. This means that the author
+reserves the option to change the interface and that only the exact
+version or even an exact git commit is required for the program that
+uses this function. </p><p>Volatile status is meant for the situation
+where the status of a specific interface is not determined. Another
+status, internal, can be used to point out that the documented item is
+an internal implementation detail not meant for external use. Relying
+on such features require same measurements as if the status was
+&#x27;volatile&#x27;. </p><div id="get_block"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/doctools.lc#L202">doctools.lc:202</a></div><a
+  href="#get_block"
+  class="name reference">get_block</a><span>(<span>members, ref</span>)</span><table
+  class="arg-ref"><tr><td>members </td><td>not documented
+</td></tr><tr><td>ref </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="get_link" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/doctools.lc#L215">doctools.lc:215</a></div><a
+  href="#get_link"
+  class="name reference">get_link</a><span>(<span>obj, ref = null</span>)</span><table
+  class="arg-ref"><tr><td>obj </td><td>not documented
+</td></tr><tr><td>ref </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="get_module_index" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/doctools.lc#L94">doctools.lc:94</a></div><a
+  href="#get_module_index"
+  class="name reference">get_module_index</a><span>(<span>module, block = null</span>)</span><table
+  class="arg-ref"><tr><td>module </td><td>not documented
+</td></tr><tr><td>block </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="get_scope_index" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/doctools.lc#L68">doctools.lc:68</a></div><a
+  href="#get_scope_index"
+  class="name reference">get_scope_index</a><span>(<span>scope, recursive = null</span>)</span><table
+  class="arg-ref"><tr><td>scope </td><td>not documented
+</td></tr><tr><td>recursive </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="import" class="reference-box"><div><a
+  href="#import"
+  class="name reference">import</a><span> : <a
+  href="base.html#Import"
+  class="reference">Import</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="import_all_modules"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/doctools.lc#L49">doctools.lc:49</a></div><a
+  href="#import_all_modules"
+  class="name reference">import_all_modules</a><span>(<span>scope</span>)</span><table
+  class="arg-ref"><tr><td>scope </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="is_function" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/doctools.lc#L161">doctools.lc:161</a></div><a
+  href="#is_function"
+  class="name reference">is_function</a><span>(<span>val</span>)</span><table
+  class="arg-ref"><tr><td>val </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="macros" class="reference-box"><div><a
+  href="#macros"
+  class="name reference">macros</a><span> : <a
+  href="base.html#dict"
+  class="reference">dict</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="name"
+  class="reference-box"><div><a href="#name"
+  class="name reference">name</a><span> = &quot;doctools&quot;
+</span></div>not documented <div class="status">volatile
+</div></div><div id="scan" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/doctools.lc#L98">doctools.lc:98</a></div><a
+  href="#scan"
+  class="name reference">scan</a><span>(<span>members, this, link, base</span>)</span><table
+  class="arg-ref"><tr><td>members </td><td>not documented
+</td></tr><tr><td>this </td><td>not documented </td></tr><tr><td>link
+</td><td>not documented </td></tr><tr><td>base </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="scan_function" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/doctools.lc#L166">doctools.lc:166</a></div><a
+  href="#scan_function"
+  class="name reference">scan_function</a><span>(<span>block, func</span>)</span><table
+  class="arg-ref"><tr><td>block </td><td>not documented
+</td></tr><tr><td>func </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="try_getattr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/doctools.lc#L225">doctools.lc:225</a></div><a
+  href="#try_getattr"
+  class="name reference">try_getattr</a><span>(<span>obj, name, default = null</span>)</span><table
+  class="arg-ref"><tr><td>obj </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented
+</td></tr><tr><td>default </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></article><div style="text-align: center"><span
+  style="background-color: #85818e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #df7120; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a7341c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #5c231c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a39ea4; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #312334; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #44588e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #4679b8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #79bbe8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #d7d2d7; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #785d9a; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #949e85; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #2e170e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #7b3c16; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #c86f31; width: 1em; height: 1em; display: inline-block">
+</span></div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script></body></html>

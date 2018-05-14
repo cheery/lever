@@ -1,0 +1,910 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta
+  content="width=device-width, initial-scale=1"
+  name="viewport"/>
+<title>Lever manual: chartparser</title><link
+  rel="stylesheet"
+  href="../../stylesheet.css">
+<!-- Generated from 'doc/chartparser.text' in github.com/cheery/lever --></head><body><ul
+  class="nav"><li><a href="../../"><img
+  src="../../logo.png"
+  alt="LEVER">
+</a></li><li><a
+  href="https://github.com/cheery/lever/"
+  class="nav_button">repository</a></li><li><a
+  href="../../index.html#download"
+  class="nav_button">download</a></li><li><a
+  href="./"
+  class="nav_button">documentation index</a></li></ul><article><h1
+  class="embed-header">Manual: chartparser</h1><p>A parser engine
+</p><p>Puzzles and problems related to parsing occur naturally at
+computer and human interaction. Often the hard parsing problems lead
+to searching for alternatives that eventually turn out to be just as
+problematic as the original challenge. </p><p>This parsing module is
+an implementation of <a
+  href="https://jeffreykegler.github.io/Marpa-web-site/">the marpa
+parsing algorithm</a>. It is distinctively easy to use. </p><p>This
+module can be used to interpret a sequence or a string according to a
+context free grammar. Alternative uses include generating strings or
+detecting ambiguity in generated output. </p><p>This is one of the
+libraries that made Lever feasible to implement by a single person.
+</p><a id="toc-link" href="#-toc">Table of contents ↑</a><fieldset
+  class="toc"
+  id="-toc"><legend>Table of contents</legend><div>01. <a
+  href="#01">Short example of use </a></div><div>02. <a
+  href="#02">Core interface </a></div><div>03. <a
+  href="#03">Implementation details </a></div></fieldset><script
+  src="../../toc-helper.js"></script><h2 id="01">01. Short example of
+use
+</h2><pre>from chartparser import Rule, Nonterminal, Terminal, preprocess
+
+expr   = Nonterminal(&quot;expr&quot;)
+number = Nonterminal(&quot;number&quot;)
+digit = Terminal(&quot;digit&quot;)
+plus  = Terminal(&quot;plus&quot;)
+
+grammar = [
+    Rule(expr, [expr, plus, number], &quot;math_op&quot;),
+    Rule(expr, [number],             &quot;pass_number&quot;),
+    Rule(number, [digit],            &quot;new_number&quot;),
+    Rule(number, [number, digit],    &quot;add_digit&quot;)
+]
+new_parser = preprocess(grammar, expr)
+parser = new_parser()
+for ch in &quot;123 + 456&quot;
+    if ch.is_space()
+        continue
+    elif ch.is_digit()
+        parser.step(digit, ch)
+    elif ch == &quot;+&quot;
+        parser.step(plus, ch)
+    else
+        print(&quot;parsing failed&quot;)
+        print(parser.expect...)
+        exit(1)
+print(&quot;accept?&quot;, parser.accepted)
+if parser.accepted
+    result = parser.traverse((rule, tree, start, stop):
+        name = rule.annotation
+        if name == &quot;new_number&quot;
+            num = parse_int(tree[0])
+            return num
+        elif name == &quot;add_digit&quot;
+            return tree[0] * 10 + parse_int(tree[1])
+        elif name == &quot;pass_number&quot;
+            print(&quot;a number&quot;, tree[0])
+            return tree[0]
+        elif name == &quot;math_op&quot;
+            print(&quot;adding two numbers&quot;, tree[0], tree[2])
+            return tree[0] + tree[2]
+        else
+            assert false
+                &quot;Not implemented: &quot; ++ name)
+    print(result)
+</pre><p>The
+output:
+</p><pre>accept? true
+a number 123
+adding two numbers 123 456
+579
+</pre><p>The
+writing of grammar rules may be tedious, so there is a separate
+language for writing rules and annotations into them. </p><h2
+  id="02">02. Core interface </h2><div id="Rule"
+  class="reference-box"><div><span>class </span><a
+  href="#Rule"
+  class="name reference">Rule</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>A rule in a context-free
+grammar. <p>This object is used to represent production rules in a
+grammar. The meaning is roughly, that things on the rhs can be used in
+the place of a lhs. </p><div id="Rule.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L40">chartparser.lc:40</a></div><a
+  href="#Rule.+init"
+  class="name reference">+init</a><span>(<span>self, lhs, rhs, annotation = null</span>)</span><table
+  class="arg-ref"><tr><td>lhs </td><td>Left hand side, expected to be
+a Nonterminal. </td></tr><tr><td>rhs </td><td>Right hand side,
+expected to be a sequence of Nonterminals and Terminals.
+</td></tr><tr><td>annotation </td><td>A field for a custom annotation.
+You can access this during the traverse to recognize the structure
+from the rules that are present. </td></tr></table></div>Creates a new
+Rule. </div><div id="Rule.+repr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L45">chartparser.lc:45</a></div><a
+  href="#Rule.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>Representation of the rule.
+LHS is separated from RHS with a &#x27;-&gt;&#x27;.
+</td></tr></table></div><div class="status">volatile
+</div></div></div><div id="Nonterminal"
+  class="reference-box"><div><span>class </span><a
+  href="#Nonterminal"
+  class="name reference">Nonterminal</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>A symbol that is not
+supposed to appear in the formal language that a grammar represents.
+<div id="Nonterminal.+init" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L69">chartparser.lc:69</a></div><a
+  href="#Nonterminal.+init"
+  class="name reference">+init</a><span>(<span>self, name</span>)</span><table
+  class="arg-ref"><tr><td>name </td><td>Name, in theory it&#x27;s
+optional and not used for parsing, but it&#x27;s a good idea to name
+your nonterminals. </td></tr></table></div></div><div
+  id="Nonterminal.+repr"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L72">chartparser.lc:72</a></div><a
+  href="#Nonterminal.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>repr(self.name)
+</td></tr></table></div><div class="status">volatile
+</div></div></div><div id="Terminal"
+  class="reference-box"><div><span>class </span><a
+  href="#Terminal"
+  class="name reference">Terminal</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>A symbol, which may appear
+in the formal language that a grammar represents. <div
+  id="Terminal.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L62">chartparser.lc:62</a></div><a
+  href="#Terminal.+init"
+  class="name reference">+init</a><span>(<span>self, name</span>)</span><table
+  class="arg-ref"><tr><td>name </td><td>Name, in theory it&#x27;s
+optional and not used for parsing, but it&#x27;s a good idea to name
+your terminals. </td></tr></table></div></div><div
+  id="Terminal.+repr"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L65">chartparser.lc:65</a></div><a
+  href="#Terminal.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>the repr(name), prefixed
+with &#x27;@&#x27; </td></tr></table></div><div
+  class="status">volatile </div></div></div><div
+  id="preprocess"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L81">chartparser.lc:81</a></div><a
+  href="#preprocess"
+  class="name reference">preprocess</a><span>(<span>user_grammar, default_accept</span>)</span><table
+  class="arg-ref"><tr><td>user_grammar </td><td>List of Rule objects
+representing the grammar you want to parse.
+</td></tr><tr><td>default_accept </td><td>Default rule to accept, can
+be chosen when invoking the initiator.
+</td></tr><tr><td>returns </td><td>An Initiator.
+</td></tr></table></div>Preprocesses a grammar and prepares for
+parsing. <p>The preprocessing of a grammar should be relatively fast.
+When it begins to take hundreds of milliseconds, you may want to
+consider memoizing the Initiator. </p></div><div
+  id="Initiator"
+  class="reference-box"><div><span>class </span><a
+  href="#Initiator"
+  class="name reference">Initiator</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>Represents an preprocessed
+grammar, ready for parsing. <div
+  id="Initiator.+call"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L241">chartparser.lc:241</a></div><a
+  href="#Initiator.+call"
+  class="name reference">+call</a><span>(<span>self, accept = null</span>)</span><table
+  class="arg-ref"><tr><td>accept </td><td>This parsing algorithm
+doesn&#x27;t optimize the grammar by the accept rule, so you can pick
+any nonterminal during instantiation as the accept symbol.
+</td></tr><tr><td>returns </td><td>a new Parser, containing starting
+state. </td></tr></table></div>Instantiates the parser. </div><div
+  id="Initiator.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L233">chartparser.lc:233</a></div><a
+  href="#Initiator.+init"
+  class="name reference">+init</a><span>(<span>self, grammar, blankset, right_recursive, default_accept</span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>Creates a new initiator.
+</td></tr></table></div>Use the &#x27;preprocess&#x27; function to
+create a new Initiator. <div class="status">internal
+</div></div></div><div id="Parser"
+  class="reference-box"><div><span>class </span><a
+  href="#Parser"
+  class="name reference">Parser</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>A parser state you can
+step through the input. <div class="status">the name may change
+</div><div id="Parser.+init" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L257">chartparser.lc:257</a></div><a
+  href="#Parser.+init"
+  class="name reference">+init</a><span>(<span>self, init, accept, output</span>)</span><table
+  class="arg-ref"><tr><td>init </td><td>Initiator
+</td></tr><tr><td>accept </td><td>Accept rule this parser was created
+with. </td></tr><tr><td>output </td><td>Starting output, usually
+empty. </td></tr></table></div>Use the Initiator.+call to create a new
+parser, rather than this. <div class="status">internal
+</div></div><div id="Parser.accepted" class="reference-box"><div><a
+  href="#Parser.accepted"
+  class="name reference">accepted</a><span> : <a
+  href="base.html#property"
+  class="reference">property</a> </span></div>boolean, on whether
+.output is filled or not. <p>Indicates whether the input is accepted.
+</p></div><div
+  id="Parser.default_ambiguity_resolution"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L312">chartparser.lc:312</a></div><a
+  href="#Parser.default_ambiguity_resolution"
+  class="name reference">default_ambiguity_resolution</a><span>(<span>self, sppf</span>)</span><table
+  class="arg-ref"></table></div>Related to ambiguity resolution,
+throws an exception. <div class="status">internal </div></div><div
+  id="Parser.expect"
+  class="reference-box"><div><a
+  href="#Parser.expect"
+  class="name reference">expect</a><span> : <a
+  href="base.html#property"
+  class="reference">property</a> </span></div>A set of symbols the
+parser is expecting. </div><div
+  id="Parser.expecting"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L294">chartparser.lc:294</a></div><a
+  href="#Parser.expecting"
+  class="name reference">expecting</a><span>(<span>self, symbol</span>)</span><table
+  class="arg-ref"><tr><td>symbol </td><td>Symbol to be checked.
+</td></tr><tr><td>returns </td><td>true or false
+</td></tr></table></div>Can be used to check whether a specific
+terminal or nonterminal is expected. </div><div
+  id="Parser.step"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L263">chartparser.lc:263</a></div><a
+  href="#Parser.step"
+  class="name reference">step</a><span>(<span>self, term, token, start = null, stop = null</span>)</span><table
+  class="arg-ref"><tr><td>term </td><td>The Terminal (or Nonterminal)
+to step with. </td></tr><tr><td>token </td><td>The token to associate
+to this step. </td></tr><tr><td>start </td><td>Start source location
+(if used) </td></tr><tr><td>stop </td><td>Stop source location (if
+used). </td></tr></table></div>Steps the parsing state with a symbol.
+</div><div id="Parser.traverse" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L297">chartparser.lc:297</a></div><a
+  href="#Parser.traverse"
+  class="name reference">traverse</a><span>(<span>self, postorder_cb, blank_cb = null, resolve_ambiguity = null</span>)</span><table
+  class="arg-ref"><tr><td>postorder_cb </td><td>Traversing function to
+use. Returns: (rule, tree, start, stop) </td></tr><tr><td>blank_cb
+</td><td>An optional callback for generating blank symbol. As a
+default the postorder_cb is used with generated arguments.
+</td></tr><tr><td>resolve_ambiguity </td><td>A function callback for
+resolving ambiguity in a grammar during postorder traverse. Not
+documented for now. </td></tr><tr><td>returns </td><td>Whatever the
+postorder_cb does. </td></tr></table></div>Postorder traverse the
+parse tree. </div></div><h2 id="03">03. Implementation details
+</h2><div id="EIM" class="reference-box"><div><span>class </span><a
+  href="#EIM"
+  class="name reference">EIM</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="EIM.+hash"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L417">chartparser.lc:417</a></div><a
+  href="#EIM.+hash"
+  class="name reference">+hash</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="EIM.+init" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L388">chartparser.lc:388</a></div><a
+  href="#EIM.+init"
+  class="name reference">+init</a><span>(<span>self, rule, pos, origin</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>rule </td><td>not documented </td></tr><tr><td>pos
+</td><td>not documented </td></tr><tr><td>origin
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="EIM.+repr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L421">chartparser.lc:421</a></div><a
+  href="#EIM.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="EIM.is_completed" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L414">chartparser.lc:414</a></div><a
+  href="#EIM.is_completed"
+  class="name reference">is_completed</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="EIM.is_confirmed" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L411">chartparser.lc:411</a></div><a
+  href="#EIM.is_confirmed"
+  class="name reference">is_confirmed</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="EIM.is_predicted" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L408">chartparser.lc:408</a></div><a
+  href="#EIM.is_predicted"
+  class="name reference">is_predicted</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="EIM.next" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L399">chartparser.lc:399</a></div><a
+  href="#EIM.next"
+  class="name reference">next</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="EIM.penult" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L404">chartparser.lc:404</a></div><a
+  href="#EIM.penult"
+  class="name reference">penult</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="EIM.postdot" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L394">chartparser.lc:394</a></div><a
+  href="#EIM.postdot"
+  class="name reference">postdot</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="IndentParser"
+  class="reference-box"><div><span>class </span><a
+  href="#IndentParser"
+  class="name reference">IndentParser</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="IndentParser.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L673">chartparser.lc:673</a></div><a
+  href="#IndentParser.+init"
+  class="name reference">+init</a><span>(<span>self, pos = null, indent = null, dedent = null, newline = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>pos </td><td>not documented </td></tr><tr><td>indent
+</td><td>not documented </td></tr><tr><td>dedent
+</td><td>not documented </td></tr><tr><td>newline
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="IndentParser.finish"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L706">chartparser.lc:706</a></div><a
+  href="#IndentParser.finish"
+  class="name reference">finish</a><span>(<span>self, parser, pos</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>parser </td><td>not documented </td></tr><tr><td>pos
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="IndentParser.slip"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L700">chartparser.lc:700</a></div><a
+  href="#IndentParser.slip"
+  class="name reference">slip</a><span>(<span>self, parser, pos, source</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>parser </td><td>not documented </td></tr><tr><td>pos
+</td><td>not documented </td></tr><tr><td>source
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="IndentParser.step"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L681">chartparser.lc:681</a></div><a
+  href="#IndentParser.step"
+  class="name reference">step</a><span>(<span>self, parser, pos, source</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>parser </td><td>not documented </td></tr><tr><td>pos
+</td><td>not documented </td></tr><tr><td>source
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="LEO"
+  class="reference-box"><div><span>class </span><a
+  href="#LEO"
+  class="name reference">LEO</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="LEO.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L444">chartparser.lc:444</a></div><a
+  href="#LEO.+init"
+  class="name reference">+init</a><span>(<span>self, left, cc</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>left </td><td>not documented </td></tr><tr><td>cc
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="LEO.stop" class="reference-box"><div><a
+  href="#LEO.stop"
+  class="name reference">stop</a><span> : <a
+  href="base.html#property"
+  class="reference">property</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="LEO.to_sppf"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L452">chartparser.lc:452</a></div><a
+  href="#LEO.to_sppf"
+  class="name reference">to_sppf</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="LEOLink"
+  class="reference-box"><div><span>class </span><a
+  href="#LEOLink"
+  class="name reference">LEOLink</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="LEOLink.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L466">chartparser.lc:466</a></div><a
+  href="#LEOLink.+init"
+  class="name reference">+init</a><span>(<span>self, left, rule, sppf</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>left </td><td>not documented </td></tr><tr><td>rule
+</td><td>not documented </td></tr><tr><td>sppf </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Link"
+  class="reference-box"><div><span>class </span><a
+  href="#Link"
+  class="name reference">Link</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Link.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L537">chartparser.lc:537</a></div><a
+  href="#Link.+init"
+  class="name reference">+init</a><span>(<span>self, left, right, link = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>left </td><td>not documented </td></tr><tr><td>right
+</td><td>not documented </td></tr><tr><td>link </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="NNF"
+  class="reference-box"><div><span>class </span><a
+  href="#NNF"
+  class="name reference">NNF</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="NNF.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L186">chartparser.lc:186</a></div><a
+  href="#NNF.+init"
+  class="name reference">+init</a><span>(<span>self, rule, present</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>rule </td><td>not documented
+</td></tr><tr><td>present </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Resolve"
+  class="reference-box"><div><span>class </span><a
+  href="#Resolve"
+  class="name reference">Resolve</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Resolve.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L593">chartparser.lc:593</a></div><a
+  href="#Resolve.+init"
+  class="name reference">+init</a><span>(<span>self, value</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>value </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="SPPF"
+  class="reference-box"><div><span>class </span><a
+  href="#SPPF"
+  class="name reference">SPPF</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="SPPF.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L472">chartparser.lc:472</a></div><a
+  href="#SPPF.+init"
+  class="name reference">+init</a><span>(<span>self, start, stop, cell, link</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>start </td><td>not documented </td></tr><tr><td>stop
+</td><td>not documented </td></tr><tr><td>cell </td><td>not documented
+</td></tr><tr><td>link </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="SPPF.+iter" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L511">chartparser.lc:511</a></div><a
+  href="#SPPF.+iter"
+  class="name reference">+iter</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="SPPF.insert" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L484">chartparser.lc:484</a></div><a
+  href="#SPPF.insert"
+  class="name reference">insert</a><span>(<span>self, left, right</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>left </td><td>not documented </td></tr><tr><td>right
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="SPPF.is_leaf" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L481">chartparser.lc:481</a></div><a
+  href="#SPPF.is_leaf"
+  class="name reference">is_leaf</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="SPPF.single" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L497">chartparser.lc:497</a></div><a
+  href="#SPPF.single"
+  class="name reference">single</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="SPPF.to_sppf" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L478">chartparser.lc:478</a></div><a
+  href="#SPPF.to_sppf"
+  class="name reference">to_sppf</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="SyntaxError"
+  class="reference-box"><div><span>class </span><a
+  href="#SyntaxError"
+  class="name reference">SyntaxError</a><span> extends <a
+  href="base.html#Exception"
+  class="reference">Exception</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="SyntaxError.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L616">chartparser.lc:616</a></div><a
+  href="#SyntaxError.+init"
+  class="name reference">+init</a><span>(<span>self, message, location, source, at_eof = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>message </td><td>not documented
+</td></tr><tr><td>location </td><td>not documented
+</td></tr><tr><td>source </td><td>not documented
+</td></tr><tr><td>at_eof </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="SyntaxError.+repr"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L623">chartparser.lc:623</a></div><a
+  href="#SyntaxError.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="SyntaxErrorExpected"
+  class="reference-box"><div><span>class </span><a
+  href="#SyntaxErrorExpected"
+  class="name reference">SyntaxErrorExpected</a><span> extends <a
+  href="chartparser.html#SyntaxError"
+  class="reference">SyntaxError</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="SyntaxErrorExpected.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L627">chartparser.lc:627</a></div><a
+  href="#SyntaxErrorExpected.+init"
+  class="name reference">+init</a><span>(<span>self, expect, location, source, at_eof = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>expect </td><td>not documented
+</td></tr><tr><td>location </td><td>not documented
+</td></tr><tr><td>source </td><td>not documented
+</td></tr><tr><td>at_eof </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="SyntaxErrorExpected.+repr"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L634">chartparser.lc:634</a></div><a
+  href="#SyntaxErrorExpected.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="all_nonterminals"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L140">chartparser.lc:140</a></div><a
+  href="#all_nonterminals"
+  class="name reference">all_nonterminals</a><span>(<span>rhs</span>)</span><table
+  class="arg-ref"><tr><td>rhs </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="all_nullable" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L146">chartparser.lc:146</a></div><a
+  href="#all_nullable"
+  class="name reference">all_nullable</a><span>(<span>rhs, nullable</span>)</span><table
+  class="arg-ref"><tr><td>rhs </td><td>not documented
+</td></tr><tr><td>nullable </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="ambiguity_traverser"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L583">chartparser.lc:583</a></div><a
+  href="#ambiguity_traverser"
+  class="name reference">ambiguity_traverser</a><span>(<span>sppf, postorder_cb, blank_cb, resolve_ambiguity</span>)</span><table
+  class="arg-ref"><tr><td>sppf </td><td>not documented
+</td></tr><tr><td>postorder_cb </td><td>not documented
+</td></tr><tr><td>blank_cb </td><td>not documented
+</td></tr><tr><td>resolve_ambiguity </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="build_nnf" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L160">chartparser.lc:160</a></div><a
+  href="#build_nnf"
+  class="name reference">build_nnf</a><span>(<span>grammar, nullable</span>)</span><table
+  class="arg-ref"><tr><td>grammar </td><td>not documented
+</td></tr><tr><td>nullable </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="cache_transitions"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L332">chartparser.lc:332</a></div><a
+  href="#cache_transitions"
+  class="name reference">cache_transitions</a><span>(<span>transitions, eim, cc, leims</span>)</span><table
+  class="arg-ref"><tr><td>transitions </td><td>not documented
+</td></tr><tr><td>eim </td><td>not documented </td></tr><tr><td>cc
+</td><td>not documented </td></tr><tr><td>leims
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="count_nonrec" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L152">chartparser.lc:152</a></div><a
+  href="#count_nonrec"
+  class="name reference">count_nonrec</a><span>(<span>rule</span>)</span><table
+  class="arg-ref"><tr><td>rule </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="dir" class="reference-box"><div><a
+  href="#dir"
+  class="name reference">dir</a><span> : <a
+  href="base.html#path"
+  class="reference">path</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="expand"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L596">chartparser.lc:596</a></div><a
+  href="#expand"
+  class="name reference">expand</a><span>(<span>start, stop, cell, blank_callback, seq</span>)</span><table
+  class="arg-ref"><tr><td>start </td><td>not documented
+</td></tr><tr><td>stop </td><td>not documented </td></tr><tr><td>cell
+</td><td>not documented </td></tr><tr><td>blank_callback
+</td><td>not documented </td></tr><tr><td>seq </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="find_nullable" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L108">chartparser.lc:108</a></div><a
+  href="#find_nullable"
+  class="name reference">find_nullable</a><span>(<span>grammar</span>)</span><table
+  class="arg-ref"><tr><td>grammar </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="find_right_recursive"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L194">chartparser.lc:194</a></div><a
+  href="#find_right_recursive"
+  class="name reference">find_right_recursive</a><span>(<span>grammar</span>)</span><table
+  class="arg-ref"><tr><td>grammar </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="format_origin" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L641">chartparser.lc:641</a></div><a
+  href="#format_origin"
+  class="name reference">format_origin</a><span>(<span>source, location, message = null</span>)</span><table
+  class="arg-ref"><tr><td>source </td><td>not documented
+</td></tr><tr><td>location </td><td>not documented
+</td></tr><tr><td>message </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="import" class="reference-box"><div><a
+  href="#import"
+  class="name reference">import</a><span> : <a
+  href="base.html#Import"
+  class="reference">Import</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="is_leo_eligible"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L368">chartparser.lc:368</a></div><a
+  href="#is_leo_eligible"
+  class="name reference">is_leo_eligible</a><span>(<span>edges, right_recursive</span>)</span><table
+  class="arg-ref"><tr><td>edges </td><td>not documented
+</td></tr><tr><td>right_recursive </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="main" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L5">chartparser.lc:5</a></div><a
+  href="#main"
+  class="name reference">main</a><span>(<span></span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="make_default_blank"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L315">chartparser.lc:315</a></div><a
+  href="#make_default_blank"
+  class="name reference">make_default_blank</a><span>(<span>parser, postorder_cb</span>)</span><table
+  class="arg-ref"><tr><td>parser </td><td>not documented
+</td></tr><tr><td>postorder_cb </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="name" class="reference-box"><div><a
+  href="#name"
+  class="name reference">name</a><span> = &quot;chartparser&quot;
+</span></div>not documented <div class="status">volatile
+</div></div><div id="nihilist_rule" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L170">chartparser.lc:170</a></div><a
+  href="#nihilist_rule"
+  class="name reference">nihilist_rule</a><span>(<span>rule, index, nullable</span>)</span><table
+  class="arg-ref"><tr><td>rule </td><td>not documented
+</td></tr><tr><td>index </td><td>not documented
+</td></tr><tr><td>nullable </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="prediction" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L324">chartparser.lc:324</a></div><a
+  href="#prediction"
+  class="name reference">prediction</a><span>(<span>current, nodes, grammar, transitions, postdot</span>)</span><table
+  class="arg-ref"><tr><td>current </td><td>not documented
+</td></tr><tr><td>nodes </td><td>not documented
+</td></tr><tr><td>grammar </td><td>not documented
+</td></tr><tr><td>transitions </td><td>not documented
+</td></tr><tr><td>postdot </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="repr_spaces" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L49">chartparser.lc:49</a></div><a
+  href="#repr_spaces"
+  class="name reference">repr_spaces</a><span>(<span>seq, space = null</span>)</span><table
+  class="arg-ref"><tr><td>seq </td><td>not documented
+</td></tr><tr><td>space </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="shift_eim" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L374">chartparser.lc:374</a></div><a
+  href="#shift_eim"
+  class="name reference">shift_eim</a><span>(<span>current, nodes, eim, bb, cc</span>)</span><table
+  class="arg-ref"><tr><td>current </td><td>not documented
+</td></tr><tr><td>nodes </td><td>not documented </td></tr><tr><td>eim
+</td><td>not documented </td></tr><tr><td>bb </td><td>not documented
+</td></tr><tr><td>cc </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="shift_eims" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L346">chartparser.lc:346</a></div><a
+  href="#shift_eims"
+  class="name reference">shift_eims</a><span>(<span>current, nodes, edges, cc, right_recursive, leims</span>)</span><table
+  class="arg-ref"><tr><td>current </td><td>not documented
+</td></tr><tr><td>nodes </td><td>not documented
+</td></tr><tr><td>edges </td><td>not documented </td></tr><tr><td>cc
+</td><td>not documented </td></tr><tr><td>right_recursive
+</td><td>not documented </td></tr><tr><td>leims
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="symbol_lt" class="reference-box"><div><a
+  href="#symbol_lt"
+  class="name reference">symbol_lt</a></div><details><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L654">chartparser.lc:654</a></div><summary><span>(<span>a : <a
+  href="chartparser.html#Terminal"
+  class="reference">Terminal</a>, b : <a
+  href="chartparser.html#Nonterminal"
+  class="reference">Nonterminal</a></span>)</span></summary><table
+  class="arg-ref"><tr><td>a </td><td>not documented
+</td></tr><tr><td>b </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table>not documented <div class="status">volatile
+</div></details><details><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L657">chartparser.lc:657</a></div><summary><span>(<span>a : <a
+  href="chartparser.html#Nonterminal"
+  class="reference">Nonterminal</a>, b : <a
+  href="chartparser.html#Terminal"
+  class="reference">Terminal</a></span>)</span></summary><table
+  class="arg-ref"><tr><td>a </td><td>not documented
+</td></tr><tr><td>b </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table>not documented <div class="status">volatile
+</div></details><details><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L660">chartparser.lc:660</a></div><summary><span>(<span>a : <a
+  href="chartparser.html#Nonterminal"
+  class="reference">Nonterminal</a>, b : <a
+  href="chartparser.html#Nonterminal"
+  class="reference">Nonterminal</a></span>)</span></summary><table
+  class="arg-ref"><tr><td>a </td><td>not documented
+</td></tr><tr><td>b </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table>not documented <div class="status">volatile
+</div></details><details><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L663">chartparser.lc:663</a></div><summary><span>(<span>a : <a
+  href="chartparser.html#Terminal"
+  class="reference">Terminal</a>, b : <a
+  href="chartparser.html#Terminal"
+  class="reference">Terminal</a></span>)</span></summary><table
+  class="arg-ref"><tr><td>a </td><td>not documented
+</td></tr><tr><td>b </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table>not documented <div class="status">volatile
+</div></details>not documented <div class="status">volatile
+</div></div><div id="traverse_sppf" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L543">chartparser.lc:543</a></div><a
+  href="#traverse_sppf"
+  class="name reference">traverse_sppf</a><span>(<span>stack, postorder_cb, blank_cb, resolve_ambiguity</span>)</span><table
+  class="arg-ref"><tr><td>stack </td><td>not documented
+</td></tr><tr><td>postorder_cb </td><td>not documented
+</td></tr><tr><td>blank_cb </td><td>not documented
+</td></tr><tr><td>resolve_ambiguity </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div
+  id="warshall_transitive_closure"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/chartparser.lc#L217">chartparser.lc:217</a></div><a
+  href="#warshall_transitive_closure"
+  class="name reference">warshall_transitive_closure</a><span>(<span>a</span>)</span><table
+  class="arg-ref"><tr><td>a </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></article><div style="text-align: center"><span
+  style="background-color: #85818e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #df7120; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a7341c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #5c231c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a39ea4; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #312334; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #44588e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #4679b8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #79bbe8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #d7d2d7; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #785d9a; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #949e85; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #2e170e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #7b3c16; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #c86f31; width: 1em; height: 1em; display: inline-block">
+</span></div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script></body></html>

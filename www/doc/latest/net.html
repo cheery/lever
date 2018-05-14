@@ -1,0 +1,604 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta
+  content="width=device-width, initial-scale=1"
+  name="viewport"/>
+<title>Lever manual: net</title><link
+  rel="stylesheet"
+  href="../../stylesheet.css">
+<!-- Generated from 'doc/net.text' in github.com/cheery/lever --></head><body><ul
+  class="nav"><li><a href="../../"><img
+  src="../../logo.png"
+  alt="LEVER">
+</a></li><li><a
+  href="https://github.com/cheery/lever/"
+  class="nav_button">repository</a></li><li><a
+  href="../../index.html#download"
+  class="nav_button">download</a></li><li><a
+  href="./"
+  class="nav_button">documentation index</a></li></ul><article><h1
+  class="embed-header">Manual: net</h1><div
+  id="AF_INET"
+  class="reference-box"><div><a href="#AF_INET"
+  class="name reference">AF_INET</a><span> = 2
+</span></div>not documented <div class="status">volatile
+</div></div><div id="AF_INET6" class="reference-box"><div><a
+  href="#AF_INET6"
+  class="name reference">AF_INET6</a><span> = 10
+</span></div>not documented <div class="status">volatile
+</div></div><div id="AF_UNSPEC" class="reference-box"><div><a
+  href="#AF_UNSPEC"
+  class="name reference">AF_UNSPEC</a><span> = 0
+</span></div>not documented <div class="status">volatile
+</div></div><div id="AI_ADDRCONFIG" class="reference-box"><div><a
+  href="#AI_ADDRCONFIG"
+  class="name reference">AI_ADDRCONFIG</a><span> = 32
+</span></div>not documented <div class="status">volatile
+</div></div><div id="AI_CANONIDN" class="reference-box"><div><a
+  href="#AI_CANONIDN"
+  class="name reference">AI_CANONIDN</a><span> = 128
+</span></div>not documented <div class="status">volatile
+</div></div><div id="AI_CANONNAME" class="reference-box"><div><a
+  href="#AI_CANONNAME"
+  class="name reference">AI_CANONNAME</a><span> = 2
+</span></div>not documented <div class="status">volatile
+</div></div><div id="AI_IDN" class="reference-box"><div><a
+  href="#AI_IDN"
+  class="name reference">AI_IDN</a><span> = 64
+</span></div>not documented <div class="status">volatile
+</div></div><div id="AI_IDN_ALLOW_UNASSIGNED"
+  class="reference-box"><div><a
+  href="#AI_IDN_ALLOW_UNASSIGNED"
+  class="name reference">AI_IDN_ALLOW_UNASSIGNED</a><span> = 256
+</span></div>not documented <div class="status">volatile
+</div></div><div
+  id="AI_IDN_USE_STD3_ASCII_RULES"
+  class="reference-box"><div><a
+  href="#AI_IDN_USE_STD3_ASCII_RULES"
+  class="name reference">AI_IDN_USE_STD3_ASCII_RULES</a><span> = 512
+</span></div>not documented <div class="status">volatile
+</div></div><div id="AI_NUMERICHOST" class="reference-box"><div><a
+  href="#AI_NUMERICHOST"
+  class="name reference">AI_NUMERICHOST</a><span> = 4
+</span></div>not documented <div class="status">volatile
+</div></div><div id="AI_NUMERICSERV" class="reference-box"><div><a
+  href="#AI_NUMERICSERV"
+  class="name reference">AI_NUMERICSERV</a><span> = 1024
+</span></div>not documented <div class="status">volatile
+</div></div><div id="AI_PASSIVE" class="reference-box"><div><a
+  href="#AI_PASSIVE"
+  class="name reference">AI_PASSIVE</a><span> = 1
+</span></div>not documented <div class="status">volatile
+</div></div><div id="AI_V4MAPPED" class="reference-box"><div><a
+  href="#AI_V4MAPPED"
+  class="name reference">AI_V4MAPPED</a><span> = 8
+</span></div>not documented <div class="status">volatile
+</div></div><div id="INADDR_ANY" class="reference-box"><div><a
+  href="#INADDR_ANY"
+  class="name reference">INADDR_ANY</a><span> = 0
+</span></div>not documented <div class="status">volatile
+</div></div><div id="INADDR_LOOPBACK" class="reference-box"><div><a
+  href="#INADDR_LOOPBACK"
+  class="name reference">INADDR_LOOPBACK</a><span> = 2130706433
+</span></div>not documented <div class="status">volatile
+</div></div><div id="NI_DGRAM" class="reference-box"><div><a
+  href="#NI_DGRAM"
+  class="name reference">NI_DGRAM</a><span> = 16
+</span></div>not documented <div class="status">volatile
+</div></div><div id="NI_IDN" class="reference-box"><div><a
+  href="#NI_IDN"
+  class="name reference">NI_IDN</a><span> = 32
+</span></div>not documented <div class="status">volatile
+</div></div><div id="NI_IDN_ALLOW_UNASSIGNED"
+  class="reference-box"><div><a
+  href="#NI_IDN_ALLOW_UNASSIGNED"
+  class="name reference">NI_IDN_ALLOW_UNASSIGNED</a><span> = 64
+</span></div>not documented <div class="status">volatile
+</div></div><div
+  id="NI_IDN_USE_STD3_ASCII_RULES"
+  class="reference-box"><div><a
+  href="#NI_IDN_USE_STD3_ASCII_RULES"
+  class="name reference">NI_IDN_USE_STD3_ASCII_RULES</a><span> = 128
+</span></div>not documented <div class="status">volatile
+</div></div><div id="NI_NAMEREQD" class="reference-box"><div><a
+  href="#NI_NAMEREQD"
+  class="name reference">NI_NAMEREQD</a><span> = 8
+</span></div>not documented <div class="status">volatile
+</div></div><div id="NI_NOFQDN" class="reference-box"><div><a
+  href="#NI_NOFQDN"
+  class="name reference">NI_NOFQDN</a><span> = 4
+</span></div>not documented <div class="status">volatile
+</div></div><div id="NI_NUMERICHOST" class="reference-box"><div><a
+  href="#NI_NUMERICHOST"
+  class="name reference">NI_NUMERICHOST</a><span> = 1
+</span></div>not documented <div class="status">volatile
+</div></div><div id="NI_NUMERICSERV" class="reference-box"><div><a
+  href="#NI_NUMERICSERV"
+  class="name reference">NI_NUMERICSERV</a><span> = 2
+</span></div>not documented <div class="status">volatile
+</div></div><div id="SOCK_DGRAM" class="reference-box"><div><a
+  href="#SOCK_DGRAM"
+  class="name reference">SOCK_DGRAM</a><span> = 2
+</span></div>not documented <div class="status">volatile
+</div></div><div id="SOCK_STREAM" class="reference-box"><div><a
+  href="#SOCK_STREAM"
+  class="name reference">SOCK_STREAM</a><span> = 1
+</span></div>not documented <div class="status">volatile
+</div></div><div id="TCP"
+  class="reference-box"><div><span>class </span><a
+  href="#TCP"
+  class="name reference">TCP</a><span> extends <a
+  href="base.html#Stream"
+  class="reference">Stream</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="TCP.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L26">builtin:&#x2F;stdlib&#x2F;net.py:26</a></div><a
+  href="#TCP.+init"
+  class="name reference">+init</a><span>(<span></span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.accept" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/uv_stream.py#L73">builtin:&#x2F;uv_stream.py:73</a></div><a
+  href="#TCP.accept"
+  class="name reference">accept</a><span>(<span>self : <a
+  href="base.html#Stream"
+  class="reference">Stream</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.bind" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L56">builtin:&#x2F;stdlib&#x2F;net.py:56</a></div><a
+  href="#TCP.bind"
+  class="name reference">bind</a><span>(<span>self : <a
+  href="net.html#TCP"
+  class="reference">TCP</a>, addr : <a
+  href="base.html#Uint8Data"
+  class="reference">Uint8Data</a>, flags = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>addr </td><td>not documented </td></tr><tr><td>flags
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.connect" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L90">builtin:&#x2F;stdlib&#x2F;net.py:90</a></div><a
+  href="#TCP.connect"
+  class="name reference">connect</a><span>(<span>self : <a
+  href="base.html#Stream"
+  class="reference">Stream</a>, addr : <a
+  href="base.html#Uint8Data"
+  class="reference">Uint8Data</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>addr </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.getpeername" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L77">builtin:&#x2F;stdlib&#x2F;net.py:77</a></div><a
+  href="#TCP.getpeername"
+  class="name reference">getpeername</a><span>(<span>self : <a
+  href="net.html#TCP"
+  class="reference">TCP</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.getsockname" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L64">builtin:&#x2F;stdlib&#x2F;net.py:64</a></div><a
+  href="#TCP.getsockname"
+  class="name reference">getsockname</a><span>(<span>self : <a
+  href="net.html#TCP"
+  class="reference">TCP</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.keepalive" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L42">builtin:&#x2F;stdlib&#x2F;net.py:42</a></div><a
+  href="#TCP.keepalive"
+  class="name reference">keepalive</a><span>(<span>self : <a
+  href="net.html#TCP"
+  class="reference">TCP</a>, enable : <a
+  href="base.html#bool"
+  class="reference">bool</a>, delay = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>enable </td><td>not documented
+</td></tr><tr><td>delay </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.listen" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/uv_stream.py#L47">builtin:&#x2F;uv_stream.py:47</a></div><a
+  href="#TCP.listen"
+  class="name reference">listen</a><span>(<span>self : <a
+  href="base.html#Stream"
+  class="reference">Stream</a>, backlog : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>backlog </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.nodelay" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L36">builtin:&#x2F;stdlib&#x2F;net.py:36</a></div><a
+  href="#TCP.nodelay"
+  class="name reference">nodelay</a><span>(<span>self : <a
+  href="net.html#TCP"
+  class="reference">TCP</a>, enable : <a
+  href="base.html#bool"
+  class="reference">bool</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>enable </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.read" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/uv_stream.py#L133">builtin:&#x2F;uv_stream.py:133</a></div><a
+  href="#TCP.read"
+  class="name reference">read</a><span>(<span>self : <a
+  href="base.html#Stream"
+  class="reference">Stream</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.shutdown" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/uv_stream.py#L36">builtin:&#x2F;uv_stream.py:36</a></div><a
+  href="#TCP.shutdown"
+  class="name reference">shutdown</a><span>(<span>self : <a
+  href="base.html#Stream"
+  class="reference">Stream</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.simultaneous_accepts"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L50">builtin:&#x2F;stdlib&#x2F;net.py:50</a></div><a
+  href="#TCP.simultaneous_accepts"
+  class="name reference">simultaneous_accepts</a><span>(<span>self : <a
+  href="net.html#TCP"
+  class="reference">TCP</a>, enable : <a
+  href="base.html#bool"
+  class="reference">bool</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>enable </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.stop" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/uv_stream.py#L128">builtin:&#x2F;uv_stream.py:128</a></div><a
+  href="#TCP.stop"
+  class="name reference">stop</a><span>(<span>self : <a
+  href="base.html#Stream"
+  class="reference">Stream</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.try_write" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/uv_stream.py#L116">builtin:&#x2F;uv_stream.py:116</a></div><a
+  href="#TCP.try_write"
+  class="name reference">try_write</a><span>(<span>self : <a
+  href="base.html#Stream"
+  class="reference">Stream</a>, data : <a
+  href="base.html#object"
+  class="reference">object</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>data </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.write" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/uv_stream.py#L88">builtin:&#x2F;uv_stream.py:88</a></div><a
+  href="#TCP.write"
+  class="name reference">write</a><span>(<span>self : <a
+  href="base.html#Stream"
+  class="reference">Stream</a>, data : <a
+  href="base.html#object"
+  class="reference">object</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>data </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TCP.write2" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/uv_stream.py#L102">builtin:&#x2F;uv_stream.py:102</a></div><a
+  href="#TCP.write2"
+  class="name reference">write2</a><span>(<span>self : <a
+  href="base.html#Stream"
+  class="reference">Stream</a>, data : <a
+  href="base.html#object"
+  class="reference">object</a>, send_handle : <a
+  href="base.html#Stream"
+  class="reference">Stream</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>data </td><td>not documented
+</td></tr><tr><td>send_handle </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="UDP"
+  class="reference-box"><div><span>class </span><a
+  href="#UDP"
+  class="name reference">UDP</a><span> extends <a
+  href="base.html#Handle"
+  class="reference">Handle</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="UDP.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L112">builtin:&#x2F;stdlib&#x2F;net.py:112</a></div><a
+  href="#UDP.+init"
+  class="name reference">+init</a><span>(<span></span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="UDP.bind" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L123">builtin:&#x2F;stdlib&#x2F;net.py:123</a></div><a
+  href="#UDP.bind"
+  class="name reference">bind</a><span>(<span>self : <a
+  href="net.html#UDP"
+  class="reference">UDP</a>, addr : <a
+  href="base.html#Uint8Data"
+  class="reference">Uint8Data</a>, flags = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>addr </td><td>not documented </td></tr><tr><td>flags
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="UDP.getsockname" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L132">builtin:&#x2F;stdlib&#x2F;net.py:132</a></div><a
+  href="#UDP.getsockname"
+  class="name reference">getsockname</a><span>(<span>self : <a
+  href="net.html#UDP"
+  class="reference">UDP</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="UDP.recv" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L205">builtin:&#x2F;stdlib&#x2F;net.py:205</a></div><a
+  href="#UDP.recv"
+  class="name reference">recv</a><span>(<span>self : <a
+  href="net.html#UDP"
+  class="reference">UDP</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="UDP.send" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L176">builtin:&#x2F;stdlib&#x2F;net.py:176</a></div><a
+  href="#UDP.send"
+  class="name reference">send</a><span>(<span>self : <a
+  href="net.html#UDP"
+  class="reference">UDP</a>, data : <a
+  href="base.html#object"
+  class="reference">object</a>, addr : <a
+  href="base.html#Uint8Data"
+  class="reference">Uint8Data</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>data </td><td>not documented </td></tr><tr><td>addr
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="UDP.set_broadcast"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L164">builtin:&#x2F;stdlib&#x2F;net.py:164</a></div><a
+  href="#UDP.set_broadcast"
+  class="name reference">set_broadcast</a><span>(<span>self : <a
+  href="net.html#UDP"
+  class="reference">UDP</a>, on : <a
+  href="base.html#bool"
+  class="reference">bool</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>on </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="UDP.set_multicast_loop"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L149">builtin:&#x2F;stdlib&#x2F;net.py:149</a></div><a
+  href="#UDP.set_multicast_loop"
+  class="name reference">set_multicast_loop</a><span>(<span>self : <a
+  href="net.html#UDP"
+  class="reference">UDP</a>, enable : <a
+  href="base.html#bool"
+  class="reference">bool</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>enable </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="UDP.set_multicast_ttl"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L155">builtin:&#x2F;stdlib&#x2F;net.py:155</a></div><a
+  href="#UDP.set_multicast_ttl"
+  class="name reference">set_multicast_ttl</a><span>(<span>self : <a
+  href="net.html#UDP"
+  class="reference">UDP</a>, ttl : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>ttl </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="UDP.set_ttl" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L170">builtin:&#x2F;stdlib&#x2F;net.py:170</a></div><a
+  href="#UDP.set_ttl"
+  class="name reference">set_ttl</a><span>(<span>self : <a
+  href="net.html#UDP"
+  class="reference">UDP</a>, ttl : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>ttl </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="UDP.try_send" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L191">builtin:&#x2F;stdlib&#x2F;net.py:191</a></div><a
+  href="#UDP.try_send"
+  class="name reference">try_send</a><span>(<span>self : <a
+  href="net.html#UDP"
+  class="reference">UDP</a>, data : <a
+  href="base.html#object"
+  class="reference">object</a>, addr : <a
+  href="base.html#Uint8Data"
+  class="reference">Uint8Data</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>data </td><td>not documented </td></tr><tr><td>addr
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="UDP_IPV6ONLY" class="reference-box"><div><a
+  href="#UDP_IPV6ONLY"
+  class="name reference">UDP_IPV6ONLY</a><span> = 1
+</span></div>not documented <div class="status">volatile
+</div></div><div id="UDP_JOIN_GROUP" class="reference-box"><div><a
+  href="#UDP_JOIN_GROUP"
+  class="name reference">UDP_JOIN_GROUP</a><span> = 1
+</span></div>not documented <div class="status">volatile
+</div></div><div id="UDP_LEAVE_GROUP" class="reference-box"><div><a
+  href="#UDP_LEAVE_GROUP"
+  class="name reference">UDP_LEAVE_GROUP</a><span> = 0
+</span></div>not documented <div class="status">volatile
+</div></div><div id="UDP_PARTIAL" class="reference-box"><div><a
+  href="#UDP_PARTIAL"
+  class="name reference">UDP_PARTIAL</a><span> = 2
+</span></div>not documented <div class="status">volatile
+</div></div><div id="UDP_REUSEADDR" class="reference-box"><div><a
+  href="#UDP_REUSEADDR"
+  class="name reference">UDP_REUSEADDR</a><span> = 4
+</span></div>not documented <div class="status">volatile
+</div></div><div id="getaddrinfo" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L273">builtin:&#x2F;stdlib&#x2F;net.py:273</a></div><a
+  href="#getaddrinfo"
+  class="name reference">getaddrinfo</a><span>(<span>node = null, service = null</span>)</span><table
+  class="arg-ref"><tr><td>node </td><td>not documented
+</td></tr><tr><td>service </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="getnameinfo" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L320">builtin:&#x2F;stdlib&#x2F;net.py:320</a></div><a
+  href="#getnameinfo"
+  class="name reference">getnameinfo</a><span>(<span>addr : <a
+  href="base.html#Uint8Data"
+  class="reference">Uint8Data</a>, flags = null</span>)</span><table
+  class="arg-ref"><tr><td>addr </td><td>not documented
+</td></tr><tr><td>flags </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="inet_ntop" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L377">builtin:&#x2F;stdlib&#x2F;net.py:377</a></div><a
+  href="#inet_ntop"
+  class="name reference">inet_ntop</a><span>(<span>af : <a
+  href="base.html#int"
+  class="reference">int</a>, src : <a
+  href="base.html#Uint8Data"
+  class="reference">Uint8Data</a></span>)</span><table
+  class="arg-ref"><tr><td>af </td><td>not documented
+</td></tr><tr><td>src </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="inet_pton" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L397">builtin:&#x2F;stdlib&#x2F;net.py:397</a></div><a
+  href="#inet_pton"
+  class="name reference">inet_pton</a><span>(<span>af : <a
+  href="base.html#int"
+  class="reference">int</a>, src : <a
+  href="base.html#str"
+  class="reference">str</a></span>)</span><table
+  class="arg-ref"><tr><td>af </td><td>not documented
+</td></tr><tr><td>src </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="ip4_addr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L339">builtin:&#x2F;stdlib&#x2F;net.py:339</a></div><a
+  href="#ip4_addr"
+  class="name reference">ip4_addr</a><span>(<span>address : <a
+  href="base.html#str"
+  class="reference">str</a>, port : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>address </td><td>not documented
+</td></tr><tr><td>port </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="ip4_name" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L353">builtin:&#x2F;stdlib&#x2F;net.py:353</a></div><a
+  href="#ip4_name"
+  class="name reference">ip4_name</a><span>(<span>addr : <a
+  href="base.html#Uint8Data"
+  class="reference">Uint8Data</a></span>)</span><table
+  class="arg-ref"><tr><td>addr </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="ip6_addr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L346">builtin:&#x2F;stdlib&#x2F;net.py:346</a></div><a
+  href="#ip6_addr"
+  class="name reference">ip6_addr</a><span>(<span>address : <a
+  href="base.html#str"
+  class="reference">str</a>, port : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>address </td><td>not documented
+</td></tr><tr><td>port </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="ip6_name" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/net.py#L365">builtin:&#x2F;stdlib&#x2F;net.py:365</a></div><a
+  href="#ip6_name"
+  class="name reference">ip6_name</a><span>(<span>addr : <a
+  href="base.html#Uint8Data"
+  class="reference">Uint8Data</a></span>)</span><table
+  class="arg-ref"><tr><td>addr </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></article><div style="text-align: center"><span
+  style="background-color: #85818e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #df7120; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a7341c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #5c231c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a39ea4; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #312334; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #44588e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #4679b8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #79bbe8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #d7d2d7; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #785d9a; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #949e85; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #2e170e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #7b3c16; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #c86f31; width: 1em; height: 1em; display: inline-block">
+</span></div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script></body></html>

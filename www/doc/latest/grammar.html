@@ -1,0 +1,962 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta
+  content="width=device-width, initial-scale=1"
+  name="viewport"/>
+<title>Lever manual: grammar</title><link
+  rel="stylesheet"
+  href="../../stylesheet.css">
+<!-- Generated from 'doc/grammar.text' in github.com/cheery/lever --></head><body><ul
+  class="nav"><li><a href="../../"><img
+  src="../../logo.png"
+  alt="LEVER">
+</a></li><li><a
+  href="https://github.com/cheery/lever/"
+  class="nav_button">repository</a></li><li><a
+  href="../../index.html#download"
+  class="nav_button">download</a></li><li><a
+  href="./"
+  class="nav_button">documentation index</a></li></ul><article><h1
+  class="embed-header">Manual: grammar</h1><p>Describes the language
+for attribute grammars used during Lever&#x27;s parsing. </p><a
+  id="toc-link"
+  href="#-toc">Table of contents ↑</a><fieldset class="toc"
+  id="-toc"><legend>Table of contents</legend><div>01. <a
+  href="#01">Structure </a></div><div>01.1. <a href="#01.1">How to
+read the attribute </a></div><div>01.2. <a href="#01.2">Capturing
+elements </a></div><div>01.3. <a href="#01.3">Index and dot
+annotations </a></div><div>01.4. <a href="#01.4">Annotation
+expressions </a></div><div>02. <a href="#02">Extensions
+</a></div><div>02.1. <a href="#02.1">indentation -extension
+</a></div><div>02.2. <a href="#02.2">alias -extension
+</a></div><div>03. <a href="#03">A Simple Example
+</a></div><div>04. <a href="#04">API </a></div><div>05. <a
+  href="#05">Internal details </a></div></fieldset><script
+  src="../../toc-helper.js"></script><p>There is distinct effort made
+to make the Lever language itself easier to develop. The grammar
+language described here has a big role in there. </p><p>Here&#x27;s
+the context-free attribute grammar for the grammar language, described
+in itself:
+</p><p></p><pre>use alias()
+    a = [symbol]
+    on = [&#x27;constructive&#x27;, &#x27;use&#x27;, &#x27;terminal&#x27;, &#x27;append&#x27;, &#x27;concat&#x27;]
+use indentation(indent, dedent, newline)
+    can_close = [&#x27;)&#x27;, &#x27;]&#x27;, &#x27;}&#x27;]
+
+file: sep(decl, newline)
+
+decl:
+    &#x27;use&#x27; symbol &#x27;(&#x27; sep(symbol, &#x27;,&#x27;) &#x27;)&#x27; (indent join(option, newline) dedent)? &#x2F; use
+    &#x27;constructive&#x27;? &#x27;terminal&#x27; join(symbol, &#x27;,&#x27;) &#x2F; terminal
+    symbol &#x27;(&#x27; sep(symbol, &#x27;,&#x27;) &#x27;)&#x27; &#x27;:&#x27; body &#x2F; template
+    symbol &#x27;:&#x27; body &#x2F; rule
+
+option: symbol &#x27;=&#x27; &#x27;[&#x27; sep(primitive, &#x27;,&#x27;) &#x27;]&#x27;
+
+primitive:
+    symbol &#x2F; symbol
+    string &#x2F; string
+
+body:
+    prod &#x2F; [.]
+    indent join(prod, newline) dedent
+
+prod: expr* (&#x27;&#x2F;&#x27; [annotation, symbol &#x2F; shorthand])? &#x2F; prod 
+
+expr:
+    term
+    &#x27;(&#x27; arg_block(prod) &#x27;)&#x27; &#x27;+&#x27; &#x2F; plus
+    &#x27;(&#x27; arg_block(prod) &#x27;)&#x27; &#x27;*&#x27; &#x2F; star
+    &#x27;(&#x27; arg_block(prod) &#x27;)&#x27; &#x27;?&#x27; &#x2F; opt
+    symbol &#x27;(&#x27; arg_block(prod) &#x27;)&#x27; &#x2F; expand
+
+term:
+    term &#x27;+&#x27; &#x2F; plus
+    term &#x27;*&#x27; &#x2F; star
+    term &#x27;?&#x27; &#x2F; opt
+    symbol &#x2F; symbol
+    string &#x2F; string
+    &#x27;[&#x27; arg_block(prod) &#x27;]&#x27; &#x2F; prod_set
+
+annotation:
+    annotation_term
+    annotation &#x27;append&#x27; annotation_term &#x2F; append
+    annotation &#x27;concat&#x27; annotation_term &#x2F; concat
+
+annotation_term:
+    &#x27;(&#x27; annotation &#x27;)&#x27;
+    int &#x2F; index
+    &#x27;.&#x27; &#x2F; dot
+    &#x27;..&#x27; &#x2F; dotdot
+    &#x27;null&#x27; &#x2F; a_null
+
+    symbol &#x27;(&#x27; sep(annotation, &#x27;,&#x27;) &#x27;)&#x27; &#x2F; label
+    &#x27;[&#x27; sep(annotation, &#x27;,&#x27;) &#x27;]&#x27; &#x2F; a_list
+
+arg_block(x):
+    sep(x, &#x27;,&#x27;, &#x27;,&#x27;)
+    indent sep_concat(x, newline) dedent
+
+sep_concat(x, y):
+    sep(x, &#x27;,&#x27;, &#x27;,&#x27;)
+    seq_b(x) y sep(x, &#x27;,&#x27;, &#x27;,&#x27;) &#x2F; (. concat .)
+</pre><h2
+  id="01">01. Structure </h2><p>The &#x27;lhs: rhs&#x27; part in the
+grammar is the production rule, the &#x27;&#x2F; thing&#x27; is an
+annotation that the rule maps into. </p><h3 id="01.1">01.1. How to
+read the attribute </h3><p>The annotation coming after the rule may
+consists of a single symbol or even just an expression. </p><p>The
+annotation is a template that is filled by deducting the details from
+the expression. </p><h3 id="01.2">01.2. Capturing elements
+</h3><p>Some pieces of the right hand side rule are ignored. These are
+the keyword string tokens and tokens that have been marked as
+&#x27;constructive&#x27;, such as indentation and dedentation tokens.
+</p><p>If there is not a single element that is captured, the ignored
+elements are retrieved in whole, otherwise only the capturing elements
+are captured. </p><p>When there is no annotation provided: If there is
+only one element captured, it is captured &#x27;as it&#x27;, otherwise
+the captured elements are inserted into a list. </p><p>When there is a
+single symbol, the elements are captured into an attribute that holds
+the name in that symbol. </p><h3 id="01.3">01.3. Index and dot
+annotations </h3><p>The index and dot annotations are read such that
+the elements captured by the index are marked as retrieved and not
+double-captured by the dot annotations. </p><p>Every item, captured or
+not captured, has an unique index. These indices start from 1, which
+is merely a convention of the grammar language. You can think of the
+index &#x27;0&#x27; as a symbol on the left hand side if you&#x27;re a
+programmer, although the left-hand side cannot be captured. </p><p>The
+single dot &#x27;.&#x27; captures an one symbol, whereas the double
+dot &#x27;..&#x27; captures all remaining symbols. The double dot may
+only occur once, and the single dot may appear before and after the
+double dot. </p><h3 id="01.4">01.4. Annotation expressions </h3><p>In
+the annotation you may denote that the contents are placed into a
+list, or that something gets appended into a list or that lists are
+concatenated together. </p><p>You may also denote that a null is
+explicitly passed into an annotation. </p><h2 id="02">02. Extensions
+</h2><p>Extensions do not change how the source grammar is parsed, but
+they will provide additional hints about how it will be used.
+</p><p>The use of an extension is described with the &#x27;use&#x27;
+-directive, and the ordering of the extensions determines in which
+order they are invoked during parsing. </p><p>The symbols passed as
+&#x27;arguments&#x27; are defined as constructive terminals, which
+means they are not gathered during parsing. These are used </p><h3
+  id="02.1">02.1. indentation -extension </h3><p>The
+&#x27;indentation&#x27; extension allows you to define
+layout-sensitive grammars. The terminals provided as input provide
+tokens that may be used to trigger the layout sensitivity. </p><p>The
+indent&#x2F;dedent&#x2F;newline is implemented by feeding such a token
+whenever it may appear and when the parsing state expects it.
+Therefore the current implementation of layout sensitivity may result
+in surprising results at ambiguous grammars. </p><p>The can_close
+-option lets you select tokens that allow the indentation level to
+decrease without reaching the end of the line first. </p><h3
+  id="02.2">02.2. alias -extension </h3><p>The &#x27;alias&#x27;
+extension is meant for situations when you want to have keywords, but
+do not want them to mess up with user code. </p><p>The effect of
+&#x27;alias&#x27; is that whenever the parsing cannot proceed with one
+of the terminals in the &#x27;on&#x27; -list, but it could proceed
+with one of the terminals in the &#x27;a&#x27; -list, the alias
+extension will rename the terminal to allow the parsing to pass.
+</p><p>Similarly to the indentation extension, the details are still a
+bit vague on these ones, and may be subject to change. </p><h2
+  id="03">03. A Simple Example </h2><p>Here&#x27;s a complicated way
+to print &#x27;4&#x27; with the grammar library: </p><p>The
+&#x27;calc.grammar&#x27;:
+</p><p></p><pre>addition: term &#x27;+&#x27; term &#x2F; add
+
+term: int &#x2F; int
+</pre><p>The
+&#x27;calc.lc&#x27;:
+</p><p></p><pre>import grammar
+
+main = (args):
+    calc_lang = grammar.read_file(dir ++ &#x27;calc.grammar&#x27;)
+
+    result = calc_lange.read_string(&quot;1 + 3&quot;)
+    result = result.traverse(traverse)
+    print(result)
+
+traverse = (name, args, loc):
+    if name == &#x27;int&#x27;
+        return parse_int(args[0])
+    elif name == &#x27;add&#x27;
+        return args[0] + args[1]
+    else
+        assert false, [name, args, loc]
+</pre><h2
+  id="04">04. API </h2><div id="read_file"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L10">grammar.lc:10</a></div><a
+  href="#read_file"
+  class="name reference">read_file</a><span>(<span>filename, extension_env = default_extensions</span>)</span><table
+  class="arg-ref"><tr><td>filename </td><td>The source path to the
+grammar </td></tr><tr><td>extension_env </td><td>Environment for the
+extensions. </td></tr><tr><td>returns </td><td>Initiator
+</td></tr></table></div>The simplest way to use the grammar module.
+<div class="status">volatile </div></div><div
+  id="Initiator"
+  class="reference-box"><div><span>class </span><a
+  href="#Initiator"
+  class="name reference">Initiator</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>Can initiate the parsing.
+<p>The behavior of this initiator is similar to the
+chartparser.Initiator. You can use this object to initiate parsing
+with the grammar. </p><div class="status">volatile </div><div
+  id="Initiator.+call"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L34">grammar.lc:34</a></div><a
+  href="#Initiator.+call"
+  class="name reference">+call</a><span>(<span>self, accept = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>accept </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Initiator.+init" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L28">grammar.lc:28</a></div><a
+  href="#Initiator.+init"
+  class="name reference">+init</a><span>(<span>self, init, extensions, keywords, symbols</span>)</span><table
+  class="arg-ref"></table></div><div class="status">internal
+</div></div><div id="Initiator.create_symtab"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L43">grammar.lc:43</a></div><a
+  href="#Initiator.create_symtab"
+  class="name reference">create_symtab</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>Symbol table to be used with the
+&#x27;tokenizer&#x27; -object. </td></tr></table></div>not documented
+<div class="status">volatile </div></div><div
+  id="Initiator.read_file"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L51">grammar.lc:51</a></div><a
+  href="#Initiator.read_file"
+  class="name reference">read_file</a><span>(<span>self, filename</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>filename </td><td>not documented
+</td></tr><tr><td>returns </td><td>Filled-up Parser -instance.
+</td></tr></table></div>Shorthand for running the parser on a file.
+<div class="status">volatile </div></div><div
+  id="Initiator.read_string"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L57">grammar.lc:57</a></div><a
+  href="#Initiator.read_string"
+  class="name reference">read_string</a><span>(<span>self, string, source = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>string </td><td>not documented
+</td></tr><tr><td>source </td><td>not documented
+</td></tr><tr><td>returns </td><td>Filled-up Parser -instance.
+</td></tr></table></div>Shorthand for running the parser on a string.
+<div class="status">volatile </div></div><div
+  id="Initiator.read_tokens"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L63">grammar.lc:63</a></div><a
+  href="#Initiator.read_tokens"
+  class="name reference">read_tokens</a><span>(<span>self, tokens, source = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>tokens </td><td>not documented
+</td></tr><tr><td>source </td><td>not documented
+</td></tr><tr><td>returns </td><td>Filled-up Parser -instance.
+</td></tr></table></div>Shorthand for running the parser on a sequence
+of tokens. <div class="status">volatile </div></div></div><div
+  id="Parser"
+  class="reference-box"><div><span>class </span><a
+  href="#Parser"
+  class="name reference">Parser</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>Parser instance. <p>Wraps
+the parser produced from the grammar into a bit easier-to-use
+packaging. </p><div class="status">volatile </div><div
+  id="Parser.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L72">grammar.lc:72</a></div><a
+  href="#Parser.+init"
+  class="name reference">+init</a><span>(<span>self, pos, init, child, extensions</span>)</span><table
+  class="arg-ref"></table></div><div class="status">internal
+</div></div><div id="Parser.accepted" class="reference-box"><div><a
+  href="#Parser.accepted"
+  class="name reference">accepted</a><span> : <a
+  href="base.html#property"
+  class="reference">property</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="Parser.expect"
+  class="reference-box"><div><a
+  href="#Parser.expect"
+  class="name reference">expect</a><span> : <a
+  href="base.html#property"
+  class="reference">property</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="Parser.expecting"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L96">grammar.lc:96</a></div><a
+  href="#Parser.expecting"
+  class="name reference">expecting</a><span>(<span>self, symbol</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>symbol </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Parser.finish" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L99">grammar.lc:99</a></div><a
+  href="#Parser.finish"
+  class="name reference">finish</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Parser.step" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L79">grammar.lc:79</a></div><a
+  href="#Parser.step"
+  class="name reference">step</a><span>(<span>self, term, token, start = null, stop = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>term </td><td>not documented </td></tr><tr><td>token
+</td><td>not documented </td></tr><tr><td>start
+</td><td>not documented </td></tr><tr><td>stop </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Parser.traverse" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L106">grammar.lc:106</a></div><a
+  href="#Parser.traverse"
+  class="name reference">traverse</a><span>(<span>self, postorder_cb, blank_cb = null, resolve_cb = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>postorder_cb </td><td>not documented
+</td></tr><tr><td>blank_cb </td><td>not documented
+</td></tr><tr><td>resolve_cb </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><h2 id="05">05. Internal details </h2><p>The
+internals of this module are not well-documented yet. </p><div
+  id="AliasExtension"
+  class="reference-box"><div><span>class </span><a
+  href="#AliasExtension"
+  class="name reference">AliasExtension</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="AliasExtension.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L115">grammar.lc:115</a></div><a
+  href="#AliasExtension.+init"
+  class="name reference">+init</a><span>(<span>self, pos, args, options</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>pos </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented </td></tr><tr><td>options
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="AliasExtension.finish"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L126">grammar.lc:126</a></div><a
+  href="#AliasExtension.finish"
+  class="name reference">finish</a><span>(<span>self, i</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>i </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="AliasExtension.step"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L119">grammar.lc:119</a></div><a
+  href="#AliasExtension.step"
+  class="name reference">step</a><span>(<span>self, i, term, token, start, stop</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>i </td><td>not documented </td></tr><tr><td>term
+</td><td>not documented </td></tr><tr><td>token
+</td><td>not documented </td></tr><tr><td>start
+</td><td>not documented </td></tr><tr><td>stop </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Append"
+  class="reference-box"><div><span>class </span><a
+  href="#Append"
+  class="name reference">Append</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Append.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L857">grammar.lc:857</a></div><a
+  href="#Append.+init"
+  class="name reference">+init</a><span>(<span>self, sequence, value</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>sequence </td><td>not documented
+</td></tr><tr><td>value </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Append.+repr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L861">grammar.lc:861</a></div><a
+  href="#Append.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Append.postorder" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L865">grammar.lc:865</a></div><a
+  href="#Append.postorder"
+  class="name reference">postorder</a><span>(<span>self, fn, args, loc</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>fn </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented </td></tr><tr><td>loc </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Arg"
+  class="reference-box"><div><span>class </span><a
+  href="#Arg"
+  class="name reference">Arg</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Arg.+hash"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L686">grammar.lc:686</a></div><a
+  href="#Arg.+hash"
+  class="name reference">+hash</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Arg.+init" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L680">grammar.lc:680</a></div><a
+  href="#Arg.+init"
+  class="name reference">+init</a><span>(<span>self, value</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>value </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Arg.get_marks" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L689">grammar.lc:689</a></div><a
+  href="#Arg.get_marks"
+  class="name reference">get_marks</a><span>(<span>self, marks</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>marks </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Arg.validate" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L693">grammar.lc:693</a></div><a
+  href="#Arg.validate"
+  class="name reference">validate</a><span>(<span>self, key...</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>key </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Concat"
+  class="reference-box"><div><span>class </span><a
+  href="#Concat"
+  class="name reference">Concat</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Concat.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L871">grammar.lc:871</a></div><a
+  href="#Concat.+init"
+  class="name reference">+init</a><span>(<span>self, left, right</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>left </td><td>not documented </td></tr><tr><td>right
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Concat.+repr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L875">grammar.lc:875</a></div><a
+  href="#Concat.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Concat.postorder" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L879">grammar.lc:879</a></div><a
+  href="#Concat.postorder"
+  class="name reference">postorder</a><span>(<span>self, fn, args, loc</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>fn </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented </td></tr><tr><td>loc </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Expr"
+  class="reference-box"><div><span>class </span><a
+  href="#Expr"
+  class="name reference">Expr</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Expr.+call"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L734">grammar.lc:734</a></div><a
+  href="#Expr.+call"
+  class="name reference">+call</a><span>(<span>self, stage, xenv</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>stage </td><td>not documented </td></tr><tr><td>xenv
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Expr.+hash" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L731">grammar.lc:731</a></div><a
+  href="#Expr.+hash"
+  class="name reference">+hash</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Expr.+init" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L727">grammar.lc:727</a></div><a
+  href="#Expr.+init"
+  class="name reference">+init</a><span>(<span>self, fn, args</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>fn </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Get"
+  class="reference-box"><div><span>class </span><a
+  href="#Get"
+  class="name reference">Get</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Get.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L847">grammar.lc:847</a></div><a
+  href="#Get.+init"
+  class="name reference">+init</a><span>(<span>self, index</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>index </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Get.+repr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L850">grammar.lc:850</a></div><a
+  href="#Get.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Get.postorder" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L853">grammar.lc:853</a></div><a
+  href="#Get.postorder"
+  class="name reference">postorder</a><span>(<span>self, fn, args, loc</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>fn </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented </td></tr><tr><td>loc </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="IndentationExtension"
+  class="reference-box"><div><span>class </span><a
+  href="#IndentationExtension"
+  class="name reference">IndentationExtension</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="IndentationExtension.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L130">grammar.lc:130</a></div><a
+  href="#IndentationExtension.+init"
+  class="name reference">+init</a><span>(<span>self, pos, args, options</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>pos </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented </td></tr><tr><td>options
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div
+  id="IndentationExtension.finish"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L140">grammar.lc:140</a></div><a
+  href="#IndentationExtension.finish"
+  class="name reference">finish</a><span>(<span>self, i</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>i </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="IndentationExtension.step"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L134">grammar.lc:134</a></div><a
+  href="#IndentationExtension.step"
+  class="name reference">step</a><span>(<span>self, i, term, token, start, stop</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>i </td><td>not documented </td></tr><tr><td>term
+</td><td>not documented </td></tr><tr><td>token
+</td><td>not documented </td></tr><tr><td>start
+</td><td>not documented </td></tr><tr><td>stop </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Label"
+  class="reference-box"><div><span>class </span><a
+  href="#Label"
+  class="name reference">Label</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Label.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L813">grammar.lc:813</a></div><a
+  href="#Label.+init"
+  class="name reference">+init</a><span>(<span>self, name, args</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Label.+repr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L818">grammar.lc:818</a></div><a
+  href="#Label.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Label.postorder" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L824">grammar.lc:824</a></div><a
+  href="#Label.postorder"
+  class="name reference">postorder</a><span>(<span>self, fn, args, loc</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>fn </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented </td></tr><tr><td>loc </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="List"
+  class="reference-box"><div><span>class </span><a
+  href="#List"
+  class="name reference">List</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="List.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L831">grammar.lc:831</a></div><a
+  href="#List.+init"
+  class="name reference">+init</a><span>(<span>self, args = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>args </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="List.+repr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L834">grammar.lc:834</a></div><a
+  href="#List.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="List.postorder" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L840">grammar.lc:840</a></div><a
+  href="#List.postorder"
+  class="name reference">postorder</a><span>(<span>self, fn, args, loc</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>fn </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented </td></tr><tr><td>loc </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Null"
+  class="reference-box"><div><span>class </span><a
+  href="#Null"
+  class="name reference">Null</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Null.+repr"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L885">grammar.lc:885</a></div><a
+  href="#Null.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Null.postorder" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L888">grammar.lc:888</a></div><a
+  href="#Null.postorder"
+  class="name reference">postorder</a><span>(<span>self, fn, args, loc</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>fn </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented </td></tr><tr><td>loc </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Prod"
+  class="reference-box"><div><span>class </span><a
+  href="#Prod"
+  class="name reference">Prod</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Prod.+hash"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L723">grammar.lc:723</a></div><a
+  href="#Prod.+hash"
+  class="name reference">+hash</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Prod.+init" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L712">grammar.lc:712</a></div><a
+  href="#Prod.+init"
+  class="name reference">+init</a><span>(<span>self, value, gather, annotation</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>value </td><td>not documented
+</td></tr><tr><td>gather </td><td>not documented
+</td></tr><tr><td>annotation </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Prod.get_marks" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L718">grammar.lc:718</a></div><a
+  href="#Prod.get_marks"
+  class="name reference">get_marks</a><span>(<span>self, marks</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>marks </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Sym"
+  class="reference-box"><div><span>class </span><a
+  href="#Sym"
+  class="name reference">Sym</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Sym.+hash"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L708">grammar.lc:708</a></div><a
+  href="#Sym.+hash"
+  class="name reference">+hash</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Sym.+init" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L700">grammar.lc:700</a></div><a
+  href="#Sym.+init"
+  class="name reference">+init</a><span>(<span>self, value, gather</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>value </td><td>not documented
+</td></tr><tr><td>gather </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Sym.get_marks" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L705">grammar.lc:705</a></div><a
+  href="#Sym.get_marks"
+  class="name reference">get_marks</a><span>(<span>self, marks</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>marks </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="actions" class="reference-box"><div><a
+  href="#actions"
+  class="name reference">actions</a><span> : <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="build_grammar_language"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L204">grammar.lc:204</a></div><a
+  href="#build_grammar_language"
+  class="name reference">build_grammar_language</a><span>(<span></span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="chartparser" class="reference-box"><div><a
+  href="#chartparser"
+  class="name reference">chartparser</a><span> : <a
+  href="base.html#Module"
+  class="reference">Module</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="default_extensions"
+  class="reference-box"><div><a
+  href="#default_extensions"
+  class="name reference">default_extensions</a><span> : <a
+  href="base.html#dict"
+  class="reference">dict</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="dir"
+  class="reference-box"><div><a href="#dir"
+  class="name reference">dir</a><span> : <a
+  href="base.html#path"
+  class="reference">path</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="expand_template"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L562">grammar.lc:562</a></div><a
+  href="#expand_template"
+  class="name reference">expand_template</a><span>(<span>env, name, args</span>)</span><table
+  class="arg-ref"><tr><td>env </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="expr_append" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L661">grammar.lc:661</a></div><a
+  href="#expr_append"
+  class="name reference">expr_append</a><span>(<span>stage, xenv, args</span>)</span><table
+  class="arg-ref"><tr><td>stage </td><td>not documented
+</td></tr><tr><td>xenv </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="expr_concat" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L668">grammar.lc:668</a></div><a
+  href="#expr_concat"
+  class="name reference">expr_concat</a><span>(<span>stage, xenv, args</span>)</span><table
+  class="arg-ref"><tr><td>stage </td><td>not documented
+</td></tr><tr><td>xenv </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="expr_dot" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L613">grammar.lc:613</a></div><a
+  href="#expr_dot"
+  class="name reference">expr_dot</a><span>(<span>stage, xenv, args</span>)</span><table
+  class="arg-ref"><tr><td>stage </td><td>not documented
+</td></tr><tr><td>xenv </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="expr_dotdot" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L622">grammar.lc:622</a></div><a
+  href="#expr_dotdot"
+  class="name reference">expr_dotdot</a><span>(<span>stage, xenv, args</span>)</span><table
+  class="arg-ref"><tr><td>stage </td><td>not documented
+</td></tr><tr><td>xenv </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="expr_index" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L607">grammar.lc:607</a></div><a
+  href="#expr_index"
+  class="name reference">expr_index</a><span>(<span>stage, xenv, args</span>)</span><table
+  class="arg-ref"><tr><td>stage </td><td>not documented
+</td></tr><tr><td>xenv </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="expr_label" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L632">grammar.lc:632</a></div><a
+  href="#expr_label"
+  class="name reference">expr_label</a><span>(<span>stage, xenv, args</span>)</span><table
+  class="arg-ref"><tr><td>stage </td><td>not documented
+</td></tr><tr><td>xenv </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="expr_list" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L647">grammar.lc:647</a></div><a
+  href="#expr_list"
+  class="name reference">expr_list</a><span>(<span>stage, xenv, args</span>)</span><table
+  class="arg-ref"><tr><td>stage </td><td>not documented
+</td></tr><tr><td>xenv </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="expr_null" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L675">grammar.lc:675</a></div><a
+  href="#expr_null"
+  class="name reference">expr_null</a><span>(<span>stage, xenv, args</span>)</span><table
+  class="arg-ref"><tr><td>stage </td><td>not documented
+</td></tr><tr><td>xenv </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="extract_annotation"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L774">grammar.lc:774</a></div><a
+  href="#extract_annotation"
+  class="name reference">extract_annotation</a><span>(<span>expr, args</span>)</span><table
+  class="arg-ref"><tr><td>expr </td><td>not documented
+</td></tr><tr><td>args </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="import" class="reference-box"><div><a
+  href="#import"
+  class="name reference">import</a><span> : <a
+  href="base.html#Import"
+  class="reference">Import</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="language"
+  class="reference-box"><div><a
+  href="#language"
+  class="name reference">language</a><span> : <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="make_rule"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L753">grammar.lc:753</a></div><a
+  href="#make_rule"
+  class="name reference">make_rule</a><span>(<span>lhs, rhs, fn</span>)</span><table
+  class="arg-ref"><tr><td>lhs </td><td>not documented
+</td></tr><tr><td>rhs </td><td>not documented </td></tr><tr><td>fn
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="name" class="reference-box"><div><a
+  href="#name"
+  class="name reference">name</a><span> = &quot;grammar&quot;
+</span></div>not documented <div class="status">volatile
+</div></div><div id="read_file_bare" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/grammar.lc#L150">grammar.lc:150</a></div><a
+  href="#read_file_bare"
+  class="name reference">read_file_bare</a><span>(<span>filename</span>)</span><table
+  class="arg-ref"><tr><td>filename </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="tokenizer" class="reference-box"><div><a
+  href="#tokenizer"
+  class="name reference">tokenizer</a><span> : <a
+  href="base.html#Module"
+  class="reference">Module</a> </span></div>not documented <div
+  class="status">volatile </div></div></article><div
+  style="text-align: center"><span
+  style="background-color: #85818e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #df7120; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a7341c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #5c231c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a39ea4; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #312334; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #44588e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #4679b8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #79bbe8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #d7d2d7; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #785d9a; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #949e85; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #2e170e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #7b3c16; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #c86f31; width: 1em; height: 1em; display: inline-block">
+</span></div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script></body></html>

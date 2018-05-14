@@ -1,0 +1,174 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta
+  content="width=device-width, initial-scale=1"
+  name="viewport"/>
+<title>Lever manual: future</title><link
+  rel="stylesheet"
+  href="../../stylesheet.css">
+<!-- Generated from 'doc/future.text' in github.com/cheery/lever --></head><body><ul
+  class="nav"><li><a href="../../"><img
+  src="../../logo.png"
+  alt="LEVER">
+</a></li><li><a
+  href="https://github.com/cheery/lever/"
+  class="nav_button">repository</a></li><li><a
+  href="../../index.html#download"
+  class="nav_button">download</a></li><li><a
+  href="./"
+  class="nav_button">documentation index</a></li></ul><article><h1
+  class="embed-header">Manual: future</h1><p>Long term goals &amp;
+strategies </p><p>Having more than one contributor, it is time to
+write out clear goals for Lever. </p><p>Communication of goals and
+strategies is important for meaningful movement as a group. This page
+is the place for that communication. The contents are revised every
+once in a while. </p><a id="toc-link"
+  href="#-toc">Table of contents ↑</a><fieldset class="toc"
+  id="-toc"><legend>Table of contents</legend><div>01. <a
+  href="#01">Exploration </a></div><div>01.1. <a
+  href="#01.1">Standardization </a></div><div>02. <a
+  href="#02">Practicality </a></div><div>02.1. <a href="#02.1">Code
+manipulation &#x2F; analysis framework </a></div><div>02.2. <a
+  href="#02.2">Improved intermediate-results&#x2F;module code
+memoization </a></div><div>02.3. <a href="#02.3">Extensible abstract
+arithmetic </a></div><div>02.4. <a href="#02.4">Live editing
+</a></div><div>02.5. <a href="#02.5">Concurrency
+</a></div><div>02.6. <a href="#02.6">Custom formats and <a
+  href="https://developers.google.com/protocol-buffers/">protobuf</a>
+</a></div><div>02.7. <a href="#02.7">Pretty printing
+</a></div><div>03. <a href="#03">Penetration
+</a></div></fieldset><script src="../../toc-helper.js"></script><h2
+  id="01">01. Exploration </h2><p>People did a lot of computer science
+related discoveries prior to the 1990s. A recurring theme was to make
+the machine assist the user in programming. For a long time it was
+impractical to implement such tools because computers were simply too
+slow. </p><p>A lot of programming language implementations exist in a
+calcified state. The internals that are left undocumented, as if
+deliberately to discourage any significant changes to them. The user
+is not supposed to change the implementation even if the source code
+is available. </p><p>This means that our programming tools have
+advanced by revolution rather than evolution. The possibility for a
+real revolution shrinks every year a little bit. You just can&#x27;t
+throw everything away once in a decade. </p><p>The internals of Lever
+are highly flexible. Our goal is to retain this plasticity through the
+lifetime of the language. </p><h3 id="01.1">01.1. Standardization
+</h3><p>Having seen how node.js software breaks despite version
+numbering makes us skeptical that version numbering is sufficient to
+ensure compatibility. </p><p>In short: It is likely that semantic
+versioning doesn&#x27;t really address issues related to changing
+APIs. Node.js, as an example, follows semver but is messed up on a
+regular basis. </p><p>As the result, we&#x27;re picking up something
+that has been proven to communicate compatibility. We will establish a
+standards board for our language. The standards established by the
+board are used to ensure compatibility. </p><p>Version numbers will be
+still used, but only for identifying releases of software. </p><h2
+  id="02">02. Practicality </h2><p>We strive to create a practical
+tool for solving difficult problems. Supremely abstract and
+sophisticated programming languages usually perform badly. For this
+reason the practical code is frequently written in crappy programming
+languages. </p><h3 id="02.1">02.1. Code manipulation &#x2F; analysis
+framework </h3><p>We are designing a framework to allow manipulation
+and analysis of source code after it has been compiled into a bytecode
+or loaded into the runtime environment. </p><p>This framework will be
+supplied with optimization, partial evaluation, static analysis,
+symbolic execution, theorem proving, validation, formal verification
+tools and libraries. </p><h3 id="02.2">02.2. Improved
+intermediate-results&#x2F;module code memoization </h3><p>Once we have
+software with very good runtime behavior, we do not want to compile it
+every time when a program is loaded. We require user-accessible
+intermediate formats to make most out of machine code that is
+produced. </p><p>On GPUs some of this has been already solved for us,
+in form of the SPIR-V binaries. So we need to come up with something
+that works with CPUs as well. </p><h3 id="02.3">02.3. Extensible
+abstract arithmetic </h3><p>We want the arithmetic to be extensible
+from the user side, but it is not very usable if you have to worry
+about whether you just broke half of your language by introducing a
+bad implicit conversion. </p><p>More about the subject in the <a
+  href="http://boxbase.org/entries/2017/nov/6/addition-expression/">&quot;How
+should the addition -expression behave?&quot;</a> </p><h3
+  id="02.4">02.4. Live editing </h3><p>Smalltalk demonstrated
+functionality where you could edit your software while it was running.
+This is an incredibly powerful tool for design of software that is
+highly interactive. </p><p>Today live programming doesn&#x27;t appear
+to be supported on programming languages or their implementations.
+Perhaps perceived to be too volatile for real-world use? While it
+allows software to be developed quickly, it also allows to write the
+kind of programs that never start again if you attempt to reset them.
+</p><h3 id="02.5">02.5. Concurrency </h3><p>We have great tools for
+implementing concurrency inside a single thread. </p><p>There are
+concerns that the provided concurrency is too much and leads people to
+writing unreliable software. We need to study these ideas formally and
+see what kind of conclusions we get. It is possible there is something
+we would have to consider even if our approach worked out apparently
+well. </p><p>The paper <a
+  href="http://www.erights.org/talks/promises/">&quot;Concurrency
+Among Strangers&quot;</a> will be used as a starting point. </p><h3
+  id="02.6">02.6. Custom formats and <a
+  href="https://developers.google.com/protocol-buffers/">protobuf</a>
+</h3><p>Machine-readable logs and how the data is stored are going to
+be more important in the future. </p><p>I think that protobuf got some
+of the details right, mainly by selecting good design goals. But the
+resulting tools were clumsy and difficult to use with dynamically
+typed languages. </p><p>Protobuf also ignores the fact that sometimes
+we want to observe and modify the data directly. The text editing was
+perfected through efficient data structures such as the piece tables,
+those could be also used here. There are more ways to diff
+tree-structured data than there are ways to diff plain text, which
+also could be useful with tightly packed non-compressed persistent log
+data that protobuf attempts to cater for. </p><p>We are going to need
+much better tools for handling binary data. Also need to decide on
+formats. Likely we would like to derive something from protobuf
+that&#x27;s better for the kind of persistent storage needs that arise
+in the runtime. </p><h3 id="02.7">02.7. Pretty printing
+</h3><p>Debugging a program often involves observing a state. To allow
+this we could use really good set of tools for pretty printing. Since
+we have environments where we can show 3D graphics, it would be
+preferable that our pretty printing would match with this environment
+while being backwards compatible with terminal views. </p><p>We would
+somehow need to handle both passive and interactive forms of prints.
+The interactive prints do not necessarily need to be
+terminal-friendly. </p><h2 id="03">03. Penetration </h2><p>Since we
+have a really nice language, we want to use it for something and see
+how it fares. </p><p>Our current focus is on the graphics related
+programming. To find a bit stronger niche we focus to software that
+runs in Virtual Reality. </p><p>Ultimately we would like to develop
+software in virtual reality and produce all assets while we are
+&quot;in the program&quot; ourselves. </p></article><div
+  style="text-align: center"><span
+  style="background-color: #85818e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #df7120; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a7341c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #5c231c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a39ea4; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #312334; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #44588e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #4679b8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #79bbe8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #d7d2d7; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #785d9a; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #949e85; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #2e170e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #7b3c16; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #c86f31; width: 1em; height: 1em; display: inline-block">
+</span></div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script></body></html>

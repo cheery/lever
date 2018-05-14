@@ -1,0 +1,155 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta
+  content="width=device-width, initial-scale=1"
+  name="viewport"/>
+<title>Lever manual: performance</title><link
+  rel="stylesheet"
+  href="../../stylesheet.css">
+<!-- Generated from 'doc/performance.text' in github.com/cheery/lever --></head><body><ul
+  class="nav"><li><a href="../../"><img
+  src="../../logo.png"
+  alt="LEVER">
+</a></li><li><a
+  href="https://github.com/cheery/lever/"
+  class="nav_button">repository</a></li><li><a
+  href="../../index.html#download"
+  class="nav_button">download</a></li><li><a
+  href="./"
+  class="nav_button">documentation index</a></li></ul><article><h1
+  class="embed-header">Manual: performance</h1><p>Lever needs to
+perform to occupy a niche of VR programming. Failure to perform fast
+is a failure of the language. </p><a id="toc-link"
+  href="#-toc">Table of contents ↑</a><fieldset class="toc"
+  id="-toc"><legend>Table of contents</legend><div>01. <a
+  href="#01">Benchmarks </a></div><div>02. <a href="#02">Current
+performance </a></div><div>03. <a href="#03">Future performance
+</a></div><div>04. <a href="#04">When it is not enough...
+</a></div><div>05. <a href="#05">Platform performance considerations
+</a></div><div>06. <a href="#06">Background on performance.text
+</a></div></fieldset><script src="../../toc-helper.js"></script><h2
+  id="01">01. Benchmarks </h2><p>The benchmarks directory in lever is
+still a bit of a stub when I am updating this text. So far I&#x27;ve
+checked the JIT performance against a nbody simulation. </p><p>In the
+samples directory there are already programs that are clearly no
+longer usable without a working JIT. I can no longer expect to run
+some of them without JIT enabled. </p><h2 id="02">02. Current
+performance </h2><p>There&#x27;s a rudimentary way to compare
+performance of CPython and Lever. Python runs a bootstrap compiler and
+Lever has the same compiler as a library to allow it to run
+standalone. </p><p>Lever is extremely heavy at how it compiles because
+it uses customizable grammar with a parsing engine. It allows fast,
+lisp-like experimentation with syntax. </p><p>We can trigger python
+compiler by touching a file we want to benchmark with, then run the
+compile-lib command.
+</p><pre>cheery@ruttunen:~&#x2F;Documents&#x2F;lever$ touch lib&#x2F;c.lc
+cheery@ruttunen:~&#x2F;Documents&#x2F;lever$ time python setup.py compile-lib
+Compiling libraries for lever
+
+real	0m1.603s
+user	0m1.540s
+sys	0m0.028s
+cheery@ruttunen:~&#x2F;Documents&#x2F;lever$ 
+</pre><p>Next
+I wrote a small program that triggers a lever compiler to run on the
+same file.
+</p><pre>import binon, compiler
+
+source = dir ++ &quot;lib&#x2F;c.lc&quot;
+code = compiler.read_file(source, &quot;lib&#x2F;c.lc&quot;)
+binon.write_file(dir ++ &quot;out.lc.cb&quot;, code)
+</pre><p>The
+results propose that Lever is 4 times slower than python at compiling
+itself. But it is likely safe to say you could get worse results here.
+</p><pre>cheery@ruttunen:~&#x2F;Documents&#x2F;lever$ time lever test.lc 
+
+real	0m7.109s
+user	0m6.808s
+sys	0m0.288s
+cheery@ruttunen:~&#x2F;Documents&#x2F;lever$ 
+</pre><p>This
+indicates rather similar results as in early tests. Worst-case
+performance of RPython-written language that resembles Python seem to
+be on the scale of 2 to 20 times slower. </p><h2 id="03">03. Future
+performance </h2><p>PyPy has used RPython to provide a language that
+is faster than Python on many occassions. With a new language
+there&#x27;s not the restriction that we would have to fixate on some
+implementation detail. This likely allows us to provide better results
+than with PyPy. </p><p>We concentrate on narrow scope of software that
+we want to make fast. Precisely desktop and graphically intensive
+software. That should help too. </p><p>There are also some cases like
+the vector arithmetic support in runtime that can really turn tables
+in interesting scenarios into Lever&#x27;s favor. </p><h2
+  id="04">04. When it is not enough... </h2><p>Even if we got near to
+C speeds with Lever runtime some day, there is still the &quot;not as
+fast as C&quot; -barrier in using dynamic languages to graphics
+programming. No matter how it good it looked, it&#x27;s just not
+enough when you got to crunch it all the way down. </p><p>I see that
+the problem is not the performance of the language at this point.
+It&#x27;s how well and how gradually can you lower out of it? Of
+course we could prototype everything in Python if it was easy to
+transition the performance critical code to the form where it
+performs. There would be huge development gains to get things into
+place in easy language and walk down from that in steps, rather than
+having to do a big jump when you get the design right. </p><p>For this
+reason I&#x27;ve picked some features that make Lever easier to
+translate. When I&#x27;ll get things far enough for it to be useful,
+I&#x27;ll replicate some of RPython&#x27;s translation framework on
+Lever and repurpose it to apply on graphics. </p><p>There&#x27;s no
+plans to get it to replace PyPy though. They are doing lots of good
+things and I don&#x27;t see a reason to replicate the greater work
+they do with the JIT generation along translation. They are doing
+whole host of things I don&#x27;t have to do myself at this point.
+</p><p>It&#x27;s nice to have a small, sub 10kloc runtime you can hack
+away with. </p><h2 id="05">05. Platform performance considerations
+</h2><p>There&#x27;s chance that WebAssembly succeeds to provide a
+generic language target. This might happen somewhere between 2 to 6
+years. </p><p>It will be very likely feasible to take this into
+account and have Lever translate to WebAssembly. It requires that they
+come up with their GC-integration and call&#x2F;cc -support.
+</p><p>There&#x27;s very, very long run to this. But it would allow
+both the translation framework and Lever itself use WebAssembly as a
+target language. That would be sort of nice. </p><h2
+  id="06">06. Background on performance.text </h2><p>I made this text
+when someone mentioned Lever should perform at the <a
+  href="https://www.phoronix.com/forums/forum/phoronix/latest-phoronix-articles/891637-lever-yet-another-general-purpose-programming-language#post891655">Phoronix.com
+-article comments</a>. </p><p>I realised I should probably mention my
+plans to get Lever to perform somewhere. </p></article><div
+  style="text-align: center"><span
+  style="background-color: #85818e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #df7120; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a7341c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #5c231c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a39ea4; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #312334; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #44588e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #4679b8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #79bbe8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #d7d2d7; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #785d9a; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #949e85; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #2e170e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #7b3c16; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #c86f31; width: 1em; height: 1em; display: inline-block">
+</span></div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script></body></html>

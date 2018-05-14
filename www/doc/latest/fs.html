@@ -1,0 +1,1115 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta
+  content="width=device-width, initial-scale=1"
+  name="viewport"/>
+<title>Lever manual: fs</title><link
+  rel="stylesheet"
+  href="../../stylesheet.css">
+<!-- Generated from 'doc/fs.text' in github.com/cheery/lever --></head><body><ul
+  class="nav"><li><a href="../../"><img
+  src="../../logo.png"
+  alt="LEVER">
+</a></li><li><a
+  href="https://github.com/cheery/lever/"
+  class="nav_button">repository</a></li><li><a
+  href="../../index.html#download"
+  class="nav_button">download</a></li><li><a
+  href="./"
+  class="nav_button">documentation index</a></li></ul><article><h1
+  class="embed-header">Manual: fs</h1><div
+  id="APPEND"
+  class="reference-box"><div><a href="#APPEND"
+  class="name reference">APPEND</a><span> = 1024
+</span></div>not documented <div class="status">volatile
+</div></div><div id="CREAT" class="reference-box"><div><a
+  href="#CREAT"
+  class="name reference">CREAT</a><span> = 64
+</span></div>not documented <div class="status">volatile
+</div></div><div id="E2BIG" class="reference-box"><div><a
+  href="#E2BIG"
+  class="name reference">E2BIG</a><span> = 7
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EACCES" class="reference-box"><div><a
+  href="#EACCES"
+  class="name reference">EACCES</a><span> = 13
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EADDRINUSE" class="reference-box"><div><a
+  href="#EADDRINUSE"
+  class="name reference">EADDRINUSE</a><span> = 98
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EADDRNOTAVAIL" class="reference-box"><div><a
+  href="#EADDRNOTAVAIL"
+  class="name reference">EADDRNOTAVAIL</a><span> = 99
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EADV" class="reference-box"><div><a
+  href="#EADV"
+  class="name reference">EADV</a><span> = 68
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EAFNOSUPPORT" class="reference-box"><div><a
+  href="#EAFNOSUPPORT"
+  class="name reference">EAFNOSUPPORT</a><span> = 97
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EAGAIN" class="reference-box"><div><a
+  href="#EAGAIN"
+  class="name reference">EAGAIN</a><span> = 11
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EALREADY" class="reference-box"><div><a
+  href="#EALREADY"
+  class="name reference">EALREADY</a><span> = 114
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EBADE" class="reference-box"><div><a
+  href="#EBADE"
+  class="name reference">EBADE</a><span> = 52
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EBADF" class="reference-box"><div><a
+  href="#EBADF"
+  class="name reference">EBADF</a><span> = 9
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EBADFD" class="reference-box"><div><a
+  href="#EBADFD"
+  class="name reference">EBADFD</a><span> = 77
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EBADMSG" class="reference-box"><div><a
+  href="#EBADMSG"
+  class="name reference">EBADMSG</a><span> = 74
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EBADR" class="reference-box"><div><a
+  href="#EBADR"
+  class="name reference">EBADR</a><span> = 53
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EBADRQC" class="reference-box"><div><a
+  href="#EBADRQC"
+  class="name reference">EBADRQC</a><span> = 56
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EBADSLT" class="reference-box"><div><a
+  href="#EBADSLT"
+  class="name reference">EBADSLT</a><span> = 57
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EBFONT" class="reference-box"><div><a
+  href="#EBFONT"
+  class="name reference">EBFONT</a><span> = 59
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EBUSY" class="reference-box"><div><a
+  href="#EBUSY"
+  class="name reference">EBUSY</a><span> = 16
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ECHILD" class="reference-box"><div><a
+  href="#ECHILD"
+  class="name reference">ECHILD</a><span> = 10
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ECHRNG" class="reference-box"><div><a
+  href="#ECHRNG"
+  class="name reference">ECHRNG</a><span> = 44
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ECOMM" class="reference-box"><div><a
+  href="#ECOMM"
+  class="name reference">ECOMM</a><span> = 70
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ECONNABORTED" class="reference-box"><div><a
+  href="#ECONNABORTED"
+  class="name reference">ECONNABORTED</a><span> = 103
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ECONNREFUSED" class="reference-box"><div><a
+  href="#ECONNREFUSED"
+  class="name reference">ECONNREFUSED</a><span> = 111
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ECONNRESET" class="reference-box"><div><a
+  href="#ECONNRESET"
+  class="name reference">ECONNRESET</a><span> = 104
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EDEADLOCK" class="reference-box"><div><a
+  href="#EDEADLOCK"
+  class="name reference">EDEADLOCK</a><span> = 35
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EDESTADDRREQ" class="reference-box"><div><a
+  href="#EDESTADDRREQ"
+  class="name reference">EDESTADDRREQ</a><span> = 89
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EDOM" class="reference-box"><div><a
+  href="#EDOM"
+  class="name reference">EDOM</a><span> = 33
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EDOTDOT" class="reference-box"><div><a
+  href="#EDOTDOT"
+  class="name reference">EDOTDOT</a><span> = 73
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EDQUOT" class="reference-box"><div><a
+  href="#EDQUOT"
+  class="name reference">EDQUOT</a><span> = 122
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EEXIST" class="reference-box"><div><a
+  href="#EEXIST"
+  class="name reference">EEXIST</a><span> = 17
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EFAULT" class="reference-box"><div><a
+  href="#EFAULT"
+  class="name reference">EFAULT</a><span> = 14
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EFBIG" class="reference-box"><div><a
+  href="#EFBIG"
+  class="name reference">EFBIG</a><span> = 27
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EHOSTDOWN" class="reference-box"><div><a
+  href="#EHOSTDOWN"
+  class="name reference">EHOSTDOWN</a><span> = 112
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EHOSTUNREACH" class="reference-box"><div><a
+  href="#EHOSTUNREACH"
+  class="name reference">EHOSTUNREACH</a><span> = 113
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EIDRM" class="reference-box"><div><a
+  href="#EIDRM"
+  class="name reference">EIDRM</a><span> = 43
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EILSEQ" class="reference-box"><div><a
+  href="#EILSEQ"
+  class="name reference">EILSEQ</a><span> = 84
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EINPROGRESS" class="reference-box"><div><a
+  href="#EINPROGRESS"
+  class="name reference">EINPROGRESS</a><span> = 115
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EINTR" class="reference-box"><div><a
+  href="#EINTR"
+  class="name reference">EINTR</a><span> = 4
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EINVAL" class="reference-box"><div><a
+  href="#EINVAL"
+  class="name reference">EINVAL</a><span> = 22
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EIO" class="reference-box"><div><a
+  href="#EIO"
+  class="name reference">EIO</a><span> = 5 </span></div>not documented
+<div class="status">volatile </div></div><div
+  id="EISCONN"
+  class="reference-box"><div><a href="#EISCONN"
+  class="name reference">EISCONN</a><span> = 106
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EISDIR" class="reference-box"><div><a
+  href="#EISDIR"
+  class="name reference">EISDIR</a><span> = 21
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EISNAM" class="reference-box"><div><a
+  href="#EISNAM"
+  class="name reference">EISNAM</a><span> = 120
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EL2HLT" class="reference-box"><div><a
+  href="#EL2HLT"
+  class="name reference">EL2HLT</a><span> = 51
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EL2NSYNC" class="reference-box"><div><a
+  href="#EL2NSYNC"
+  class="name reference">EL2NSYNC</a><span> = 45
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EL3HLT" class="reference-box"><div><a
+  href="#EL3HLT"
+  class="name reference">EL3HLT</a><span> = 46
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EL3RST" class="reference-box"><div><a
+  href="#EL3RST"
+  class="name reference">EL3RST</a><span> = 47
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ELIBACC" class="reference-box"><div><a
+  href="#ELIBACC"
+  class="name reference">ELIBACC</a><span> = 79
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ELIBBAD" class="reference-box"><div><a
+  href="#ELIBBAD"
+  class="name reference">ELIBBAD</a><span> = 80
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ELIBEXEC" class="reference-box"><div><a
+  href="#ELIBEXEC"
+  class="name reference">ELIBEXEC</a><span> = 83
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ELIBMAX" class="reference-box"><div><a
+  href="#ELIBMAX"
+  class="name reference">ELIBMAX</a><span> = 82
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ELIBSCN" class="reference-box"><div><a
+  href="#ELIBSCN"
+  class="name reference">ELIBSCN</a><span> = 81
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ELNRNG" class="reference-box"><div><a
+  href="#ELNRNG"
+  class="name reference">ELNRNG</a><span> = 48
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ELOOP" class="reference-box"><div><a
+  href="#ELOOP"
+  class="name reference">ELOOP</a><span> = 40
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EMFILE" class="reference-box"><div><a
+  href="#EMFILE"
+  class="name reference">EMFILE</a><span> = 24
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EMLINK" class="reference-box"><div><a
+  href="#EMLINK"
+  class="name reference">EMLINK</a><span> = 31
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EMSGSIZE" class="reference-box"><div><a
+  href="#EMSGSIZE"
+  class="name reference">EMSGSIZE</a><span> = 90
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EMULTIHOP" class="reference-box"><div><a
+  href="#EMULTIHOP"
+  class="name reference">EMULTIHOP</a><span> = 72
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENAMETOOLONG" class="reference-box"><div><a
+  href="#ENAMETOOLONG"
+  class="name reference">ENAMETOOLONG</a><span> = 36
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENAVAIL" class="reference-box"><div><a
+  href="#ENAVAIL"
+  class="name reference">ENAVAIL</a><span> = 119
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENETDOWN" class="reference-box"><div><a
+  href="#ENETDOWN"
+  class="name reference">ENETDOWN</a><span> = 100
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENETRESET" class="reference-box"><div><a
+  href="#ENETRESET"
+  class="name reference">ENETRESET</a><span> = 102
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENETUNREACH" class="reference-box"><div><a
+  href="#ENETUNREACH"
+  class="name reference">ENETUNREACH</a><span> = 101
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENFILE" class="reference-box"><div><a
+  href="#ENFILE"
+  class="name reference">ENFILE</a><span> = 23
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOANO" class="reference-box"><div><a
+  href="#ENOANO"
+  class="name reference">ENOANO</a><span> = 55
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOBUFS" class="reference-box"><div><a
+  href="#ENOBUFS"
+  class="name reference">ENOBUFS</a><span> = 105
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOCSI" class="reference-box"><div><a
+  href="#ENOCSI"
+  class="name reference">ENOCSI</a><span> = 50
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENODATA" class="reference-box"><div><a
+  href="#ENODATA"
+  class="name reference">ENODATA</a><span> = 61
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENODEV" class="reference-box"><div><a
+  href="#ENODEV"
+  class="name reference">ENODEV</a><span> = 19
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOENT" class="reference-box"><div><a
+  href="#ENOENT"
+  class="name reference">ENOENT</a><span> = 2
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOEXEC" class="reference-box"><div><a
+  href="#ENOEXEC"
+  class="name reference">ENOEXEC</a><span> = 8
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOLCK" class="reference-box"><div><a
+  href="#ENOLCK"
+  class="name reference">ENOLCK</a><span> = 37
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOLINK" class="reference-box"><div><a
+  href="#ENOLINK"
+  class="name reference">ENOLINK</a><span> = 67
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOMEM" class="reference-box"><div><a
+  href="#ENOMEM"
+  class="name reference">ENOMEM</a><span> = 12
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOMSG" class="reference-box"><div><a
+  href="#ENOMSG"
+  class="name reference">ENOMSG</a><span> = 42
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENONET" class="reference-box"><div><a
+  href="#ENONET"
+  class="name reference">ENONET</a><span> = 64
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOPKG" class="reference-box"><div><a
+  href="#ENOPKG"
+  class="name reference">ENOPKG</a><span> = 65
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOPROTOOPT" class="reference-box"><div><a
+  href="#ENOPROTOOPT"
+  class="name reference">ENOPROTOOPT</a><span> = 92
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOSPC" class="reference-box"><div><a
+  href="#ENOSPC"
+  class="name reference">ENOSPC</a><span> = 28
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOSR" class="reference-box"><div><a
+  href="#ENOSR"
+  class="name reference">ENOSR</a><span> = 63
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOSTR" class="reference-box"><div><a
+  href="#ENOSTR"
+  class="name reference">ENOSTR</a><span> = 60
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOSYS" class="reference-box"><div><a
+  href="#ENOSYS"
+  class="name reference">ENOSYS</a><span> = 38
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOTBLK" class="reference-box"><div><a
+  href="#ENOTBLK"
+  class="name reference">ENOTBLK</a><span> = 15
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOTCONN" class="reference-box"><div><a
+  href="#ENOTCONN"
+  class="name reference">ENOTCONN</a><span> = 107
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOTDIR" class="reference-box"><div><a
+  href="#ENOTDIR"
+  class="name reference">ENOTDIR</a><span> = 20
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOTEMPTY" class="reference-box"><div><a
+  href="#ENOTEMPTY"
+  class="name reference">ENOTEMPTY</a><span> = 39
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOTNAM" class="reference-box"><div><a
+  href="#ENOTNAM"
+  class="name reference">ENOTNAM</a><span> = 118
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOTSOCK" class="reference-box"><div><a
+  href="#ENOTSOCK"
+  class="name reference">ENOTSOCK</a><span> = 88
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOTSUP" class="reference-box"><div><a
+  href="#ENOTSUP"
+  class="name reference">ENOTSUP</a><span> = 95
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOTTY" class="reference-box"><div><a
+  href="#ENOTTY"
+  class="name reference">ENOTTY</a><span> = 25
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENOTUNIQ" class="reference-box"><div><a
+  href="#ENOTUNIQ"
+  class="name reference">ENOTUNIQ</a><span> = 76
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ENXIO" class="reference-box"><div><a
+  href="#ENXIO"
+  class="name reference">ENXIO</a><span> = 6
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EOVERFLOW" class="reference-box"><div><a
+  href="#EOVERFLOW"
+  class="name reference">EOVERFLOW</a><span> = 75
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EPERM" class="reference-box"><div><a
+  href="#EPERM"
+  class="name reference">EPERM</a><span> = 1
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EPFNOSUPPORT" class="reference-box"><div><a
+  href="#EPFNOSUPPORT"
+  class="name reference">EPFNOSUPPORT</a><span> = 96
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EPIPE" class="reference-box"><div><a
+  href="#EPIPE"
+  class="name reference">EPIPE</a><span> = 32
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EPROTO" class="reference-box"><div><a
+  href="#EPROTO"
+  class="name reference">EPROTO</a><span> = 71
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EPROTONOSUPPORT" class="reference-box"><div><a
+  href="#EPROTONOSUPPORT"
+  class="name reference">EPROTONOSUPPORT</a><span> = 93
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EPROTOTYPE" class="reference-box"><div><a
+  href="#EPROTOTYPE"
+  class="name reference">EPROTOTYPE</a><span> = 91
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ERANGE" class="reference-box"><div><a
+  href="#ERANGE"
+  class="name reference">ERANGE</a><span> = 34
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EREMCHG" class="reference-box"><div><a
+  href="#EREMCHG"
+  class="name reference">EREMCHG</a><span> = 78
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EREMOTE" class="reference-box"><div><a
+  href="#EREMOTE"
+  class="name reference">EREMOTE</a><span> = 66
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EREMOTEIO" class="reference-box"><div><a
+  href="#EREMOTEIO"
+  class="name reference">EREMOTEIO</a><span> = 121
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ERESTART" class="reference-box"><div><a
+  href="#ERESTART"
+  class="name reference">ERESTART</a><span> = 85
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EROFS" class="reference-box"><div><a
+  href="#EROFS"
+  class="name reference">EROFS</a><span> = 30
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ESHUTDOWN" class="reference-box"><div><a
+  href="#ESHUTDOWN"
+  class="name reference">ESHUTDOWN</a><span> = 108
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ESOCKTNOSUPPORT" class="reference-box"><div><a
+  href="#ESOCKTNOSUPPORT"
+  class="name reference">ESOCKTNOSUPPORT</a><span> = 94
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ESPIPE" class="reference-box"><div><a
+  href="#ESPIPE"
+  class="name reference">ESPIPE</a><span> = 29
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ESRCH" class="reference-box"><div><a
+  href="#ESRCH"
+  class="name reference">ESRCH</a><span> = 3
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ESRMNT" class="reference-box"><div><a
+  href="#ESRMNT"
+  class="name reference">ESRMNT</a><span> = 69
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ESTALE" class="reference-box"><div><a
+  href="#ESTALE"
+  class="name reference">ESTALE</a><span> = 116
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ESTRPIPE" class="reference-box"><div><a
+  href="#ESTRPIPE"
+  class="name reference">ESTRPIPE</a><span> = 86
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ETIME" class="reference-box"><div><a
+  href="#ETIME"
+  class="name reference">ETIME</a><span> = 62
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ETIMEDOUT" class="reference-box"><div><a
+  href="#ETIMEDOUT"
+  class="name reference">ETIMEDOUT</a><span> = 110
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ETOOMANYREFS" class="reference-box"><div><a
+  href="#ETOOMANYREFS"
+  class="name reference">ETOOMANYREFS</a><span> = 109
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ETXTBSY" class="reference-box"><div><a
+  href="#ETXTBSY"
+  class="name reference">ETXTBSY</a><span> = 26
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EUCLEAN" class="reference-box"><div><a
+  href="#EUCLEAN"
+  class="name reference">EUCLEAN</a><span> = 117
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EUNATCH" class="reference-box"><div><a
+  href="#EUNATCH"
+  class="name reference">EUNATCH</a><span> = 49
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EUSERS" class="reference-box"><div><a
+  href="#EUSERS"
+  class="name reference">EUSERS</a><span> = 87
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EXCL" class="reference-box"><div><a
+  href="#EXCL"
+  class="name reference">EXCL</a><span> = 128
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EXDEV" class="reference-box"><div><a
+  href="#EXDEV"
+  class="name reference">EXDEV</a><span> = 18
+</span></div>not documented <div class="status">volatile
+</div></div><div id="EXFULL" class="reference-box"><div><a
+  href="#EXFULL"
+  class="name reference">EXFULL</a><span> = 54
+</span></div>not documented <div class="status">volatile
+</div></div><div id="File"
+  class="reference-box"><div><span>class </span><a
+  href="#File"
+  class="name reference">File</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="File.chmod"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L478">builtin:&#x2F;stdlib&#x2F;fs.py:478</a></div><a
+  href="#File.chmod"
+  class="name reference">chmod</a><span>(<span>self : <a
+  href="fs.html#File"
+  class="reference">File</a>, mode : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>mode </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="File.chown" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L614">builtin:&#x2F;stdlib&#x2F;fs.py:614</a></div><a
+  href="#File.chown"
+  class="name reference">chown</a><span>(<span>self : <a
+  href="fs.html#File"
+  class="reference">File</a>, uid : <a
+  href="base.html#int"
+  class="reference">int</a>, gid : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>uid </td><td>not documented </td></tr><tr><td>gid
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="File.close" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L134">builtin:&#x2F;stdlib&#x2F;fs.py:134</a></div><a
+  href="#File.close"
+  class="name reference">close</a><span>(<span>self : <a
+  href="fs.html#File"
+  class="reference">File</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="File.datasync" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L397">builtin:&#x2F;stdlib&#x2F;fs.py:397</a></div><a
+  href="#File.datasync"
+  class="name reference">datasync</a><span>(<span>self : <a
+  href="fs.html#File"
+  class="reference">File</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="File.pread" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L150">builtin:&#x2F;stdlib&#x2F;fs.py:150</a></div><a
+  href="#File.pread"
+  class="name reference">pread</a><span>(<span>self : <a
+  href="fs.html#File"
+  class="reference">File</a>, data : <a
+  href="base.html#object"
+  class="reference">object</a>, offset : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>data </td><td>not documented
+</td></tr><tr><td>offset </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="File.pwrite" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L167">builtin:&#x2F;stdlib&#x2F;fs.py:167</a></div><a
+  href="#File.pwrite"
+  class="name reference">pwrite</a><span>(<span>self : <a
+  href="fs.html#File"
+  class="reference">File</a>, data : <a
+  href="base.html#object"
+  class="reference">object</a>, offset : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>data </td><td>not documented
+</td></tr><tr><td>offset </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="File.stat" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L326">builtin:&#x2F;stdlib&#x2F;fs.py:326</a></div><a
+  href="#File.stat"
+  class="name reference">stat</a><span>(<span>self : <a
+  href="fs.html#File"
+  class="reference">File</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="File.sync" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L382">builtin:&#x2F;stdlib&#x2F;fs.py:382</a></div><a
+  href="#File.sync"
+  class="name reference">sync</a><span>(<span>self : <a
+  href="fs.html#File"
+  class="reference">File</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="File.truncate" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L413">builtin:&#x2F;stdlib&#x2F;fs.py:413</a></div><a
+  href="#File.truncate"
+  class="name reference">truncate</a><span>(<span>self : <a
+  href="fs.html#File"
+  class="reference">File</a>, offset : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>offset </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="File.utime" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L510">builtin:&#x2F;stdlib&#x2F;fs.py:510</a></div><a
+  href="#File.utime"
+  class="name reference">utime</a><span>(<span>self : <a
+  href="fs.html#File"
+  class="reference">File</a>, atime : <a
+  href="base.html#float"
+  class="reference">float</a>, mtime : <a
+  href="base.html#float"
+  class="reference">float</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>atime </td><td>not documented
+</td></tr><tr><td>mtime </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="RDONLY" class="reference-box"><div><a
+  href="#RDONLY"
+  class="name reference">RDONLY</a><span> = 0
+</span></div>not documented <div class="status">volatile
+</div></div><div id="RDWR" class="reference-box"><div><a
+  href="#RDWR"
+  class="name reference">RDWR</a><span> = 2
+</span></div>not documented <div class="status">volatile
+</div></div><div id="ReadStream"
+  class="reference-box"><div><span>class </span><a
+  href="#ReadStream"
+  class="name reference">ReadStream</a><span> extends <i>file_stream</i>
+</span></div>not documented <div class="status">volatile </div><div
+  id="ReadStream.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L751">builtin:&#x2F;stdlib&#x2F;fs.py:751</a></div><a
+  href="#ReadStream.+init"
+  class="name reference">+init</a><span>(<span>fileobj : <a
+  href="fs.html#File"
+  class="reference">File</a>, offset = null</span>)</span><table
+  class="arg-ref"><tr><td>fileobj </td><td>not documented
+</td></tr><tr><td>offset </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="ReadStream.close" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L744">builtin:&#x2F;stdlib&#x2F;fs.py:744</a></div><a
+  href="#ReadStream.close"
+  class="name reference">close</a><span>(<span>self : <i>file_stream</i></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="ReadStream.read" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L756">builtin:&#x2F;stdlib&#x2F;fs.py:756</a></div><a
+  href="#ReadStream.read"
+  class="name reference">read</a><span>(<span>self : <a
+  href="fs.html#ReadStream"
+  class="reference">ReadStream</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="TRUNC" class="reference-box"><div><a
+  href="#TRUNC"
+  class="name reference">TRUNC</a><span> = 512
+</span></div>not documented <div class="status">volatile
+</div></div><div id="WRONLY" class="reference-box"><div><a
+  href="#WRONLY"
+  class="name reference">WRONLY</a><span> = 1
+</span></div>not documented <div class="status">volatile
+</div></div><div id="WriteStream"
+  class="reference-box"><div><span>class </span><a
+  href="#WriteStream"
+  class="name reference">WriteStream</a><span> extends <i>file_stream</i>
+</span></div>not documented <div class="status">volatile </div><div
+  id="WriteStream.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L768">builtin:&#x2F;stdlib&#x2F;fs.py:768</a></div><a
+  href="#WriteStream.+init"
+  class="name reference">+init</a><span>(<span>fileobj : <a
+  href="fs.html#File"
+  class="reference">File</a>, offset = null</span>)</span><table
+  class="arg-ref"><tr><td>fileobj </td><td>not documented
+</td></tr><tr><td>offset </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="WriteStream.write"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L773">builtin:&#x2F;stdlib&#x2F;fs.py:773</a></div><a
+  href="#WriteStream.write"
+  class="name reference">write</a><span>(<span>self : <a
+  href="fs.html#WriteStream"
+  class="reference">WriteStream</a>, data : <a
+  href="base.html#object"
+  class="reference">object</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>data </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="access" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L444">builtin:&#x2F;stdlib&#x2F;fs.py:444</a></div><a
+  href="#access"
+  class="name reference">access</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a>, mode : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>mode </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="chmod" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L461">builtin:&#x2F;stdlib&#x2F;fs.py:461</a></div><a
+  href="#chmod"
+  class="name reference">chmod</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a>, mode : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>mode </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="chown" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L597">builtin:&#x2F;stdlib&#x2F;fs.py:597</a></div><a
+  href="#chown"
+  class="name reference">chown</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a>, uid : <a
+  href="base.html#int"
+  class="reference">int</a>, gid : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>uid </td><td>not documented </td></tr><tr><td>gid
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="errorcode" class="reference-box"><div><a
+  href="#errorcode"
+  class="name reference">errorcode</a><span> : <a
+  href="base.html#dict"
+  class="reference">dict</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="exists"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L22">builtin:&#x2F;stdlib&#x2F;fs.py:22</a></div><a
+  href="#exists"
+  class="name reference">exists</a><span>(<span>path : <a
+  href="base.html#object"
+  class="reference">object</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="getatime" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L53">builtin:&#x2F;stdlib&#x2F;fs.py:53</a></div><a
+  href="#getatime"
+  class="name reference">getatime</a><span>(<span>path : <a
+  href="base.html#object"
+  class="reference">object</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="getctime" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L73">builtin:&#x2F;stdlib&#x2F;fs.py:73</a></div><a
+  href="#getctime"
+  class="name reference">getctime</a><span>(<span>path : <a
+  href="base.html#object"
+  class="reference">object</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="getmtime" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L63">builtin:&#x2F;stdlib&#x2F;fs.py:63</a></div><a
+  href="#getmtime"
+  class="name reference">getmtime</a><span>(<span>path : <a
+  href="base.html#object"
+  class="reference">object</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="link" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L525">builtin:&#x2F;stdlib&#x2F;fs.py:525</a></div><a
+  href="#link"
+  class="name reference">link</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a>, new_path : <a
+  href="base.html#path"
+  class="reference">path</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>new_path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="lstat" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L309">builtin:&#x2F;stdlib&#x2F;fs.py:309</a></div><a
+  href="#lstat"
+  class="name reference">lstat</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="mkdir" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L201">builtin:&#x2F;stdlib&#x2F;fs.py:201</a></div><a
+  href="#mkdir"
+  class="name reference">mkdir</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a>, mode = null</span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>mode </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="mkdtemp" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L219">builtin:&#x2F;stdlib&#x2F;fs.py:219</a></div><a
+  href="#mkdtemp"
+  class="name reference">mkdtemp</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="open" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L111">builtin:&#x2F;stdlib&#x2F;fs.py:111</a></div><a
+  href="#open"
+  class="name reference">open</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a>, flags : <a
+  href="base.html#int"
+  class="reference">int</a>, mode = null</span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>flags </td><td>not documented </td></tr><tr><td>mode
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="read_file" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L83">builtin:&#x2F;stdlib&#x2F;fs.py:83</a></div><a
+  href="#read_file"
+  class="name reference">read_file</a><span>(<span>argv...</span>)</span><table
+  class="arg-ref"><tr><td>argv </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="readlink" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L561">builtin:&#x2F;stdlib&#x2F;fs.py:561</a></div><a
+  href="#readlink"
+  class="name reference">readlink</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="realpath" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L579">builtin:&#x2F;stdlib&#x2F;fs.py:579</a></div><a
+  href="#realpath"
+  class="name reference">realpath</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="rename" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L364">builtin:&#x2F;stdlib&#x2F;fs.py:364</a></div><a
+  href="#rename"
+  class="name reference">rename</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a>, new_path : <a
+  href="base.html#path"
+  class="reference">path</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>new_path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="rmdir" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L237">builtin:&#x2F;stdlib&#x2F;fs.py:237</a></div><a
+  href="#rmdir"
+  class="name reference">rmdir</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="scandir" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L254">builtin:&#x2F;stdlib&#x2F;fs.py:254</a></div><a
+  href="#scandir"
+  class="name reference">scandir</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="sendfile" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L428">builtin:&#x2F;stdlib&#x2F;fs.py:428</a></div><a
+  href="#sendfile"
+  class="name reference">sendfile</a><span>(<span>out_file : <a
+  href="fs.html#File"
+  class="reference">File</a>, in_file : <a
+  href="fs.html#File"
+  class="reference">File</a>, in_offset : <a
+  href="base.html#int"
+  class="reference">int</a>, length : <a
+  href="base.html#int"
+  class="reference">int</a></span>)</span><table
+  class="arg-ref"><tr><td>out_file </td><td>not documented
+</td></tr><tr><td>in_file </td><td>not documented
+</td></tr><tr><td>in_offset </td><td>not documented
+</td></tr><tr><td>length </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="stat" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L292">builtin:&#x2F;stdlib&#x2F;fs.py:292</a></div><a
+  href="#stat"
+  class="name reference">stat</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="symlink" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L543">builtin:&#x2F;stdlib&#x2F;fs.py:543</a></div><a
+  href="#symlink"
+  class="name reference">symlink</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a>, new_path : <a
+  href="base.html#path"
+  class="reference">path</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>new_path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="unlink" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L184">builtin:&#x2F;stdlib&#x2F;fs.py:184</a></div><a
+  href="#unlink"
+  class="name reference">unlink</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="utime" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L493">builtin:&#x2F;stdlib&#x2F;fs.py:493</a></div><a
+  href="#utime"
+  class="name reference">utime</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a>, atime : <a
+  href="base.html#float"
+  class="reference">float</a>, mtime : <a
+  href="base.html#float"
+  class="reference">float</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>atime </td><td>not documented
+</td></tr><tr><td>mtime </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="watch"
+  class="reference-box"><div><span>class </span><a
+  href="#watch"
+  class="name reference">watch</a><span> extends <a
+  href="base.html#Handle"
+  class="reference">Handle</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="watch.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L644">builtin:&#x2F;stdlib&#x2F;fs.py:644</a></div><a
+  href="#watch.+init"
+  class="name reference">+init</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a></span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="watch.+iter" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L641">builtin:&#x2F;stdlib&#x2F;fs.py:641</a></div><a
+  href="#watch.+iter"
+  class="name reference">+iter</a><span>(<span></span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="watch.close" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/uv_handle.py#L162">builtin:&#x2F;uv_handle.py:162</a></div><a
+  href="#watch.close"
+  class="name reference">close</a><span>(<span>self : <a
+  href="base.html#Handle"
+  class="reference">Handle</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="watch.get_recv_buffer_size"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/uv_handle.py#L184">builtin:&#x2F;uv_handle.py:184</a></div><a
+  href="#watch.get_recv_buffer_size"
+  class="name reference">get_recv_buffer_size</a><span>(<span>self : <a
+  href="base.html#Handle"
+  class="reference">Handle</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="watch.get_send_buffer_size"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/uv_handle.py#L174">builtin:&#x2F;uv_handle.py:174</a></div><a
+  href="#watch.get_send_buffer_size"
+  class="name reference">get_send_buffer_size</a><span>(<span>self : <a
+  href="base.html#Handle"
+  class="reference">Handle</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="watch.next" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L696">builtin:&#x2F;stdlib&#x2F;fs.py:696</a></div><a
+  href="#watch.next"
+  class="name reference">next</a><span>(<span>self : <a
+  href="fs.html#watch"
+  class="reference">watch</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="watch.wait" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/fs.py#L711">builtin:&#x2F;stdlib&#x2F;fs.py:711</a></div><a
+  href="#watch.wait"
+  class="name reference">wait</a><span>(<span>self : <a
+  href="fs.html#watch"
+  class="reference">watch</a></span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div></article><div style="text-align: center"><span
+  style="background-color: #85818e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #df7120; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a7341c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #5c231c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a39ea4; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #312334; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #44588e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #4679b8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #79bbe8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #d7d2d7; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #785d9a; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #949e85; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #2e170e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #7b3c16; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #c86f31; width: 1em; height: 1em; display: inline-block">
+</span></div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script></body></html>

@@ -1,0 +1,1231 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta
+  content="width=device-width, initial-scale=1"
+  name="viewport"/>
+<title>Lever manual: compiler</title><link
+  rel="stylesheet"
+  href="../../stylesheet.css">
+<!-- Generated from 'doc/compiler.text' in github.com/cheery/lever --></head><body><ul
+  class="nav"><li><a href="../../"><img
+  src="../../logo.png"
+  alt="LEVER">
+</a></li><li><a
+  href="https://github.com/cheery/lever/"
+  class="nav_button">repository</a></li><li><a
+  href="../../index.html#download"
+  class="nav_button">download</a></li><li><a
+  href="./"
+  class="nav_button">documentation index</a></li></ul><article><h1
+  class="embed-header">Manual: compiler</h1><div
+  id="And"
+  class="reference-box"><div><span>class </span><a
+  href="#And"
+  class="name reference">And</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="And.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L677">compiler.lc:677</a></div><a
+  href="#And.+init"
+  class="name reference">+init</a><span>(<span>self, lhs, rhs</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>lhs </td><td>not documented </td></tr><tr><td>rhs
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="And.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L681">compiler.lc:681</a></div><a
+  href="#And.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="AttrSlot"
+  class="reference-box"><div><span>class </span><a
+  href="#AttrSlot"
+  class="name reference">AttrSlot</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="AttrSlot.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L464">compiler.lc:464</a></div><a
+  href="#AttrSlot.+init"
+  class="name reference">+init</a><span>(<span>self, slot, name</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>slot </td><td>not documented </td></tr><tr><td>name
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="AttrSlot.get" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L468">compiler.lc:468</a></div><a
+  href="#AttrSlot.get"
+  class="name reference">get</a><span>(<span>self, context</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="AttrSlot.set" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L472">compiler.lc:472</a></div><a
+  href="#AttrSlot.set"
+  class="name reference">set</a><span>(<span>self, context, value</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>value </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Block"
+  class="reference-box"><div><span>class </span><a
+  href="#Block"
+  class="name reference">Block</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Block.+getitem"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1135">compiler.lc:1135</a></div><a
+  href="#Block.+getitem"
+  class="name reference">+getitem</a><span>(<span>self, index</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>index </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Block.+init" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1128">compiler.lc:1128</a></div><a
+  href="#Block.+init"
+  class="name reference">+init</a><span>(<span>self, contents, succ, exc</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>contents </td><td>not documented
+</td></tr><tr><td>succ </td><td>not documented </td></tr><tr><td>exc
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Block.+iter" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1138">compiler.lc:1138</a></div><a
+  href="#Block.+iter"
+  class="name reference">+iter</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Block.append" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1145">compiler.lc:1145</a></div><a
+  href="#Block.append"
+  class="name reference">append</a><span>(<span>self, op</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>op </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Block.length" class="reference-box"><div><a
+  href="#Block.length"
+  class="name reference">length</a><span> : <a
+  href="base.html#property"
+  class="reference">property</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="Block.op"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1151">compiler.lc:1151</a></div><a
+  href="#Block.op"
+  class="name reference">op</a><span>(<span>self, loc, opname, args...</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>loc </td><td>not documented </td></tr><tr><td>opname
+</td><td>not documented </td></tr><tr><td>args </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Cell"
+  class="reference-box"><div><span>class </span><a
+  href="#Cell"
+  class="name reference">Cell</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Cell.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L477">compiler.lc:477</a></div><a
+  href="#Cell.+init"
+  class="name reference">+init</a><span>(<span>self, visit</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>visit </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Closure"
+  class="reference-box"><div><span>class </span><a
+  href="#Closure"
+  class="name reference">Closure</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Closure.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L495">compiler.lc:495</a></div><a
+  href="#Closure.+init"
+  class="name reference">+init</a><span>(<span>self, bindings, body</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>bindings </td><td>not documented
+</td></tr><tr><td>body </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Closure.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L499">compiler.lc:499</a></div><a
+  href="#Closure.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Code"
+  class="reference-box"><div><span>class </span><a
+  href="#Code"
+  class="name reference">Code</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Code.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L526">compiler.lc:526</a></div><a
+  href="#Code.+init"
+  class="name reference">+init</a><span>(<span>self, name, args...</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Code.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L530">compiler.lc:530</a></div><a
+  href="#Code.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="CodeGroup"
+  class="reference-box"><div><span>class </span><a
+  href="#CodeGroup"
+  class="name reference">CodeGroup</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="CodeGroup.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L557">compiler.lc:557</a></div><a
+  href="#CodeGroup.+init"
+  class="name reference">+init</a><span>(<span>self, name, prefix, groups</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented
+</td></tr><tr><td>prefix </td><td>not documented
+</td></tr><tr><td>groups </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="CodeGroup.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L562">compiler.lc:562</a></div><a
+  href="#CodeGroup.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="CodeM"
+  class="reference-box"><div><span>class </span><a
+  href="#CodeM"
+  class="name reference">CodeM</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="CodeM.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L539">compiler.lc:539</a></div><a
+  href="#CodeM.+init"
+  class="name reference">+init</a><span>(<span>self, name, args, order</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented </td></tr><tr><td>order
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="CodeM.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L544">compiler.lc:544</a></div><a
+  href="#CodeM.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Cond"
+  class="reference-box"><div><span>class </span><a
+  href="#Cond"
+  class="name reference">Cond</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Cond.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L694">compiler.lc:694</a></div><a
+  href="#Cond.+init"
+  class="name reference">+init</a><span>(<span>self, cond, otherwise</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>cond </td><td>not documented
+</td></tr><tr><td>otherwise </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Cond.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L698">compiler.lc:698</a></div><a
+  href="#Cond.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="ConstantTable"
+  class="reference-box"><div><span>class </span><a
+  href="#ConstantTable"
+  class="name reference">ConstantTable</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="ConstantTable.+getitem"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1184">compiler.lc:1184</a></div><a
+  href="#ConstantTable.+getitem"
+  class="name reference">+getitem</a><span>(<span>self, const</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>const </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="ConstantTable.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1180">compiler.lc:1180</a></div><a
+  href="#ConstantTable.+init"
+  class="name reference">+init</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Context"
+  class="reference-box"><div><span>class </span><a
+  href="#Context"
+  class="name reference">Context</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Context.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L351">compiler.lc:351</a></div><a
+  href="#Context.+init"
+  class="name reference">+init</a><span>(<span>self, closures</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>closures </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Context.new_block"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L382">compiler.lc:382</a></div><a
+  href="#Context.new_block"
+  class="name reference">new_block</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Context.op" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L389">compiler.lc:389</a></div><a
+  href="#Context.op"
+  class="name reference">op</a><span>(<span>self, name, args...</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented </td></tr><tr><td>args
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Context.pop_finally"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L379">compiler.lc:379</a></div><a
+  href="#Context.pop_finally"
+  class="name reference">pop_finally</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Context.pop_loop" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L376">compiler.lc:376</a></div><a
+  href="#Context.pop_loop"
+  class="name reference">pop_loop</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Context.push_finally"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L362">compiler.lc:362</a></div><a
+  href="#Context.push_finally"
+  class="name reference">push_finally</a><span>(<span>self, body</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>body </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Context.push_loop"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L368">compiler.lc:368</a></div><a
+  href="#Context.push_loop"
+  class="name reference">push_loop</a><span>(<span>self, cont, brk</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>cont </td><td>not documented </td></tr><tr><td>brk
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Exc"
+  class="reference-box"><div><span>class </span><a
+  href="#Exc"
+  class="name reference">Exc</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Exc.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1100">compiler.lc:1100</a></div><a
+  href="#Exc.+init"
+  class="name reference">+init</a><span>(<span>self, block, parent = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>block </td><td>not documented
+</td></tr><tr><td>parent </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Exc.+iter" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1112">compiler.lc:1112</a></div><a
+  href="#Exc.+iter"
+  class="name reference">+iter</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Exc.trace" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1115">compiler.lc:1115</a></div><a
+  href="#Exc.trace"
+  class="name reference">trace</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Exc.uses" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1109">compiler.lc:1109</a></div><a
+  href="#Exc.uses"
+  class="name reference">uses</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="For"
+  class="reference-box"><div><span>class </span><a
+  href="#For"
+  class="name reference">For</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="For.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L609">compiler.lc:609</a></div><a
+  href="#For.+init"
+  class="name reference">+init</a><span>(<span>self, bind, iterator, body</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>bind </td><td>not documented
+</td></tr><tr><td>iterator </td><td>not documented
+</td></tr><tr><td>body </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="For.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L614">compiler.lc:614</a></div><a
+  href="#For.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Function"
+  class="reference-box"><div><span>class </span><a
+  href="#Function"
+  class="name reference">Function</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Function.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1124">compiler.lc:1124</a></div><a
+  href="#Function.+init"
+  class="name reference">+init</a><span>(<span>self, index</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>index </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Getvar"
+  class="reference-box"><div><span>class </span><a
+  href="#Getvar"
+  class="name reference">Getvar</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Getvar.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L800">compiler.lc:800</a></div><a
+  href="#Getvar.+init"
+  class="name reference">+init</a><span>(<span>self, name</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Getvar.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L803">compiler.lc:803</a></div><a
+  href="#Getvar.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Jumper"
+  class="reference-box"><div><span>class </span><a
+  href="#Jumper"
+  class="name reference">Jumper</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Jumper.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L587">compiler.lc:587</a></div><a
+  href="#Jumper.+init"
+  class="name reference">+init</a><span>(<span>self, blockfn</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>blockfn </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Jumper.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L590">compiler.lc:590</a></div><a
+  href="#Jumper.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Let"
+  class="reference-box"><div><span>class </span><a
+  href="#Let"
+  class="name reference">Let</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Let.+call"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L824">compiler.lc:824</a></div><a
+  href="#Let.+call"
+  class="name reference">+call</a><span>(<span>self, body</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>body </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Let.+init" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L820">compiler.lc:820</a></div><a
+  href="#Let.+init"
+  class="name reference">+init</a><span>(<span>self, value</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>value </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Let.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L827">compiler.lc:827</a></div><a
+  href="#Let.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="LetBody"
+  class="reference-box"><div><span>class </span><a
+  href="#LetBody"
+  class="name reference">LetBody</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="LetBody.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L836">compiler.lc:836</a></div><a
+  href="#LetBody.+init"
+  class="name reference">+init</a><span>(<span>self, binding, body</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>binding </td><td>not documented
+</td></tr><tr><td>body </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="LetBody.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L840">compiler.lc:840</a></div><a
+  href="#LetBody.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="ObjectScope"
+  class="reference-box"><div><span>class </span><a
+  href="#ObjectScope"
+  class="name reference">ObjectScope</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="ObjectScope.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L451">compiler.lc:451</a></div><a
+  href="#ObjectScope.+init"
+  class="name reference">+init</a><span>(<span>self, parent, slot, localv</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>parent </td><td>not documented
+</td></tr><tr><td>slot </td><td>not documented
+</td></tr><tr><td>localv </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="ObjectScope.getslot"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L460">compiler.lc:460</a></div><a
+  href="#ObjectScope.getslot"
+  class="name reference">getslot</a><span>(<span>self, name</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="ObjectScope.object_scope"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L457">compiler.lc:457</a></div><a
+  href="#ObjectScope.object_scope"
+  class="name reference">object_scope</a><span>(<span>self, context, val, parent = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>val </td><td>not documented </td></tr><tr><td>parent
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Op"
+  class="reference-box"><div><span>class </span><a
+  href="#Op"
+  class="name reference">Op</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Op.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1157">compiler.lc:1157</a></div><a
+  href="#Op.+init"
+  class="name reference">+init</a><span>(<span>self, loc, opname, args</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>loc </td><td>not documented </td></tr><tr><td>opname
+</td><td>not documented </td></tr><tr><td>args </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Op.+iter" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1176">compiler.lc:1176</a></div><a
+  href="#Op.+iter"
+  class="name reference">+iter</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Op.uses" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1169">compiler.lc:1169</a></div><a
+  href="#Op.uses"
+  class="name reference">uses</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Or"
+  class="reference-box"><div><span>class </span><a
+  href="#Or"
+  class="name reference">Or</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Or.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L660">compiler.lc:660</a></div><a
+  href="#Or.+init"
+  class="name reference">+init</a><span>(<span>self, lhs, rhs</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>lhs </td><td>not documented </td></tr><tr><td>rhs
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Or.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L664">compiler.lc:664</a></div><a
+  href="#Or.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Origin"
+  class="reference-box"><div><span>class </span><a
+  href="#Origin"
+  class="name reference">Origin</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Origin.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L481">compiler.lc:481</a></div><a
+  href="#Origin.+init"
+  class="name reference">+init</a><span>(<span>self, cell, location_id, start, stop</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>cell </td><td>not documented
+</td></tr><tr><td>location_id </td><td>not documented
+</td></tr><tr><td>start </td><td>not documented </td></tr><tr><td>stop
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Origin.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L487">compiler.lc:487</a></div><a
+  href="#Origin.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Prog"
+  class="reference-box"><div><span>class </span><a
+  href="#Prog"
+  class="name reference">Prog</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Prog.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L572">compiler.lc:572</a></div><a
+  href="#Prog.+init"
+  class="name reference">+init</a><span>(<span>self, exprs</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>exprs </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Prog.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L575">compiler.lc:575</a></div><a
+  href="#Prog.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Scope"
+  class="reference-box"><div><span>class </span><a
+  href="#Scope"
+  class="name reference">Scope</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Scope.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L403">compiler.lc:403</a></div><a
+  href="#Scope.+init"
+  class="name reference">+init</a><span>(<span>self, parent, flags, argc, topc, localv</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>parent </td><td>not documented
+</td></tr><tr><td>flags </td><td>not documented </td></tr><tr><td>argc
+</td><td>not documented </td></tr><tr><td>topc </td><td>not documented
+</td></tr><tr><td>localv </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Scope.getslot" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L420">compiler.lc:420</a></div><a
+  href="#Scope.getslot"
+  class="name reference">getslot</a><span>(<span>self, name</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Scope.object_scope"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L413">compiler.lc:413</a></div><a
+  href="#Scope.object_scope"
+  class="name reference">object_scope</a><span>(<span>self, context, val, parent = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>val </td><td>not documented </td></tr><tr><td>parent
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="ScopeGrab"
+  class="reference-box"><div><span>class </span><a
+  href="#ScopeGrab"
+  class="name reference">ScopeGrab</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="ScopeGrab.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L595">compiler.lc:595</a></div><a
+  href="#ScopeGrab.+init"
+  class="name reference">+init</a><span>(<span>self, expr, body</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>expr </td><td>not documented </td></tr><tr><td>body
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="ScopeGrab.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L599">compiler.lc:599</a></div><a
+  href="#ScopeGrab.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Setvar"
+  class="reference-box"><div><span>class </span><a
+  href="#Setvar"
+  class="name reference">Setvar</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Setvar.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L810">compiler.lc:810</a></div><a
+  href="#Setvar.+init"
+  class="name reference">+init</a><span>(<span>self, flavor, name, value</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>flavor </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented </td></tr><tr><td>value
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Setvar.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L815">compiler.lc:815</a></div><a
+  href="#Setvar.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Slot"
+  class="reference-box"><div><span>class </span><a
+  href="#Slot"
+  class="name reference">Slot</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Slot.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L424">compiler.lc:424</a></div><a
+  href="#Slot.+init"
+  class="name reference">+init</a><span>(<span>self, scope, index</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>scope </td><td>not documented
+</td></tr><tr><td>index </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Slot.get" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L428">compiler.lc:428</a></div><a
+  href="#Slot.get"
+  class="name reference">get</a><span>(<span>self, context</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Slot.set" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L439">compiler.lc:439</a></div><a
+  href="#Slot.set"
+  class="name reference">set</a><span>(<span>self, context, value</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>value </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="SourcemapBuilder"
+  class="reference-box"><div><span>class </span><a
+  href="#SourcemapBuilder"
+  class="name reference">SourcemapBuilder</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="SourcemapBuilder.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1194">compiler.lc:1194</a></div><a
+  href="#SourcemapBuilder.+init"
+  class="name reference">+init</a><span>(<span>self, origin</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>origin </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="SourcemapBuilder.add"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1202">compiler.lc:1202</a></div><a
+  href="#SourcemapBuilder.add"
+  class="name reference">add</a><span>(<span>self, count, origin</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>count </td><td>not documented
+</td></tr><tr><td>origin </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="SourcemapBuilder.get"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1217">compiler.lc:1217</a></div><a
+  href="#SourcemapBuilder.get"
+  class="name reference">get</a><span>(<span>self, force = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>force </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Try"
+  class="reference-box"><div><span>class </span><a
+  href="#Try"
+  class="name reference">Try</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Try.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L749">compiler.lc:749</a></div><a
+  href="#Try.+init"
+  class="name reference">+init</a><span>(<span>self, body, excepts, finally_body</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>body </td><td>not documented
+</td></tr><tr><td>excepts </td><td>not documented
+</td></tr><tr><td>finally_body </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Try.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L754">compiler.lc:754</a></div><a
+  href="#Try.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="While"
+  class="reference-box"><div><span>class </span><a
+  href="#While"
+  class="name reference">While</a><span> extends <a
+  href="compiler.html#Cell"
+  class="reference">Cell</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="While.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L634">compiler.lc:634</a></div><a
+  href="#While.+init"
+  class="name reference">+init</a><span>(<span>self, cond, body</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>cond </td><td>not documented </td></tr><tr><td>body
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="While.visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L638">compiler.lc:638</a></div><a
+  href="#While.visit"
+  class="name reference">visit</a><span>(<span>self, context, noret = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>context </td><td>not documented
+</td></tr><tr><td>noret </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="actions" class="reference-box"><div><a
+  href="#actions"
+  class="name reference">actions</a><span> : <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="allocate_tmp"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L931">compiler.lc:931</a></div><a
+  href="#allocate_tmp"
+  class="name reference">allocate_tmp</a><span>(<span>blocks</span>)</span><table
+  class="arg-ref"><tr><td>blocks </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="as_arg" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1076">compiler.lc:1076</a></div><a
+  href="#as_arg"
+  class="name reference">as_arg</a><span>(<span>op, vt, arg, consttab</span>)</span><table
+  class="arg-ref"><tr><td>op </td><td>not documented
+</td></tr><tr><td>vt </td><td>not documented </td></tr><tr><td>arg
+</td><td>not documented </td></tr><tr><td>consttab
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="base" class="reference-box"><div><a
+  href="#base"
+  class="name reference">base</a><span> : <a
+  href="base.html#module"
+  class="reference">module</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="binon"
+  class="reference-box"><div><a href="#binon"
+  class="name reference">binon</a><span> : <a
+  href="base.html#module"
+  class="reference">module</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="chartparser"
+  class="reference-box"><div><a
+  href="#chartparser"
+  class="name reference">chartparser</a><span> : <a
+  href="base.html#module"
+  class="reference">module</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="check_args"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1049">compiler.lc:1049</a></div><a
+  href="#check_args"
+  class="name reference">check_args</a><span>(<span>op</span>)</span><table
+  class="arg-ref"><tr><td>op </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="compile_file" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L26">compiler.lc:26</a></div><a
+  href="#compile_file"
+  class="name reference">compile_file</a><span>(<span>cb_path, lc_path</span>)</span><table
+  class="arg-ref"><tr><td>cb_path </td><td>not documented
+</td></tr><tr><td>lc_path </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="dir" class="reference-box"><div><a
+  href="#dir"
+  class="name reference">dir</a><span> : <a
+  href="base.html#path"
+  class="reference">path</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="dump"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L867">compiler.lc:867</a></div><a
+  href="#dump"
+  class="name reference">dump</a><span>(<span>flags, argc, topc, localv, entry_block, consttab, origin</span>)</span><table
+  class="arg-ref"><tr><td>flags </td><td>not documented
+</td></tr><tr><td>argc </td><td>not documented </td></tr><tr><td>topc
+</td><td>not documented </td></tr><tr><td>localv
+</td><td>not documented </td></tr><tr><td>entry_block
+</td><td>not documented </td></tr><tr><td>consttab
+</td><td>not documented </td></tr><tr><td>origin
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="enc_vlq" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1225">compiler.lc:1225</a></div><a
+  href="#enc_vlq"
+  class="name reference">enc_vlq</a><span>(<span>v</span>)</span><table
+  class="arg-ref"><tr><td>v </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="encode_op" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1031">compiler.lc:1031</a></div><a
+  href="#encode_op"
+  class="name reference">encode_op</a><span>(<span>op, consttab</span>)</span><table
+  class="arg-ref"><tr><td>op </td><td>not documented
+</td></tr><tr><td>consttab </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="find_exception_ranges"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1009">compiler.lc:1009</a></div><a
+  href="#find_exception_ranges"
+  class="name reference">find_exception_ranges</a><span>(<span>blocks, finish</span>)</span><table
+  class="arg-ref"><tr><td>blocks </td><td>not documented
+</td></tr><tr><td>finish </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="grammar_language" class="reference-box"><div><a
+  href="#grammar_language"
+  class="name reference">grammar_language</a><span> : <a
+  href="base.html#module"
+  class="reference">module</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="import"
+  class="reference-box"><div><a href="#import"
+  class="name reference">import</a><span> : <a
+  href="base.html#Import"
+  class="reference">Import</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="label_this_point"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L741">compiler.lc:741</a></div><a
+  href="#label_this_point"
+  class="name reference">label_this_point</a><span>(<span>context, block</span>)</span><table
+  class="arg-ref"><tr><td>context </td><td>not documented
+</td></tr><tr><td>block </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="language" class="reference-box"><div><a
+  href="#language"
+  class="name reference">language</a><span> : <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="main"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L19">compiler.lc:19</a></div><a
+  href="#main"
+  class="name reference">main</a><span>(<span></span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="name" class="reference-box"><div><a
+  href="#name"
+  class="name reference">name</a><span> = &quot;compiler&quot;
+</span></div>not documented <div class="status">volatile
+</div></div><div id="optable" class="reference-box"><div><a
+  href="#optable"
+  class="name reference">optable</a><span> : <a
+  href="base.html#module"
+  class="reference">module</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="plot_range"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L1000">compiler.lc:1000</a></div><a
+  href="#plot_range"
+  class="name reference">plot_range</a><span>(<span>ranges, key, pos</span>)</span><table
+  class="arg-ref"><tr><td>ranges </td><td>not documented
+</td></tr><tr><td>key </td><td>not documented </td></tr><tr><td>pos
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="postorder_visit" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L919">compiler.lc:919</a></div><a
+  href="#postorder_visit"
+  class="name reference">postorder_visit</a><span>(<span>sequence, block</span>)</span><table
+  class="arg-ref"><tr><td>sequence </td><td>not documented
+</td></tr><tr><td>block </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="read_file" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L30">compiler.lc:30</a></div><a
+  href="#read_file"
+  class="name reference">read_file</a><span>(<span>path, source = null</span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>source </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="read_string" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L34">compiler.lc:34</a></div><a
+  href="#read_string"
+  class="name reference">read_string</a><span>(<span>string, source = null</span>)</span><table
+  class="arg-ref"><tr><td>string </td><td>not documented
+</td></tr><tr><td>source </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="read_tokens" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L38">compiler.lc:38</a></div><a
+  href="#read_tokens"
+  class="name reference">read_tokens</a><span>(<span>tokens, source = null</span>)</span><table
+  class="arg-ref"><tr><td>tokens </td><td>not documented
+</td></tr><tr><td>source </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="reverse_postorder"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L914">compiler.lc:914</a></div><a
+  href="#reverse_postorder"
+  class="name reference">reverse_postorder</a><span>(<span>entry</span>)</span><table
+  class="arg-ref"><tr><td>entry </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="scope_lookup" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L853">compiler.lc:853</a></div><a
+  href="#scope_lookup"
+  class="name reference">scope_lookup</a><span>(<span>scope, flavor, name</span>)</span><table
+  class="arg-ref"><tr><td>scope </td><td>not documented
+</td></tr><tr><td>flavor </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="setvar" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/compiler.lc#L847">compiler.lc:847</a></div><a
+  href="#setvar"
+  class="name reference">setvar</a><span>(<span>context, flavor, name, value</span>)</span><table
+  class="arg-ref"><tr><td>context </td><td>not documented
+</td></tr><tr><td>flavor </td><td>not documented
+</td></tr><tr><td>name </td><td>not documented </td></tr><tr><td>value
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="tokenizer" class="reference-box"><div><a
+  href="#tokenizer"
+  class="name reference">tokenizer</a><span> : <a
+  href="base.html#module"
+  class="reference">module</a> </span></div>not documented <div
+  class="status">volatile </div></div></article><div
+  style="text-align: center"><span
+  style="background-color: #85818e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #df7120; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a7341c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #5c231c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a39ea4; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #312334; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #44588e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #4679b8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #79bbe8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #d7d2d7; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #785d9a; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #949e85; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #2e170e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #7b3c16; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #c86f31; width: 1em; height: 1em; display: inline-block">
+</span></div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script></body></html>

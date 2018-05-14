@@ -1,0 +1,143 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta
+  content="width=device-width, initial-scale=1"
+  name="viewport"/>
+<title>Lever manual: api</title><link
+  rel="stylesheet"
+  href="../../stylesheet.css">
+<!-- Generated from 'doc/api.text' in github.com/cheery/lever --></head><body><ul
+  class="nav"><li><a href="../../"><img
+  src="../../logo.png"
+  alt="LEVER">
+</a></li><li><a
+  href="https://github.com/cheery/lever/"
+  class="nav_button">repository</a></li><li><a
+  href="../../index.html#download"
+  class="nav_button">download</a></li><li><a
+  href="./"
+  class="nav_button">documentation index</a></li></ul><article><h1
+  class="embed-header">Manual: api</h1><div
+  id="funclibrary"
+  class="reference-box"><div><span>class </span><a
+  href="#funclibrary"
+  class="name reference">funclibrary</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="funclibrary.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/api.py#L201">builtin:&#x2F;stdlib&#x2F;api.py:201</a></div><a
+  href="#funclibrary.+init"
+  class="name reference">+init</a><span>(<span>api : <a
+  href="base.html#object"
+  class="reference">object</a>, func : <a
+  href="base.html#object"
+  class="reference">object</a></span>)</span><table
+  class="arg-ref"><tr><td>api </td><td>not documented
+</td></tr><tr><td>func </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="library" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/api.py#L223">builtin:&#x2F;stdlib&#x2F;api.py:223</a></div><a
+  href="#library"
+  class="name reference">library</a><span>(<span>path : <a
+  href="base.html#str"
+  class="reference">str</a>, func = null, dependencies = null, decorator = null</span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>not documented
+</td></tr></table></div>Opens a library directly with the .json
+headers. <p>Searches for .json -notated C headers at
+$(LEVER_PATH)&#x2F;headers&#x2F;{name} </p><p>If those are found, it
+invokes FFI to open a shared library that corresponds to the headers.
+Or uses the function you supplied to it to retrieve C-FFI handles to
+annotate. </p><p>The resulting object overloads +getattr, so you can
+treat your newly instantiated C-bindings as a module. </p><div
+  class="status">volatile </div></div><div
+  id="open"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/api.py#L217">builtin:&#x2F;stdlib&#x2F;api.py:217</a></div><a
+  href="#open"
+  class="name reference">open</a><span>(<span>path : <a
+  href="base.html#str"
+  class="reference">str</a>, func = null, dependencies = null, decorator = null</span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">deprecated
+</div></div><div id="open_nobind" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/api.py#L235">builtin:&#x2F;stdlib&#x2F;api.py:235</a></div><a
+  href="#open_nobind"
+  class="name reference">open_nobind</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a>, dependencies = null, decorator = null</span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>dependencies </td><td>not documented
+</td></tr><tr><td>decorator </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="read_file" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/api.py#L241">builtin:&#x2F;stdlib&#x2F;api.py:241</a></div><a
+  href="#read_file"
+  class="name reference">read_file</a><span>(<span>path : <a
+  href="base.html#path"
+  class="reference">path</a>, dependencies = null, decorator = null</span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>not documented
+</td></tr><tr><td>dependencies </td><td>not documented
+</td></tr><tr><td>decorator </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="read_object" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/runtime/stdlib/api.py#L256">builtin:&#x2F;stdlib&#x2F;api.py:256</a></div><a
+  href="#read_object"
+  class="name reference">read_object</a><span>(<span>apispec : <a
+  href="base.html#object"
+  class="reference">object</a>, dependencies = null, decorator = null</span>)</span><table
+  class="arg-ref"><tr><td>apispec </td><td>not documented
+</td></tr><tr><td>dependencies </td><td>not documented
+</td></tr><tr><td>decorator </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="so_ext" class="reference-box"><div><a
+  href="#so_ext"
+  class="name reference">so_ext</a><span> = &quot;so&quot;
+</span></div>not documented <div class="status">volatile
+</div></div></article><div style="text-align: center"><span
+  style="background-color: #85818e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #df7120; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a7341c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #5c231c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a39ea4; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #312334; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #44588e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #4679b8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #79bbe8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #d7d2d7; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #785d9a; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #949e85; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #2e170e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #7b3c16; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #c86f31; width: 1em; height: 1em; display: inline-block">
+</span></div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script></body></html>

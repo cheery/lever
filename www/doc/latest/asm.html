@@ -1,0 +1,325 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta
+  content="width=device-width, initial-scale=1"
+  name="viewport"/>
+<title>Lever manual: asm</title><link
+  rel="stylesheet"
+  href="../../stylesheet.css">
+<!-- Generated from 'doc/asm.text' in github.com/cheery/lever --></head><body><ul
+  class="nav"><li><a href="../../"><img
+  src="../../logo.png"
+  alt="LEVER">
+</a></li><li><a
+  href="https://github.com/cheery/lever/"
+  class="nav_button">repository</a></li><li><a
+  href="../../index.html#download"
+  class="nav_button">download</a></li><li><a
+  href="./"
+  class="nav_button">documentation index</a></li></ul><article><h1
+  class="embed-header">Manual: asm</h1><div
+  id="Address"
+  class="reference-box"><div><span>class </span><a
+  href="#Address"
+  class="name reference">Address</a><span> extends <a
+  href="asm.html#Operand"
+  class="reference">Operand</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Address.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L286">asm.lc:286</a></div><a
+  href="#Address.+init"
+  class="name reference">+init</a><span>(<span>self, type, offset, base = null, index = null, scale = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>type </td><td>not documented
+</td></tr><tr><td>offset </td><td>not documented
+</td></tr><tr><td>base </td><td>not documented </td></tr><tr><td>index
+</td><td>not documented </td></tr><tr><td>scale
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="GPR"
+  class="reference-box"><div><span>class </span><a
+  href="#GPR"
+  class="name reference">GPR</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="GPR.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L309">asm.lc:309</a></div><a
+  href="#GPR.+init"
+  class="name reference">+init</a><span>(<span>self, size</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>size </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="GPR.+repr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L312">asm.lc:312</a></div><a
+  href="#GPR.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Immediate"
+  class="reference-box"><div><span>class </span><a
+  href="#Immediate"
+  class="name reference">Immediate</a><span> extends <a
+  href="asm.html#Operand"
+  class="reference">Operand</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Immediate.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L304">asm.lc:304</a></div><a
+  href="#Immediate.+init"
+  class="name reference">+init</a><span>(<span>self, type, value</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>type </td><td>not documented </td></tr><tr><td>value
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="MM"
+  class="reference-box"><div><span>class </span><a
+  href="#MM"
+  class="name reference">MM</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="MM.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L316">asm.lc:316</a></div><a
+  href="#MM.+init"
+  class="name reference">+init</a><span>(<span>self, size</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>size </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="MM.+repr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L319">asm.lc:319</a></div><a
+  href="#MM.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Operand"
+  class="reference-box"><div><span>class </span><a
+  href="#Operand"
+  class="name reference">Operand</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Operand.resolve"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L261">asm.lc:261</a></div><a
+  href="#Operand.resolve"
+  class="name reference">resolve</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Register"
+  class="reference-box"><div><span>class </span><a
+  href="#Register"
+  class="name reference">Register</a><span> extends <a
+  href="asm.html#Operand"
+  class="reference">Operand</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Register.+hash"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L273">asm.lc:273</a></div><a
+  href="#Register.+hash"
+  class="name reference">+hash</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Register.+init" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L265">asm.lc:265</a></div><a
+  href="#Register.+init"
+  class="name reference">+init</a><span>(<span>self, type, index</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>type </td><td>not documented </td></tr><tr><td>index
+</td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="Register.+repr" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L269">asm.lc:269</a></div><a
+  href="#Register.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="Relative"
+  class="reference-box"><div><span>class </span><a
+  href="#Relative"
+  class="name reference">Relative</a><span> extends <a
+  href="asm.html#Operand"
+  class="reference">Operand</a> </span></div>not documented <div
+  class="status">volatile </div><div
+  id="Relative.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L282">asm.lc:282</a></div><a
+  href="#Relative.+init"
+  class="name reference">+init</a><span>(<span>self, offset</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>offset </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></div><div id="by_name" class="reference-box"><div><a
+  href="#by_name"
+  class="name reference">by_name</a><span> : <a
+  href="base.html#dict"
+  class="reference">dict</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="dir"
+  class="reference-box"><div><a href="#dir"
+  class="name reference">dir</a><span> : <a
+  href="base.html#path"
+  class="reference">path</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="encode_ins"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L55">asm.lc:55</a></div><a
+  href="#encode_ins"
+  class="name reference">encode_ins</a><span>(<span>uid, args, features = null</span>)</span><table
+  class="arg-ref"><tr><td>uid </td><td>not documented
+</td></tr><tr><td>args </td><td>not documented
+</td></tr><tr><td>features </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="format_hex" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L49">asm.lc:49</a></div><a
+  href="#format_hex"
+  class="name reference">format_hex</a><span>(<span>xs</span>)</span><table
+  class="arg-ref"><tr><td>xs </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="i16" class="reference-box"><div><a
+  href="#i16"
+  class="name reference">i16</a><span> : <a
+  href="asm.html#GPR"
+  class="reference">GPR</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="i32"
+  class="reference-box"><div><a href="#i32"
+  class="name reference">i32</a><span> : <a
+  href="asm.html#GPR"
+  class="reference">GPR</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="i64"
+  class="reference-box"><div><a href="#i64"
+  class="name reference">i64</a><span> : <a
+  href="asm.html#GPR"
+  class="reference">GPR</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="i8"
+  class="reference-box"><div><a href="#i8"
+  class="name reference">i8</a><span> : <a
+  href="asm.html#GPR"
+  class="reference">GPR</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="import"
+  class="reference-box"><div><a href="#import"
+  class="name reference">import</a><span> : <a
+  href="base.html#Import"
+  class="reference">Import</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="instructions"
+  class="reference-box"><div><a
+  href="#instructions"
+  class="name reference">instructions</a><span> : <a
+  href="base.html#list"
+  class="reference">list</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="json"
+  class="reference-box"><div><a href="#json"
+  class="name reference">json</a><span> : <a
+  href="base.html#module"
+  class="reference">module</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="m128"
+  class="reference-box"><div><a href="#m128"
+  class="name reference">m128</a><span> : <a
+  href="asm.html#MM"
+  class="reference">MM</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="m64"
+  class="reference-box"><div><a href="#m64"
+  class="name reference">m64</a><span> : <a
+  href="asm.html#MM"
+  class="reference">MM</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="main"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L7">asm.lc:7</a></div><a
+  href="#main"
+  class="name reference">main</a><span>(<span></span>)</span><table
+  class="arg-ref"><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="name" class="reference-box"><div><a
+  href="#name"
+  class="name reference">name</a><span> = &quot;asm&quot;
+</span></div>not documented <div class="status">volatile
+</div></div><div id="print_ins_entry" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L34">asm.lc:34</a></div><a
+  href="#print_ins_entry"
+  class="name reference">print_ins_entry</a><span>(<span>ins</span>)</span><table
+  class="arg-ref"><tr><td>ins </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="resolve" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/asm.lc#L295">asm.lc:295</a></div><a
+  href="#resolve"
+  class="name reference">resolve</a><span>(<span>operand_or_index</span>)</span><table
+  class="arg-ref"><tr><td>operand_or_index </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="table" class="reference-box"><div><a
+  href="#table"
+  class="name reference">table</a><span> : <a
+  href="base.html#dict"
+  class="reference">dict</a> </span></div>not documented <div
+  class="status">volatile </div></div></article><div
+  style="text-align: center"><span
+  style="background-color: #85818e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #df7120; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a7341c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #5c231c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a39ea4; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #312334; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #44588e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #4679b8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #79bbe8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #d7d2d7; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #785d9a; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #949e85; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #2e170e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #7b3c16; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #c86f31; width: 1em; height: 1em; display: inline-block">
+</span></div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script></body></html>

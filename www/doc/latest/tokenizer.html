@@ -1,0 +1,317 @@
+<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta
+  content="width=device-width, initial-scale=1"
+  name="viewport"/>
+<title>Lever manual: tokenizer</title><link
+  rel="stylesheet"
+  href="../../stylesheet.css">
+<!-- Generated from 'doc/tokenizer.text' in github.com/cheery/lever --></head><body><ul
+  class="nav"><li><a href="../../"><img
+  src="../../logo.png"
+  alt="LEVER">
+</a></li><li><a
+  href="https://github.com/cheery/lever/"
+  class="nav_button">repository</a></li><li><a
+  href="../../index.html#download"
+  class="nav_button">download</a></li><li><a
+  href="./"
+  class="nav_button">documentation index</a></li></ul><article><h1
+  class="embed-header">Manual: tokenizer</h1><p>Converts strings into
+Lever tokens </p><p>This tokenizer is the first thing that happens to
+a Lever program that is about to be run. The tokenizer is invoked by
+the parser and the compiler. </p><p>To bootstrap Lever&#x27;s compiler
+with Python, there is a ported implementation of this module in
+compiler&#x2F;lever_parser&#x2F;reader&#x2F;. </p><a
+  id="toc-link"
+  href="#-toc">Table of contents ↑</a><fieldset class="toc"
+  id="-toc"><legend>Table of contents</legend><div>01. <a
+  href="#01">Keyword smearing </a></div><div>02. <a href="#02">API
+</a></div><div>03. <a href="#03">Internal details
+</a></div></fieldset><script
+  src="../../toc-helper.js"></script><p>Lever&#x27;s tokenizer
+resembles Python&#x27;s tokenizer a lot. The major difference is that
+the keywords and operators collected by the tokenizer are determined
+by the &#x27;table&#x27; -argument passed in as an argument. This
+allows the parsing engine to have a last word on the keywords the
+tokenizer parses. </p><p>This tokenizer should understand..
+</p><ol><li>Comments starting with &#x27;#&#x27; that continue to the
+end of the line. </li><li>Python&#x27;s raw string syntax, eg.
+r&quot;foo\bar&quot;, r&#x27;foo\bar&#x27; </li><li>Symbols, eg.
+identifiers, regex. [a-zA-Z_][a-zA-Z0-9_]* </li><li>Hexadecimals
+starting with 0x... </li><li>Whole numbers, regex. [0-9]+
+</li><li>Numbers with decimal point and exponent, eg. 1.23e-10, 1.2
+</li><li>Strings with single or double quotes, eg. &#x27;hello&#x27;
+or &quot;world&quot; </li><li>Custom keywords or operators.
+</li></ol><p>The tokenizer treats space as separator between tokens,
+and does not produce Literal -objects for it. </p><h2
+  id="01">01. Keyword smearing </h2><p>The keyword table given to the
+tokenizer may contain symbols such as &#x27;!=&#x27;. For these to be
+correctly recognized, the non-alphabetic keywords have to be smeared.
+</p><p>Here&#x27;s a smearing function you can use for that purpose:
+</p><p></p><pre>default_smear = (keyword):
+    for ch in keyword
+        if ch.is_alpha()
+            return [keyword]
+    result = []
+    prefix = []
+    for ch in keyword
+        prefix.append(ch)
+        result.append(&quot;&quot;.join(prefix))
+    return result
+</pre><h2
+  id="02">02. API </h2><div id="read_file"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L5">tokenizer.lc:5</a></div><a
+  href="#read_file"
+  class="name reference">read_file</a><span>(<span>path, table = null, symtab = null</span>)</span><table
+  class="arg-ref"><tr><td>path </td><td>The path to the file to be
+tokenized. </td></tr><tr><td>table </td><td>Keyword table.
+</td></tr><tr><td>symtab </td><td>Symbol table.
+</td></tr><tr><td>returns </td><td>List of Literal -objects.
+</td></tr></table></div>Tokenize a file. <div class="status">volatile
+</div></div><div id="read_string" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L8">tokenizer.lc:8</a></div><a
+  href="#read_string"
+  class="name reference">read_string</a><span>(<span>string, table = null, symtab = null</span>)</span><table
+  class="arg-ref"><tr><td>string </td><td>The string to be tokenized.
+</td></tr><tr><td>table </td><td>Keyword table.
+</td></tr><tr><td>symtab </td><td>Symbol table.
+</td></tr><tr><td>returns </td><td>List of Literal -objects.
+</td></tr></table></div>Tokenize a string. <div
+  class="status">volatile </div></div><div
+  id="default_symtab"
+  class="reference-box"><div><a
+  href="#default_symtab"
+  class="name reference">default_symtab</a><span> : <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>The default symbol table
+that is used if you do not pass a third argument to read_file or
+read_string. <p>To create your own symbol table, create an object with
+attributes: &#x27;string&#x27;, &#x27;symbol&#x27;, &#x27;hex&#x27;,
+&#x27;int&#x27;, &#x27;float&#x27;. </p><div class="status">volatile
+</div></div><h2 id="03">03. Internal details </h2><p>The rest of this
+file isn&#x27;t well-documented. </p><div
+  id="Literal"
+  class="reference-box"><div><span>class </span><a
+  href="#Literal"
+  class="name reference">Literal</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>The representation of a
+token. <div class="status">volatile </div><div
+  id="Literal.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L126">tokenizer.lc:126</a></div><a
+  href="#Literal.+init"
+  class="name reference">+init</a><span>(<span>self, start, stop, name, string</span>)</span><table
+  class="arg-ref"><tr><td>start </td><td>start source location {col,
+lno} </td></tr><tr><td>stop </td><td>stop source location {col, lno}
+</td></tr><tr><td>name </td><td>&#x27;name&#x27; of the token,
+retrieved from the symtab -object. </td></tr><tr><td>string
+</td><td>The string captured by this token.
+</td></tr></table></div><div class="status">volatile </div></div><div
+  id="Literal.+repr"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L132">tokenizer.lc:132</a></div><a
+  href="#Literal.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"></table></div><div class="status">volatile
+</div></div></div><div id="Position"
+  class="reference-box"><div><span>class </span><a
+  href="#Position"
+  class="name reference">Position</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>represents a source
+location. <p>This object is likely unnecessary, and may be replaced by
+something with .col and .lno -attributes in the future. </p><div
+  class="status">volatile </div><div
+  id="Position.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L195">tokenizer.lc:195</a></div><a
+  href="#Position.+init"
+  class="name reference">+init</a><span>(<span>self, col, lno</span>)</span><table
+  class="arg-ref"><tr><td>col </td><td>column, starts from 0
+</td></tr><tr><td>lno </td><td>line number, starts from 1
+</td></tr></table></div><div class="status">volatile </div></div><div
+  id="Position.+repr"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L199">tokenizer.lc:199</a></div><a
+  href="#Position.+repr"
+  class="name reference">+repr</a><span>(<span>self</span>)</span><table
+  class="arg-ref"></table></div><div class="status">volatile
+</div></div></div><div id="TextStream"
+  class="reference-box"><div><span>class </span><a
+  href="#TextStream"
+  class="name reference">TextStream</a><span> extends <a
+  href="base.html#object"
+  class="reference">object</a> </span></div><div
+  class="status">internal </div><p>Represents a character stream used
+by the parser. This is purely an internal detail. </p><div
+  id="TextStream.+init"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L136">tokenizer.lc:136</a></div><a
+  href="#TextStream.+init"
+  class="name reference">+init</a><span>(<span>self, source, index = null, col = null, lno = null</span>)</span><table
+  class="arg-ref"></table></div><div class="status">volatile
+</div></div><div id="TextStream.advance"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L165">tokenizer.lc:165</a></div><a
+  href="#TextStream.advance"
+  class="name reference">advance</a><span>(<span>self</span>)</span><table
+  class="arg-ref"></table></div><div class="status">volatile
+</div></div><div id="TextStream.current" class="reference-box"><div><a
+  href="#TextStream.current"
+  class="name reference">current</a><span> : <a
+  href="base.html#property"
+  class="reference">property</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="TextStream.filled"
+  class="reference-box"><div><a
+  href="#TextStream.filled"
+  class="name reference">filled</a><span> : <a
+  href="base.html#property"
+  class="reference">property</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="TextStream.get_digit"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L189">tokenizer.lc:189</a></div><a
+  href="#TextStream.get_digit"
+  class="name reference">get_digit</a><span>(<span>self, base = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>base </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TextStream.is_digit"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L179">tokenizer.lc:179</a></div><a
+  href="#TextStream.is_digit"
+  class="name reference">is_digit</a><span>(<span>self, base = null</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>base </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TextStream.is_space"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L184">tokenizer.lc:184</a></div><a
+  href="#TextStream.is_space"
+  class="name reference">is_space</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TextStream.is_sym"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L174">tokenizer.lc:174</a></div><a
+  href="#TextStream.is_sym"
+  class="name reference">is_sym</a><span>(<span>self</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TextStream.pair_ahead"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L150">tokenizer.lc:150</a></div><a
+  href="#TextStream.pair_ahead"
+  class="name reference">pair_ahead</a><span>(<span>self, table</span>)</span><table
+  class="arg-ref"><tr><td>self </td><td>not documented
+</td></tr><tr><td>table </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="TextStream.position"
+  class="reference-box"><div><a
+  href="#TextStream.position"
+  class="name reference">position</a><span> : <a
+  href="base.html#property"
+  class="reference">property</a> </span></div>not documented <div
+  class="status">volatile </div></div></div><div
+  id="default_symtab"
+  class="reference-box"><div><a
+  href="#default_symtab"
+  class="name reference">default_symtab</a><span> : <a
+  href="base.html#object"
+  class="reference">object</a> </span></div>The default symbol table
+that is used if you do not pass a third argument to read_file or
+read_string. <div class="status">volatile </div></div><div
+  id="dir"
+  class="reference-box"><div><a href="#dir"
+  class="name reference">dir</a><span> : <a
+  href="base.html#path"
+  class="reference">path</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="escape_sequence"
+  class="reference-box"><div><div class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L106">tokenizer.lc:106</a></div><a
+  href="#escape_sequence"
+  class="name reference">escape_sequence</a><span>(<span>stream</span>)</span><table
+  class="arg-ref"><tr><td>stream </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div><div id="escape_sequences" class="reference-box"><div><a
+  href="#escape_sequences"
+  class="name reference">escape_sequences</a><span> : <a
+  href="base.html#dict"
+  class="reference">dict</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="fs"
+  class="reference-box"><div><a href="#fs"
+  class="name reference">fs</a><span> : <a
+  href="base.html#Module"
+  class="reference">Module</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="import"
+  class="reference-box"><div><a href="#import"
+  class="name reference">import</a><span> : <a
+  href="base.html#Import"
+  class="reference">Import</a> </span></div>not documented <div
+  class="status">volatile </div></div><div
+  id="name"
+  class="reference-box"><div><a href="#name"
+  class="name reference">name</a><span> = &quot;tokenizer&quot;
+</span></div>not documented <div class="status">volatile
+</div></div><div id="next_token" class="reference-box"><div><div
+  class="source-link"><a
+  href="https://github.com/cheery/lever/blob/master/lib/tokenizer.lc#L24">tokenizer.lc:24</a></div><a
+  href="#next_token"
+  class="name reference">next_token</a><span>(<span>stream, table, symtab = null</span>)</span><table
+  class="arg-ref"><tr><td>stream </td><td>not documented
+</td></tr><tr><td>table </td><td>not documented
+</td></tr><tr><td>symtab </td><td>not documented
+</td></tr><tr><td>returns </td><td>not documented
+</td></tr></table></div>not documented <div class="status">volatile
+</div></div></article><div style="text-align: center"><span
+  style="background-color: #85818e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #df7120; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a7341c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #5c231c; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #a39ea4; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #312334; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #44588e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #4679b8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #79bbe8; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #d7d2d7; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #785d9a; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #949e85; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #2e170e; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #7b3c16; width: 1em; height: 1em; display: inline-block">
+</span><span
+  style="background-color: #c86f31; width: 1em; height: 1em; display: inline-block">
+</span></div>
+    <script>
+      (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+      (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+      m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+      })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+      ga('create', 'UA-12626354-9', 'auto');
+      ga('send', 'pageview');
+    </script></body></html>
