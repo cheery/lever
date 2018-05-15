@@ -33,12 +33,19 @@ class Interface(Object):
     interface = None
 
     def method(self, operator):
-        assert False, "abstract method"
-
+        return operator.resolution_trampoline(self)
 
 # NOPA stands for a non-parametric interface
 class InterfaceNOPA(Interface):
     interface = None
+    def __init__(self):
+        self.methods = {}
+
+    def method(self, operator):
+        impl = self.methods.get(operator, None)
+        if impl is None:
+            return Interface.method(self, operator)
+        return impl
 
 # The object should never return itself as a face, but
 # we have to cut our type hierarchy to something. We do it
@@ -73,6 +80,13 @@ class Integer(Object):
     def __init__(self, integer_val):
         self.integer_val = integer_val
 
+    # TODO: better error message for this?
+    def toint(self):
+        try:
+            return self.integer_val.toint()
+        except OverflowError:
+            raise error(e_OverflowError())
+
 class String(Object):
     def __init__(self, string_val):
         self.string_val = string_val
@@ -94,19 +108,28 @@ class FunctionInterface(Interface):
 # every produced instance will be memoized so that they
 # are shared between functions that have the same shape.
 class FunctionMemo:
-    def __init__(self):
+    def __init__(self, cls):
         self.memo = {}
+        self.cls = cls
 
-func_interfaces = FunctionMemo()
+    def get(self, argc, vari, opt):
+        key = (argc, vari, opt)
+        try:
+            return func_interfaces.memo[key]
+        except KeyError:
+            face = self.cls(argc, vari, opt)
+            func_interfaces.memo[key] = face
+            return face
 
-def get_function_interface(argc, vari, opt):
-    key = (argc, vari, opt)
-    try:
-        return func_interfaces.memo[key]
-    except KeyError:
-        face = FunctionInterface(argc, vari, opt)
-        func_interfaces.memo[key] = face
-        return face
+func_interfaces = FunctionMemo(FunctionInterface)
+
+class BuiltinInterface(FunctionInterface):
+    def method(self, op):
+        if op is op_call:
+            return w_call
+        return FunctionInterface.method(self, op)
+
+builtin_interfaces = FunctionMemo(BuiltinInterface)
 
 # To compute with functions you eventually need concretely
 # defined functions on the bottom. Builtins serve this
@@ -123,11 +146,9 @@ class Builtin(Object):
 # Every call made by the interpreter eventually must resolve
 # to a builtin command.
 def call(callee, args):
-    if not isinstance(callee, Builtin):
-        raise error(e_TypeError())
-    #while not isinstance(callee, Builtin):
-    #    args.insert(0, callee)
-    #    callee = callee.face().method(op_call)
+    while not isinstance(callee, Builtin):
+        args.insert(0, callee)
+        callee = callee.face().method(op_call)
     return callee.builtin_func(args)
 
 # This decorator replaces the function with a builtin
@@ -171,8 +192,13 @@ def python_bridge(function, vari=False):
         if result is None:
             return null
         return result
-    face = get_function_interface(argc, opt, vari)
+    face = builtin_interfaces.get(argc, opt, vari)
     return Builtin(py_bridge, face)
+
+# If the builtin ends up being called through op_call,
+# it needs an access to this raw operation in order to
+# resolve.
+w_call = python_bridge(call, vari=True)
 
 # Many of the builtin functions still require specific
 # records or group of records that we have to provide them.
@@ -199,21 +225,144 @@ def error(response):
 class Traceback(Exception):
     def __init__(self, error):
         self.error = error
+        self.trace = []
 
 # Type error is every error that can be discovered without
 # running the program iff the type annotation succeeds.
 class e_TypeError(Object):
     pass
 
+# Appears in the runtime/json_loader.py the first time
+class e_IOError(Object):
+    pass
+
+class e_JSONDecodeError(Object):
+    def __init__(self, message):
+        self.message = message
+
+class e_IntegerParseError(Object):
+    pass
+
+class e_OverflowError(Object):
+    pass
+
+class e_ModuleError(Object):
+    pass
+
+class e_EvalError(Object):
+    pass
+
 # Operators are the next element to be implemented. They
-# form the foundations for the object system here.
+# form the foundations for the whole object system here.
+class OperatorInterface(Interface): 
+    def __init__(self, operator):
+        self.operator = operator
 
-#class OperatorInterface(FunctionInterface):
-#    interface = InterfaceNOPA()
-#    def __init__(self, selector, argc, vari, opt):
-#        self.selector = selector
-#        FunctionInterface.__init__(self, argc, vari, opt)
+    def method(self, operator):
+        if operator is op_call:
+            return w_operator_call
+        return Interface.method(self, operator)
 
+# Every operator has an unique type, but generally they are
+# callable and try to resolve themselves based on the
+# arguments they receive.
+class Operator(Object):
+    def __init__(self, selectors):
+        self.operator_face = OperatorInterface(self)
+        self.selectors = selectors
+        self.default = None
+        self.methods = {}
+
+        self.min_arity = 0
+        for index in selectors:
+            self.min_arity = max(self.min_arity, index + 1)
+
+    def face(self):
+        return self.operator_face
+
+    # When user defines new operators he may need to
+    # provide methods for existing types. This is the last
+    # place that is checked though, because I am expecting
+    # that new types are more common than new operators.
+    def resolution_trampoline(self, interface):
+        impl = self.methods.get(interface, self.default)
+        if impl is None:
+            raise error(e_TypeError())
+        return impl
+
+# Equality and hashing is crucial for dictionaries and sets.
+op_eq = Operator([0, 1])
+def op_eq_default(a, b):
+    if a is b:
+        return true
+    return false
+op_eq.default = python_bridge(op_eq_default)
+
+op_hash = Operator([0])
+
+# Without the call operator we would be unable to provide
+# closures that can be called.
+op_call = Operator([0])
+
+# op_call is slightly more special than others because it
+# corresponds with the 'call' -function here. The 'call' is
+# actually called by the interpreter, but it corresponds
+# with the 'op_call'.
+
+# Every operator is resolved by selectors, in the same
+# manner. If the interface doesn't provide an
+# implementation, it will attempt to obtain implementation
+# for itself from the operator itself.
+def operator_call(op, args):
+    L = len(op.selectors)
+    if len(args) < op.min_arity:
+        raise error(e_TypeError())
+    if L == 1:
+        index = op.selectors[0]
+        impl = args[index].face().method(op)
+    else:
+        faces = {}
+        for index in op.selectors:
+            faces[args[index].face()] = None
+        face = unique_coercion(faces)
+        if face is None:
+            raise error(e_TypeError())
+        impl = face.method(op)
+        args = list(args)
+        for index in op.selectors:
+            args[index] = convert(args[index], face)
+    return call(impl, args)
+w_operator_call = python_bridge(operator_call, vari=True)
+
+# Helper decorator for describing new operators
+def method(face, operator):
+    def _impl_(fn, vari=False):
+        face.methods[operator] = python_bridge(fn, vari)
+        return fn
+    return _impl_
+
+# The operator handling needs operative coercion
+def unique_coercion(faces):
+    s = []
+    for y in faces:
+        ok = True
+        for x in faces:
+            ok = ok and (x == y or has_coercion(x, y))
+        if ok:
+            s.append(y)
+    if len(s) == 1:
+        return s[0]
+    return None
+
+# For now we do not have any conversion&coercion utilities
+# in place.
+def has_coercion(x, y):
+    return False
+
+def convert(x, face):
+    if x.face() is not face:
+        raise error(e_TypeError())
+    return x
 
 # The important concept in this new object system is the
 # variances of different kinds. First we have parametric
@@ -244,3 +393,30 @@ class Set(Object):
     interface = InterfaceParametric([BIV])
     def __init__(self, set_val):
         self.set_val = set_val
+
+# Each module becomes their own interface, the system has
+# been purposefully designed such that you get an access to
+# a new module only after it has been populated.
+class ModuleInterface(Interface):
+    def __init__(self):
+        self.cells = {}
+
+class Module(Object):
+    interface = None
+    def __init__(self):
+        self.module_face = ModuleInterface()
+
+    def face(self):
+        return self.module_face
+
+    def assign(self, name, value):
+        face = self.module_face
+        if name in face.cells:
+            raise error(e_ModuleError())
+        face.cells[name] = ModuleCell(value)
+
+class ModuleCell:
+    def __init__(self, val):
+        self.val = val
+
+

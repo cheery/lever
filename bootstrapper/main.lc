@@ -1,0 +1,606 @@
+import fs, grammar, json
+
+language = grammar.read_file(dir ++ "../lever-0.10.0.grammar")
+
+# The task of this software is to scan the prelude directory
+# and produce a .json dump for every file in there.
+main = ():
+    prelude = path(dir ++ "../prelude")
+    for entry in fs.scandir(prelude)
+        if entry.type == "file" and entry.path.endswith(".lc")
+            src = prelude ++ entry.path
+            dst = prelude ++ (entry.path ++ ".json")
+            compile_file(src, dst)
+
+# The directory is scanned through and every file is
+# compiled with the following function.
+compile_file = (src, dst):
+    sources = [src.relpath(dst.dirname).to_string()]
+    parse = language.read_file(src)
+    program = parse.traverse((name, args, loc):
+        ast = actions[name](args...)
+
+        loc = (start=loc.start, stop=loc.stop, src=0)
+        set_loc = (this):
+            if this.loc == null
+                this.loc = loc
+                this.traverse(set_loc)
+        set_loc(ast)
+        return ast)
+    # The first traverse of the parse produces objects
+    # with the table of actions that is described later.
+    # After that everything is packed into a function and
+    # the scope is solved as a second step.
+    function = Script(program, sources)
+    solve_scope(function)
+
+    # Conversion into json is a temporary measure. It is too
+    # vicious act to produce source location numbering
+    # for this.
+    json.write_file(dst, js(function), {indent=4})
+
+# The bootstrapping process will ensure that the runtime is
+# able to load and evaluate the scripts, but it will do
+# nothing else.
+
+# There is a second stage that does the proper job at
+# bootstrapping. The second stage obtains the modules, type
+# inferences them and then stores it all into an image.
+
+actions = {
+    "assign": (slot, value):
+        return Assign(slot, value)
+    "symbol": (a):
+        return Symbol(a)
+    "call": (callee, args):
+        return Call(callee, args)
+    "binop": (lhs, op, rhs):
+        return Call(Symbol(op), [lhs, rhs])
+    "prefix": (op, rhs):
+        return Call(Symbol(op), [rhs])
+
+#    "condition": (cond, t_body, f_body=[]):
+#        return Cond(cond, t_body, f_body)
+#    "repeat": (body):
+#        return Repeat(body)
+#    "return": (expr=Lookup("null")):
+#        return Return(expr)
+#    "generator": (body):
+#        return Generator(body)
+#    "yield": (expr):
+#        return Yield(expr)
+#    "inplace": (slot, op, value):
+#        return Inplace(slot, Lookup(op), value)
+#    "attr_slot": (base, symbol):
+#        return AttrSlot(base, symbol)
+#    "closure": (args, body): 
+#        return Function(args, body)
+#    "getattr": (base, name):
+#        return Attr(base, name)
+
+    "rational": (repr):
+        return Literal("rational", repr)
+    "integer": (repr):
+        return Literal("integer", repr)
+    "string": (repr):
+        return Literal("string", repr)
+}
+
+# TODO: When I wrote it the first time, I didn't completely explain how
+#       the scope works. We should not assume that it works.
+class Scope
+    +init = (self, module):
+        self.module = module    # assign into a module.
+        self.rd = {}            # readable part of the env {var: slot}
+        self.wd = {}            # writeable part of the env {var: slot}
+        self.sh = set()         # shadowed part of the env {var}
+        self.parent = null  # these two solve the frame.   
+        self.depend = set()
+        self.localvars = []
+        self.cellvars = []
+
+    get_frame = (self):
+        frame = []
+        i = 0
+        for dep in self.depend
+            frame.append(self.parent.cellvars.index(dep))
+            assert self.cellvars[i] == dep
+            i += 1
+        return frame
+
+class Cell
+    +init = (self, name):
+        self.deref = false
+        self.name = name
+
+    to_json = (self):
+        return {
+            type = "cell",
+            deref = self.deref,
+            name = self.name }
+
+
+solve_scope = (function):
+    scope = function.scope
+    shadow = set()
+    locals = {}
+    cells = []
+
+    flow = (this):
+        if isinstance(this, Function)
+            for var, cell in scope.wd.items()
+                this.scope.wd[var] = cell
+            for var, cell in locals.items()
+                this.scope.wd[var] = cell
+        elif isinstance(this, Symbol)
+            if this.wronly
+                if this.deep and this.name in scope.wd
+                    this.cell = cell = scope.wd[this.name]
+                    scope.depend.add(cell)
+                elif this.deep and scope.module
+                    this.global = true
+                elif this.name in locals
+                    shadow.discard(this.name)
+                    this.cell = locals[this.name]
+                else
+                    cell = Cell(this.name)
+                    cells.append(cell)
+                    shadow.discard(this.name)
+                    locals[this.name] = cell
+                    this.cell = cell
+            else
+                assert this.name not in shadow
+                    ["variable", this.name, "in shadow"]
+                if this.name in locals and not self.module
+                    this.cell = locals[this.name]
+                elif this.name in scope.rd
+                    scope.rd[this.name].deref = true
+                    this.cell = scope.rd[this.name]
+                    scope.depend.add(scope.rd[this.name])
+                else
+                    this.global = true
+                    assert this.name not in scope.sh,
+                        ["variable", this.name, "in topscope shadow"]
+            assert this.cell != null or this.global
+        elif isinstance(this, Cond)
+            # At Cond, there is not really subscope, but the
+            # shadow set still needs to be made.
+            flow(this.cond)
+            p_locals = locals
+            locals := dict(locals)
+            for stmt in this.t_body
+                flow(stmt)
+            t_locals = dict(locals)
+            for var in locals
+                if var not in p_locals
+                    shadow.add(var)
+            for stmt in this.f_body
+                flow(stmt)
+            for var, cell in locals.items()
+                if var in t_locals
+                    shadow.discard(var)
+                else
+                    shadow.add(var)
+        elif isinstance(this, Repeat)
+            p_locals = locals
+            locals := dict(locals)
+            this.traverse(flow)
+            for var, cell in locals.items()
+                if var not in p_locals
+                    shadow.add(var)
+                    this.sublocals[var] = cell
+            locals := p_locals
+            this.scope = self.scope
+        else
+            this.traverse(flow)
+    function.traverse(flow)
+
+    # At this point 'locals' tell the local values in scope
+    # And 'shadow' tell the shadowed values. Variable goes to
+    # shadowed if not certain that it is set.
+
+    subscope = (this):
+        if isinstance(this, Repeat)
+            p_locals = locals
+            locals := dict(locals)
+            locals.update(this.sublocals)
+            this.traverse(subscope)
+            locals := p_locals
+        elif isinstance(this, Function)
+            this.scope.sh.update(scope.sh)
+            this.scope.sh.update(shadow) # shadow -group
+                                         # contains all shadowed wars
+            for var, cell in self.rd.items()
+                this.rd[var] = cell
+                this.sh.discard(var)
+            for var, cell in locals.items()
+                this.rd[var] = cell
+                this.sh.discard(var)
+            # The depend-set is built from 'rd', so we have to check
+            # which depends should be carried over.
+            solve_scope(this)
+            for dep in this.scope.depend
+                if dep in self.rd
+                    depend.add(d)
+            this.scope.parent = scope
+        elif isinstance(this, Symbol)
+            this.scope = scope
+        else
+            this.traverse(subscope)
+    function.traverse(subscope)
+
+    for cell in scope.depend
+        scope.cellvars.append(cell)
+    for cell in cells
+        if cell.deref
+             scope.cellvars.append(cell)
+        else
+             scope.localvars.append(cell)
+
+
+class Script
+    +init = (self, body, sources):
+        self.body = body
+        self.scope = Scope(true)
+        self.sources = sources
+
+    traverse = (self, f):
+        for stmt in self.body
+            f(stmt)
+
+    to_json = (self):
+        assert self.scope.depend.length == 0
+        return {
+            type = "script",
+            cellvars = js(self.scope.cellvars),
+            localvars = js(self.scope.localvars),
+            body = js(self.body),
+            sources = self.sources }
+
+class Function
+    +init = (self, args, body):
+        self.args = args
+        self.body = body
+        self.scope = Scope(false)
+        self.loc = null
+
+    traverse = (self, f):
+        for arg in self.args
+            f(arg)
+        for stmt in self.body
+            f(stmt)
+
+    to_json = (self):
+        return {
+            type = "function",
+            cellvars = js(self.scope.cellvars),
+            localvars = js(self.scope.localvars),
+            frame = self.scope.get_frame(),
+            args = js(self.args),
+            body = js(self.body),
+            loc = js_loc(self.loc)
+        }
+
+class Assign
+    +init = (self, slot, value):
+        slot.deepen(true)
+        self.slot = slot
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.slot)
+        f(self.value)
+
+    to_json = (self):
+        return {
+            type = "assign",
+            slot = js(self.slot),
+            value = js(self.value) }
+
+class Symbol
+    +init = (self, name):
+        self.name = name
+        self.global = false
+        self.deep = false
+        self.wronly = false
+        self.scope = null
+        self.cell = null
+        self.loc = null
+
+    deepen = (self, wronly):
+        self.deep = true
+        self.wronly = wronly
+
+    traverse = (self, f):
+        null
+
+    to_json = (self):
+        if self.global
+            mode = "global"
+            return {
+                type = "slot",
+                kind = "global",
+                name = self.name,
+                loc = js_loc(self.loc) }
+        elif self.cell.deref
+            return {
+                type = "slot",
+                kind = "local",
+                index = self.scope.cellvars.index(self.cell) }
+        else
+            return {
+                type = "slot",
+                kind = "cell",
+                index = self.scope.localvars.index(self.cell) }
+
+#TODO: Continue from here.
+
+# How closures should work: frames and subframes
+#   shadowing transparency:
+#     if the variable is defined in the subframe, it should
+#     be shadowed from that point on.
+#
+#   Assign to variables above the defpoint.
+#   But fetch from the whole scope.
+#
+#   Variable slot appears on the frame where the variable
+#   is defined on.
+#
+#   repeat -subframe
+#     expect that the subframe might not be run.
+#
+#   conditional -subframes
+#     allow the variable pass into parent frame only
+#     if it appears on all of the flowpaths.
+#
+#   closure always fetches from the whole scope above it.
+#
+#   The separate 'assignment' is removed. Not longer needed
+#   because the topmost scope is immutable.
+
+# We are not checking .sh on write.
+# This is a fringe case arising from the need
+# to do shadowing for the variables.
+#
+# I am certain that somebody, possibly a highly paid
+# consultant, will argue for checking a shadow on write
+# when inside a closure.
+#
+# The shadowing mechanism in itself is used to ensure that
+# the user is not harmed by the unusual scoping rules that
+# allow consistent and useful behavior for nested functions
+# inside repetition clauses.
+#
+# When we get outside of certain precaution, the usefulness of
+# the measures decrease while the inconvenience increases.
+#
+# If there was a check in here then we would get
+# consultants argue that it should not be there.
+
+# TODO: On toplevel, we got to "pierce" holes for the
+#       global scope, so that assignments hit mutable
+#       elements.
+
+# Every value imported using "from" will be retrieved through
+# "bind", and set writable. This allows the doctools to
+# identify imported variables and define their origins,
+# while they stay out of the scope.
+
+# Must note that it won't work with "from" * -syntax.
+
+
+
+# TODO: Generator is a bit more sophisticated than this.
+# Note that we should remove "Return" from generator,
+#                 and remove "Yield" from closure
+class Generator
+    +init = (self, body):
+        self.body = body
+        self.rd = {}
+        self.wd = {}
+        self.sh = set()
+        self.module = module
+
+        self.localvars = []
+        self.cellvars = []
+        self.frame = []
+        self.depend = set()
+        self.loc = null
+
+    traverse = (self, f):
+        for stmt in self.body
+            f(stmt)
+
+    to_json = (self):
+        return {
+            type = "generator",
+            cellvars = list(self.cellvars),
+            localvars = list(self.localvars),
+            frame = self.frame,
+            body = js(self.body),
+            loc = js_loc(self.loc) }
+
+class Yield
+    +init = (self, value):
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.value)
+
+    to_json = (self):
+        return {
+            type = "yield",
+            value = js(self.value) }
+
+class Cond
+    +init = (self, cond, t_body, f_body):
+        self.cond = cond
+        self.t_body = t_body
+        self.f_body = f_body
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.cond)
+        for stmt in self.t_body
+            f(stmt)
+        for stmt in self.f_body
+            f(stmt)
+        
+    to_json = (self):
+        return {
+            type = "cond",
+            cond = js(self.cond),
+            t_body = js(self.t_body),
+            f_body = js(self.f_body),
+            loc = js_loc(self.loc) }
+
+class Repeat
+    +init = (self, body):
+        self.body = body
+        self.sublocals = {}
+        self.scope = null
+        self.loc = null
+
+    traverse = (self, f):
+        for stmt in self.body
+            f(stmt)
+        
+    to_json = (self):
+        fresh = []
+        # TODO: associate to the repeater and add 'fresh' -field.
+        for var, cell in self.sublocals.items()
+            fresh.append(self.scope.cellvars.index(cell))
+        return {
+            type = "repeat",
+            fresh = fresh,
+            body = js(self.body) }
+
+class Inplace
+    +init = (self, slot, operator, value):
+        slot.deepen()
+        self.slot = slot
+        self.operator = operator
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.slot)
+        f(self.operator)
+        f(self.value)
+
+    to_json = (self):
+        return {
+            type = "inplace",
+            slot = js(self.slot),
+            operator = js(self.operator),
+            value = js(self.value) }
+
+class AttrSlot
+    +init = (self, base, name):
+        self.base = base
+        self.name = name
+        self.loc = null
+
+    deepen = (self):
+        null
+
+    traverse = (self, f):
+        f(self.base)
+
+    to_json = (self):
+        return {
+            type = "slot",
+            kind = "attr",
+            base = js(self.base),
+            name = self.name,
+            loc = js_loc(self.loc) }
+
+class Return
+    +init = (self, value):
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.value)
+
+    to_json = (self):
+        return { type = "return", value = js(self.value) }
+
+class Attr
+    +init = (self, base, name):
+        self.base = base
+        self.name = name
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.base)
+
+    to_json = (self):
+        return {
+            type = "getattr",
+            name = self.name,
+            base = js(self.base),
+            loc = js_loc(self.loc) }
+
+
+
+
+
+class Call
+    +init = (self, callee, args):
+        self.callee = callee
+        self.args = args
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.callee)
+        for arg in self.args
+            f(arg)
+
+    to_json = (self):
+        return {
+            type = "call",
+            callee = js(self.callee),
+            args = js(self.args),
+            loc = js_loc(self.loc) }
+
+class Literal
+    +init = (self, kind, repr):
+        self.kind = kind
+        self.repr = repr
+        self.loc = null
+
+    traverse = (self, f):
+        null
+
+    to_json = (self):
+        return {
+            type = "literal",
+            kind = self.kind,
+            value = self.repr }
+
+# The 'loc' field appears on constructs that may fail for
+# one or another reason. The source in json format is
+# verbose enough so this is a big help.
+js_loc = (loc):
+    if loc == null
+        loc = (start=(lno=0,col=0), stop=(lno=0,col=0), src=0)
+    return [loc.start.col, loc.start.lno, loc.stop.col, loc.stop.lno, loc.src]
+
+js = (obj):
+    if isinstance(obj, list)
+        r = []
+        for i in obj
+            r.append(js(i))
+        return r
+    elif isinstance(obj, dict)
+        r = {}
+        for k, v in obj.items()
+            r[k] = js(v)
+        return r
+    elif isinstance(obj, str)
+        return obj
+    else
+        return obj.to_json()

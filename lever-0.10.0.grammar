@@ -1,0 +1,30 @@
+file: (=statement)+
+
+statement:
+    slot "=" >expr / assign
+    expr
+
+slot:
+    symbol / symbol
+
+expr:
+    postfix
+
+postfix:
+    postfix "(" sep(expr, ',') ")" / call
+    term
+
+term:
+    "(" pform ")"
+    symbol / symbol
+    string / string
+
+pform:
+    expr
+    operator / symbol
+    keyword  / symbol
+
+operator: ["+", "-"]
+keyword: ["import", "yield"]
+
+terminal symbol, string
