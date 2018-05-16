@@ -134,7 +134,7 @@ prepare for compiling and running proper programs.
 
  TODO: tagged unions syntax
 
- TODO: And/Or/Not/Cmp -interpretation.
+ TODO: And/Or/Not -interpretation.
 
  TODO: cond -intepretation.
 
@@ -150,7 +150,7 @@ method call = (a,b,c):
  are at the module level.
 
  (Now condition block may set the value into a module,
- whereas since assuming repeat may not occur at all, whereas the
+ whereas since assuming repeat may not occur at all, the
  repeat block does assign things locally because we know it
  won't always set it.)
 
@@ -164,7 +164,8 @@ else
     c
 ```
 
- TODO: Write a program that checks variance in an object.
+ TODO: Write a program that checks variance in an object
+ (best effort, false positives).
 
  TODO: The coercion&conversion subsystem needs to be added
  soon, but it's not clear how to extend it in.
