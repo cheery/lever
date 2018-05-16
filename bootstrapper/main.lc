@@ -54,10 +54,31 @@ actions = {
         return Symbol(a)
     "call": (callee, args):
         return Call(callee, args)
-    "binop": (lhs, op, rhs):
+    "binary": (lhs, op, rhs):
         return Call(Symbol(op), [lhs, rhs])
     "prefix": (op, rhs):
         return Call(Symbol(op), [rhs])
+
+    "and": (lhs, rhs):
+        return And(lhs, rhs)
+    "or": (lhs, rhs):
+        return Or(lhs, rhs)
+    "not": (rhs):
+        return Not(rhs)
+
+    "in": (lhs, rhs):
+        return Call(Symbol("in"), [lhs, rhs])
+    "not_in": (lhs, rhs):
+        return Not(Call(Symbol("in"), [lhs, rhs]))
+
+    "cmp": (chain, rhs):
+        exprs = []
+        operators = []
+        for lhs, op in chain
+            exprs.append(lhs)
+            operators.append(op)
+        exprs.append(rhs)
+        return Cmp(exprs, operators)
 
 #    "condition": (cond, t_body, f_body=[]):
 #        return Cond(cond, t_body, f_body)

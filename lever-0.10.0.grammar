@@ -8,10 +8,64 @@ slot:
     symbol / symbol
 
 expr:
+    expr_or
+
+expr_or:
+    expr_and "or" expr_or / or
+    expr_and
+
+expr_and:
+    expr_not "and" expr_and / and
+    expr_not
+
+expr_not:
+    "not" expr_cmp / not
+    expr_cmp
+
+expr_cmp:
+    expr_bitor
+    expr_bitor "in" expr_bitor          / in
+    expr_bitor "not" "in" expr_bitor    / not_in
+    [expr_bitor comparison]+ expr_bitor / cmp
+
+expr_bitor:
+    expr_bitand
+    expr_bitor ["|"] expr_bitand / binary
+
+expr_bitand:
+    expr_sh
+    expr_bitand ["&"] expr_sh / binary
+
+expr_sh:
+    expr_add
+    expr_sh ["<<"] expr_add / binary
+    expr_sh [">>"] expr_add / binary
+expr_add:
+    expr_mul
+    expr_add ["++"] expr_mul / binary
+    expr_add ["+"] expr_mul / binary
+    expr_add ["-"] expr_mul / binary
+
+expr_mul:
+    prefix
+    expr_mul ["*"] prefix  / binary
+    expr_mul ["/"] prefix  / binary
+    expr_mul ["//"] prefix / binary
+    expr_mul ["%"] prefix  / binary
+
+prefix:
+    exponent_postfix
+    ["+"] exponent_postfix / prefix
+    ["-"] exponent_postfix / prefix
+
+exponent_postfix:
     postfix
+    postfix ["^"] exponent_postfix / binary
 
 postfix:
     postfix "(" sep(expr, ',') ")" / call
+    postfix "[" form "]"           / item
+    postfix "." symbol             / attr
     term
 
 term:
@@ -20,11 +74,15 @@ term:
     string / string
 
 pform:
-    expr
+    form
     operator / symbol
     keyword  / symbol
 
-operator: ["+", "-"]
-keyword: ["import", "yield"]
+form:
+    expr
+
+operator: ["+", "-", comparison]
+keyword: ["import", "yield", "and", "or", "not", "in"]
+comparison: ["<", ">", "==", "!=", "<=", ">="]
 
 terminal symbol, string

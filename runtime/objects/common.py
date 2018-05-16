@@ -7,6 +7,7 @@ from rpython.rlib.objectmodel import (
     specialize,
 )
 from rpython.rlib.rarithmetic import intmask
+from rpython.rlib.rbigint import rbigint
 
 # Objects in a dynamically typed system is a large
 # union of tagged records. RPython requires that a
@@ -86,6 +87,10 @@ class Integer(Object):
             return self.integer_val.toint()
         except OverflowError:
             raise error(e_OverflowError())
+
+# 
+def fresh_integer(val):
+    return Integer(rbigint.fromint(val))
 
 class String(Object):
     def __init__(self, string_val):
@@ -309,6 +314,59 @@ op_call = Operator([0])
 # actually called by the interpreter, but it corresponds
 # with the 'op_call'.
 
+# All the remaining operators defined by the runtime are not
+# as important for proper functioning of the runtime, but
+# without them the runtime would not have much it can do.
+
+op_in = Operator([1])
+op_getitem = Operator([0])
+op_setitem = Operator([0])
+op_iter = Operator([0])
+
+# These may actually be conversion. 'iter' might be as well.
+#op_product = Operator([0]) x,y = a
+#op_pattern = Operator([0]) case _ of a(...) then ...
+#op_form    = Operator([0]) repr(a)
+
+# Some of these are not implemented yet.
+#op_shl = Operator([0]) # a << _
+#op_shr = Operator([0]) # a >> _
+
+op_cmp = Operator([0,1])
+# all comparison operations are derived from the op_cmp
+
+op_concat = Operator([0,1])
+
+#op_neg = Operator([0])
+#op_pos = Operator([0])
+
+op_add = Operator([0,1])
+op_sub = Operator([0,1])
+op_mul = Operator([0,1])
+
+#op_div = Operator([0,1])
+#op_mod = Operator([0,1])
+#op_floordiv = Operator([0,1]) # floordiv(a, b)
+
+#op_divrem = Operator([0,1])
+
+op_and = Operator([0,1]) # &
+op_or  = Operator([0,1]) # |
+op_xor = Operator([0,1]) # xor(a,b)
+
+
+#op_clamp = Operator([0]) clamp(a, min,max)
+#op_abs = Operator([0])
+#op_length = Operator([0])
+#op_normalize = Operator([0])
+#op_distance = Operator([0,1])
+#op_dot = Operator([0,1])
+#op_reflect = Operator([0,1])
+#op_refract = Operator([0,1]) refract(a,b,eta)
+#op_pow = Operator([0,1])
+
+
+
 # Every operator is resolved by selectors, in the same
 # manner. If the interface doesn't provide an
 # implementation, it will attempt to obtain implementation
@@ -419,4 +477,25 @@ class ModuleCell:
     def __init__(self, val):
         self.val = val
 
+# Ending the common -module by defining equality and hash
+# methods for Unit. These are defined in case there are
+# datasets or structures that use null.
+@method(Unit, op_eq)
+def Unit_eq(a, b):
+    return true
 
+@method(Unit, op_hash)
+def Unit_hash(a):
+    return fresh_integer(0)
+
+# Provides hashtables to equality and hash.
+def eq_fn(a, b):
+    result = convert(call(op_eq, [a,b]), Bool)
+    if result is true:
+        return true
+    else:
+        return false
+
+def hash_fn(a):
+    result = call(op_hash, [a])
+    return intmask(cast(result, Integer).toint())

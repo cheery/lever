@@ -11,7 +11,37 @@
                 "name": "hello",
                 "loc": [0, 1, 5, 1, 0]
             },
-            "value": {"type": "literal", "kind": "string", "value": "Hello"}
+            "value": {
+                "type": "call",
+                "callee": {
+                    "type": "slot",
+                    "kind": "global",
+                    "name": "++",
+                    "loc": [8, 1, 33, 1, 0]
+                },
+                "args": [
+                    {
+                        "type": "call",
+                        "callee": {
+                            "type": "slot",
+                            "kind": "global",
+                            "name": "++",
+                            "loc": [8, 1, 22, 1, 0]
+                        },
+                        "args": [
+                            {
+                                "type": "literal",
+                                "kind": "string",
+                                "value": "Hello"
+                            },
+                            {"type": "literal", "kind": "string", "value": " "}
+                        ],
+                        "loc": [8, 1, 22, 1, 0]
+                    },
+                    {"type": "literal", "kind": "string", "value": "world"}
+                ],
+                "loc": [8, 1, 33, 1, 0]
+            }
         },
         {
             "type": "call",

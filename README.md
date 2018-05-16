@@ -103,6 +103,11 @@ together into a single module that can be imported.
 `runtime/objects/common.py` constructs the foundations for
 the type and object space.
 
+`runtime/objects/booleans.py` has methods for booleans.
+
+`runtime/objects/strings.py` has methods for strings.
+
+
 ### Bootstrapper
 
 `bootstrapper/main.lc` is the entry point for the compiler.
@@ -115,6 +120,10 @@ files into the same directory.
 `prelude/intro.lc` has the steps the runtime takes to
 prepare for compiling and running proper programs.
 
+ TODO: Object system needs to be populated.
+
+ TODO: Strings need the remaining methods (attributes)
+
  TODO: Iterators/For loops are rising in priority.
 
  TODO: Type inference/interpretation rising up in sync.
@@ -124,6 +133,10 @@ prepare for compiling and running proper programs.
  reinventing the same behavior twice in a different context.
 
  TODO: tagged unions syntax
+
+ TODO: And/Or/Not/Cmp -interpretation.
+
+ TODO: cond -intepretation.
 
 ```
 datatype A(..) = x + y(a, b, c)

@@ -43,6 +43,50 @@ def w_print(args):
         sp = " "
     os.write(0, "\n")
 
+@builtin()
+def w_ne(a,b):
+    return boolean(call(op_eq, [a,b]) is true)
+
+@builtin()
+def w_ge(a,b):
+    i = cast(call(op_cmp, [a,b]), Integer).toint()
+    return boolean(i >= 0)
+
+@builtin()
+def w_gt(a,b):
+    i = cast(call(op_cmp, [a,b]), Integer).toint()
+    return boolean(i == 1)
+
+@builtin()
+def w_le(a,b):
+    i = cast(call(op_cmp, [a,b]), Integer).toint()
+    return boolean(i <= 0)
+
+@builtin()
+def w_lt(a,b):
+    i = cast(call(op_cmp, [a,b]), Integer).toint()
+    return boolean(i == -1)
+
 base_stem = {
     u"print": w_print,
+    u"==": op_eq,
+    u"!=": w_ne,
+    u"hash": op_hash,
+    u"call": op_call,
+    u"in": op_in,
+    u"getitem": op_getitem,
+    u"setitem": op_setitem,
+    u"iter": op_iter,
+    u"cmp": op_cmp,
+    u">=": w_ge,
+    u">": w_gt,
+    u"<=": w_le,
+    u"<": w_lt,
+    u"++": op_concat,
+    u"+": op_add,
+    u"-": op_sub,
+    u"*": op_mul,
+    u"&": op_and,
+    u"|": op_or,
+    u"xor": op_xor,
 }
