@@ -37,3 +37,7 @@ def String_concat(a, b):
     a = cast(a, String)
     b = cast(b, String)
     return String(a.string_val + b.string_val)
+
+@method(String.interface, op_stringify)
+def String_stringify(a):
+    return cast(a, String)

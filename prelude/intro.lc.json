@@ -60,6 +60,84 @@
                 }
             ],
             "loc": [0, 3, 12, 3, 0]
+        },
+        {
+            "type": "assign",
+            "slot": {
+                "type": "slot",
+                "kind": "global",
+                "name": "a",
+                "loc": [0, 5, 1, 5, 0]
+            },
+            "value": {
+                "type": "literal",
+                "kind": "integer",
+                "value": "21203102402104012041024"
+            }
+        },
+        {
+            "type": "assign",
+            "slot": {
+                "type": "slot",
+                "kind": "global",
+                "name": "b",
+                "loc": [0, 6, 1, 6, 0]
+            },
+            "value": {
+                "type": "literal",
+                "kind": "integer",
+                "value": "12042104120304012314252"
+            }
+        },
+        {
+            "type": "call",
+            "callee": {
+                "type": "slot",
+                "kind": "global",
+                "name": "print",
+                "loc": [0, 7, 5, 7, 0]
+            },
+            "args": [
+                {"type": "literal", "kind": "string", "value": "a big number"},
+                {
+                    "type": "call",
+                    "callee": {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "stringify",
+                        "loc": [22, 7, 31, 7, 0]
+                    },
+                    "args": [
+                        {
+                            "type": "call",
+                            "callee": {
+                                "type": "slot",
+                                "kind": "global",
+                                "name": "*",
+                                "loc": [32, 7, 37, 7, 0]
+                            },
+                            "args": [
+                                {
+                                    "type": "slot",
+                                    "kind": "global",
+                                    "name": "a",
+                                    "loc": [32, 7, 33, 7, 0]
+                                },
+                                {
+                                    "type": "slot",
+                                    "kind": "global",
+                                    "name": "b",
+                                    "loc": [36, 7, 37, 7, 0]
+                                }
+                            ],
+                            "loc": [32, 7, 37, 7, 0]
+                        },
+                        {"type": "literal", "kind": "integer", "value": "36"}
+                    ],
+                    "loc": [22, 7, 42, 7, 0]
+                }
+            ],
+            "loc": [0, 7, 43, 7, 0]
         }
     ],
     "sources": ["intro.lc"]

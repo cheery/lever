@@ -70,8 +70,9 @@ postfix:
 
 term:
     "(" pform ")"
-    symbol / symbol
-    string / string
+    symbol  / symbol
+    string  / string
+    int / integer
 
 pform:
     form
@@ -85,4 +86,4 @@ operator: ["+", "-", comparison]
 keyword: ["import", "yield", "and", "or", "not", "in"]
 comparison: ["<", ">", "==", "!=", "<=", ">="]
 
-terminal symbol, string
+terminal symbol, string, int

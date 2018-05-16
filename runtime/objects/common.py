@@ -257,6 +257,9 @@ class e_ModuleError(Object):
 class e_EvalError(Object):
     pass
 
+class e_IntegerBaseError(Object):
+    pass
+
 # Operators are the next element to be implemented. They
 # form the foundations for the whole object system here.
 class OperatorInterface(Interface): 
@@ -365,6 +368,10 @@ op_xor = Operator([0,1]) # xor(a,b)
 #op_refract = Operator([0,1]) refract(a,b,eta)
 #op_pow = Operator([0,1])
 
+# Stringify is provided so that we can print and show
+# values. I don't think it's a conversion because many
+# things stringifyable have nothing else to do with strings.
+op_stringify = Operator([0])
 
 
 # Every operator is resolved by selectors, in the same
@@ -487,6 +494,10 @@ def Unit_eq(a, b):
 @method(Unit, op_hash)
 def Unit_hash(a):
     return fresh_integer(0)
+
+@method(Unit, op_stringify)
+def Unit_stringify(a):
+    return String(u"null")
 
 # Provides hashtables to equality and hash.
 def eq_fn(a, b):

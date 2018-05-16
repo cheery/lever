@@ -28,6 +28,7 @@ from common import (
     e_JSONDecodeError,
     e_IntegerParseError,
     e_EvalError,
+    e_IntegerBaseError,
     Operator,
     op_eq,
     op_hash,
@@ -44,6 +45,7 @@ from common import (
     op_and,
     op_or,
     op_xor,
+    op_stringify,
     method,
     unique_coercion,
     has_coercion,
@@ -55,6 +57,7 @@ from common import (
     eq_fn,
     hash_fn )
 from booleans import boolean
+from integers import parse_integer
 import strings
 
 def fresh_list():
@@ -65,36 +68,3 @@ def fresh_dict():
 
 def fresh_set():
     return Set(r_dict(eq_fn, hash_fn, force_non_null=True))
-
-# Some methods for Integer
-@method(Integer.interface, op_eq)
-def Integer_eq(a, b):
-    if a.integer_val == b.integer_val:
-        return true
-    else:
-        return false
-
-@method(Integer.interface, op_hash)
-def Integer_hash(a):
-    return a
-
-# Needed in the evaluator. It receives integer literals as
-# strings in the current structure.
-# TODO: The error messages here need improvement.
-def parse_integer(string, base=None):
-    string = cast(string, String)
-    base = 10 if base is None else cast(base, Integer).toint()
-    value = 0
-    for ch in string.string_val:
-        if u'0' <= ch and ch <= u'9':
-            digit = ord(ch) - ord('0')
-        elif u'a' <= ch and ch <= u'z':
-            digit = ord(ch) - ord('a') + 10
-        elif u'A' <= ch and ch <= u'Z':
-            digit = ord(ch) - ord('A') + 10
-        else:
-            raise error(e_EvalError()) #u"invalid digit char: " + ch))
-        if digit >= base:
-            raise error(e_EvalError()) #u"invalid digit char: " + ch))
-        value = value * base + digit
-    return fresh_integer(value)

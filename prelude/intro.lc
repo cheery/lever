@@ -1,3 +1,7 @@
 hello = "Hello" ++ " " ++ "world"
 
 print(hello)
+
+a = 21203102402104012041024
+b = 12042104120304012314252
+print('a big number in base 36', stringify(a * b, 36))

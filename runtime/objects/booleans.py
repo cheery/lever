@@ -50,9 +50,17 @@ def Bool_xor(a, b):
     else:
         return false
 
+@method(Bool, op_stringify)
+def Bool_stringify(a):
+    if a is true:
+        return String(u"true")
+    else:
+        return String(u"false")
+
 # This utility helps a bit if handling booleans.
 def boolean(a):
     if a:
         return true
     else:
         return false
+

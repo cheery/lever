@@ -37,7 +37,7 @@ def new_entry_point(config):
 def w_print(args):
     sp = ""
     for arg in args:
-        s = cast(arg, String).string_val
+        s = cast(call(op_stringify, [arg]), String).string_val
         b = s.encode('utf-8')
         os.write(0, sp + b)
         sp = " "
@@ -89,4 +89,6 @@ base_stem = {
     u"&": op_and,
     u"|": op_or,
     u"xor": op_xor,
+    u"stringify": op_stringify,
+    u"parse_integer": builtin()(parse_integer),
 }
