@@ -105,8 +105,9 @@ the type and object space.
 
 `runtime/objects/booleans.py` has methods for booleans.
 
-`runtime/objects/strings.py` has methods for strings.
+`runtime/objects/integers.py` has methods for integers.
 
+`runtime/objects/strings.py` has methods for strings.
 
 ### Bootstrapper
 
@@ -176,6 +177,10 @@ else
  compiler.
 
  TODO: read_script should resolve the relative source paths.
+
+ TODO: Create a step-by-step tutorial for beginners that walks
+ through the language and teaches to program with it. Add
+ interactive 'modules' that allow to test yourself.
 
  [AttributeGrammar]: https://en.wikipedia.org/wiki/Attribute_grammar
  [pypybuild]: http://doc.pypy.org/en/latest/build.html
