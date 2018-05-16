@@ -2,13 +2,26 @@ file: (=statement)+
 
 statement:
     slot "=" >expr / assign
+    "if" expr "then" >(=statement)+
+             ["else" >(=statement)+]? / cond
+    "return" expr? / return
     expr
 
 slot:
     symbol / symbol
 
 expr:
+    [loop_head]* "repeat" >(=statement)+  / repeat
+    # "generator" >(=statement)+       / generator
+    "(" arglist ")" ":" >(=statement)+ / closure
     expr_or
+
+loop_head:
+    "while" expr         / while_loop
+    "for" slot "in" expr / for_loop
+    "if" expr            / if_loop
+
+arglist: sep(slot / argument, ",")
 
 expr_or:
     expr_and "or" expr_or / or

@@ -5,7 +5,7 @@ from rpython.rlib.rstring import NumberStringParser
 # Some methods for Integer
 @method(Integer.interface, op_eq)
 def Integer_eq(a, b):
-    if a.integer_val == b.integer_val:
+    if a.integer_val.eq(b.integer_val):
         return true
     else:
         return false
@@ -61,7 +61,7 @@ def Integer_xor(a, b):
     b = cast(b, Integer)
     return Integer(a.integer_val.xor(b.integer_val))
 
-# TODO: The error message needs improvement.
+# TODO: The error messages here need improvement.
 @method(Integer.interface, op_stringify)
 def Integer_stringify(a, base=fresh_integer(10)):
     integer = cast(a, Integer).integer_val
@@ -76,7 +76,6 @@ digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 # Needed in the evaluator. It receives integer literals as
 # strings in the current structure.
-# TODO: The error messages here need improvement.
 def parse_integer(string, base=fresh_integer(10)):
     string = cast(string, String)
     base = cast(base, Integer).toint()

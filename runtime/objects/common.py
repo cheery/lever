@@ -123,7 +123,7 @@ class FunctionMemo:
             return func_interfaces.memo[key]
         except KeyError:
             face = self.cls(argc, vari, opt)
-            func_interfaces.memo[key] = face
+            self.memo[key] = face
             return face
 
 func_interfaces = FunctionMemo(FunctionInterface)
@@ -258,6 +258,9 @@ class e_EvalError(Object):
     pass
 
 class e_IntegerBaseError(Object):
+    pass
+
+class e_PartialOnArgument(Object):
     pass
 
 # Operators are the next element to be implemented. They
@@ -498,6 +501,14 @@ def Unit_hash(a):
 @method(Unit, op_stringify)
 def Unit_stringify(a):
     return String(u"null")
+
+# The Iterator doesn't return StopIteration() for any
+# particular reason. If you use this as an empty iterator,
+# make sure you rename it.
+class Iterator(Object):
+    interface = InterfaceParametric([COV])
+    def next(self):
+        raise StopIteration()
 
 # Provides hashtables to equality and hash.
 def eq_fn(a, b):

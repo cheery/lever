@@ -33,4 +33,4 @@ if __name__ == '__main__':
     from rpython.config.translationoption import get_combined_translation_config
     config = get_combined_translation_config(translating=True)
     force_config(config)
-    sys.exit(intro.new_entry_point(config)(sys.argv))
+    sys.exit(intro.new_entry_point(config, interpret=True)(sys.argv))

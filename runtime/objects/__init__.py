@@ -29,6 +29,7 @@ from common import (
     e_IntegerParseError,
     e_EvalError,
     e_IntegerBaseError,
+    e_PartialOnArgument,
     Operator,
     op_eq,
     op_hash,
@@ -54,6 +55,7 @@ from common import (
     Dict,
     Set,
     Module,
+    Iterator,
     eq_fn,
     hash_fn )
 from booleans import boolean

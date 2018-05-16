@@ -3,12 +3,12 @@ from objects import *
 import interpreter
 import os
 
-def new_entry_point(config):
+def new_entry_point(config, interpret=False):
     base_module = Module()
     for name in base_stem:
         base_module.assign(name, base_stem[name])
 
-    def entry_point(raw_argv):
+    def entry_point_a(raw_argv):
         try:
             obj = read_json_file(String(u"prelude/intro.lc.json"))
             env = [base_module]
@@ -27,7 +27,20 @@ def new_entry_point(config):
                 os.write(0, s)
             os.write(0, tb.error.__class__.__name__ + "\n")
         return 0
-    return entry_point
+
+    # This smaller version can be used during interpretation
+    # if you want more traceback than what the earlier entry
+    # point can do.
+    def entry_point_b(raw_argv):
+        obj = read_json_file(String(u"prelude/intro.lc.json"))
+        env = [base_module]
+        script = interpreter.read_script(obj, {}, env)
+        call(script, [])
+
+    if not interpret:
+        return entry_point_a
+    else:
+        return entry_point_b
 
 # The stem for the base module is defined outside the entry
 # point generator. For now it is populated with 'print'.
@@ -45,7 +58,9 @@ def w_print(args):
 
 @builtin()
 def w_ne(a,b):
-    return boolean(call(op_eq, [a,b]) is true)
+    result = call(op_eq, [a,b])
+    result = boolean(convert(result, Bool) is false)
+    return result
 
 @builtin()
 def w_ge(a,b):
@@ -66,6 +81,36 @@ def w_le(a,b):
 def w_lt(a,b):
     i = cast(call(op_cmp, [a,b]), Integer).toint()
     return boolean(i == -1)
+
+@builtin()
+def w_range(start,stop=None,step=None):
+    if stop is None:
+        stop = start
+        start = fresh_integer(0)
+    if step is None:
+        step = fresh_integer(1)
+    sign  = cast(call(op_cmp, [fresh_integer(0), step]), Integer).toint()
+    if sign == 0:
+        raise error(e_PartialOnArgument())
+    else:
+        return RangeIterator(start, stop, step, sign)
+
+class RangeIterator(Iterator):
+    interface = Iterator.interface
+    def __init__(self, current, limit, step, sign):
+        self.current = current
+        self.limit = limit
+        self.step = step
+        self.sign = sign
+
+    def next(self):
+        i = cast(call(op_cmp, [self.current, self.limit]), Integer).toint()
+        if i == self.sign:
+            value = self.current
+            self.current = call(op_add, [self.current, self.step])
+            return value
+        else:
+            raise StopIteration()
 
 base_stem = {
     u"print": w_print,
@@ -91,4 +136,8 @@ base_stem = {
     u"xor": op_xor,
     u"stringify": op_stringify,
     u"parse_integer": builtin()(parse_integer),
+    u"null": null,
+    u"true" : true,
+    u"false": false,
+    u"range": w_range,
 }

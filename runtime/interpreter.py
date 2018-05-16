@@ -26,6 +26,9 @@ class Closure(Object):
         self.frame = frame
         self.sources = sources
 
+        # cell and local variables have 'defs' -field that
+        # has count of how many assignments there are in the
+        # program for that variable.
         self.cellvars = as_list(attr(code, u"cellvars"))
         self.localvars = as_list(attr(code, u"localvars"))
 
@@ -33,18 +36,19 @@ class Closure(Object):
             self.args = []
             self.body = as_list(attr(code, u"body"))
             self.loc  = [fresh_integer(0)] * 5
-        elif as_string(attr(code, u"type")) == u"function":
+        elif as_string(attr(code, u"type")) == u"closure":
             self.args = as_list(attr(code, u"args"))
             self.body = as_list(attr(code, u"body"))
             self.loc  = as_list(attr(code, u"loc"))
         else:
             raise error(e_EvalError())
 
-        self.function_face = closure_interfaces.get(
+        self.closure_face = closure_interfaces.get(
             len(self.args), False, 0)
+        assert isinstance(self.closure_face, ClosureInterface)
 
     def face(self):
-        return self.function_face
+        return self.closure_face
 
 # json-as-bytecode is supposed to be a temporary measure,
 # but who knows how long we will have it. It already shows
@@ -68,7 +72,8 @@ def call_closure(closure, args):
         slot  = as_dict(attr(arg, u"slot"))
         eval_slot_set(ctx, slot, args[i])
     stack = [(closure.body, 0, None)]
-    return eval_program(ctx, stack)
+    res = eval_program(ctx, stack)
+    return res
 
 w_call_closure = python_bridge(call_closure, vari=True)
 
@@ -89,6 +94,7 @@ class EvaluationContext:
 # implement but also, I never really used the 'if' as
 # an expression in the previous interpreters for
 # readability reasons.
+
 def eval_program(ctx, stack):
     try:
         while len(stack) > 0:
@@ -103,36 +109,126 @@ def eval_program(ctx, stack):
                 #    expr = as_dict(attr(stmt, u"value"))
                 #    stack.append((body, i+1, mod))
                 #    return eval_expr(ctx, expr)
-                #elif tp == u"repeat":
-                #    fresh = as_list(attr(stmt, u"fresh"))
-                #    branch = as_list(attr(stmt, u"body"))
-                #    stack.append((body, i+1, mod))
-                #    stack.append((branch, 0, Loop(fresh)))
-                #    break
-                #elif tp == u"cond":
-                #    cond = as_dict(attr(stmt, u"cond"))
-                #    cond = eval_expr(ctx, cond)
-                #    if cast(cond, Bool) is true:
-                #        branch = as_list(attr(stmt, u"t_body"))
-                #        stack.append((body, i+1, mod))
-                #        stack.append((branch, 0, None))
-                #        break
-                #    else:
-                #        branch = as_list(attr(stmt, u"f_body"))
-                #        stack.append((body, i+1, mod))
-                #        stack.append((branch, 0, None))
-                #        break
-                #else:
-                eval_expr(ctx, stmt)
+                elif tp == u"repeat":
+                    fresh = as_list(attr(stmt, u"fresh"))
+                    heads = as_list(attr(stmt, u"heads"))
+                    stack.append((body, i+1, mod))
+                    body = as_list(attr(stmt, u"body"))
+                    mod  = eval_loop_header(ctx, heads, fresh)
+                    break
+                elif tp == u"cond":
+                    cond = as_dict(attr(stmt, u"cond"))
+                    cond = eval_expr(ctx, cond)
+                    if convert(cond, Bool) is true:
+                        stack.append((body, i+1, mod))
+                        body = as_list(attr(stmt, u"tbody"))
+                        stack.append((body, 0, None))
+                        mod  = None
+                        break
+                    else:
+                        stack.append((body, i+1, mod))
+                        body = as_list(attr(stmt, u"fbody"))
+                        stack.append((body, 0, None))
+                        mod  = None
+                        break
+                else:
+                    eval_expr(ctx, stmt)
             if isinstance(mod, Loop):
-                for index in mod.fresh:
-                    index = as_integer(index)
-                    ctx.cellvars[index] = Cell()
-                stack.append((body, 0, mod))
+                count = len(mod.heads)
+                k, restart = mod.index, (mod.index == 0)
+                k -= int(not restart)
+                while 0 <= k < count:
+                    if restart:
+                        restart = mod.heads[k].restart(ctx)
+                    else:
+                        restart = mod.heads[k].step(ctx)
+                    if restart:
+                        k += 1
+                    else:
+                        k -= 1
+                if restart:
+                    mod.index = k
+                    for index in mod.fresh:
+                        index = as_integer(index)
+                        ctx.cellvars[index] = Cell()
+                    stack.append((body, 0, mod))
     finally:
         while len(stack) > 0:
             stack.pop()
     return null
+
+# Loops were finicky to implement due to the multiple heads
+# that I allow. Each loop may have multiple heads that have
+# to start and stop in correct order.
+def eval_loop_header(ctx, input_heads, fresh):
+    heads = []
+    for head in input_heads:
+        head = as_dict(head)
+        tp = as_string(attr(head, u"type"))
+        if tp == u"for":
+            slot = as_dict(attr(head, u"slot"))
+            value = as_dict(attr(head, u"value"))
+            heads.append(ForLoop(slot, value))
+        if tp == u"while":
+            cond = as_dict(attr(head, u"cond"))
+            heads.append(WhileLoop(cond))
+        if tp == u"if":
+            cond = as_dict(attr(head, u"cond"))
+            heads.append(IfLoop(cond))
+    return Loop(fresh, heads)
+
+class Loop:
+    def __init__(self, fresh, heads):
+        self.fresh = fresh
+        self.heads = heads
+        self.index = 0
+
+class LoopHead:
+    def restart(self, ctx):
+        return self.step(ctx)
+
+    def step(self, ctx):
+        return False
+
+class ForLoop(LoopHead):
+    def __init__(self, slot, value):
+        self.slot = slot
+        self.iterator = None
+        self.value = value
+
+    def restart(self, ctx):
+        self.iterator = cast(eval_expr(ctx, self.value), Iterator)
+        return self.step(ctx)
+
+    def step(self, ctx):
+        try:
+            eval_slot_set(ctx, self.slot, self.iterator.next())
+            return True
+        except StopIteration:
+            return False
+
+class WhileLoop(LoopHead):
+    def __init__(self, cond):
+        self.cond = cond
+
+    def step(self, ctx):
+        if convert(eval_expr(ctx, self.cond), Bool) is true:
+            return True
+        else:
+            return False
+
+class IfLoop(LoopHead):
+    def __init__(self, cond):
+        self.cond = cond
+
+    def restart(self, ctx):
+        if convert(eval_expr(ctx, self.cond), Bool) is true:
+            return True
+        else:
+            return False
+
+    def step(self, ctx):
+        return False
 
 #@setter(Generator, "next",
 #    signature(Generator, returns=Object))
@@ -152,7 +248,6 @@ def eval_program(ctx, stack):
 #        raise StopIteration()
 #    else:
 #        return result
-
 def eval_expr(ctx, val):
     tp = as_string(attr(val, u"type"))
     if tp == u"literal":
@@ -177,12 +272,25 @@ def eval_expr(ctx, val):
             loc = as_list(attr(val, u"loc"))
             tb.trace.append((loc, ctx.sources))
             raise tb
-    elif tp == u"function":
+    elif tp == u"closure":
         frame = []
         for index in as_list(attr(val, u"frame")):
             index = as_integer(index)
             frame.append(ctx.cellvars[index])
         return Closure(val, ctx.module, ctx.env, frame, ctx.sources)
+    elif tp == u"cmp":
+        i_exprs = as_list(attr(val, u"exprs"))
+        i_ops = as_list(attr(val, u"ops"))
+        if len(i_exprs) != len(i_ops) + 1:
+            raise error(e_EvalError())
+        l_expr = eval_expr(ctx, as_dict(i_exprs[0]))
+        for i in range(0, len(i_ops)):
+            op = eval_expr(ctx, as_dict(i_ops[i]))
+            r_expr = eval_expr(ctx, as_dict(i_exprs[i+1]))
+            if convert(call(op, [l_expr, r_expr]), Bool) is false:
+                return false
+            l_expr = r_expr
+        return true
 #    elif tp == u"generator":
 #        frame = []
 #        for index in as_list(attr(val, u"frame")):
@@ -264,11 +372,6 @@ def eval_literal(obj):
 class Cell:
     def __init__(self):
         self.val = null
-
-class Loop:
-    def __init__(self, fresh):
-        self.fresh = fresh
-
 
 def attr(val, name):
     return val[String(name)]

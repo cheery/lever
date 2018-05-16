@@ -33,6 +33,8 @@ def main():
     cmd.set_defaults(func=interpret_lever)
     cmd.add_argument("--use-pypy", action="store_true",
         help="Use pypy for interpretation")
+    cmd.add_argument("--pdb", action="store_true",
+        help="Run with a debugger")
 
     # TODO: Provide remaining helpers for maintaining the project.
 
@@ -106,9 +108,12 @@ def interpret_lever(args):
         cmd = 'pypy'
     else:
         cmd = 'python'
+    flags = []
+    if args.pdb:
+        flags.extend(["-m", "pdb"])
     for key, value in config.get('env', {}).items():
         os.environ[key] = value
-    check_call([cmd, "runtime/goal_standalone.py"])
+    check_call([cmd] + flags + ["runtime/goal_standalone.py"])
 
 # There's a build-time configuration file in build/config.json
 # It contains some variables you may change to adjust your build.

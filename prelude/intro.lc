@@ -1,7 +1,29 @@
-hello = "Hello" ++ " " ++ "world"
+# I have few test programs in prelude.
 
+# Function definitions.
+fibonacci = (a):
+    if a < 2 then
+        return 1
+    else
+        return fibonacci(a-1) + fibonacci(a-2)
+
+factorial = (a):
+    if a < 1 then
+        return 1
+    else
+        return a * factorial(a-1)
+
+# Trying out variable assignment here.
+hello = "Hello" ++ " " ++ "world"
 print(hello)
 
 a = 21203102402104012041024
 b = 12042104120304012314252
 print('a big number in base 36', stringify(a * b, 36))
+
+# There is fun in here somewhere.
+for i in range(4,16) if i != 14
+repeat
+    y = fibonacci(i)
+    print('fibonacci(', i, '):', y)
+    print('factorial(', y, '):', factorial(y))

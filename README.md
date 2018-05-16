@@ -120,13 +120,13 @@ files into the same directory.
 `prelude/intro.lc` has the steps the runtime takes to
 prepare for compiling and running proper programs.
 
+ TODO: Generators are rising in priority.
+
  TODO: Object system needs to be populated.
 
  TODO: Strings need the remaining methods (attributes)
 
- TODO: Iterators/For loops are rising in priority.
-
- TODO: Type inference/interpretation rising up in sync.
+ TODO: Type inference/interpretation required.
 
  TODO: we can make the compiler still cleaner by obtaining
  the 'attr', 'item' behaviors from slots instead of
@@ -145,6 +145,15 @@ method call = (a,b,c):
 
  TODO: pattern matching syntax proposal
 
+ TODO: Reconsider how condition block should work if the
+ variable does not appear in all evaluation paths and we
+ are at the module level.
+
+ (Now condition block may set the value into a module,
+ whereas since assuming repeat may not occur at all, whereas the
+ repeat block does assign things locally because we know it
+ won't always set it.)
+
 ```
 case x of
 x then
@@ -155,6 +164,8 @@ else
     c
 ```
 
+ TODO: Write a program that checks variance in an object.
+
  TODO: The coercion&conversion subsystem needs to be added
  soon, but it's not clear how to extend it in.
  
@@ -164,10 +175,6 @@ else
  compiler.
 
  TODO: read_script should resolve the relative source paths.
-
- TODO: we would like to distinguish cell variables that are
- not modified during their lifetime, in order to extend the
- amount of things that we can verify to be invariant.
 
  [AttributeGrammar]: https://en.wikipedia.org/wiki/Attribute_grammar
  [pypybuild]: http://doc.pypy.org/en/latest/build.html

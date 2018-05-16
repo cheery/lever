@@ -48,6 +48,22 @@ compile_file = (src, dst):
 # inferences them and then stores it all into an image.
 
 actions = {
+    "closure": (args, body):
+        return Closure(args, body)
+    "argument": (arg):
+        return Argument(arg)
+    "cond": (cond, tb, fb):
+        return Cond(cond, tb, fb)
+    "repeat": (heads, body):
+        return Repeat(heads, body)
+    "for_loop": (slot, expr):
+        return ForLoop(slot, expr)
+    "while_loop": (cond):
+        return WhileLoop(cond)
+    "if_loop": (cond):
+        return IfLoop(cond)
+    "return": (expr=Symbol("null")):
+        return Return(expr)
     "assign": (slot, value):
         return Assign(slot, value)
     "symbol": (a):
@@ -76,16 +92,9 @@ actions = {
         operators = []
         for lhs, op in chain
             exprs.append(lhs)
-            operators.append(op)
+            operators.append(Symbol(op))
         exprs.append(rhs)
         return Cmp(exprs, operators)
-
-#    "condition": (cond, t_body, f_body=[]):
-#        return Cond(cond, t_body, f_body)
-#    "repeat": (body):
-#        return Repeat(body)
-#    "return": (expr=Lookup("null")):
-#        return Return(expr)
 #    "generator": (body):
 #        return Generator(body)
 #    "yield": (expr):
@@ -94,8 +103,6 @@ actions = {
 #        return Inplace(slot, Lookup(op), value)
 #    "attr_slot": (base, symbol):
 #        return AttrSlot(base, symbol)
-#    "closure": (args, body): 
-#        return Function(args, body)
 #    "getattr": (base, name):
 #        return Attr(base, name)
 
@@ -133,12 +140,14 @@ class Cell
     +init = (self, name):
         self.deref = false
         self.name = name
+        self.defs = 1
 
     to_json = (self):
         return {
             type = "cell",
             deref = self.deref,
-            name = self.name }
+            name = self.name,
+            defs = self.defs }
 
 
 solve_scope = (function):
@@ -148,7 +157,7 @@ solve_scope = (function):
     cells = []
 
     flow = (this):
-        if isinstance(this, Function)
+        if isinstance(this, Closure)
             for var, cell in scope.wd.items()
                 this.scope.wd[var] = cell
             for var, cell in locals.items()
@@ -157,12 +166,14 @@ solve_scope = (function):
             if this.wronly
                 if this.deep and this.name in scope.wd
                     this.cell = cell = scope.wd[this.name]
+                    this.cell.defs += 1
                     scope.depend.add(cell)
                 elif this.deep and scope.module
                     this.global = true
                 elif this.name in locals
                     shadow.discard(this.name)
                     this.cell = locals[this.name]
+                    this.cell.defs += 1
                 else
                     cell = Cell(this.name)
                     cells.append(cell)
@@ -172,7 +183,7 @@ solve_scope = (function):
             else
                 assert this.name not in shadow
                     ["variable", this.name, "in shadow"]
-                if this.name in locals and not self.module
+                if this.name in locals
                     this.cell = locals[this.name]
                 elif this.name in scope.rd
                     scope.rd[this.name].deref = true
@@ -203,6 +214,8 @@ solve_scope = (function):
                 else
                     shadow.add(var)
         elif isinstance(this, Repeat)
+            tmp_module = scope.module
+            scope.module = false
             p_locals = locals
             locals := dict(locals)
             this.traverse(flow)
@@ -211,7 +224,8 @@ solve_scope = (function):
                     shadow.add(var)
                     this.sublocals[var] = cell
             locals := p_locals
-            this.scope = self.scope
+            this.scope = scope
+            scope.module = tmp_module
         else
             this.traverse(flow)
     function.traverse(flow)
@@ -227,11 +241,11 @@ solve_scope = (function):
             locals.update(this.sublocals)
             this.traverse(subscope)
             locals := p_locals
-        elif isinstance(this, Function)
+        elif isinstance(this, Closure)
             this.scope.sh.update(scope.sh)
             this.scope.sh.update(shadow) # shadow -group
                                          # contains all shadowed wars
-            for var, cell in self.rd.items()
+            for var, cell in scope.rd.items()
                 this.rd[var] = cell
                 this.sh.discard(var)
             for var, cell in locals.items()
@@ -258,7 +272,6 @@ solve_scope = (function):
         else
              scope.localvars.append(cell)
 
-
 class Script
     +init = (self, body, sources):
         self.body = body
@@ -278,12 +291,14 @@ class Script
             body = js(self.body),
             sources = self.sources }
 
-class Function
+class Closure
     +init = (self, args, body):
         self.args = args
         self.body = body
         self.scope = Scope(false)
         self.loc = null
+        for arg in args
+            arg.slot.slotconfig(false, true)
 
     traverse = (self, f):
         for arg in self.args
@@ -293,7 +308,7 @@ class Function
 
     to_json = (self):
         return {
-            type = "function",
+            type = "closure",
             cellvars = js(self.scope.cellvars),
             localvars = js(self.scope.localvars),
             frame = self.scope.get_frame(),
@@ -302,9 +317,22 @@ class Function
             loc = js_loc(self.loc)
         }
 
+class Argument
+    +init = (self, slot):
+        self.slot = slot
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.slot)
+
+    to_json = (self):
+        return {
+            slot = js(self.slot) }
+
+
 class Assign
     +init = (self, slot, value):
-        slot.deepen(true)
+        slot.slotconfig(true, true)
         self.slot = slot
         self.value = value
         self.loc = null
@@ -319,6 +347,25 @@ class Assign
             slot = js(self.slot),
             value = js(self.value) }
 
+class Cmp
+    +init = (self, exprs, ops):
+        self.exprs = exprs
+        self.ops = ops
+        self.loc = null
+
+    traverse = (self, f):
+        for expr in self.exprs
+            f(expr)
+        for op in self.ops
+            f(op)
+
+    to_json = (self):
+        return {
+            type = "cmp",
+            exprs = js(self.exprs)
+            ops = js(self.ops),
+            loc = js_loc(self.loc) }
+
 class Symbol
     +init = (self, name):
         self.name = name
@@ -329,8 +376,8 @@ class Symbol
         self.cell = null
         self.loc = null
 
-    deepen = (self, wronly):
-        self.deep = true
+    slotconfig = (self, deep, wronly):
+        self.deep = deep
         self.wronly = wronly
 
     traverse = (self, f):
@@ -347,12 +394,12 @@ class Symbol
         elif self.cell.deref
             return {
                 type = "slot",
-                kind = "local",
+                kind = "cell",
                 index = self.scope.cellvars.index(self.cell) }
         else
             return {
                 type = "slot",
-                kind = "cell",
+                kind = "local",
                 index = self.scope.localvars.index(self.cell) }
 
 #TODO: Continue from here.
@@ -473,18 +520,21 @@ class Cond
         return {
             type = "cond",
             cond = js(self.cond),
-            t_body = js(self.t_body),
-            f_body = js(self.f_body),
+            tbody = js(self.t_body),
+            fbody = js(self.f_body),
             loc = js_loc(self.loc) }
 
 class Repeat
-    +init = (self, body):
+    +init = (self, heads, body):
+        self.heads = heads
         self.body = body
         self.sublocals = {}
         self.scope = null
         self.loc = null
 
     traverse = (self, f):
+        for head in self.heads
+            f(head)
         for stmt in self.body
             f(stmt)
         
@@ -492,11 +542,56 @@ class Repeat
         fresh = []
         # TODO: associate to the repeater and add 'fresh' -field.
         for var, cell in self.sublocals.items()
-            fresh.append(self.scope.cellvars.index(cell))
+            if cell.deref
+                fresh.append(self.scope.cellvars.index(cell))
         return {
             type = "repeat",
             fresh = fresh,
+            heads = js(self.heads),
             body = js(self.body) }
+
+class ForLoop
+    +init = (self, slot, value):
+        self.slot = slot
+        self.value = value
+        self.loc = null
+        slot.slotconfig(false, true)
+
+    traverse = (self, f):
+        f(self.slot)
+        f(self.value)
+
+    to_json = (self):
+        return {
+            type = "for",
+            slot = js(self.slot),
+            value = js(self.value) }
+
+class WhileLoop
+    +init = (self, cond):
+        self.cond = cond
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.cond)
+
+    to_json = (self):
+        return {
+            type = "while",
+            cond = js(self.cond) }
+
+class IfLoop
+    +init = (self, cond):
+        self.cond = cond
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.cond)
+
+    to_json = (self):
+        return {
+            type = "if",
+            cond = js(self.cond) }
 
 class Inplace
     +init = (self, slot, operator, value):
