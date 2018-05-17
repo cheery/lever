@@ -137,23 +137,12 @@ prepare for compiling and running proper programs.
 
  TODO: And/Or/Not -interpretation.
 
- TODO: cond -intepretation.
-
 ```
 datatype A(..) = x + y(a, b, c)
 method call = (a,b,c):
 ```
 
  TODO: pattern matching syntax proposal
-
- TODO: Reconsider how condition block should work if the
- variable does not appear in all evaluation paths and we
- are at the module level.
-
- (Now condition block may set the value into a module,
- whereas since assuming repeat may not occur at all, the
- repeat block does assign things locally because we know it
- won't always set it.)
 
 ```
 case x of
@@ -164,6 +153,21 @@ y(a,b,c) then
 else
     c
 ```
+
+ TODO: Reconsider how condition block should work if the
+ variable does not appear in all evaluation paths and we
+ are at the module level.
+
+ (Now condition block may set the value into a module,
+ whereas since assuming repeat may not occur at all, the
+ repeat block does assign things locally because we know it
+ won't always set it.)
+
+ TODO: When interesting and useful software appears at the
+       prelude/intro.lc as result of testing. Put them into
+       samples/
+
+ TODO: This time, divide the samples/ into categories.
 
  TODO: Write a program that checks variance in an object
  (best effort, false positives).
