@@ -121,7 +121,10 @@ files into the same directory.
 `prelude/intro.lc` has the steps the runtime takes to
 prepare for compiling and running proper programs.
 
- TODO: Generators are rising in priority.
+ TODO: If there is only one row in closure body and it is an expr,
+       wrap it into a return.
+ 
+ TODO: Add inplace assignment
 
  TODO: Object system needs to be populated.
 
@@ -134,8 +137,6 @@ prepare for compiling and running proper programs.
  reinventing the same behavior twice in a different context.
 
  TODO: tagged unions syntax
-
- TODO: And/Or/Not -interpretation.
 
 ```
 datatype A(..) = x + y(a, b, c)

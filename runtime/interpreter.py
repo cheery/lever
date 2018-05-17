@@ -72,21 +72,63 @@ def call_closure(closure, args):
         slot  = as_dict(attr(arg, u"slot"))
         eval_slot_set(ctx, slot, args[i])
     stack = [(closure.body, 0, None)]
-    res = eval_program(ctx, stack)
+    try:
+        res = eval_program(ctx, stack)
+    finally:
+        while len(stack) > 0:
+            stack.pop()
     return res
 
 w_call_closure = python_bridge(call_closure, vari=True)
 
+# Generators are incredibly much more simpler than Closures
+# because we do not give them an argument list.
+class Generator(Iterator):
+    interface = Iterator.interface
+    def __init__(self, code, module, env, frame, sources):
+        self.module = module
+        self.env = env
+        self.sources = sources
+
+        cellvars = as_list(attr(code, u"cellvars"))
+        localvars = as_list(attr(code, u"localvars"))
+        body = as_list(attr(code, u"body"))
+        self.cellvars = frame + [
+            Cell()
+            for _ in range(len(frame), len(cellvars))]
+        self.localvars = [null
+            for _ in range(len(localvars))]
+        self.stack = [(body, 0, None)]
+
+    def next(self):
+        if len(self.stack) == 0:
+            raise StopIteration()
+        ctx = EvaluationContext(
+            self.localvars, self.cellvars,
+            self.module, self.env, self.sources,
+            is_generator=True)
+        try:
+            result = eval_program(ctx, self.stack)
+        except:
+            while len(self.stack) > 0:
+                self.stack.pop()
+            raise
+        if len(self.stack) == 0:
+            raise StopIteration()
+        else:
+            return result
+
+# TODO: add a flag telling whether it's function or
+# generator we are running. allow/disallow return/yield.
 class EvaluationContext:
-    def __init__(self, localvars, cellvars, module, env, sources):
+    def __init__(self, localvars, cellvars, module, env, sources,
+                 is_generator=False):
         self.localvars = localvars
         self.cellvars = cellvars
         self.module = module
         self.env = env
         self.sources = sources
-
-# TODO: add a flag telling whether it's function or
-# generator we are running. allow/disallow return/yield.
+        self.is_generator = is_generator
 
 
 # The evaluator is layered and now really distinguishes
@@ -96,65 +138,74 @@ class EvaluationContext:
 # readability reasons.
 
 def eval_program(ctx, stack):
-    try:
-        while len(stack) > 0:
-            body, start, mod = stack.pop()
-            for i in range(start, len(body)):
-                stmt = as_dict(body[i])
-                tp = as_string(attr(stmt, u"type"))
-                if tp == u"return":
-                    expr = as_dict(attr(stmt, u"value"))
-                    return eval_expr(ctx, expr)
-                #elif tp == u"yield":
-                #    expr = as_dict(attr(stmt, u"value"))
-                #    stack.append((body, i+1, mod))
-                #    return eval_expr(ctx, expr)
-                elif tp == u"repeat":
-                    fresh = as_list(attr(stmt, u"fresh"))
-                    heads = as_list(attr(stmt, u"heads"))
+    while len(stack) > 0:
+        body, start, mod = stack.pop()
+        for i in range(start, len(body)):
+            stmt = as_dict(body[i])
+            tp = as_string(attr(stmt, u"type"))
+            if tp == u"return" and not ctx.is_generator:
+                expr = as_dict(attr(stmt, u"value"))
+                return eval_expr(ctx, expr)
+            elif tp == u"yield" and ctx.is_generator:
+                expr = as_dict(attr(stmt, u"value"))
+                stack.append((body, i+1, mod))
+                return eval_expr(ctx, expr)
+            elif tp == u"break":
+                while not isinstance(mod, Loop):
+                    if len(stack) == 0:
+                        raise error(e_EvalError())
+                    body, start, mod = stack.pop()
+                mod = None
+                break
+            elif tp == u"continue":
+                while not isinstance(mod, Loop):
+                    if len(stack) == 0:
+                        raise error(e_EvalError())
+                    body, start, mod = stack.pop()
+                break
+            elif tp == u"repeat":
+                fresh = as_list(attr(stmt, u"fresh"))
+                heads = as_list(attr(stmt, u"heads"))
+                stack.append((body, i+1, mod))
+                body = as_list(attr(stmt, u"body"))
+                mod  = eval_loop_header(ctx, heads, fresh)
+                break
+            elif tp == u"cond":
+                cond = as_dict(attr(stmt, u"cond"))
+                cond = eval_expr(ctx, cond)
+                if convert(cond, Bool) is true:
                     stack.append((body, i+1, mod))
-                    body = as_list(attr(stmt, u"body"))
-                    mod  = eval_loop_header(ctx, heads, fresh)
+                    body = as_list(attr(stmt, u"tbody"))
+                    stack.append((body, 0, None))
+                    mod  = None
                     break
-                elif tp == u"cond":
-                    cond = as_dict(attr(stmt, u"cond"))
-                    cond = eval_expr(ctx, cond)
-                    if convert(cond, Bool) is true:
-                        stack.append((body, i+1, mod))
-                        body = as_list(attr(stmt, u"tbody"))
-                        stack.append((body, 0, None))
-                        mod  = None
-                        break
-                    else:
-                        stack.append((body, i+1, mod))
-                        body = as_list(attr(stmt, u"fbody"))
-                        stack.append((body, 0, None))
-                        mod  = None
-                        break
                 else:
-                    eval_expr(ctx, stmt)
-            if isinstance(mod, Loop):
-                count = len(mod.heads)
-                k, restart = mod.index, (mod.index == 0)
-                k -= int(not restart)
-                while 0 <= k < count:
-                    if restart:
-                        restart = mod.heads[k].restart(ctx)
-                    else:
-                        restart = mod.heads[k].step(ctx)
-                    if restart:
-                        k += 1
-                    else:
-                        k -= 1
+                    stack.append((body, i+1, mod))
+                    body = as_list(attr(stmt, u"fbody"))
+                    stack.append((body, 0, None))
+                    mod  = None
+                    break
+            else:
+                eval_expr(ctx, stmt)
+        if isinstance(mod, Loop):
+            count = len(mod.heads)
+            k, restart = mod.index, (mod.index == 0)
+            k -= int(not restart)
+            while 0 <= k < count:
                 if restart:
-                    mod.index = k
-                    for index in mod.fresh:
-                        index = as_integer(index)
-                        ctx.cellvars[index] = Cell()
-                    stack.append((body, 0, mod))
-    finally:
-        while len(stack) > 0:
-            stack.pop()
+                    restart = mod.heads[k].restart(ctx)
+                else:
+                    restart = mod.heads[k].step(ctx)
+                if restart:
+                    k += 1
+                else:
+                    k -= 1
+            if restart:
+                mod.index = k
+                for index in mod.fresh:
+                    index = as_integer(index)
+                    ctx.cellvars[index] = Cell()
+                stack.append((body, 0, mod))
     return null
 
 # Loops were finicky to implement due to the multiple heads
@@ -230,24 +281,6 @@ class IfLoop(LoopHead):
     def step(self, ctx):
         return False
 
-#@setter(Generator, "next",
-#    signature(Generator, returns=Object))
-#def Generator_next(generator):
-#    try:
-#        return eval_generator(generator)
-#    except StopIteration as _:
-#        raise error(e_StopIteration())
-
-#def eval_generator(generator):
-#    stack = generator.stack
-#    ctx = EvaluationContext(
-#        generator.module, generator.env,
-#        generator.cellvars, generator.localvars)
-#    result = eval_program(ctx, stack)
-#    if len(stack) == 0:
-#        raise StopIteration()
-#    else:
-#        return result
 def eval_expr(ctx, val):
     tp = as_string(attr(val, u"type"))
     if tp == u"literal":
@@ -291,12 +324,32 @@ def eval_expr(ctx, val):
                 return false
             l_expr = r_expr
         return true
-#    elif tp == u"generator":
-#        frame = []
-#        for index in as_list(attr(val, u"frame")):
-#            index = as_integer(index)
-#            frame.append(ctx.cellvars[index])
-#        return Generator(val, ctx.module, ctx.env, frame)
+    elif tp == u"and":
+        lhs = as_dict(attr(val, u"lhs"))
+        rhs = as_dict(attr(val, u"rhs"))
+        if convert(eval_expr(ctx, lhs), Bool) is true:
+            return convert(eval_expr(ctx, rhs), Bool)
+        else:
+            return false
+    elif tp == u"or":
+        lhs = as_dict(attr(val, u"lhs"))
+        rhs = as_dict(attr(val, u"rhs"))
+        if convert(eval_expr(ctx, lhs), Bool) is true:
+            return true
+        else:
+            return convert(eval_expr(ctx, rhs), Bool)
+    elif tp == u"not":
+        value = as_dict(attr(val, u"value"))
+        if convert(eval_expr(ctx, value), Bool) is true:
+            return false
+        else:
+            return true
+    elif tp == u"generator":
+        frame = []
+        for index in as_list(attr(val, u"frame")):
+            index = as_integer(index)
+            frame.append(ctx.cellvars[index])
+        return Generator(val, ctx.module, ctx.env, frame, ctx.sources)
     else:
         raise error(e_EvalError())
 

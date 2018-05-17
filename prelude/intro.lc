@@ -13,6 +13,18 @@ factorial = (a):
     else
         return a * factorial(a-1)
 
+simple_generator = ():
+    sg = generator
+        for x in range(10)
+        for y in range(20)
+        repeat
+            yield x * y
+
+    s = 0
+    for x in sg repeat
+        s = s + x
+    print('simple_generator output sum:', s)
+
 # Trying out variable assignment here.
 hello = "Hello" ++ " " ++ "world"
 print(hello)
@@ -27,3 +39,5 @@ repeat
     y = fibonacci(i)
     print('fibonacci(', i, '):', y)
     print('factorial(', y, '):', factorial(y))
+
+simple_generator()

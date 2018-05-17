@@ -50,6 +50,8 @@ compile_file = (src, dst):
 actions = {
     "closure": (args, body):
         return Closure(args, body)
+    "generator": (body):
+        return Generator(body)
     "argument": (arg):
         return Argument(arg)
     "cond": (cond, tb, fb):
@@ -64,6 +66,12 @@ actions = {
         return IfLoop(cond)
     "return": (expr=Symbol("null")):
         return Return(expr)
+    "yield": (expr=Symbol("null")):
+        return Yield(expr)
+    "break": ():
+        return Break()
+    "continue": ():
+        return Continue()
     "assign": (slot, value):
         return Assign(slot, value)
     "symbol": (a):
@@ -95,10 +103,6 @@ actions = {
             operators.append(Symbol(op))
         exprs.append(rhs)
         return Cmp(exprs, operators)
-#    "generator": (body):
-#        return Generator(body)
-#    "yield": (expr):
-#        return Yield(expr)
 #    "inplace": (slot, op, value):
 #        return Inplace(slot, Lookup(op), value)
 #    "attr_slot": (base, symbol):
@@ -157,7 +161,7 @@ solve_scope = (function):
     cells = []
 
     flow = (this):
-        if isinstance(this, Closure)
+        if isinstance(this, [Closure, Generator])
             for var, cell in scope.wd.items()
                 this.scope.wd[var] = cell
             for var, cell in locals.items()
@@ -241,16 +245,16 @@ solve_scope = (function):
             locals.update(this.sublocals)
             this.traverse(subscope)
             locals := p_locals
-        elif isinstance(this, Closure)
+        elif isinstance(this, [Closure, Generator])
             this.scope.sh.update(scope.sh)
             this.scope.sh.update(shadow) # shadow -group
                                          # contains all shadowed wars
             for var, cell in scope.rd.items()
-                this.rd[var] = cell
-                this.sh.discard(var)
+                this.scope.rd[var] = cell
+                this.scope.sh.discard(var)
             for var, cell in locals.items()
-                this.rd[var] = cell
-                this.sh.discard(var)
+                this.scope.rd[var] = cell
+                this.scope.sh.discard(var)
             # The depend-set is built from 'rd', so we have to check
             # which depends should be carried over.
             solve_scope(this)
@@ -316,6 +320,24 @@ class Closure
             body = js(self.body),
             loc = js_loc(self.loc)
         }
+
+class Generator
+    +init = (self, body):
+        self.body = body
+        self.scope = Scope(false)
+        self.loc = null
+
+    traverse = (self, f):
+        for stmt in self.body
+            f(stmt)
+
+    to_json = (self):
+        return {
+            type = "generator",
+            cellvars = js(self.scope.cellvars),
+            localvars = js(self.scope.localvars),
+            frame = self.scope.get_frame(),
+            body = js(self.body) }
 
 class Argument
     +init = (self, slot):
@@ -457,51 +479,6 @@ class Symbol
 
 # Must note that it won't work with "from" * -syntax.
 
-
-
-# TODO: Generator is a bit more sophisticated than this.
-# Note that we should remove "Return" from generator,
-#                 and remove "Yield" from closure
-class Generator
-    +init = (self, body):
-        self.body = body
-        self.rd = {}
-        self.wd = {}
-        self.sh = set()
-        self.module = module
-
-        self.localvars = []
-        self.cellvars = []
-        self.frame = []
-        self.depend = set()
-        self.loc = null
-
-    traverse = (self, f):
-        for stmt in self.body
-            f(stmt)
-
-    to_json = (self):
-        return {
-            type = "generator",
-            cellvars = list(self.cellvars),
-            localvars = list(self.localvars),
-            frame = self.frame,
-            body = js(self.body),
-            loc = js_loc(self.loc) }
-
-class Yield
-    +init = (self, value):
-        self.value = value
-        self.loc = null
-
-    traverse = (self, f):
-        f(self.value)
-
-    to_json = (self):
-        return {
-            type = "yield",
-            value = js(self.value) }
-
 class Cond
     +init = (self, cond, t_body, f_body):
         self.cond = cond
@@ -593,6 +570,54 @@ class IfLoop
             type = "if",
             cond = js(self.cond) }
 
+class Return
+    +init = (self, value):
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.value)
+
+    to_json = (self):
+        return { type = "return", value = js(self.value) }
+
+class Yield
+    +init = (self, value):
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.value)
+
+    to_json = (self):
+        return { type = "yield", value = js(self.value) }
+
+class Break
+    +init = (self):
+        self.loc = null
+
+    traverse = (self, f):
+        null
+
+    to_json = (self):
+        return { type = "break" }
+
+class Continue
+    +init = (self):
+        self.loc = null
+
+    traverse = (self, f):
+        null
+
+    to_json = (self):
+        return { type = "break" }
+
+
+
+
+
+
+
 class Inplace
     +init = (self, slot, operator, value):
         slot.deepen()
@@ -613,6 +638,9 @@ class Inplace
             operator = js(self.operator),
             value = js(self.value) }
 
+
+
+
 class AttrSlot
     +init = (self, base, name):
         self.base = base
@@ -632,17 +660,6 @@ class AttrSlot
             base = js(self.base),
             name = self.name,
             loc = js_loc(self.loc) }
-
-class Return
-    +init = (self, value):
-        self.value = value
-        self.loc = null
-
-    traverse = (self, f):
-        f(self.value)
-
-    to_json = (self):
-        return { type = "return", value = js(self.value) }
 
 class Attr
     +init = (self, base, name):
@@ -681,6 +698,46 @@ class Call
             callee = js(self.callee),
             args = js(self.args),
             loc = js_loc(self.loc) }
+
+class And
+    +init = (self, lhs, rhs):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    traverse = (self, f):
+        f(self.lhs)
+        f(self.rhs)
+
+    to_json = (self):
+        return {
+            type = "and",
+            lhs = js(self.lhs),
+            rhs = js(self.rhs) }
+
+class Or
+    +init = (self, lhs, rhs):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    traverse = (self, f):
+        f(self.lhs)
+        f(self.rhs)
+
+    to_json = (self):
+        return {
+            type = "or",
+            lhs = js(self.lhs),
+            rhs = js(self.rhs) }
+
+class Not
+    +init = (self, value):
+        self.value = value
+
+    traverse = (self, f):
+        f(self.value)
+
+    to_json = (self):
+        return { type = "not", value = js(self.value) }
 
 class Literal
     +init = (self, kind, repr):

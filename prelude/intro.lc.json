@@ -272,8 +272,217 @@
             "slot": {
                 "type": "slot",
                 "kind": "global",
+                "name": "simple_generator",
+                "loc": [0, 16, 16, 16, 0]
+            },
+            "value": {
+                "type": "closure",
+                "cellvars": [],
+                "localvars": [
+                    {"type": "cell", "deref": false, "name": "sg", "defs": 1},
+                    {"type": "cell", "deref": false, "name": "s", "defs": 2},
+                    {"type": "cell", "deref": false, "name": "x", "defs": 1}
+                ],
+                "frame": [],
+                "args": [],
+                "body": [
+                    {
+                        "type": "assign",
+                        "slot": {"type": "slot", "kind": "local", "index": 0},
+                        "value": {
+                            "type": "generator",
+                            "cellvars": [],
+                            "localvars": [
+                                {
+                                    "type": "cell",
+                                    "deref": false,
+                                    "name": "x",
+                                    "defs": 1
+                                },
+                                {
+                                    "type": "cell",
+                                    "deref": false,
+                                    "name": "y",
+                                    "defs": 1
+                                }
+                            ],
+                            "frame": [],
+                            "body": [
+                                {
+                                    "type": "repeat",
+                                    "fresh": [],
+                                    "heads": [
+                                        {
+                                            "type": "for",
+                                            "slot": {
+                                                "type": "slot",
+                                                "kind": "local",
+                                                "index": 0
+                                            },
+                                            "value": {
+                                                "type": "call",
+                                                "callee": {
+                                                    "type": "slot",
+                                                    "kind": "global",
+                                                    "name": "range",
+                                                    "loc": [17, 18, 22, 18, 0]
+                                                },
+                                                "args": [
+                                                    {
+                                                        "type": "literal",
+                                                        "kind": "integer",
+                                                        "value": "10"
+                                                    }
+                                                ],
+                                                "loc": [17, 18, 26, 18, 0]
+                                            }
+                                        },
+                                        {
+                                            "type": "for",
+                                            "slot": {
+                                                "type": "slot",
+                                                "kind": "local",
+                                                "index": 1
+                                            },
+                                            "value": {
+                                                "type": "call",
+                                                "callee": {
+                                                    "type": "slot",
+                                                    "kind": "global",
+                                                    "name": "range",
+                                                    "loc": [17, 19, 22, 19, 0]
+                                                },
+                                                "args": [
+                                                    {
+                                                        "type": "literal",
+                                                        "kind": "integer",
+                                                        "value": "20"
+                                                    }
+                                                ],
+                                                "loc": [17, 19, 26, 19, 0]
+                                            }
+                                        }
+                                    ],
+                                    "body": [
+                                        {
+                                            "type": "yield",
+                                            "value": {
+                                                "type": "call",
+                                                "callee": {
+                                                    "type": "slot",
+                                                    "kind": "global",
+                                                    "name": "*",
+                                                    "loc": [18, 21, 23, 21, 0]
+                                                },
+                                                "args": [
+                                                    {
+                                                        "type": "slot",
+                                                        "kind": "local",
+                                                        "index": 0
+                                                    },
+                                                    {
+                                                        "type": "slot",
+                                                        "kind": "local",
+                                                        "index": 1
+                                                    }
+                                                ],
+                                                "loc": [18, 21, 23, 21, 0]
+                                            }
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    },
+                    {
+                        "type": "assign",
+                        "slot": {"type": "slot", "kind": "local", "index": 1},
+                        "value": {
+                            "type": "literal",
+                            "kind": "integer",
+                            "value": "0"
+                        }
+                    },
+                    {
+                        "type": "repeat",
+                        "fresh": [],
+                        "heads": [
+                            {
+                                "type": "for",
+                                "slot": {
+                                    "type": "slot",
+                                    "kind": "local",
+                                    "index": 2
+                                },
+                                "value": {
+                                    "type": "slot",
+                                    "kind": "local",
+                                    "index": 0
+                                }
+                            }
+                        ],
+                        "body": [
+                            {
+                                "type": "assign",
+                                "slot": {
+                                    "type": "slot",
+                                    "kind": "local",
+                                    "index": 1
+                                },
+                                "value": {
+                                    "type": "call",
+                                    "callee": {
+                                        "type": "slot",
+                                        "kind": "global",
+                                        "name": "+",
+                                        "loc": [12, 25, 17, 25, 0]
+                                    },
+                                    "args": [
+                                        {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 1
+                                        },
+                                        {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 2
+                                        }
+                                    ],
+                                    "loc": [12, 25, 17, 25, 0]
+                                }
+                            }
+                        ]
+                    },
+                    {
+                        "type": "call",
+                        "callee": {
+                            "type": "slot",
+                            "kind": "global",
+                            "name": "print",
+                            "loc": [4, 26, 9, 26, 0]
+                        },
+                        "args": [
+                            {
+                                "type": "literal",
+                                "kind": "string",
+                                "value": "simple_generator output sum:"
+                            },
+                            {"type": "slot", "kind": "local", "index": 1}
+                        ],
+                        "loc": [4, 26, 44, 26, 0]
+                    }
+                ],
+                "loc": [19, 16, 44, 26, 0]
+            }
+        },
+        {
+            "type": "assign",
+            "slot": {
+                "type": "slot",
+                "kind": "global",
                 "name": "hello",
-                "loc": [0, 17, 5, 17, 0]
+                "loc": [0, 29, 5, 29, 0]
             },
             "value": {
                 "type": "call",
@@ -281,7 +490,7 @@
                     "type": "slot",
                     "kind": "global",
                     "name": "++",
-                    "loc": [8, 17, 33, 17, 0]
+                    "loc": [8, 29, 33, 29, 0]
                 },
                 "args": [
                     {
@@ -290,7 +499,7 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "++",
-                            "loc": [8, 17, 22, 17, 0]
+                            "loc": [8, 29, 22, 29, 0]
                         },
                         "args": [
                             {
@@ -300,11 +509,11 @@
                             },
                             {"type": "literal", "kind": "string", "value": " "}
                         ],
-                        "loc": [8, 17, 22, 17, 0]
+                        "loc": [8, 29, 22, 29, 0]
                     },
                     {"type": "literal", "kind": "string", "value": "world"}
                 ],
-                "loc": [8, 17, 33, 17, 0]
+                "loc": [8, 29, 33, 29, 0]
             }
         },
         {
@@ -313,17 +522,17 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "print",
-                "loc": [0, 18, 5, 18, 0]
+                "loc": [0, 30, 5, 30, 0]
             },
             "args": [
                 {
                     "type": "slot",
                     "kind": "global",
                     "name": "hello",
-                    "loc": [6, 18, 11, 18, 0]
+                    "loc": [6, 30, 11, 30, 0]
                 }
             ],
-            "loc": [0, 18, 12, 18, 0]
+            "loc": [0, 30, 12, 30, 0]
         },
         {
             "type": "assign",
@@ -331,7 +540,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "a",
-                "loc": [0, 20, 1, 20, 0]
+                "loc": [0, 32, 1, 32, 0]
             },
             "value": {
                 "type": "literal",
@@ -345,7 +554,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "b",
-                "loc": [0, 21, 1, 21, 0]
+                "loc": [0, 33, 1, 33, 0]
             },
             "value": {
                 "type": "literal",
@@ -359,7 +568,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "print",
-                "loc": [0, 22, 5, 22, 0]
+                "loc": [0, 34, 5, 34, 0]
             },
             "args": [
                 {
@@ -373,7 +582,7 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "stringify",
-                        "loc": [33, 22, 42, 22, 0]
+                        "loc": [33, 34, 42, 34, 0]
                     },
                     "args": [
                         {
@@ -382,30 +591,30 @@
                                 "type": "slot",
                                 "kind": "global",
                                 "name": "*",
-                                "loc": [43, 22, 48, 22, 0]
+                                "loc": [43, 34, 48, 34, 0]
                             },
                             "args": [
                                 {
                                     "type": "slot",
                                     "kind": "global",
                                     "name": "a",
-                                    "loc": [43, 22, 44, 22, 0]
+                                    "loc": [43, 34, 44, 34, 0]
                                 },
                                 {
                                     "type": "slot",
                                     "kind": "global",
                                     "name": "b",
-                                    "loc": [47, 22, 48, 22, 0]
+                                    "loc": [47, 34, 48, 34, 0]
                                 }
                             ],
-                            "loc": [43, 22, 48, 22, 0]
+                            "loc": [43, 34, 48, 34, 0]
                         },
                         {"type": "literal", "kind": "integer", "value": "36"}
                     ],
-                    "loc": [33, 22, 53, 22, 0]
+                    "loc": [33, 34, 53, 34, 0]
                 }
             ],
-            "loc": [0, 22, 54, 22, 0]
+            "loc": [0, 34, 54, 34, 0]
         },
         {
             "type": "repeat",
@@ -420,7 +629,7 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "range",
-                            "loc": [9, 25, 14, 25, 0]
+                            "loc": [9, 37, 14, 37, 0]
                         },
                         "args": [
                             {"type": "literal", "kind": "integer", "value": "4"
@@ -431,7 +640,7 @@
                                 "value": "16"
                             }
                         ],
-                        "loc": [9, 25, 20, 25, 0]
+                        "loc": [9, 37, 20, 37, 0]
                     }
                 },
                 {
@@ -451,10 +660,10 @@
                                 "type": "slot",
                                 "kind": "global",
                                 "name": "!=",
-                                "loc": [24, 25, 31, 25, 0]
+                                "loc": [24, 37, 31, 37, 0]
                             }
                         ],
-                        "loc": [24, 25, 31, 25, 0]
+                        "loc": [24, 37, 31, 37, 0]
                     }
                 }
             ],
@@ -468,10 +677,10 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "fibonacci",
-                            "loc": [8, 27, 17, 27, 0]
+                            "loc": [8, 39, 17, 39, 0]
                         },
                         "args": [{"type": "slot", "kind": "local", "index": 0}],
-                        "loc": [8, 27, 20, 27, 0]
+                        "loc": [8, 39, 20, 39, 0]
                     }
                 },
                 {
@@ -480,7 +689,7 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "print",
-                        "loc": [4, 28, 9, 28, 0]
+                        "loc": [4, 40, 9, 40, 0]
                     },
                     "args": [
                         {
@@ -492,7 +701,7 @@
                         {"type": "literal", "kind": "string", "value": "):"},
                         {"type": "slot", "kind": "local", "index": 1}
                     ],
-                    "loc": [4, 28, 35, 28, 0]
+                    "loc": [4, 40, 35, 40, 0]
                 },
                 {
                     "type": "call",
@@ -500,7 +709,7 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "print",
-                        "loc": [4, 29, 9, 29, 0]
+                        "loc": [4, 41, 9, 41, 0]
                     },
                     "args": [
                         {
@@ -516,17 +725,28 @@
                                 "type": "slot",
                                 "kind": "global",
                                 "name": "factorial",
-                                "loc": [33, 29, 42, 29, 0]
+                                "loc": [33, 41, 42, 41, 0]
                             },
                             "args": [
                                 {"type": "slot", "kind": "local", "index": 1}
                             ],
-                            "loc": [33, 29, 45, 29, 0]
+                            "loc": [33, 41, 45, 41, 0]
                         }
                     ],
-                    "loc": [4, 29, 46, 29, 0]
+                    "loc": [4, 41, 46, 41, 0]
                 }
             ]
+        },
+        {
+            "type": "call",
+            "callee": {
+                "type": "slot",
+                "kind": "global",
+                "name": "simple_generator",
+                "loc": [0, 43, 16, 43, 0]
+            },
+            "args": [],
+            "loc": [0, 43, 18, 43, 0]
         }
     ],
     "sources": ["intro.lc"]

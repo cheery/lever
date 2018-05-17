@@ -5,6 +5,9 @@ statement:
     "if" expr "then" >(=statement)+
              ["else" >(=statement)+]? / cond
     "return" expr? / return
+    "yield" expr   / yield
+    "break"        / break
+    "continue"     / continue
     expr
 
 slot:
@@ -12,7 +15,7 @@ slot:
 
 expr:
     [loop_head]* "repeat" >(=statement)+  / repeat
-    # "generator" >(=statement)+       / generator
+    "generator" >(=statement)+         / generator
     "(" arglist ")" ":" >(=statement)+ / closure
     expr_or
 
