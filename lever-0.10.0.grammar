@@ -11,12 +11,17 @@ statement:
     expr
 
 slot:
+    slot_item
+    slot_item ["," slot_item]+ / tuple([.] concat .)
+
+slot_item:
     symbol / symbol
 
 expr:
     [loop_head]* "repeat" >(=statement)+  / repeat
     "generator" >(=statement)+         / generator
     "(" arglist ")" ":" >(=statement)+ / closure
+    expr_or ["," expr_or]+ / make_tuple([.] concat .)
     expr_or
 
 loop_head:
@@ -24,7 +29,7 @@ loop_head:
     "for" slot "in" expr / for_loop
     "if" expr            / if_loop
 
-arglist: sep(slot / argument, ",")
+arglist: sep([slot_item, "(" slot ")"] / argument, ",")
 
 expr_or:
     expr_and "or" expr_or / or
@@ -79,7 +84,7 @@ exponent_postfix:
     postfix ["^"] exponent_postfix / binary
 
 postfix:
-    postfix "(" sep(expr, ',') ")" / call
+    postfix "(" sep(expr_or, ',') ")" / call
     postfix "[" form "]"           / item
     postfix "." symbol             / attr
     term

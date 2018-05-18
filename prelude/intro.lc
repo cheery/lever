@@ -41,3 +41,7 @@ repeat
     print('factorial(', y, '):', factorial(y))
 
 simple_generator()
+
+# a tuple example.
+e,f,g = 1, 2, 3
+print(e,f,g)

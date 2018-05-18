@@ -38,6 +38,7 @@ from common import (
     op_getitem,
     op_setitem,
     op_iter,
+    op_product,
     op_cmp,
     op_concat,
     op_add,
@@ -56,6 +57,7 @@ from common import (
     Set,
     Module,
     Iterator,
+    Tuple,
     eq_fn,
     hash_fn )
 from booleans import boolean

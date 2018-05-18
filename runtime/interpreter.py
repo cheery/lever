@@ -350,6 +350,10 @@ def eval_expr(ctx, val):
             index = as_integer(index)
             frame.append(ctx.cellvars[index])
         return Generator(val, ctx.module, ctx.env, frame, ctx.sources)
+    elif tp == u"make_tuple":
+        return Tuple([
+            eval_expr(ctx, as_dict(item))
+            for item in as_list(attr(val, u"items"))])
     else:
         raise error(e_EvalError())
 
@@ -378,6 +382,11 @@ def eval_slot_get(ctx, slot):
             tb = error(e_TypeError())
             tb.trace.append((loc, ctx.sources))
             raise tb
+    elif kind == u"tuple":
+        return Tuple([
+            eval_slot_get(ctx, as_dict(s))
+            for s in as_list(attr(slot, u"slots"))])
+
 #    elif kind == u"attr":
 #        name = as_string(attr(val, u"name"))
 #        base = eval_expr(ctx, as_dict(attr(val, u"base")))
@@ -401,6 +410,17 @@ def eval_slot_set(ctx, slot, val):
         name = as_string(attr(slot, u"name"))
         ctx.module.assign(name, val)
         # TODO: Add trace here as well.
+    elif kind == u"tuple":
+        tup = cast(call(op_product, [val]), Tuple).tuple_val
+        slots = as_list(attr(slot, u"slots"))
+        if len(tup) != len(slots):
+            loc = as_list(attr(slot, u"loc"))
+            tb = error(e_TypeError())
+            tb.trace.append((loc, ctx.sources))
+            raise tb
+        for i in range(len(tup)):
+            eval_slot_set(ctx, as_dict(slots[i]), tup[i])
+
 #    elif kind == u"attr":
 #        name = as_string(attr(val, u"name"))
 #        base = eval_expr(ctx, as_dict(attr(val, u"base")))

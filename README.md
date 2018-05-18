@@ -121,6 +121,39 @@ files into the same directory.
 `prelude/intro.lc` has the steps the runtime takes to
 prepare for compiling and running proper programs.
 
+
+
+ TODO: tagged unions
+
+```
+datatype A(..) = x + y(a, b, c)
+method call = (a,b,c):
+```
+
+ TODO: pattern matching
+
+```
+case x of
+x then
+    a
+y(a,b,c) then
+    b
+else
+    c
+```
+ 
+ TODO: Make working Set/Dict/Slot -types.
+       Using &a to assign a slot.
+
+ TODO: Add direct conversions between types.
+
+ TODO: Add modules
+
+
+ TODO: start converting suoml inside prelude.
+
+
+
  TODO: If there is only one row in closure body and it is an expr,
        wrap it into a return.
  
@@ -135,25 +168,6 @@ prepare for compiling and running proper programs.
  TODO: we can make the compiler still cleaner by obtaining
  the 'attr', 'item' behaviors from slots instead of
  reinventing the same behavior twice in a different context.
-
- TODO: tagged unions syntax
-
-```
-datatype A(..) = x + y(a, b, c)
-method call = (a,b,c):
-```
-
- TODO: pattern matching syntax proposal
-
-```
-case x of
-x then
-    a
-y(a,b,c) then
-    b
-else
-    c
-```
 
  TODO: Reconsider how condition block should work if the
  variable does not appear in all evaluation paths and we

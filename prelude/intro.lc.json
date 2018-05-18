@@ -747,6 +747,72 @@
             },
             "args": [],
             "loc": [0, 43, 18, 43, 0]
+        },
+        {
+            "type": "assign",
+            "slot": {
+                "type": "slot",
+                "kind": "tuple",
+                "slots": [
+                    {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "e",
+                        "loc": [0, 46, 1, 46, 0]
+                    },
+                    {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "f",
+                        "loc": [2, 46, 3, 46, 0]
+                    },
+                    {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "g",
+                        "loc": [4, 46, 5, 46, 0]
+                    }
+                ],
+                "loc": [0, 46, 5, 46, 0]
+            },
+            "value": {
+                "type": "make_tuple",
+                "items": [
+                    {"type": "literal", "kind": "integer", "value": "1"},
+                    {"type": "literal", "kind": "integer", "value": "2"},
+                    {"type": "literal", "kind": "integer", "value": "3"}
+                ]
+            }
+        },
+        {
+            "type": "call",
+            "callee": {
+                "type": "slot",
+                "kind": "global",
+                "name": "print",
+                "loc": [0, 47, 5, 47, 0]
+            },
+            "args": [
+                {
+                    "type": "slot",
+                    "kind": "global",
+                    "name": "e",
+                    "loc": [6, 47, 7, 47, 0]
+                },
+                {
+                    "type": "slot",
+                    "kind": "global",
+                    "name": "f",
+                    "loc": [8, 47, 9, 47, 0]
+                },
+                {
+                    "type": "slot",
+                    "kind": "global",
+                    "name": "g",
+                    "loc": [10, 47, 11, 47, 0]
+                }
+            ],
+            "loc": [0, 47, 12, 47, 0]
         }
     ],
     "sources": ["intro.lc"]

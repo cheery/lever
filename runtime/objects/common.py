@@ -329,8 +329,11 @@ op_getitem = Operator([0])
 op_setitem = Operator([0])
 op_iter = Operator([0])
 
+# op_product cannot be a conversion because tuple is not a
+# single type but many types.
+op_product = Operator([0])
+
 # These may actually be conversion. 'iter' might be as well.
-#op_product = Operator([0]) x,y = a
 #op_pattern = Operator([0]) case _ of a(...) then ...
 #op_form    = Operator([0]) repr(a)
 
@@ -509,6 +512,44 @@ class Iterator(Object):
     interface = InterfaceParametric([COV])
     def next(self):
         raise StopIteration()
+
+# Tuples form the basis for records and they appear in function
+# definitions a bit too.
+class TupleInterface(Interface):
+    def __init__(self, arity):
+        self.arity = arity
+
+    def method(self, operator):
+        if operator is op_product:
+            return w_return_itself
+        return Interface.method(self, operator)
+
+w_return_itself = python_bridge(lambda a: a)
+
+# Just like functions, tuples have parameters in their interfaces,
+# and we have to memoize them by those parameters.
+class TupleMemo:
+    def __init__(self):
+        self.memo = {}
+
+    def get(self, arity):
+        try:
+            return self.memo[arity]
+        except KeyError:
+            face = TupleInterface(arity)
+            self.memo[arity] = face
+            return face
+
+tuple_interfaces = TupleMemo()
+
+class Tuple(Object):
+    interface = None
+    def __init__(self, tuple_val):
+        self.tuple_val = tuple_val
+        self.tuple_face = tuple_interfaces.get(len(tuple_val))
+
+    def face(self):
+        return self.tuple_face
 
 # Provides hashtables to equality and hash.
 def eq_fn(a, b):

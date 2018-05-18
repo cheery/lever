@@ -76,6 +76,8 @@ actions = {
         return Assign(slot, value)
     "symbol": (a):
         return Symbol(a)
+    "tuple": (slots):
+        return Tuple(slots)
     "call": (callee, args):
         return Call(callee, args)
     "binary": (lhs, op, rhs):
@@ -109,7 +111,8 @@ actions = {
 #        return AttrSlot(base, symbol)
 #    "getattr": (base, name):
 #        return Attr(base, name)
-
+    "make_tuple": (items):
+        return MakeTuple(items)
     "rational": (repr):
         return Literal("rational", repr)
     "integer": (repr):
@@ -423,6 +426,38 @@ class Symbol
                 type = "slot",
                 kind = "local",
                 index = self.scope.localvars.index(self.cell) }
+
+class Tuple
+    +init = (self, slots):
+        self.slots = slots
+        self.loc = null
+
+    slotconfig = (self, deep, wronly):
+        for slot in self.slots
+            slot.slotconfig(deep, wronly)
+
+    traverse = (self, f):
+        for slot in self.slots
+            f(slot)
+
+    to_json = (self):
+        return {
+            type = "slot",
+            kind = "tuple",
+            slots = js(self.slots),
+            loc = js_loc(self.loc) }
+
+class MakeTuple
+    +init = (self, items):
+        self.items = items
+        self.loc = null
+
+    traverse = (self, f):
+        for item in self.items
+            f(item)
+
+    to_json = (self):
+        return { type = "make_tuple", items = js(self.items) }
 
 #TODO: Continue from here.
 
