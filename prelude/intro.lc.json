@@ -1,10 +1,7 @@
 {
     "type": "script",
     "cellvars": [],
-    "localvars": [
-        {"type": "cell", "deref": false, "name": "i", "defs": 1},
-        {"type": "cell", "deref": false, "name": "y", "defs": 1}
-    ],
+    "localvars": [],
     "body": [
         {
             "type": "assign",
@@ -535,284 +532,75 @@
             "loc": [0, 30, 12, 30, 0]
         },
         {
-            "type": "assign",
-            "slot": {
-                "type": "slot",
-                "kind": "global",
-                "name": "a",
-                "loc": [0, 32, 1, 32, 0]
-            },
+            "type": "case",
             "value": {
-                "type": "literal",
-                "kind": "integer",
-                "value": "21203102402104012041024"
-            }
-        },
-        {
-            "type": "assign",
-            "slot": {
                 "type": "slot",
                 "kind": "global",
-                "name": "b",
-                "loc": [0, 33, 1, 33, 0]
+                "name": "true",
+                "loc": [5, 54, 9, 54, 0]
             },
-            "value": {
-                "type": "literal",
-                "kind": "integer",
-                "value": "12042104120304012314252"
-            }
-        },
-        {
-            "type": "call",
-            "callee": {
-                "type": "slot",
-                "kind": "global",
-                "name": "print",
-                "loc": [0, 34, 5, 34, 0]
-            },
-            "args": [
+            "cases": [
                 {
-                    "type": "literal",
-                    "kind": "string",
-                    "value": "a big number in base 36"
-                },
-                {
-                    "type": "call",
-                    "callee": {
+                    "type": "constant",
+                    "value": {
                         "type": "slot",
                         "kind": "global",
-                        "name": "stringify",
-                        "loc": [33, 34, 42, 34, 0]
+                        "name": "true",
+                        "loc": [0, 55, 4, 55, 0]
                     },
-                    "args": [
+                    "body": [
                         {
                             "type": "call",
                             "callee": {
                                 "type": "slot",
                                 "kind": "global",
-                                "name": "*",
-                                "loc": [43, 34, 48, 34, 0]
+                                "name": "print",
+                                "loc": [10, 55, 15, 55, 0]
                             },
                             "args": [
                                 {
-                                    "type": "slot",
-                                    "kind": "global",
-                                    "name": "a",
-                                    "loc": [43, 34, 44, 34, 0]
-                                },
-                                {
-                                    "type": "slot",
-                                    "kind": "global",
-                                    "name": "b",
-                                    "loc": [47, 34, 48, 34, 0]
+                                    "type": "literal",
+                                    "kind": "string",
+                                    "value": "hello"
                                 }
                             ],
-                            "loc": [43, 34, 48, 34, 0]
-                        },
-                        {"type": "literal", "kind": "integer", "value": "36"}
+                            "loc": [10, 55, 24, 55, 0]
+                        }
                     ],
-                    "loc": [33, 34, 53, 34, 0]
-                }
-            ],
-            "loc": [0, 34, 54, 34, 0]
-        },
-        {
-            "type": "repeat",
-            "fresh": [],
-            "heads": [
-                {
-                    "type": "for",
-                    "slot": {"type": "slot", "kind": "local", "index": 0},
-                    "value": {
-                        "type": "call",
-                        "callee": {
-                            "type": "slot",
-                            "kind": "global",
-                            "name": "range",
-                            "loc": [9, 37, 14, 37, 0]
-                        },
-                        "args": [
-                            {"type": "literal", "kind": "integer", "value": "4"
-                            },
-                            {
-                                "type": "literal",
-                                "kind": "integer",
-                                "value": "16"
-                            }
-                        ],
-                        "loc": [9, 37, 20, 37, 0]
-                    }
+                    "loc": [0, 55, 24, 55, 0]
                 },
                 {
-                    "type": "if",
-                    "cond": {
-                        "type": "cmp",
-                        "exprs": [
-                            {"type": "slot", "kind": "local", "index": 0},
-                            {
-                                "type": "literal",
-                                "kind": "integer",
-                                "value": "14"
-                            }
-                        ],
-                        "ops": [
-                            {
-                                "type": "slot",
-                                "kind": "global",
-                                "name": "!=",
-                                "loc": [24, 37, 31, 37, 0]
-                            }
-                        ],
-                        "loc": [24, 37, 31, 37, 0]
-                    }
-                }
-            ],
-            "body": [
-                {
-                    "type": "assign",
-                    "slot": {"type": "slot", "kind": "local", "index": 1},
+                    "type": "constant",
                     "value": {
-                        "type": "call",
-                        "callee": {
-                            "type": "slot",
-                            "kind": "global",
-                            "name": "fibonacci",
-                            "loc": [8, 39, 17, 39, 0]
-                        },
-                        "args": [{"type": "slot", "kind": "local", "index": 0}],
-                        "loc": [8, 39, 20, 39, 0]
-                    }
-                },
-                {
-                    "type": "call",
-                    "callee": {
                         "type": "slot",
                         "kind": "global",
-                        "name": "print",
-                        "loc": [4, 40, 9, 40, 0]
+                        "name": "false",
+                        "loc": [0, 56, 5, 56, 0]
                     },
-                    "args": [
-                        {
-                            "type": "literal",
-                            "kind": "string",
-                            "value": "fibonacci("
-                        },
-                        {"type": "slot", "kind": "local", "index": 0},
-                        {"type": "literal", "kind": "string", "value": "):"},
-                        {"type": "slot", "kind": "local", "index": 1}
-                    ],
-                    "loc": [4, 40, 35, 40, 0]
-                },
-                {
-                    "type": "call",
-                    "callee": {
-                        "type": "slot",
-                        "kind": "global",
-                        "name": "print",
-                        "loc": [4, 41, 9, 41, 0]
-                    },
-                    "args": [
-                        {
-                            "type": "literal",
-                            "kind": "string",
-                            "value": "factorial("
-                        },
-                        {"type": "slot", "kind": "local", "index": 1},
-                        {"type": "literal", "kind": "string", "value": "):"},
+                    "body": [
                         {
                             "type": "call",
                             "callee": {
                                 "type": "slot",
                                 "kind": "global",
-                                "name": "factorial",
-                                "loc": [33, 41, 42, 41, 0]
+                                "name": "print",
+                                "loc": [11, 56, 16, 56, 0]
                             },
                             "args": [
-                                {"type": "slot", "kind": "local", "index": 1}
+                                {
+                                    "type": "literal",
+                                    "kind": "string",
+                                    "value": "hmm"
+                                }
                             ],
-                            "loc": [33, 41, 45, 41, 0]
+                            "loc": [11, 56, 23, 56, 0]
                         }
                     ],
-                    "loc": [4, 41, 46, 41, 0]
-                }
-            ]
-        },
-        {
-            "type": "call",
-            "callee": {
-                "type": "slot",
-                "kind": "global",
-                "name": "simple_generator",
-                "loc": [0, 43, 16, 43, 0]
-            },
-            "args": [],
-            "loc": [0, 43, 18, 43, 0]
-        },
-        {
-            "type": "assign",
-            "slot": {
-                "type": "slot",
-                "kind": "tuple",
-                "slots": [
-                    {
-                        "type": "slot",
-                        "kind": "global",
-                        "name": "e",
-                        "loc": [0, 46, 1, 46, 0]
-                    },
-                    {
-                        "type": "slot",
-                        "kind": "global",
-                        "name": "f",
-                        "loc": [2, 46, 3, 46, 0]
-                    },
-                    {
-                        "type": "slot",
-                        "kind": "global",
-                        "name": "g",
-                        "loc": [4, 46, 5, 46, 0]
-                    }
-                ],
-                "loc": [0, 46, 5, 46, 0]
-            },
-            "value": {
-                "type": "make_tuple",
-                "items": [
-                    {"type": "literal", "kind": "integer", "value": "1"},
-                    {"type": "literal", "kind": "integer", "value": "2"},
-                    {"type": "literal", "kind": "integer", "value": "3"}
-                ]
-            }
-        },
-        {
-            "type": "call",
-            "callee": {
-                "type": "slot",
-                "kind": "global",
-                "name": "print",
-                "loc": [0, 47, 5, 47, 0]
-            },
-            "args": [
-                {
-                    "type": "slot",
-                    "kind": "global",
-                    "name": "e",
-                    "loc": [6, 47, 7, 47, 0]
-                },
-                {
-                    "type": "slot",
-                    "kind": "global",
-                    "name": "f",
-                    "loc": [8, 47, 9, 47, 0]
-                },
-                {
-                    "type": "slot",
-                    "kind": "global",
-                    "name": "g",
-                    "loc": [10, 47, 11, 47, 0]
+                    "loc": [0, 56, 23, 56, 0]
                 }
             ],
-            "loc": [0, 47, 12, 47, 0]
+            "default": [],
+            "loc": [0, 54, 23, 56, 0]
         }
     ],
     "sources": ["intro.lc"]

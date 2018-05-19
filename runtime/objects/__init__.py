@@ -39,6 +39,7 @@ from common import (
     op_setitem,
     op_iter,
     op_product,
+    op_pattern,
     op_cmp,
     op_concat,
     op_add,

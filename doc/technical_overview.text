@@ -1,0 +1,64 @@
+<doc title="Technical overview"/>
+
+`doc/technical_overview.text` does a quick rundown through the
+main features of the language. It is written for programmers
+that want to know what Lever has to offer.
+
+
+Lever is a dynamically typed object based programming
+language where objects provide enough invariance to provide
+a type-inferenced variation of the language for "free".
+
+Objects in Lever are accessed through operators. Operators
+are callable objects that select their implementation
+from their arguments. There are operators for...
+
+<ul>
+    <li>(==), hash: Equality between objects can be
+    determined.</li>
+    
+    <li>call: Object can be called.</li>
+
+    <li>(in)/getitem/setitem/iter: Object contains
+    other objects, it can be indexed or iterated.</li>
+
+    <li>product: Object can be broken into a
+    tuple.</li>
+
+    <li>pattern: Object can be used as a pattern to
+    match other objects.</li>
+
+    <li>cmp: Objects can be compared.</li>
+
+    <li>(++) Objects can be concatenated together</li>
+
+    <li>Arithmetic operators such as (+)/(-) allow
+    arithmetic on objects.</li>
+
+    <li>Attribute access is treated as a large group of
+    operators.</li>
+
+    <li>The user of the language may provide more operators
+    if they are needed.</li>
+</ul>
+
+Whenever an operator is called, it may select its
+implementation from a single or multiple arguments. If the
+implementation is selected from a single argument then the
+operator resolves to a method of that argument.
+
+If the implementation of an operator is chosen from multiple
+arguments, then a type of those arguments is extracted and
+it is used to find an unique coercion into a single type.
+Then that single type is used to select a method and the
+arguments used for selection are converted into the same
+type.
+
+
+TODO: Coercions
+
+TODO: Variance and invariance, modules
+
+TODO: Scoping rules
+
+TODO: Type inference

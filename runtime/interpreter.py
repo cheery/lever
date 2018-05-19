@@ -185,6 +185,15 @@ def eval_program(ctx, stack):
                     stack.append((body, 0, None))
                     mod  = None
                     break
+            elif tp == u"case":
+                value = eval_expr(ctx, as_dict(attr(stmt, u"value")))
+                cases = as_list(attr(stmt, u"cases"))
+                default = as_list(attr(stmt, u"default"))
+                body = eval_case(ctx, value, cases, default)
+                stack.append((body, 0, None))
+                mod = None
+                break
+
             else:
                 eval_expr(ctx, stmt)
         if isinstance(mod, Loop):
@@ -280,6 +289,29 @@ class IfLoop(LoopHead):
 
     def step(self, ctx):
         return False
+
+def eval_case(ctx, value, cases, default):
+    for case in cases:
+        case = as_dict(case)
+        tp = as_string(attr(case, u"type"))
+        if tp == u"constant":
+            constant = eval_expr(ctx, as_dict(attr(case, u"value")))
+            if convert(call(op_eq, [value, constant]), Bool) is true:
+                return as_list(attr(case, u"body"))
+        elif tp == u"pattern":
+            pattern = eval_expr(ctx, as_dict(attr(case, u"pattern")))
+            tup = cast(call(op_pattern, [pattern]), Tuple).tuple_val
+            if len(tup) != 2:
+                raise error(e_EvalError())
+            if call(tup[0], [value]) is true:
+                slot = as_dict(attr(case, u"slot"))
+                eval_slot_set(ctx, slot, call(tup[1], [value]))
+                return as_list(attr(case, u"body"))
+        else:
+            raise error(e_EvalError())
+    if len(default) == 0:
+        raise error(e_EvalError())
+    return default
 
 def eval_expr(ctx, val):
     tp = as_string(attr(val, u"type"))

@@ -64,6 +64,15 @@ actions = {
         return WhileLoop(cond)
     "if_loop": (cond):
         return IfLoop(cond)
+    "case": (value, cases, default=[]):
+        return Case(value, cases, default)
+    "constant_case": (value, body):
+        return ConstantCase(value, body)
+    "pattern_case": (pattern, slots, body):
+        if slots.length == 1
+            return PatternCase(value, slots[0], body)
+        else
+            return PatternCase(value, Tuple(slots), body)
     "return": (expr=Symbol("null")):
         return Return(expr)
     "yield": (expr=Symbol("null")):
@@ -279,6 +288,10 @@ solve_scope = (function):
         else
              scope.localvars.append(cell)
 
+# Expressions are distinguished so that we can extend
+# them with 'Return' in closures.
+class Expr
+
 class Script
     +init = (self, body, sources):
         self.body = body
@@ -298,7 +311,7 @@ class Script
             body = js(self.body),
             sources = self.sources }
 
-class Closure
+class Closure extends Expr
     +init = (self, args, body):
         self.args = args
         self.body = body
@@ -306,6 +319,8 @@ class Closure
         self.loc = null
         for arg in args
             arg.slot.slotconfig(false, true)
+        if body.length == 1 and isinstance(body[0], Expr)
+            self.body = [Return(body[0])]
 
     traverse = (self, f):
         for arg in self.args
@@ -324,7 +339,7 @@ class Closure
             loc = js_loc(self.loc)
         }
 
-class Generator
+class Generator extends Expr
     +init = (self, body):
         self.body = body
         self.scope = Scope(false)
@@ -372,7 +387,7 @@ class Assign
             slot = js(self.slot),
             value = js(self.value) }
 
-class Cmp
+class Cmp extends Expr
     +init = (self, exprs, ops):
         self.exprs = exprs
         self.ops = ops
@@ -391,7 +406,7 @@ class Cmp
             ops = js(self.ops),
             loc = js_loc(self.loc) }
 
-class Symbol
+class Symbol extends Expr
     +init = (self, name):
         self.name = name
         self.global = false
@@ -427,7 +442,7 @@ class Symbol
                 kind = "local",
                 index = self.scope.localvars.index(self.cell) }
 
-class Tuple
+class Tuple extends Expr
     +init = (self, slots):
         self.slots = slots
         self.loc = null
@@ -447,7 +462,7 @@ class Tuple
             slots = js(self.slots),
             loc = js_loc(self.loc) }
 
-class MakeTuple
+class MakeTuple extends Expr
     +init = (self, items):
         self.items = items
         self.loc = null
@@ -605,6 +620,68 @@ class IfLoop
             type = "if",
             cond = js(self.cond) }
 
+class Case
+    +init = (self, value, cases, default):
+        self.value = value
+        self.cases = cases
+        self.default = default
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.value)
+        for case in self.cases
+            f(case)
+        for stmt in self.default
+            f(stmt)
+
+    to_json = (self):
+        return {
+            type = "case",
+            value = js(self.value),
+            cases = js(self.cases),
+            default = js(self.default),
+            loc = js_loc(self.loc) }
+
+class ConstantCase
+    +init = (self, value, body):
+        self.value = value
+        self.body = body
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.value)
+        for stmt in self.body
+            f(stmt)
+
+    to_json = (self):
+        return {
+            type = "constant",
+            value = js(self.value),
+            body = js(self.body),
+            loc = js_loc(self.loc) }
+
+class PatternCase
+    +init = (self, pattern, slot, body):
+        self.pattern = pattern
+        self.slot = slot
+        self.body = body
+        slot.slotconfig(false, true)
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.pattern)
+        f(self.slot)
+        for stmt in self.body
+            f(stmt)
+
+    to_json = (self):
+        return {
+            type = "pattern",
+            pattern = js(self.pattern),
+            slot = js(self.slot),
+            body = js(self.body),
+            loc = js_loc(self.loc) }
+
 class Return
     +init = (self, value):
         self.value = value
@@ -676,7 +753,7 @@ class Inplace
 
 
 
-class AttrSlot
+class AttrSlot extends Expr
     +init = (self, base, name):
         self.base = base
         self.name = name
@@ -696,7 +773,7 @@ class AttrSlot
             name = self.name,
             loc = js_loc(self.loc) }
 
-class Attr
+class Attr extends Expr
     +init = (self, base, name):
         self.base = base
         self.name = name
@@ -716,7 +793,7 @@ class Attr
 
 
 
-class Call
+class Call extends Expr
     +init = (self, callee, args):
         self.callee = callee
         self.args = args
@@ -734,7 +811,7 @@ class Call
             args = js(self.args),
             loc = js_loc(self.loc) }
 
-class And
+class And extends Expr
     +init = (self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
@@ -749,7 +826,7 @@ class And
             lhs = js(self.lhs),
             rhs = js(self.rhs) }
 
-class Or
+class Or extends Expr
     +init = (self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
@@ -764,7 +841,7 @@ class Or
             lhs = js(self.lhs),
             rhs = js(self.rhs) }
 
-class Not
+class Not extends Expr
     +init = (self, value):
         self.value = value
 
@@ -774,7 +851,7 @@ class Not
     to_json = (self):
         return { type = "not", value = js(self.value) }
 
-class Literal
+class Literal extends Expr
     +init = (self, kind, repr):
         self.kind = kind
         self.repr = repr

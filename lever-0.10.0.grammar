@@ -8,7 +8,13 @@ statement:
     "yield" expr   / yield
     "break"        / break
     "continue"     / continue
+    "case" expr "of" case+
+        ("else" >(=statement)+)? / case
     expr
+
+case:
+    term                         "then" >(=statement)+ / constant_case
+    term "(" join(slot, ",") ")" "then" >(=statement)+ / pattern_case
 
 slot:
     slot_item

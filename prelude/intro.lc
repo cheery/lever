@@ -45,3 +45,12 @@ simple_generator()
 # a tuple example.
 e,f,g = 1, 2, 3
 print(e,f,g)
+
+
+inline_fn = (x): x*2
+
+print(inline_fn(4))
+
+case true of
+true  then print('hello')
+false then print('hmm')

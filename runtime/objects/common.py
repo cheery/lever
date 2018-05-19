@@ -334,7 +334,7 @@ op_iter = Operator([0])
 op_product = Operator([0])
 
 # These may actually be conversion. 'iter' might be as well.
-#op_pattern = Operator([0]) case _ of a(...) then ...
+op_pattern = Operator([0]) # case _ of a(...) then ...
 #op_form    = Operator([0]) repr(a)
 
 # Some of these are not implemented yet.

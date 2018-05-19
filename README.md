@@ -55,6 +55,8 @@ along the code in the comments.
 `setup.py` is the utility script for the project. It
 provides tools to build the runtime for the language.
 
+`doc/` has documentation that would not form otherwise.
+
 `runtime/` contains every file used for building the
 runtime. These are python scripts mostly, but a proper
 binary runtime is produced.
@@ -74,6 +76,12 @@ capable of loading source code programs on its own.
 [Attribute grammar][AttributeGrammar] that specifies every
 syntactically valid construct in the language. Every tool in
 the project references this file for parsing Lever code.
+
+### Documentation
+
+`doc/technical_overview.text` does a quick rundown through the
+main features of the language. It is written for programmers
+that want to know about Lever.
 
 ### Runtime
 
@@ -121,27 +129,21 @@ files into the same directory.
 `prelude/intro.lc` has the steps the runtime takes to
 prepare for compiling and running proper programs.
 
-
+ TODO: doc/technical_overview.text is not finished.
 
  TODO: tagged unions
 
 ```
-datatype A(..) = x + y(a, b, c)
+datatype A(..) = x | y(a, b, c)
 method call = (a,b,c):
 ```
 
- TODO: pattern matching
+ TODO: Provide some patterns.
 
-```
-case x of
-x then
-    a
-y(a,b,c) then
-    b
-else
-    c
-```
+    op_pattern(pat(a,b) -> (a -> bool, a -> b))
  
+ TODO: Make setattr/getattr
+
  TODO: Make working Set/Dict/Slot -types.
        Using &a to assign a slot.
 
@@ -152,10 +154,14 @@ else
 
  TODO: start converting suoml inside prelude.
 
+ TODO: adjust the grammar to handle `f((x): x*2)`
+       the last expression in a call can be a
+       closure or a generator.
 
+ TODO: Add syntax for lists.
 
- TODO: If there is only one row in closure body and it is an expr,
-       wrap it into a return.
+ TODO: Add hash/eq for tuples.
+       (this may require introduction of type constructors)
  
  TODO: Add inplace assignment
 
