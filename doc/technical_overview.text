@@ -1,9 +1,10 @@
 <doc title="Technical overview"/>
 
-`doc/technical_overview.text` does a quick rundown through the
-main features of the language. It is written for programmers
-that want to know what Lever has to offer.
+This is a quick rundown through the main features of the
+language. It is written for programmers that want to know
+what Lever has to offer. 
 
+<h1>Operators</h1>
 
 Lever is a dynamically typed object based programming
 language where objects provide enough invariance to provide
@@ -54,11 +55,68 @@ Then that single type is used to select a method and the
 arguments used for selection are converted into the same
 type.
 
+<h1>Coercions</h1>
 
-TODO: Coercions
+Coercion is defined through a function 'unique_coercion'
+that retrieves a set of types and returns an unique coercion
+if there exists one.
 
-TODO: Variance and invariance, modules
+The 'unique_coercion' function finds every type from the
+set, that every other type in that set can be implicitly
+coerced to. If it finds more than one coercion, then it
+behaves as if there was no such type.
+
+Generally coercions have to be defined on type basis, but
+types can be marked base or composite types. There exist an
+implicit, lifting coercion between base and composite types.
+
+The coercion system allows great tools to be made for
+symbolic computation and numerical analysis, and it allows
+those tools to interoperate.
+
+<h1>Invariant modules</h1>
+
+Modules and all the contents of modules are enforced to be
+invariant. This ensures modules are reusable within
+different tasks in a process without leaking state between
+those tasks.
+
+Variance is determined on object-basis. That is, in two
+objects of same type, one may be invariant and another may
+be not. But type may also refer on only variant objects,
+eg. mutable lists and dictionaries.
+
+<h1>Type inference</h1>
+
+A type inference can be run on any module that is loaded.
+The results of the type inference can be memoized, reused
+and passed around along the module.
+
+Static type checking for turing-complete languages must be
+incomplete. That means there are correct programs that are
+rejected by the type checking. My viewpoint is that those
+rejected programs include, not only interesting programs,
+but also some useful ones. Therefore the type inference is
+not required for all programs.
+
+The main purpose for type inferencing is further refinement
+of the software. This opens up new options that make
+software development less error prone and more effective.
+
+For example, it is possible to write a PNG decoder in Lever
+that is as fast or even faster than the decoder written in
+C.  This can be achieved by optimizing the paeth filtering
+step that the decoder has to do after decompression.
+
+<h1>Scoping rules</h1>
 
 TODO: Scoping rules
 
-TODO: Type inference
+<h1>Parsing</h1>
+
+TODO: Grammars
+
+<h1>Coeffects</h1>
+
+TODO: Coeffects
+
