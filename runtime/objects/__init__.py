@@ -59,6 +59,10 @@ from common import (
     Module,
     Iterator,
     Tuple,
+    new_datatype,
+    new_constant,
+    new_constructor,
+    Freevar,
     eq_fn,
     hash_fn )
 from booleans import boolean

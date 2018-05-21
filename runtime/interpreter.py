@@ -193,7 +193,25 @@ def eval_program(ctx, stack):
                 stack.append((body, 0, None))
                 mod = None
                 break
-
+            elif tp == u"datatype":
+                varc = len(as_list(attr(stmt, u"vars")))
+                dt = new_datatype(varc)
+                eval_slot_set(ctx, as_dict(attr(stmt, u"slot")), dt)
+                for row in as_list(attr(stmt, u"rows")):
+                    row = as_list(row)
+                    if len(row) != 2:
+                        raise error(e_EvalError())
+                    row_slot = as_dict(row[0])
+                    row_params = as_list(row[1])
+                    params = []
+                    for param in row_params:
+                        params.append(eval_expr(ctx, as_dict(param)))
+                    if len(params) == 0:
+                        row = new_constant(dt)
+                    else:
+                        row = new_constructor(dt, params)
+                    eval_slot_set(ctx, row_slot, row)
+                dt.close()
             else:
                 eval_expr(ctx, stmt)
         if isinstance(mod, Loop):
@@ -386,6 +404,9 @@ def eval_expr(ctx, val):
         return Tuple([
             eval_expr(ctx, as_dict(item))
             for item in as_list(attr(val, u"items"))])
+    elif tp == u"var":
+        var_index = as_integer(attr(val, u"index"))
+        return Freevar(var_index)
     else:
         raise error(e_EvalError())
 

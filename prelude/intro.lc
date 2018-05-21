@@ -54,3 +54,17 @@ print(inline_fn(4))
 case true of
 true  then print('hello')
 false then print('hmm')
+
+datatype LinkedList(a) =
+    empty | cons(a, LinkedList(a))
+
+print('constructing')
+a = cons(1, cons(2, empty))
+
+print('deconstructing')
+case a of
+cons(x,l) then
+    print('list head', x)
+empty then
+    print('list empty')
+

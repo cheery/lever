@@ -64,15 +64,17 @@ actions = {
         return WhileLoop(cond)
     "if_loop": (cond):
         return IfLoop(cond)
+    "datatype": (head, rows):
+        return Datatype(head, rows)
     "case": (value, cases, default=[]):
         return Case(value, cases, default)
     "constant_case": (value, body):
         return ConstantCase(value, body)
     "pattern_case": (pattern, slots, body):
         if slots.length == 1
-            return PatternCase(value, slots[0], body)
+            return PatternCase(pattern, slots[0], body)
         else
-            return PatternCase(value, Tuple(slots), body)
+            return PatternCase(pattern, Tuple(slots), body)
     "return": (expr=Symbol("null")):
         return Return(expr)
     "yield": (expr=Symbol("null")):
@@ -166,10 +168,14 @@ class Cell
             defs = self.defs }
 
 
+# The solve_scope is broken because after two subsequent loops we
+# may end up with a corrupted shadow and break the scope. The whole scope
+# handler has to resume to the drawing board, before we are finished..
 solve_scope = (function):
     scope = function.scope
     shadow = set()
     locals = {}
+    macro = {}
     cells = []
 
     flow = (this):
@@ -197,6 +203,8 @@ solve_scope = (function):
                     locals[this.name] = cell
                     this.cell = cell
             else
+                if this.name in macro
+                    this.macro = macro[this.name]
                 assert this.name not in shadow
                     ["variable", this.name, "in shadow"]
                 if this.name in locals
@@ -242,6 +250,22 @@ solve_scope = (function):
             locals := p_locals
             this.scope = scope
             scope.module = tmp_module
+        elif isinstance(this, Datatype)
+            # The macro mechanism was added for the datatypes.
+            # It is supposed to replace the parameters with
+            # variables and ensure they're visible only inside the 
+            # datatype declaration.
+            flow(this.slot)
+            p_macro = macro
+            macro := dict(p_macro)
+            for i in range(this.vars.length)
+                name = this.vars[i]
+                macro[name] = { type = "var", index = 0 }
+            for constructor, fields in this.rows
+                flow(constructor)
+                for field in fields
+                    flow(field)
+            macro := p_macro
         else
             this.traverse(flow)
     function.traverse(flow)
@@ -415,6 +439,7 @@ class Symbol extends Expr
         self.scope = null
         self.cell = null
         self.loc = null
+        self.macro = null
 
     slotconfig = (self, deep, wronly):
         self.deep = deep
@@ -424,6 +449,8 @@ class Symbol extends Expr
         null
 
     to_json = (self):
+        if self.macro
+            return js(self.macro)
         if self.global
             mode = "global"
             return {
@@ -619,6 +646,32 @@ class IfLoop
         return {
             type = "if",
             cond = js(self.cond) }
+
+class Datatype
+    +init = (self, head, rows):
+        self.slot = head[0]
+        self.vars = head[1]
+        self.rows = rows
+        self.loc = null
+        self.slot.slotconfig(false, true)
+        for constructor, fields in self.rows
+            constructor.slotconfig(false, true)
+
+    traverse = (self, f):
+        f(self.slot)
+        for constructor, fields in self.rows
+            f(constructor)
+            for field in fields
+                f(field)
+
+    to_json = (self):
+        return {
+            type = "datatype",
+            slot = js(self.slot),
+            vars = js(self.vars),
+            rows = js(self.rows),
+            loc = js_loc(self.loc) }
+
 
 class Case
     +init = (self, value, cases, default):
@@ -886,6 +939,8 @@ js = (obj):
             r[k] = js(v)
         return r
     elif isinstance(obj, str)
+        return obj
+    elif isinstance(obj, int)
         return obj
     else
         return obj.to_json()

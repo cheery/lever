@@ -8,13 +8,24 @@ statement:
     "yield" expr   / yield
     "break"        / break
     "continue"     / continue
-    "case" expr "of" case+
-        ("else" >(=statement)+)? / case
+    "datatype" datatype_head >"=" >join(datatype_row, "|") / datatype
+    "case" expr "of" =(=case)+
+        =("else" >(=statement)+)? / case
     expr
 
+
+datatype_head:
+    slot                           / [., []]
+    slot "(" join(symbol, ",") ")" / [.,  .]
+
+datatype_row:
+    slot                            / [., []]
+    slot "(" join(expr_or, ",") ")" / [.,  .]
+
 case:
-    term                         "then" >(=statement)+ / constant_case
-    term "(" join(slot, ",") ")" "then" >(=statement)+ / pattern_case
+    term                              "then" >(=statement)+ / constant_case
+    term "(" join(slot_item, ",") ")" "then" >(=statement)+ / pattern_case
+
 
 slot:
     slot_item

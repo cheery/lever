@@ -129,27 +129,30 @@ files into the same directory.
 `prelude/intro.lc` has the steps the runtime takes to
 prepare for compiling and running proper programs.
 
- TODO: doc/technical_overview.text is not finished.
 
- TODO: tagged unions
+## Unfinished tasks
+
+ TODO: Add method declarations.
 
 ```
 datatype A(..) = x | y(a, b, c)
 method call = (a,b,c):
 ```
 
- TODO: Provide some patterns.
-
-    op_pattern(pat(a,b) -> (a -> bool, a -> b))
+ TODO: Add direct conversions between types.
  
  TODO: Make setattr/getattr
 
  TODO: Make working Set/Dict/Slot -types.
        Using &a to assign a slot.
 
- TODO: Add direct conversions between types.
-
  TODO: Add modules
+
+
+ TODO: Resume and correct the solve_scope in bootstrapper/main.lc
+
+ TODO: Ensure the datatypes are implemented well. This may require that
+       we have some type inference with them already.
 
 
  TODO: start converting suoml inside prelude.
@@ -202,6 +205,8 @@ method call = (a,b,c):
  compiler.
 
  TODO: read_script should resolve the relative source paths.
+
+ TODO: doc/technical_overview.text is not finished.
 
  TODO: Create a step-by-step tutorial for beginners that walks
  through the language and teaches to program with it. Add

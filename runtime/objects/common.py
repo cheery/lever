@@ -141,9 +141,10 @@ builtin_interfaces = FunctionMemo(BuiltinInterface)
 # purpose.
 class Builtin(Object):
     interface = None
-    def __init__(self, builtin_func, builtin_face):
+    def __init__(self, builtin_func, builtin_face, prefill=[]):
         self.builtin_func = builtin_func
         self.builtin_face = builtin_face
+        self.prefill = prefill
 
     def face(self):
         return self.builtin_face
@@ -154,7 +155,19 @@ def call(callee, args):
     while not isinstance(callee, Builtin):
         args.insert(0, callee)
         callee = callee.face().method(op_call)
-    return callee.builtin_func(args)
+    return callee.builtin_func(callee.prefill + args)
+
+# In few places in the runtime we have to provide "closures" for
+# builtin functions. I added the functionality into the builtin objects.
+def prefill(builtin, args):
+    face = builtin.builtin_face
+    argc = face.argc - 1
+    vari = face.vari
+    opt = min(argc, face.opt)
+    return Builtin(
+        builtin.builtin_func,
+        func_interfaces.get(argc, vari, opt),
+        prefill=builtin.prefill + args)
 
 # This decorator replaces the function with a builtin
 # representing that function. This is likely not going to be
@@ -406,8 +419,8 @@ def operator_call(op, args):
 w_operator_call = python_bridge(operator_call, vari=True)
 
 # Helper decorator for describing new operators
-def method(face, operator):
-    def _impl_(fn, vari=False):
+def method(face, operator, vari=False):
+    def _impl_(fn):
         face.methods[operator] = python_bridge(fn, vari)
         return fn
     return _impl_
@@ -550,6 +563,103 @@ class Tuple(Object):
 
     def face(self):
         return self.tuple_face
+
+# If the type is parametric, this probably is a type constructor
+# and not an interface, but lets get some
+# results first and afterwards make it correct.
+
+# It is certain that this section of the code will see more changes
+# in short time. 
+def new_datatype(varc):
+    return Datatype(varc)
+
+# This is probably going to need a datatype that has
+# parameters and one that does not have them.
+class Datatype(Interface):
+    def __init__(self, varc):
+        self.varc = varc
+        self.closed = False
+        self.constants = []
+        self.constructors = []
+
+    def close(self):
+        self.closed = True
+
+# We are going to need the constructors to determine the variance
+# of our new datatype.
+
+# Also proposing: if an object has bivariants or contravariants, then
+# it cannot have conversions.
+
+@method(Datatype.interface, op_call, vari=True)
+def Datatype_call(datatype, args):
+    if datatype.varc != len(args):
+        raise error(e_TypeError())
+    return TypeInstance(datatype, args)
+
+class TypeInstance(Object):
+    def __init__(self, datatype, args):
+        self.datatype = datatype
+        self.args = args
+
+class Freevar(Object):
+    def __init__(self, index):
+        self.index = index
+
+def new_constant(datatype):
+    if datatype.closed:
+        raise error(e_EvalError())
+    const = Constant(datatype)
+    datatype.constants.append(const)
+    return const
+    
+def new_constructor(datatype, params):
+    if datatype.closed:
+        raise error(e_EvalError())
+    cons = Constructor(datatype, params)
+    datatype.constructors.append(cons)
+    return cons
+
+class Constructor(Object):
+    def __init__(self, datatype, fields):
+        self.datatype = datatype
+        self.fields = fields
+
+@method(Constructor.interface, op_call, vari=True)
+def Constructor_call(constructor, fields):
+    # TODO: Check the fields.
+    return TaggedRecord(constructor, fields)
+
+@method(Constructor.interface, op_pattern)
+def Constructor_pattern(constructor):
+    check = prefill(w_tagrec_check, [constructor])
+    unpack = prefill(w_tagrec_unpack, [constructor])
+    return Tuple([check, unpack])
+
+@python_bridge
+def w_tagrec_check(constructor, tagrec):
+    constructor = cast(constructor, Constructor)
+    tagrec = convert(tagrec, constructor.datatype)
+    if tagrec.record_cons is constructor:
+        return true
+    else:
+        return false
+
+@python_bridge
+def w_tagrec_unpack(constructor, tagrec):
+    constructor = cast(constructor, Constructor)
+    tagrec = convert(tagrec, constructor.datatype)
+    return Tuple(cast(tagrec, TaggedRecord).fields)
+
+class TaggedRecord(Object):
+    interface = None
+    def __init__(self, record_cons, fields):
+        self.record_cons = record_cons
+        self.fields = fields
+
+    def face(self):
+        return self.record_cons.datatype
+
 
 # Provides hashtables to equality and hash.
 def eq_fn(a, b):
