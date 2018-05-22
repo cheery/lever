@@ -359,8 +359,8 @@ op_cmp = Operator([0,1])
 
 op_concat = Operator([0,1])
 
-#op_neg = Operator([0])
-#op_pos = Operator([0])
+op_neg = Operator([0])
+op_pos = Operator([0])
 
 op_add = Operator([0,1])
 op_sub = Operator([0,1])
@@ -372,6 +372,7 @@ op_mul = Operator([0,1])
 
 #op_divrem = Operator([0,1])
 
+op_not = Operator([0])   # ~
 op_and = Operator([0,1]) # &
 op_or  = Operator([0,1]) # |
 op_xor = Operator([0,1]) # xor(a,b)
@@ -581,9 +582,19 @@ class Datatype(Interface):
         self.closed = False
         self.constants = []
         self.constructors = []
+        self.methods = {}
 
     def close(self):
         self.closed = True
+
+    def method(self, operator):
+        impl = self.methods.get(operator, None)
+        if impl is None:
+            return Interface.method(self, operator)
+        return impl
+
+def add_method(datatype, op, method):
+    datatype.methods[op] = method
 
 # We are going to need the constructors to determine the variance
 # of our new datatype.

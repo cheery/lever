@@ -25,6 +25,15 @@ def Integer_cmp(a, b):
     else:
         return fresh_integer(0)
 
+@method(Integer.interface, op_neg)
+def Integer_neg(a):
+    a = cast(a, Integer)
+    return Integer(a.integer_val.neg())
+
+@method(Integer.interface, op_pos)
+def Integer_pos(a):
+    return cast(a, Integer)
+
 @method(Integer.interface, op_add)
 def Integer_add(a, b):
     a = cast(a, Integer)

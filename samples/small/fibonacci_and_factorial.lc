@@ -1,0 +1,19 @@
+main = ():
+    for i in range(4,16) if i != 14
+    repeat
+        y = fibonacci(i)
+        print('fibonacci(', i, '):', y)
+        print('factorial(', y, '):', factorial(y))
+
+fibonacci = (a):
+    if a < 2 then
+        return 1
+    else
+        return fibonacci(a-1) + fibonacci(a-2)
+
+factorial = (a):
+    if a < 1 then
+        return 1
+    else
+        return a * factorial(a-1)
+

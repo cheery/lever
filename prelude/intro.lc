@@ -1,70 +1,48 @@
-# I have few test programs in prelude.
+# Following rules of Kleene algebra
+datatype ThreeVL = False | True | Unknown
+method stringify = (a):
+    case a of
+    False then
+        return "False"
+    True then
+        return "True"
+    Unknown then
+        return "Unknown"
+method (~¤) = (a):
+    case a of
+    False then
+        return True
+    True then
+        return False
+    Unknown then
+        return Unknown
+method (&) = (a, b):
+    if a == False then
+        return False
+    if b == False then
+        return False
+    if a == True and b == True then
+        return True
+    return Unknown
+method (|) = (a, b):
+    if a == True then
+        return True
+    if b == True then
+        return True
+    if a == False and b == False then
+        return False
+    return Unknown
+method xor = (a, b):
+    if a == True and b == True then
+        return False
+    if a == True and b == False then
+        return True
+    if a == False and b == True then
+        return True
+    if a == False and b == False then
+        return False
+    return Unknown
 
-# Function definitions.
-fibonacci = (a):
-    if a < 2 then
-        return 1
-    else
-        return fibonacci(a-1) + fibonacci(a-2)
-
-factorial = (a):
-    if a < 1 then
-        return 1
-    else
-        return a * factorial(a-1)
-
-simple_generator = ():
-    sg = generator
-        for x in range(10)
-        for y in range(20)
-        repeat
-            yield x * y
-
-    s = 0
-    for x in sg repeat
-        s = s + x
-    print('simple_generator output sum:', s)
-
-# Trying out variable assignment here.
-hello = "Hello" ++ " " ++ "world"
-print(hello)
-
-a = 21203102402104012041024
-b = 12042104120304012314252
-print('a big number in base 36', stringify(a * b, 36))
-
-# There is fun in here somewhere.
-for i in range(4,16) if i != 14
-repeat
-    y = fibonacci(i)
-    print('fibonacci(', i, '):', y)
-    print('factorial(', y, '):', factorial(y))
-
-simple_generator()
-
-# a tuple example.
-e,f,g = 1, 2, 3
-print(e,f,g)
-
-
-inline_fn = (x): x*2
-
-print(inline_fn(4))
-
-case true of
-true  then print('hello')
-false then print('hmm')
-
-datatype LinkedList(a) =
-    empty | cons(a, LinkedList(a))
-
-print('constructing')
-a = cons(1, cons(2, empty))
-
-print('deconstructing')
-case a of
-cons(x,l) then
-    print('list head', x)
-empty then
-    print('list empty')
-
+print("not(false) =",      ~False )
+print("and(true, true) =", True & True )
+print("or(true, false) =", True | False )

@@ -54,7 +54,7 @@ actions = {
         return Generator(body)
     "argument": (arg):
         return Argument(arg)
-    "cond": (cond, tb, fb):
+    "cond": (cond, tb, fb=[]):
         return Cond(cond, tb, fb)
     "repeat": (heads, body):
         return Repeat(heads, body)
@@ -64,8 +64,10 @@ actions = {
         return WhileLoop(cond)
     "if_loop": (cond):
         return IfLoop(cond)
-    "datatype": (head, rows):
-        return Datatype(head, rows)
+    "datatype": (head, rows, decls):
+        return Datatype(head, rows, decls)
+    "method": (op, value):
+        return Method(op, value)
     "case": (value, cases, default=[]):
         return Case(value, cases, default)
     "constant_case": (value, body):
@@ -87,6 +89,8 @@ actions = {
         return Assign(slot, value)
     "symbol": (a):
         return Symbol(a)
+    "prefix_symbol": (a):
+        return Symbol(a ++ "expr")
     "tuple": (slots):
         return Tuple(slots)
     "call": (callee, args):
@@ -94,7 +98,7 @@ actions = {
     "binary": (lhs, op, rhs):
         return Call(Symbol(op), [lhs, rhs])
     "prefix": (op, rhs):
-        return Call(Symbol(op), [rhs])
+        return Call(Symbol(op ++ "expr"), [rhs])
 
     "and": (lhs, rhs):
         return And(lhs, rhs)
@@ -266,6 +270,8 @@ solve_scope = (function):
                 for field in fields
                     flow(field)
             macro := p_macro
+            for decl in this.decls
+                flow(decl)
         else
             this.traverse(flow)
     function.traverse(flow)
@@ -295,7 +301,7 @@ solve_scope = (function):
             # which depends should be carried over.
             solve_scope(this)
             for dep in this.scope.depend
-                if dep in self.rd
+                if dep in scope.rd
                     depend.add(d)
             this.scope.parent = scope
         elif isinstance(this, Symbol)
@@ -648,10 +654,11 @@ class IfLoop
             cond = js(self.cond) }
 
 class Datatype
-    +init = (self, head, rows):
+    +init = (self, head, rows, decls):
         self.slot = head[0]
         self.vars = head[1]
         self.rows = rows
+        self.decls = decls
         self.loc = null
         self.slot.slotconfig(false, true)
         for constructor, fields in self.rows
@@ -663,6 +670,8 @@ class Datatype
             f(constructor)
             for field in fields
                 f(field)
+        for decl in self.decls
+            f(decl)
 
     to_json = (self):
         return {
@@ -670,8 +679,24 @@ class Datatype
             slot = js(self.slot),
             vars = js(self.vars),
             rows = js(self.rows),
+            decls = js(self.decls),
             loc = js_loc(self.loc) }
 
+class Method
+    +init = (self, op, value):
+        self.op = op
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.op)
+        f(self.value)
+
+    to_json = (self):
+        return {
+            type = "method",
+            op = js(self.op),
+            value = js(self.value) }
 
 class Case
     +init = (self, value, cases, default):
@@ -868,6 +893,7 @@ class And extends Expr
     +init = (self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
+        self.loc = null
 
     traverse = (self, f):
         f(self.lhs)
@@ -877,12 +903,14 @@ class And extends Expr
         return {
             type = "and",
             lhs = js(self.lhs),
-            rhs = js(self.rhs) }
+            rhs = js(self.rhs),
+            loc = js_loc(self.loc) }
 
 class Or extends Expr
     +init = (self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
+        self.loc = null
 
     traverse = (self, f):
         f(self.lhs)
@@ -892,17 +920,22 @@ class Or extends Expr
         return {
             type = "or",
             lhs = js(self.lhs),
-            rhs = js(self.rhs) }
+            rhs = js(self.rhs),
+            loc = js_loc(self.loc) }
 
 class Not extends Expr
     +init = (self, value):
         self.value = value
+        self.loc = null
 
     traverse = (self, f):
         f(self.value)
 
     to_json = (self):
-        return { type = "not", value = js(self.value) }
+        return {
+            type = "not",
+            value = js(self.value),
+            loc = js_loc(self.loc) }
 
 class Literal extends Expr
     +init = (self, kind, repr):

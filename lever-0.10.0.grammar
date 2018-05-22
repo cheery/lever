@@ -8,7 +8,8 @@ statement:
     "yield" expr   / yield
     "break"        / break
     "continue"     / continue
-    "datatype" datatype_head >"=" >join(datatype_row, "|") / datatype
+    "datatype" datatype_head >"=" >join(datatype_row, "|")
+        =(=datatype_declaration)* / datatype
     "case" expr "of" =(=case)+
         =("else" >(=statement)+)? / case
     expr
@@ -21,6 +22,9 @@ datatype_head:
 datatype_row:
     slot                            / [., []]
     slot "(" join(expr_or, ",") ")" / [.,  .]
+
+datatype_declaration:
+    "method" term "=" expr / method
 
 case:
     term                              "then" >(=statement)+ / constant_case
@@ -95,6 +99,7 @@ prefix:
     exponent_postfix
     ["+"] exponent_postfix / prefix
     ["-"] exponent_postfix / prefix
+    ["~"] exponent_postfix / prefix
 
 exponent_postfix:
     postfix
@@ -114,13 +119,17 @@ term:
 
 pform:
     form
+    operator "¤" / prefix_symbol
     operator / symbol
     keyword  / symbol
 
 form:
     expr
 
-operator: ["+", "-", comparison]
+operator: ["+", "-", "*",
+    "/", "//", "%", "~", "<<", ">>", "&", "|",
+    "++", "^",
+    comparison]
 keyword: ["import", "yield", "and", "or", "not", "in"]
 comparison: ["<", ">", "==", "!=", "<=", ">="]
 

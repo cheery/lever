@@ -77,6 +77,8 @@ capable of loading source code programs on its own.
 syntactically valid construct in the language. Every tool in
 the project references this file for parsing Lever code.
 
+`samples/` has some programs written in Lever.
+
 ### Documentation
 
 `doc/technical_overview.text` does a quick rundown through the
@@ -129,15 +131,14 @@ files into the same directory.
 `prelude/intro.lc` has the steps the runtime takes to
 prepare for compiling and running proper programs.
 
+### Sample programs
+
+`samples/small/fibonacci_and_factorial.lc` recursive variations
+of fibonacci and factorial.
+
+`samples/small/simple_generator.lc` shows how generators work.
 
 ## Unfinished tasks
-
- TODO: Add method declarations.
-
-```
-datatype A(..) = x | y(a, b, c)
-method call = (a,b,c):
-```
 
  TODO: Add direct conversions between types.
  
@@ -190,8 +191,6 @@ method call = (a,b,c):
  TODO: When interesting and useful software appears at the
        prelude/intro.lc as result of testing. Put them into
        samples/
-
- TODO: This time, divide the samples/ into categories.
 
  TODO: Write a program that checks variance in an object
  (best effort, false positives).

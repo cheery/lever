@@ -211,6 +211,9 @@ def eval_program(ctx, stack):
                     else:
                         row = new_constructor(dt, params)
                     eval_slot_set(ctx, row_slot, row)
+                for decl in as_list(attr(stmt, u"decls")):
+                    decl = as_dict(decl)
+                    eval_decl(ctx, dt, decl)
                 dt.close()
             else:
                 eval_expr(ctx, stmt)
@@ -330,6 +333,16 @@ def eval_case(ctx, value, cases, default):
     if len(default) == 0:
         raise error(e_EvalError())
     return default
+
+def eval_decl(ctx, dt, decl):
+    tp = as_string(attr(decl, u"type"))
+    if tp == u"method":
+        op = eval_expr(ctx, as_dict(attr(decl, u"op")))
+        value = eval_expr(ctx, as_dict(attr(decl, u"value")))
+        op = cast(op, Operator)
+        add_method(dt, op, value)
+    else:
+        raise error(e_EvalError())
 
 def eval_expr(ctx, val):
     tp = as_string(attr(val, u"type"))
