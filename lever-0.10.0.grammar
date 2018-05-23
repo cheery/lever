@@ -117,6 +117,7 @@ postfix:
 
 term:
     "(" pform ")"
+    "[" sep(expr_or, ",") "]" / list
     symbol  / symbol
     string  / string
     int / integer

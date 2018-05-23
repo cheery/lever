@@ -231,6 +231,7 @@ def python_bridge(function, vari=False):
             return null
         return result
     face = builtin_interfaces.get(argc, opt, vari)
+    py_bridge.__name__ = function.__name__
     return Builtin(py_bridge, face)
 
 # If the builtin ends up being called through op_call,
@@ -574,9 +575,41 @@ class TupleInterface(Interface):
     def method(self, operator):
         if operator is op_product:
             return w_return_itself
+        if operator is op_hash:
+            return w_tuple_hash
+        if operator is op_eq:
+            return w_tuple_eq
         return Interface.method(self, operator)
 
 w_return_itself = python_bridge(lambda a: a)
+
+# Further introduction of methods that operate on
+# many shapes of one variation of a type
+# may require some sort of type constructors.
+@python_bridge
+def w_tuple_hash(a):
+    contents = cast(a, Tuple).tuple_val
+    mult = 1000003
+    x = 0x345678
+    z = len(contents)
+    for item in contents:
+        y = cast(call(op_hash, [item]), Integer).toint()
+        x = (x ^ y) * mult
+        z -= 1
+        mult += 82520 + z + z
+    x += 97531
+    return fresh_integer(intmask(x))
+
+@python_bridge
+def w_tuple_eq(a, b):
+    a = cast(a, Tuple).tuple_val
+    b = cast(b, Tuple).tuple_val
+    if len(a) != len(b):
+        return false
+    for i in range(len(a)):
+        if convert(call(op_eq, [a[i], b[i]]), Bool) is false:
+            return false
+    return true
 
 # Just like functions, tuples have parameters in their interfaces,
 # and we have to memoize them by those parameters.

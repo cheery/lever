@@ -388,6 +388,131 @@
             },
             "args": [],
             "loc": [0, 18, 6, 18, 0]
+        },
+        {
+            "type": "call",
+            "callee": {
+                "type": "slot",
+                "kind": "global",
+                "name": "print",
+                "loc": [0, 21, 5, 21, 0]
+            },
+            "args": [
+                {
+                    "type": "cmp",
+                    "exprs": [
+                        {
+                            "type": "make_tuple",
+                            "items": [
+                                {
+                                    "type": "literal",
+                                    "kind": "integer",
+                                    "value": "2"
+                                },
+                                {
+                                    "type": "literal",
+                                    "kind": "integer",
+                                    "value": "3"
+                                }
+                            ]
+                        },
+                        {
+                            "type": "make_tuple",
+                            "items": [
+                                {
+                                    "type": "literal",
+                                    "kind": "integer",
+                                    "value": "2"
+                                },
+                                {
+                                    "type": "literal",
+                                    "kind": "integer",
+                                    "value": "3"
+                                }
+                            ]
+                        }
+                    ],
+                    "ops": [
+                        {
+                            "type": "slot",
+                            "kind": "global",
+                            "name": "==",
+                            "loc": [6, 21, 20, 21, 0]
+                        }
+                    ],
+                    "loc": [6, 21, 20, 21, 0]
+                }
+            ],
+            "loc": [0, 21, 21, 21, 0]
+        },
+        {
+            "type": "assign",
+            "slot": {
+                "type": "slot",
+                "kind": "global",
+                "name": "list_item",
+                "loc": [0, 25, 9, 25, 0]
+            },
+            "value": {
+                "type": "list",
+                "values": [
+                    {"type": "literal", "kind": "integer", "value": "1"},
+                    {"type": "literal", "kind": "integer", "value": "2"},
+                    {"type": "literal", "kind": "integer", "value": "3"}
+                ]
+            }
+        },
+        {
+            "type": "call",
+            "callee": {
+                "type": "slot",
+                "kind": "global",
+                "name": "print",
+                "loc": [0, 26, 5, 26, 0]
+            },
+            "args": [
+                {"type": "literal", "kind": "string", "value": "list length"},
+                {
+                    "type": "slot",
+                    "kind": "attr",
+                    "base": {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "list_item",
+                        "loc": [21, 26, 30, 26, 0]
+                    },
+                    "name": "length"
+                }
+            ],
+            "loc": [0, 26, 38, 26, 0]
+        },
+        {
+            "type": "call",
+            "callee": {
+                "type": "slot",
+                "kind": "global",
+                "name": "print",
+                "loc": [0, 27, 5, 27, 0]
+            },
+            "args": [
+                {"type": "literal", "kind": "string", "value": "first item"},
+                {
+                    "type": "slot",
+                    "kind": "item",
+                    "base": {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "list_item",
+                        "loc": [21, 27, 30, 27, 0]
+                    },
+                    "index": {
+                        "type": "literal",
+                        "kind": "integer",
+                        "value": "0"
+                    }
+                }
+            ],
+            "loc": [0, 27, 34, 27, 0]
         }
     ],
     "sources": ["intro.lc"]

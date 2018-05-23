@@ -424,6 +424,11 @@ def eval_expr(ctx, val):
         return Tuple([
             eval_expr(ctx, as_dict(item))
             for item in as_list(attr(val, u"items"))])
+    elif tp == u"list":
+        l = fresh_list()
+        for value in as_list(attr(val, u"values")):
+            l.list_val.append(eval_expr(ctx, as_dict(value)))
+        return l
     elif tp == u"var":
         var_index = as_integer(attr(val, u"index"))
         return Freevar(var_index)

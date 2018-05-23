@@ -119,6 +119,8 @@ the type and object space.
 
 `runtime/objects/strings.py` has methods for strings.
 
+`runtime/objects/lists.py` has methods for lists.
+
 ### Bootstrapper
 
 `bootstrapper/main.lc` is the entry point for the compiler.
@@ -142,17 +144,14 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- TODO: Make working Set/Dict/Slot -types.
+ TODO: Make working String/List/Set/Dict/Slot -types.
        Using &a to assign a slot.
 
  TODO: Provide a way to declare attributes
 
- Next test the getattr/setattr with something.
-
  TODO: Add modules (module scoping, mainly)
 
  TODO: Add direct conversions between types.
-
 
  TODO: Resume and correct the solve_scope in bootstrapper/main.lc
 
@@ -173,20 +172,11 @@ of fibonacci and factorial.
        the last expression in a call can be a
        closure or a generator.
 
- TODO: Add syntax for lists.
-
- TODO: Add hash/eq for tuples.
-       (this may require introduction of type constructors)
-
  TODO: Object system needs to be populated.
 
  TODO: Strings need the remaining methods (attributes)
 
  TODO: Type inference/interpretation required.
-
- TODO: we can make the compiler still cleaner by obtaining
- the 'attr', 'item' behaviors from slots instead of
- reinventing the same behavior twice in a different context.
 
  TODO: Reconsider how condition block should work if the
  variable does not appear in all evaluation paths and we

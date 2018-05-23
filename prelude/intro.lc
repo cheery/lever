@@ -16,3 +16,12 @@ jittery_op = (a, b):
         return a + b * +3
 
 test()
+
+# I just introduced eq/hash on tuples
+print((2,3) == (2,3))
+
+# and a syntax for lists. These are out of the way
+# when I 
+list_item = [1,2,3]
+print("list length", list_item.length)
+print("first item",  list_item[0])

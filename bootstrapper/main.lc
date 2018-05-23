@@ -126,14 +126,10 @@ actions = {
             operators.append(Symbol(op))
         exprs.append(rhs)
         return Cmp(exprs, operators)
-#    "inplace": (slot, op, value):
-#        return Inplace(slot, Lookup(op), value)
-#    "attr_slot": (base, symbol):
-#        return AttrSlot(base, symbol)
-#    "getattr": (base, name):
-#        return Attr(base, name)
     "make_tuple": (items):
         return MakeTuple(items)
+    "list": (values):
+        return List(values)
     "rational": (repr):
         return Literal("rational", repr)
     "integer": (repr):
@@ -506,6 +502,7 @@ class Item extends Expr
     +init = (self, base, index):
         self.base = base
         self.index = index
+        self.loc = null
 
     slotconfig = (self, deep, wronly):
         null
@@ -525,6 +522,7 @@ class Attr extends Expr
     +init = (self, base, name):
         self.base = base
         self.name = name
+        self.loc = null
 
     slotconfig = (self, deep, wronly):
         null
@@ -866,75 +864,6 @@ class Continue
     to_json = (self):
         return { type = "break" }
 
-
-
-
-
-
-
-class Inplace
-    +init = (self, slot, operator, value):
-        slot.deepen()
-        self.slot = slot
-        self.operator = operator
-        self.value = value
-        self.loc = null
-
-    traverse = (self, f):
-        f(self.slot)
-        f(self.operator)
-        f(self.value)
-
-    to_json = (self):
-        return {
-            type = "inplace",
-            slot = js(self.slot),
-            operator = js(self.operator),
-            value = js(self.value) }
-
-
-
-
-class AttrSlot extends Expr
-    +init = (self, base, name):
-        self.base = base
-        self.name = name
-        self.loc = null
-
-    deepen = (self):
-        null
-
-    traverse = (self, f):
-        f(self.base)
-
-    to_json = (self):
-        return {
-            type = "slot",
-            kind = "attr",
-            base = js(self.base),
-            name = self.name,
-            loc = js_loc(self.loc) }
-
-class Attr extends Expr
-    +init = (self, base, name):
-        self.base = base
-        self.name = name
-        self.loc = null
-
-    traverse = (self, f):
-        f(self.base)
-
-    to_json = (self):
-        return {
-            type = "getattr",
-            name = self.name,
-            base = js(self.base),
-            loc = js_loc(self.loc) }
-
-
-
-
-
 class Call extends Expr
     +init = (self, callee, args):
         self.callee = callee
@@ -1000,6 +929,20 @@ class Not extends Expr
             type = "not",
             value = js(self.value),
             loc = js_loc(self.loc) }
+
+class List extends Expr
+    +init = (self, values):
+        self.values = values
+        self.loc = null
+
+    traverse = (self, f):
+        for value in self.values
+            f(value)
+
+    to_json = (self):
+        return {
+            type = "list",
+            values = js(self.values) }
 
 class Literal extends Expr
     +init = (self, kind, repr):

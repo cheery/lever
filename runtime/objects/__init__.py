@@ -72,6 +72,7 @@ from common import (
 from booleans import boolean
 from integers import parse_integer
 import strings
+import lists
 
 def fresh_list():
     return List([])
