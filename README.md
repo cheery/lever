@@ -138,16 +138,20 @@ of fibonacci and factorial.
 
 `samples/small/simple_generator.lc` shows how generators work.
 
-## Unfinished tasks
+`samples/small/three_valued_logic.lc` defines a new datatype.
 
- TODO: Add direct conversions between types.
- 
- TODO: Make setattr/getattr
+## Unfinished tasks
 
  TODO: Make working Set/Dict/Slot -types.
        Using &a to assign a slot.
 
- TODO: Add modules
+ TODO: Provide a way to declare attributes
+
+ Next test the getattr/setattr with something.
+
+ TODO: Add modules (module scoping, mainly)
+
+ TODO: Add direct conversions between types.
 
 
  TODO: Resume and correct the solve_scope in bootstrapper/main.lc
@@ -155,6 +159,13 @@ of fibonacci and factorial.
  TODO: Ensure the datatypes are implemented well. This may require that
        we have some type inference with them already.
 
+
+ TODO: Implement coeffects before it gets so hard to implement
+       them that it's not worthwhile anymore.
+
+ TODO: Implement tools to derive methods for datatypes.
+
+ TODO: Turn generators 'immutable' through linked-list construction.
 
  TODO: start converting suoml inside prelude.
 
@@ -166,8 +177,6 @@ of fibonacci and factorial.
 
  TODO: Add hash/eq for tuples.
        (this may require introduction of type constructors)
- 
- TODO: Add inplace assignment
 
  TODO: Object system needs to be populated.
 
@@ -182,6 +191,11 @@ of fibonacci and factorial.
  TODO: Reconsider how condition block should work if the
  variable does not appear in all evaluation paths and we
  are at the module level.
+
+ TODO: If the case clause contains assignment into same local variable in a
+       group, I'd like to create an implicit check that the value extracted
+       into that slot is the same.
+       Or alternatively would like to disallow that.
 
  (Now condition block may set the value into a module,
  whereas since assuming repeat may not occur at all, the
@@ -210,6 +224,37 @@ of fibonacci and factorial.
  TODO: Create a step-by-step tutorial for beginners that walks
  through the language and teaches to program with it. Add
  interactive 'modules' that allow to test yourself.
+
+ TODO: Implement rationals
+
+Notable things there is in the previous version, not present here yet.
+
+ * exception handling, generation, (except/finally)
+ * libuv bindings systemwide.
+ * continuations
+ * logging utilities
+ * path objects
+ * uint8arrays
+ * slices
+ * vector arithmetic
+ * math utilities
+ * floats/doubles
+ * various math constants
+ * naming based on location in a module
+ * vmprofiler support
+ * networking lib
+ * zlib library
+ * mman, memory management utility for installing machine code.
+ * json library
+ * JIT-optimized bytecode interpreter
+ * weak references library (not needed as much this time)
+ * C API header library
+ * C FFI library
+ * process spawning library
+ * async io through libuv
+
+ * A heap of interesting and useful libraries written in the language
+   that may need to be converted.
 
  [AttributeGrammar]: https://en.wikipedia.org/wiki/Attribute_grammar
  [pypybuild]: http://doc.pypy.org/en/latest/build.html

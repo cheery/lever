@@ -87,8 +87,14 @@ actions = {
         return Continue()
     "assign": (slot, value):
         return Assign(slot, value)
+    "inplace_assign": (slot, op, value):
+        return InplaceAssign(slot, op, value)
     "symbol": (a):
         return Symbol(a)
+    "item": (base, index):
+        return Item(base, index)
+    "attr": (base, name):
+        return Attr(base, name)
     "prefix_symbol": (a):
         return Symbol(a ++ "expr")
     "tuple": (slots):
@@ -417,6 +423,27 @@ class Assign
             slot = js(self.slot),
             value = js(self.value) }
 
+class InplaceAssign
+    +init = (self, slot, op, value):
+        slot.slotconfig(true, false)
+        self.slot = slot
+        self.op = op
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.slot)
+        f(self.op)
+        f(self.value)
+
+    to_json = (self):
+        return {
+            type = "inplace_assign",
+            slot = js(self.slot),
+            op = js(self.op),
+            value = js(self.value) }
+
+
 class Cmp extends Expr
     +init = (self, exprs, ops):
         self.exprs = exprs
@@ -474,6 +501,43 @@ class Symbol extends Expr
                 type = "slot",
                 kind = "local",
                 index = self.scope.localvars.index(self.cell) }
+
+class Item extends Expr
+    +init = (self, base, index):
+        self.base = base
+        self.index = index
+
+    slotconfig = (self, deep, wronly):
+        null
+
+    traverse = (self, f):
+        f(self.base)
+        f(self.index)
+
+    to_json = (self):
+        return {
+            type = "slot",
+            kind = "item",
+            base = js(self.base),
+            index = js(self.index) }
+
+class Attr extends Expr
+    +init = (self, base, name):
+        self.base = base
+        self.name = name
+
+    slotconfig = (self, deep, wronly):
+        null
+
+    traverse = (self, f):
+        f(self.base)
+
+    to_json = (self):
+        return {
+            type = "slot",
+            kind = "attr",
+            base = js(self.base),
+            name = self.name }
 
 class Tuple extends Expr
     +init = (self, slots):

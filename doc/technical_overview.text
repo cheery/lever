@@ -108,13 +108,34 @@ that is as fast or even faster than the decoder written in
 C.  This can be achieved by optimizing the paeth filtering
 step that the decoder has to do after decompression.
 
+<h1>Datatypes</h1>
+
+Lever provides several primitive datatypes with behaviors
+you cannot conveniently implement inside the language,
+though almost everything is behind an operator that user
+can define for his own types.
+
+This is a result of having to split some types such as lists
+due to the multiple ways they are used in a statically typed
+environment. Besides there was a lot of challenge in getting
+the type system arranged to fit both dynamic and static typing
+into same object space.
+
+For user defined datatypes I decided to provide parametric,
+tagged unions. They allow the user to create abstract datatypes
+that properly hide how they're implemented. They also encourage
+writing of more immutable structures, and we can check that their
+case clauses cover all possibilities there are.
+
 <h1>Scoping rules</h1>
 
 TODO: Scoping rules
 
 <h1>Parsing</h1>
 
-TODO: Grammars
+Parsing is driven from a file with a generic-purpose parser,
+just like in the previous version. Changing the file changes
+the language.
 
 <h1>Coeffects</h1>
 

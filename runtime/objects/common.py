@@ -33,6 +33,12 @@ class Object:
 class Interface(Object):
     interface = None
 
+    def getattr(self, name):
+        raise error(e_TypeError())
+
+    def setattr(self, name):
+        raise error(e_TypeError())
+
     def method(self, operator):
         return operator.resolution_trampoline(self)
 
@@ -41,6 +47,20 @@ class InterfaceNOPA(Interface):
     interface = None
     def __init__(self):
         self.methods = {}
+        self.getters = {}
+        self.setters = {}
+
+    def getattr(self, name):
+        impl = self.getters.get(name, None)
+        if impl is None:
+            return Interface.getattr(self, name)
+        return impl
+
+    def setattr(self, name):
+        impl = self.setters.get(name, None)
+        if impl is None:
+            return Interface.getattr(self, name)
+        return impl
 
     def method(self, operator):
         impl = self.methods.get(operator, None)
@@ -426,6 +446,23 @@ def method(face, operator, vari=False):
         return fn
     return _impl_
 
+# And the same tools for describing methods.
+def getter(face, name, vari=False):
+    if isinstance(name, str):
+        name = name.decode('utf-8')
+    def _impl_(fn):
+        face.getters[name] = python_bridge(fn, vari)
+        return fn
+    return _impl_
+
+def setter(face, name, vari=False):
+    if isinstance(name, str):
+        name = name.decode('utf-8')
+    def _impl_(fn):
+        face.setters[name] = python_bridge(fn, vari)
+        return fn
+    return _impl_
+
 # The operator handling needs operative coercion
 def unique_coercion(faces):
     s = []
@@ -457,9 +494,10 @@ COV = COVARIANT     = 1
 CNV = CONTRAVARIANT = 2
 BIV = BIVARIANT     = 3
 
-class InterfaceParametric(Interface):
+class InterfaceParametric(InterfaceNOPA):
     def __init__(self, variances):
         self.variances = variances
+        InterfaceNOPA.__init__(self)
 
 # If we provide R/W flags, we can make these structures
 # immutable, but it would be hard to ensure such constraints

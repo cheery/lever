@@ -1,0 +1,47 @@
+datatype ThreeVL = False | True | Unknown
+method stringify = (a):
+    case a of
+    False then
+        return "False"
+    True then
+        return "True"
+    Unknown then
+        return "Unknown"
+method (~¤) = (a):
+    case a of
+    False then
+        return True
+    True then
+        return False
+    Unknown then
+        return Unknown
+method (&) = (a, b):
+    if a == False then
+        return False
+    if b == False then
+        return False
+    if a == True and b == True then
+        return True
+    return Unknown
+method (|) = (a, b):
+    if a == True then
+        return True
+    if b == True then
+        return True
+    if a == False and b == False then
+        return False
+    return Unknown
+method xor = (a, b):
+    if a == True and b == True then
+        return False
+    if a == True and b == False then
+        return True
+    if a == False and b == True then
+        return True
+    if a == False and b == False then
+        return False
+    return Unknown
+
+print("not(false) =",      ~False )
+print("and(true, true) =", True & True )
+print("or(true, false) =", True | False )

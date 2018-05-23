@@ -70,7 +70,7 @@ def call_closure(closure, args):
     for i in range(len(args)):
         arg = as_dict(closure.args[i])
         slot  = as_dict(attr(arg, u"slot"))
-        eval_slot_set(ctx, slot, args[i])
+        eval_slot(ctx, slot).store(ctx, args[i])
     stack = [(closure.body, 0, None)]
     try:
         res = eval_program(ctx, stack)
@@ -196,7 +196,7 @@ def eval_program(ctx, stack):
             elif tp == u"datatype":
                 varc = len(as_list(attr(stmt, u"vars")))
                 dt = new_datatype(varc)
-                eval_slot_set(ctx, as_dict(attr(stmt, u"slot")), dt)
+                eval_slot(ctx, as_dict(attr(stmt, u"slot"))).store(ctx, dt)
                 for row in as_list(attr(stmt, u"rows")):
                     row = as_list(row)
                     if len(row) != 2:
@@ -210,7 +210,7 @@ def eval_program(ctx, stack):
                         row = new_constant(dt)
                     else:
                         row = new_constructor(dt, params)
-                    eval_slot_set(ctx, row_slot, row)
+                    eval_slot(ctx, row_slot).store(ctx, row)
                 for decl in as_list(attr(stmt, u"decls")):
                     decl = as_dict(decl)
                     eval_decl(ctx, dt, decl)
@@ -283,7 +283,7 @@ class ForLoop(LoopHead):
 
     def step(self, ctx):
         try:
-            eval_slot_set(ctx, self.slot, self.iterator.next())
+            eval_slot(ctx, self.slot).store(ctx, self.iterator.next())
             return True
         except StopIteration:
             return False
@@ -326,7 +326,7 @@ def eval_case(ctx, value, cases, default):
                 raise error(e_EvalError())
             if call(tup[0], [value]) is true:
                 slot = as_dict(attr(case, u"slot"))
-                eval_slot_set(ctx, slot, call(tup[1], [value]))
+                eval_slot(ctx, slot).store(ctx, call(tup[1], [value]))
                 return as_list(attr(case, u"body"))
         else:
             raise error(e_EvalError())
@@ -349,11 +349,18 @@ def eval_expr(ctx, val):
     if tp == u"literal":
         return eval_literal(val)
     if tp == u"slot":
-        return eval_slot_get(ctx, val)
+        return eval_slot(ctx, val).load(ctx)
     elif tp == u"assign":
         expr = eval_expr(ctx, as_dict(attr(val, u"value")))
         slot = as_dict(attr(val, u"slot"))
-        eval_slot_set(ctx, slot, expr)
+        eval_slot(ctx, slot).store(ctx, expr)
+        return null
+    elif tp == u"inplace_assign":
+        op = eval_expr(ctx, as_dict(attr(val, u"op")))
+        expr = eval_expr(ctx, as_dict(attr(val, u"value")))
+        slot = as_dict(attr(val, u"slot"))
+        slot = eval_slot(ctx, slot)
+        slot.store(ctx, call(op, [slot.load(ctx), expr]))
         return null
     elif tp == u"call":
         callee = as_dict(attr(val, u"callee"))
@@ -423,81 +430,125 @@ def eval_expr(ctx, val):
     else:
         raise error(e_EvalError())
 
-# The slot design eventually incorporates attributes and
-# indices as well. Recognizing this duality in some
-# expressions has really simplified many of the utilities.
-def eval_slot_get(ctx, slot):
+# The slot design incorporates attributes and indices as well.
+# Recognizing this duality in some expressions really
+# simplified many of the utilities.
+def eval_slot(ctx, slot):
     kind = as_string(attr(slot, u"kind"))
     if kind == u"local":
         index = as_integer(attr(slot, u"index"))
-        return ctx.localvars[index]
+        return LocalSlot(index)
     elif kind == u"cell":
         index = as_integer(attr(slot, u"index"))
-        return ctx.cellvars[index].val
+        return CellSlot(index)
     elif kind == u"global":
         name = as_string(attr(slot, u"name"))
-        cell = ctx.module.face().cells.get(name, None)
+        loc = as_list(attr(slot, u"loc"))
+        return GlobalSlot(name, loc)
+    elif kind == u"tuple":
+        return TupleSlot(
+            [eval_slot(ctx, as_dict(s))
+                for s in as_list(attr(slot, u"slots"))],
+            loc = as_list(attr(slot, u"loc")))
+
+    elif kind == u"attr":
+        base = eval_expr(ctx, as_dict(attr(slot, u"base")))
+        name = as_string(attr(slot, u"name"))
+        return AttrSlot(base, name)
+    elif kind == u"item":
+        base = eval_expr(ctx, as_dict(attr(slot, u"base")))
+        index = eval_expr(ctx, as_dict(attr(slot, u"index")))
+        return ItemSlot(base, index)
+    else:
+        raise error(e_EvalError())
+
+class Slot:
+    def load(self, ctx):
+        raise error(e_EvalError())
+
+    def store(self, ctx, value):
+        raise error(e_EvalError())
+
+class LocalSlot(Slot):
+    def __init__(self, index):
+        self.index = index
+
+    def load(self, ctx):
+        return ctx.localvars[self.index]
+
+    def store(self, ctx, value):
+        ctx.localvars[self.index] = value
+
+class CellSlot(Slot):
+    def __init__(self, index):
+        self.index = index
+
+    def load(self, ctx):
+        return ctx.cellvars[self.index].val
+
+    def store(self, ctx, value):
+        ctx.cellvars[self.index].val = value
+
+class GlobalSlot(Slot):
+    def __init__(self, name, loc):
+        self.name = name
+        self.loc = loc
+    
+    def load(self, ctx):
+        cell = ctx.module.face().cells.get(self.name, None)
         if cell is not None:
             return cell.val
         for module in ctx.env:
-            cell = module.face().cells.get(name, None)
+            cell = module.face().cells.get(self.name, None)
             if cell is not None:
                 return cell.val
         else:
-            loc = as_list(attr(slot, u"loc"))
             tb = error(e_TypeError())
-            tb.trace.append((loc, ctx.sources))
+            tb.trace.append((self.loc, ctx.sources))
             raise tb
-    elif kind == u"tuple":
-        return Tuple([
-            eval_slot_get(ctx, as_dict(s))
-            for s in as_list(attr(slot, u"slots"))])
 
-#    elif kind == u"attr":
-#        name = as_string(attr(val, u"name"))
-#        base = eval_expr(ctx, as_dict(attr(val, u"base")))
-#        return getattr(base, name)
-#    elif kind == u"index":
-#        base = eval_expr(ctx, as_dict(attr(val, u"base")))
-#        index = eval_expr(ctx, as_dict(attr(val, u"index")))
-#        return getitem(base, index)
-    else:
-        raise error(e_EvalError())
-
-def eval_slot_set(ctx, slot, val):
-    kind = as_string(attr(slot, u"kind"))
-    if kind == u"local":
-        index = as_integer(attr(slot, u"index"))
-        ctx.localvars[index] = val
-    elif kind == u"cell":
-        index = as_integer(attr(slot, u"index"))
-        ctx.cellvars[index].val = val
-    elif kind == u"global":
-        name = as_string(attr(slot, u"name"))
-        ctx.module.assign(name, val)
+    def store(self, ctx, value):
+        ctx.module.assign(self.name, value)
         # TODO: Add trace here as well.
-    elif kind == u"tuple":
-        tup = cast(call(op_product, [val]), Tuple).tuple_val
-        slots = as_list(attr(slot, u"slots"))
-        if len(tup) != len(slots):
-            loc = as_list(attr(slot, u"loc"))
+
+class TupleSlot(Slot):
+    def __init__(self, slots, loc):
+        self.slots = slots
+        self.loc = loc
+
+    def load(self, ctx):
+        return Tuple([slot.load(ctx) for slot in self.slots])
+
+    def store(self, ctx, value):
+        tup = cast(call(op_product, [value]), Tuple).tuple_val
+        if len(tup) != len(self.slots):
             tb = error(e_TypeError())
-            tb.trace.append((loc, ctx.sources))
+            tb.trace.append((self.loc, ctx.sources))
             raise tb
         for i in range(len(tup)):
-            eval_slot_set(ctx, as_dict(slots[i]), tup[i])
+            self.slots[i].store(ctx, tup[i])
 
-#    elif kind == u"attr":
-#        name = as_string(attr(val, u"name"))
-#        base = eval_expr(ctx, as_dict(attr(val, u"base")))
-#        index = eval_expr(ctx, as_dict(attr(val, u"index")))
-#        return setattr(base, name, val)
-#    elif kind == u"index":
-#        base = eval_expr(ctx, as_dict(attr(val, u"base")))
-#        index = eval_expr(ctx, as_dict(attr(val, u"index")))
-#        return setitem(base, index, val)
-    else:
-        raise error(e_EvalError())
+class AttrSlot(Slot):
+    def __init__(self, base, name):
+        self.base = base
+        self.name = name
+
+    def load(self, ctx):
+        return call(self.base.face().getattr(self.name), [self.base])
+
+    def store(self, ctx, value):
+        return call(self.base.face().setattr(self.name), [self.base, value])
+
+class ItemSlot(Slot):
+    def __init__(self, base, index):
+        self.base = base
+        self.index = index
+
+    def load(self, ctx):
+        return call(op_getitem, [self.base, self.index])
+
+    def store(self, ctx, value):
+        call(op_setitem, [self.base, self.index, value])
 
 def eval_literal(obj):
     kind = as_string(attr(obj, u"kind"))

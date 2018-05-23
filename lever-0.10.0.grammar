@@ -1,6 +1,8 @@
 file: (=statement)+
 
 statement:
+    slot operator "=" >expr      / inplace_assign(., symbol(.), .)
+    slot "(" pform ")" "=" >expr / inplace_assign
     slot "=" >expr / assign
     "if" expr "then" >(=statement)+
              ["else" >(=statement)+]? / cond
@@ -36,7 +38,9 @@ slot:
     slot_item ["," slot_item]+ / tuple([.] concat .)
 
 slot_item:
-    symbol / symbol
+    symbol               / symbol
+    postfix "[" form "]" / item
+    postfix "." symbol   / attr
 
 expr:
     [loop_head]* "repeat" >(=statement)+  / repeat
