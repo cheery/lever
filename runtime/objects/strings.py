@@ -57,9 +57,9 @@ class StringIterator(Iterator):
 def String_cmp(a, b):
     a = cast(a, String).string_val
     b = cast(b, String).string_val
-    if a.string_val < b.string_val:
+    if a < b:
         return fresh_integer(-1)
-    elif a.string_val > b.string_val:
+    elif a > b:
         return fresh_integer(+1)
     else:
         return fresh_integer(0)

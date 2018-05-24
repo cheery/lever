@@ -215,6 +215,8 @@ of fibonacci and factorial.
 
  Add read and write indexers.
 
+ TODO: https://srfi.schemers.org/srfi-41/srfi-41.html
+
  TODO: Create stringbuilders.
 
  TODO: If the case clause contains assignment into same local variable in a
