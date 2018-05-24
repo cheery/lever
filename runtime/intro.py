@@ -107,8 +107,9 @@ class RangeIterator(Iterator):
         i = cast(call(op_cmp, [self.current, self.limit]), Integer).toint()
         if i == self.sign:
             value = self.current
-            self.current = call(op_add, [self.current, self.step])
-            return value
+            next_value = call(op_add, [self.current, self.step])
+            k = RangeIterator(next_value, self.limit, self.step, self.sign)
+            return value, k
         else:
             raise StopIteration()
 

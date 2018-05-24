@@ -464,6 +464,16 @@ def setter(face, name, vari=False):
         return fn
     return _impl_
 
+def attr_method(face, name, vari=False):
+    if isinstance(name, str):
+        name = name.decode('utf-8')
+    def _impl_(fn):
+        w_fn = python_bridge(fn, vari=vari)
+        def _wrapper_(a):
+            return prefill(w_fn, [a])
+        face.getters[name] = python_bridge(_wrapper_)
+    return _impl_
+
 # The operator handling needs operative coercion
 def unique_coercion(faces):
     s = []

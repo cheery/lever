@@ -83,8 +83,7 @@ w_call_closure = python_bridge(call_closure, vari=True)
 
 # Generators are incredibly much more simpler than Closures
 # because we do not give them an argument list.
-class Generator(Iterator):
-    interface = Iterator.interface
+class GeneratorTip:
     def __init__(self, code, module, env, frame, sources):
         self.module = module
         self.env = env
@@ -100,7 +99,7 @@ class Generator(Iterator):
             for _ in range(len(localvars))]
         self.stack = [(body, 0, None)]
 
-    def next(self):
+    def step(self):
         if len(self.stack) == 0:
             raise StopIteration()
         ctx = EvaluationContext(
@@ -117,6 +116,20 @@ class Generator(Iterator):
             raise StopIteration()
         else:
             return result
+
+class Generator(Iterator):
+    interface = Iterator.interface
+    def __init__(self, tip):
+        self.tip = tip
+        self.current = None
+        self.tail = None
+
+    def next(self):
+        if self.current is None:
+            self.current = self.tip.step()
+            self.tail = Generator(self.tip)
+        return self.current, self.tail
+
 
 # TODO: add a flag telling whether it's function or
 # generator we are running. allow/disallow return/yield.
@@ -283,10 +296,12 @@ class ForLoop(LoopHead):
 
     def step(self, ctx):
         try:
-            eval_slot(ctx, self.slot).store(ctx, self.iterator.next())
-            return True
+            value, self.iterator = self.iterator.next()
         except StopIteration:
             return False
+        else:
+            eval_slot(ctx, self.slot).store(ctx, value)
+            return True
 
 class WhileLoop(LoopHead):
     def __init__(self, cond):
@@ -419,7 +434,8 @@ def eval_expr(ctx, val):
         for index in as_list(attr(val, u"frame")):
             index = as_integer(index)
             frame.append(ctx.cellvars[index])
-        return Generator(val, ctx.module, ctx.env, frame, ctx.sources)
+        tip = GeneratorTip(val, ctx.module, ctx.env, frame, ctx.sources)
+        return Generator(tip)
     elif tp == u"make_tuple":
         return Tuple([
             eval_expr(ctx, as_dict(item))

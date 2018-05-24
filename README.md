@@ -144,8 +144,41 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- TODO: Make working String/List/Set/Dict/Slot -types.
+ TODO: Make working List/Set/Dict/Slot -types.
        Using &a to assign a slot.
+
+ TODO: Consider writing a sample program that uses the whole palette
+       of methods that are available for strings.
+
+    a < b
+    a == b
+    a ++ b
+    a.count(b)
+    a.endswith(b)
+    a in b
+    a.is_alpha()
+    a.is_digit(base=10)
+    a.is_lower()
+    a.is_space()
+    a.is_upper()
+    a.join(seq)
+    a.length
+    a.lower()
+    a.replace(x,y)
+    a.rsplit(sep, maxsplit=n)
+    a.split(sep, maxsplit=n)
+    a.startswith(b)
+    a.upper()
+    a[x]
+    a.center(width, fillchar=' ')
+    hash(a)
+    iter(a)
+    a.ljust(width, fillchar=' ')
+    a.rjust(width, fillchar=' ')
+    a.repeat(n)
+
+ TODO: Provide a way to convert item into an iterator, then retrieving
+       the first element and the subsequent iterator, eg. `x = (seq ==> rest)`
 
  TODO: Provide a way to declare attributes
 
@@ -174,13 +207,15 @@ of fibonacci and factorial.
 
  TODO: Object system needs to be populated.
 
- TODO: Strings need the remaining methods (attributes)
-
  TODO: Type inference/interpretation required.
 
  TODO: Reconsider how condition block should work if the
  variable does not appear in all evaluation paths and we
  are at the module level.
+
+ Add read and write indexers.
+
+ TODO: Create stringbuilders.
 
  TODO: If the case clause contains assignment into same local variable in a
        group, I'd like to create an implicit check that the value extracted
