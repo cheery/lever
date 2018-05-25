@@ -482,6 +482,9 @@ def eval_slot(ctx, slot):
         base = eval_expr(ctx, as_dict(attr(slot, u"base")))
         index = eval_expr(ctx, as_dict(attr(slot, u"index")))
         return ItemSlot(base, index)
+    elif kind == u"deref":
+        value = eval_expr(ctx, as_dict(attr(slot, u"value")))
+        return DerefSlot(value)
     else:
         raise error(e_EvalError())
 
@@ -572,6 +575,16 @@ class ItemSlot(Slot):
 
     def store(self, ctx, value):
         call(op_setitem, [self.base, self.index, value])
+
+class DerefSlot(Slot):
+    def __init__(self, value):
+        self.value = value
+
+    def load(self, ctx):
+        return call(op_getslot, [self.value])
+
+    def store(self, ctx, value):
+        call(op_setslot, [self.value, value])
 
 def eval_literal(obj):
     kind = as_string(attr(obj, u"kind"))

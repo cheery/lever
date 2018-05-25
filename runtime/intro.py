@@ -113,6 +113,10 @@ class RangeIterator(Iterator):
         else:
             raise StopIteration()
 
+@builtin()
+def w_slot(value):
+    return Slot(value)
+
 base_stem = {
     u"print": w_print,
     u"==": op_eq,
@@ -145,4 +149,5 @@ base_stem = {
     u"true" : true,
     u"false": false,
     u"range": w_range,
+    u"slot": w_slot,
 }

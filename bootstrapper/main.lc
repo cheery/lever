@@ -130,6 +130,8 @@ actions = {
         return MakeTuple(items)
     "list": (values):
         return List(values)
+    "deref": (value):
+        return Deref(value)
     "rational": (repr):
         return Literal("rational", repr)
     "integer": (repr):
@@ -516,7 +518,26 @@ class Item extends Expr
             type = "slot",
             kind = "item",
             base = js(self.base),
-            index = js(self.index) }
+            index = js(self.index),
+            loc = js_loc(self.loc) }
+
+class Deref extends Expr
+    +init = (self, value):
+        self.value = value
+        self.loc = null
+
+    slotconfig = (self, deep, wronly):
+        null
+
+    traverse = (self, f):
+        f(self.value)
+
+    to_json = (self):
+        return {
+            type = "slot",
+            kind = "deref",
+            value = js(self.value),
+            loc = js_loc(self.loc) }
 
 class Attr extends Expr
     +init = (self, base, name):
@@ -535,7 +556,8 @@ class Attr extends Expr
             type = "slot",
             kind = "attr",
             base = js(self.base),
-            name = self.name }
+            name = self.name,
+            loc = js_loc(self.loc) }
 
 class Tuple extends Expr
     +init = (self, slots):

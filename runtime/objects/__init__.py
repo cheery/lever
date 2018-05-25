@@ -37,6 +37,8 @@ from common import (
     op_in,
     op_getitem,
     op_setitem,
+    op_getslot,
+    op_setslot,
     op_iter,
     op_product,
     op_pattern,
@@ -76,3 +78,4 @@ import strings
 from lists import fresh_list
 from dicts import fresh_dict
 from sets import fresh_set
+from slots import Slot

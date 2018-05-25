@@ -21,7 +21,15 @@ test()
 print((2,3) == (2,3))
 
 # and a syntax for lists. These are out of the way
-# when I 
+# when they're needed.
 list_item = [1,2,3]
 print("list length", list_item.length)
 print("first item",  list_item[0])
+
+slot_5 = slot(5)
+
+print("a weird necessity", *slot_5)
+
+*slot_5 = 10
+
+print("you can set its value", *slot_5)

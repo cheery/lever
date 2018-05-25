@@ -41,6 +41,7 @@ slot_item:
     symbol               / symbol
     postfix "[" form "]" / item
     postfix "." symbol   / attr
+    "*" term / deref
 
 expr:
     [loop_head]* "repeat" >(=statement)+  / repeat
@@ -120,7 +121,8 @@ term:
     "[" sep(expr_or, ",") "]" / list
     symbol  / symbol
     string  / string
-    int / integer
+    int      / integer
+    "*" term / deref
 
 pform:
     form

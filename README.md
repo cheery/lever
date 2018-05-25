@@ -148,9 +148,6 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- TODO: Make working Slot -types.
-       Using &a to assign a slot.
-
  TODO: Consider writing a sample program that uses the whole palette
        of methods that are available for strings.
 
@@ -182,9 +179,6 @@ of fibonacci and factorial.
     a.repeat(n)
 
  TODO: Consider similar sample programs for lists, dicts, sets, slots.
-
- TODO: Make a slot type, add syntax *a  to access and retrieve value from
-       a slot.
 
  TODO: Provide a way to convert item into an iterator, then retrieving
        the first element and the subsequent iterator, eg. `x = (seq ==> rest)`

@@ -481,7 +481,8 @@
                         "name": "list_item",
                         "loc": [21, 26, 30, 26, 0]
                     },
-                    "name": "length"
+                    "name": "length",
+                    "loc": [21, 26, 37, 26, 0]
                 }
             ],
             "loc": [0, 26, 38, 26, 0]
@@ -509,10 +510,102 @@
                         "type": "literal",
                         "kind": "integer",
                         "value": "0"
-                    }
+                    },
+                    "loc": [21, 27, 33, 27, 0]
                 }
             ],
             "loc": [0, 27, 34, 27, 0]
+        },
+        {
+            "type": "assign",
+            "slot": {
+                "type": "slot",
+                "kind": "global",
+                "name": "slot_5",
+                "loc": [0, 29, 6, 29, 0]
+            },
+            "value": {
+                "type": "call",
+                "callee": {
+                    "type": "slot",
+                    "kind": "global",
+                    "name": "slot",
+                    "loc": [9, 29, 13, 29, 0]
+                },
+                "args": [{"type": "literal", "kind": "integer", "value": "5"}],
+                "loc": [9, 29, 16, 29, 0]
+            }
+        },
+        {
+            "type": "call",
+            "callee": {
+                "type": "slot",
+                "kind": "global",
+                "name": "print",
+                "loc": [0, 31, 5, 31, 0]
+            },
+            "args": [
+                {
+                    "type": "literal",
+                    "kind": "string",
+                    "value": "a weird necessity"
+                },
+                {
+                    "type": "slot",
+                    "kind": "deref",
+                    "value": {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "slot_5",
+                        "loc": [28, 31, 34, 31, 0]
+                    },
+                    "loc": [27, 31, 34, 31, 0]
+                }
+            ],
+            "loc": [0, 31, 35, 31, 0]
+        },
+        {
+            "type": "assign",
+            "slot": {
+                "type": "slot",
+                "kind": "deref",
+                "value": {
+                    "type": "slot",
+                    "kind": "global",
+                    "name": "slot_5",
+                    "loc": [1, 33, 7, 33, 0]
+                },
+                "loc": [0, 33, 7, 33, 0]
+            },
+            "value": {"type": "literal", "kind": "integer", "value": "10"}
+        },
+        {
+            "type": "call",
+            "callee": {
+                "type": "slot",
+                "kind": "global",
+                "name": "print",
+                "loc": [0, 35, 5, 35, 0]
+            },
+            "args": [
+                {
+                    "type": "literal",
+                    "kind": "string",
+                    "value": "you can set its value"
+                },
+                {
+                    "type": "slot",
+                    "kind": "deref",
+                    "value": {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "slot_5",
+                        "loc": [32, 35, 38, 35, 0]
+                    },
+                    "loc": [31, 35, 38, 35, 0]
+                }
+            ],
+            "loc": [0, 35, 39, 35, 0]
         }
     ],
     "sources": ["intro.lc"]

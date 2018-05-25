@@ -363,6 +363,9 @@ op_getitem = Operator([0])
 op_setitem = Operator([0])
 op_iter = Operator([0])
 
+op_getslot = Operator([0])
+op_setslot = Operator([0])
+
 # op_product cannot be a conversion because tuple is not a
 # single type but many types.
 op_product = Operator([0])
