@@ -144,7 +144,7 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- TODO: Make working List/Set/Dict/Slot -types.
+ TODO: Make working Set/Dict/Slot -types.
        Using &a to assign a slot.
 
  TODO: Consider writing a sample program that uses the whole palette
@@ -216,6 +216,8 @@ of fibonacci and factorial.
  Add read and write indexers.
 
  TODO: https://srfi.schemers.org/srfi-41/srfi-41.html
+
+ TODO: Provide an util to produce an iterator from functions.
 
  TODO: Create stringbuilders.
 

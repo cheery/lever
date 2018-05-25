@@ -72,10 +72,8 @@ from common import (
 from booleans import boolean
 from integers import parse_integer
 import strings
+from lists import fresh_list
 import lists
-
-def fresh_list():
-    return List([])
 
 def fresh_dict():
     return Dict(r_dict(eq_fn, hash_fn, force_non_null=True))
