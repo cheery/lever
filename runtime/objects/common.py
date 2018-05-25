@@ -580,6 +580,10 @@ class Iterator(Object):
     def next(self):
         raise StopIteration()
 
+@method(Iterator.interface, op_iter)
+def Iterator_iter(a):
+    return a
+
 # Tuples form the basis for records and they appear in function
 # definitions a bit too.
 class TupleInterface(Interface):

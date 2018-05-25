@@ -1,7 +1,7 @@
 {
     "type": "script",
     "cellvars": [],
-    "localvars": [],
+    "localvars": [{"type": "cell", "deref": false, "name": "x", "defs": 1}],
     "body": [
         {
             "type": "assign",
@@ -606,6 +606,92 @@
                 }
             ],
             "loc": [0, 35, 39, 35, 0]
+        },
+        {
+            "type": "call",
+            "callee": {
+                "type": "slot",
+                "kind": "global",
+                "name": "print",
+                "loc": [0, 37, 5, 37, 0]
+            },
+            "args": [
+                {
+                    "type": "literal",
+                    "kind": "string",
+                    "value": "first item in range"
+                },
+                {
+                    "type": "iter_once",
+                    "value": {
+                        "type": "call",
+                        "callee": {
+                            "type": "slot",
+                            "kind": "global",
+                            "name": "range",
+                            "loc": [29, 37, 34, 37, 0]
+                        },
+                        "args": [
+                            {
+                                "type": "literal",
+                                "kind": "integer",
+                                "value": "10"
+                            }
+                        ],
+                        "loc": [29, 37, 38, 37, 0]
+                    },
+                    "slot": {
+                        "type": "slot",
+                        "kind": "deref",
+                        "value": {
+                            "type": "slot",
+                            "kind": "global",
+                            "name": "slot_5",
+                            "loc": [44, 37, 50, 37, 0]
+                        },
+                        "loc": [43, 37, 50, 37, 0]
+                    },
+                    "loc": [29, 37, 50, 37, 0]
+                }
+            ],
+            "loc": [0, 37, 51, 37, 0]
+        },
+        {
+            "type": "repeat",
+            "fresh": [],
+            "heads": [
+                {
+                    "type": "for",
+                    "slot": {"type": "slot", "kind": "local", "index": 0},
+                    "value": {
+                        "type": "slot",
+                        "kind": "deref",
+                        "value": {
+                            "type": "slot",
+                            "kind": "global",
+                            "name": "slot_5",
+                            "loc": [10, 38, 16, 38, 0]
+                        },
+                        "loc": [9, 38, 16, 38, 0]
+                    }
+                }
+            ],
+            "body": [
+                {
+                    "type": "call",
+                    "callee": {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "print",
+                        "loc": [4, 39, 9, 39, 0]
+                    },
+                    "args": [
+                        {"type": "literal", "kind": "string", "value": "next"},
+                        {"type": "slot", "kind": "local", "index": 0}
+                    ],
+                    "loc": [4, 39, 20, 39, 0]
+                }
+            ]
         }
     ],
     "sources": ["intro.lc"]

@@ -105,6 +105,8 @@ actions = {
         return Call(Symbol(op), [lhs, rhs])
     "prefix": (op, rhs):
         return Call(Symbol(op ++ "expr"), [rhs])
+    "iter_once": (value, slot):
+        return IterOnce(value, slot)
 
     "and": (lhs, rhs):
         return And(lhs, rhs)
@@ -902,6 +904,24 @@ class Call extends Expr
             type = "call",
             callee = js(self.callee),
             args = js(self.args),
+            loc = js_loc(self.loc) }
+
+class IterOnce extends Expr
+    +init = (self, value, slot):
+        self.value = value
+        self.slot = slot
+        self.loc = null
+        slot.slotconfig(false, true)
+
+    traverse = (self, f):
+        f(self.value)
+        f(self.slot)
+
+    to_json = (self):
+        return {
+            type = "iter_once",
+            value = js(self.value),
+            slot = js(self.slot),
             loc = js_loc(self.loc) }
 
 class And extends Expr

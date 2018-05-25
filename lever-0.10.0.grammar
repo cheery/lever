@@ -111,6 +111,7 @@ exponent_postfix:
     postfix ["^"] exponent_postfix / binary
 
 postfix:
+    postfix "==>" slot_item           / iter_once
     postfix "(" sep(expr_or, ',') ")" / call
     postfix "[" form "]"           / item
     postfix "." symbol             / attr

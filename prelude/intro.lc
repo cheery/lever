@@ -33,3 +33,7 @@ print("a weird necessity", *slot_5)
 *slot_5 = 10
 
 print("you can set its value", *slot_5)
+
+print("first item in range", range(10) ==> *slot_5)
+for x in *slot_5 repeat
+    print("next", x)

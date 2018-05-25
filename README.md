@@ -148,6 +148,8 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
+ TODO: Add modules (module scoping, mainly)
+
  TODO: Consider writing a sample program that uses the whole palette
        of methods that are available for strings.
 
@@ -178,14 +180,65 @@ of fibonacci and factorial.
     a.rjust(width, fillchar=' ')
     a.repeat(n)
 
+ TODO: The same for dicts:
+
+    a.length
+    a in b
+    iter(a) -> produces pairs
+    copy(a)
+    a.get(key, default)
+    a.pop(key)
+    a[key] (setitem and getitem)
+    a.keys()
+    a.items()
+    a.values()
+    a.update(iterable)
+
+ TODO: the same for lists:
+
+    a.length
+    a == b
+    a ++ b
+    copy(a)
+    a in b
+    a[b] (getitem and setitem)
+    iter(a)
+    a.append(b)
+    a.extend(iterable)
+    a.insert(index, obj)
+    a.remove(obj)
+    a.pop([index])
+    a.count(obj)
+    a.reverse()
+    a.sort(fcmp=cmp)
+
+ TODO: the same for sets
+
+    a.length
+    a in b
+    iter(a)
+    a == b
+    copy(a)
+    a.clear()
+    a.add(b)
+    a.update(iterable)
+    a.intersection_update(iterable)
+    a.difference_update(iterable)
+    a.symmetric_difference_update(iterable)
+    a.discard(b)
+    a.remove(item)
+    a.pop()
+    a.is_disjoint(iterable)
+    a.is_subset(iterable)
+    a.is_superset(iterable)
+    a.union(iterable), a | b
+    a.intersection(iterable), a & b
+    a.difference(iterable), a - b
+    a.symmetric_difference(iterable), xor(a, b)
+
  TODO: Consider similar sample programs for lists, dicts, sets, slots.
 
- TODO: Provide a way to convert item into an iterator, then retrieving
-       the first element and the subsequent iterator, eg. `x = (seq ==> rest)`
-
  TODO: Provide a way to declare attributes and attribute methods.
-
- TODO: Add modules (module scoping, mainly)
 
  TODO: Add direct conversions between types.
 

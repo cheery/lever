@@ -103,9 +103,9 @@ def List_remove(a, obj):
         raise error(e_PartialOnArgument())
 
 @attr_method(List.interface, u"pop")
-def List_pop(a, index=null):
+def List_pop(a, index=None):
     a = cast(a, List)
-    if index is null:
+    if index is None:
         index = len(a.list_val) - 1
     else:
         index = cast(index, Integer).toint()

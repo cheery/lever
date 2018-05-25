@@ -450,6 +450,13 @@ def eval_expr(ctx, val):
     elif tp == u"var":
         var_index = as_integer(attr(val, u"index"))
         return Freevar(var_index)
+    elif tp == u"iter_once":
+        value = eval_expr(ctx, as_dict(attr(val, u"value")))
+        it = cast(call(op_iter, [value]), Iterator)
+        slot = eval_slot(ctx, as_dict(attr(val, u"slot")))
+        result, it = it.next()
+        slot.store(ctx, it)
+        return result
     else:
         raise error(e_EvalError())
 
@@ -473,7 +480,6 @@ def eval_slot(ctx, slot):
             [eval_slot(ctx, as_dict(s))
                 for s in as_list(attr(slot, u"slots"))],
             loc = as_list(attr(slot, u"loc")))
-
     elif kind == u"attr":
         base = eval_expr(ctx, as_dict(attr(slot, u"base")))
         name = as_string(attr(slot, u"name"))

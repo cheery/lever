@@ -19,6 +19,19 @@ def Dict_iter(item, a):
     a = cast(a, Dict).dict_val
     return DictIterator(a.iteritems())
 
+@method(Dict.interface, op_getitem)
+def Dict_getitem(a, item):
+    a = cast(a, Dict)
+    try:
+        return a.dict_val[item]
+    except KeyError:
+        raise error(e_PartialOnArgument())
+
+@method(Dict.interface, op_getitem)
+def Dict_setitem(a, item, value):
+    a = cast(a, Dict)
+    a.dict_val[item] = value
+
 @method(Dict.interface, op_copy)
 def Dict_copy(a):
     c = fresh_dict()
@@ -26,13 +39,11 @@ def Dict_copy(a):
     return c
 
 @attr_method(Dict.interface, u"dict")
-def get(a, item, default=None):
+def get(a, item, default):
     a = cast(a, Dict)
     try:
         return a.dict_val[item]
     except KeyError:
-        if default is None:
-            raise error(e_PartialOnArgument())
         return default
 
 @attr_method(Dict.interface, u"pop")
