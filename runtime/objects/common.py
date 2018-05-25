@@ -379,6 +379,7 @@ op_cmp = Operator([0,1])
 # all comparison operations are derived from the op_cmp
 
 op_concat = Operator([0,1])
+op_copy = Operator([0])
 
 op_neg = Operator([0])
 op_pos = Operator([0])
@@ -757,9 +758,9 @@ class TaggedRecord(Object):
 def eq_fn(a, b):
     result = convert(call(op_eq, [a,b]), Bool)
     if result is true:
-        return true
+        return True
     else:
-        return false
+        return False
 
 def hash_fn(a):
     result = call(op_hash, [a])

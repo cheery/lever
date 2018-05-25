@@ -25,6 +25,10 @@ def List_concat(a, b):
     b = cast(b, List).list_val
     return List(a + b)
 
+@method(List.interface, op_copy)
+def List_copy(a):
+    return List(list(cast(a, Dict).dict_val))
+
 @method(List.interface, op_in)
 def List_in(item, a):
     a = cast(a, List).list_val

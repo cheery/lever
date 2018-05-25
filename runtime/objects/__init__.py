@@ -42,6 +42,7 @@ from common import (
     op_pattern,
     op_cmp,
     op_concat,
+    op_copy,
     op_neg,
     op_pos,
     op_add,
@@ -73,10 +74,5 @@ from booleans import boolean
 from integers import parse_integer
 import strings
 from lists import fresh_list
-import lists
-
-def fresh_dict():
-    return Dict(r_dict(eq_fn, hash_fn, force_non_null=True))
-
-def fresh_set():
-    return Set(r_dict(eq_fn, hash_fn, force_non_null=True))
+from dicts import fresh_dict
+from sets import fresh_set

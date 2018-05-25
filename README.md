@@ -121,6 +121,10 @@ the type and object space.
 
 `runtime/objects/lists.py` has methods for lists.
 
+`runtime/objects/sets.py` has methods for sets.
+
+`runtime/objects/dicts.py` has methods for dictionaries.
+
 ### Bootstrapper
 
 `bootstrapper/main.lc` is the entry point for the compiler.
@@ -144,7 +148,7 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- TODO: Make working Set/Dict/Slot -types.
+ TODO: Make working Slot -types.
        Using &a to assign a slot.
 
  TODO: Consider writing a sample program that uses the whole palette
@@ -177,10 +181,15 @@ of fibonacci and factorial.
     a.rjust(width, fillchar=' ')
     a.repeat(n)
 
+ TODO: Consider similar sample programs for lists, dicts, sets, slots.
+
+ TODO: Make a slot type, add syntax *a  to access and retrieve value from
+       a slot.
+
  TODO: Provide a way to convert item into an iterator, then retrieving
        the first element and the subsequent iterator, eg. `x = (seq ==> rest)`
 
- TODO: Provide a way to declare attributes
+ TODO: Provide a way to declare attributes and attribute methods.
 
  TODO: Add modules (module scoping, mainly)
 
@@ -196,8 +205,6 @@ of fibonacci and factorial.
        them that it's not worthwhile anymore.
 
  TODO: Implement tools to derive methods for datatypes.
-
- TODO: Turn generators 'immutable' through linked-list construction.
 
  TODO: start converting suoml inside prelude.
 

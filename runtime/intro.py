@@ -129,6 +129,7 @@ base_stem = {
     u"<=": w_le,
     u"<": w_lt,
     u"++": op_concat,
+    u"copy": op_copy,
     u"-expr": op_neg,
     u"+expr": op_pos,
     u"+": op_add,
