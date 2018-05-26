@@ -14,3 +14,8 @@ def Slot_getslot(slot):
 def Slot_setslot(slot, value):
     slot = cast(slot, Slot)
     slot.slot_val = value
+
+@method(Slot.interface, op_copy)
+def Slot_copy(slot):
+    slot = cast(slot, Slot)
+    return Slot(slot.slot_val)

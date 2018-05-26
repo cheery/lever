@@ -113,8 +113,9 @@ exponent_postfix:
 postfix:
     postfix "==>" slot_item           / iter_once
     postfix "(" sep(expr_or, ',') ")" / call
-    postfix "[" form "]"           / item
-    postfix "." symbol             / attr
+    postfix "[" form "]"              / item
+    postfix "." symbol                / attr
+    postfix "." keyword               / attr
     term
 
 term:
@@ -138,7 +139,7 @@ operator: ["+", "-", "*",
     "/", "//", "%", "~", "<<", ">>", "&", "|",
     "++", "^",
     comparison]
-keyword: ["import", "yield", "and", "or", "not", "in"]
+keyword: ["import", "yield", "and", "or", "not", "in", "repeat"]
 comparison: ["<", ">", "==", "!=", "<=", ">="]
 
 terminal symbol, string, int

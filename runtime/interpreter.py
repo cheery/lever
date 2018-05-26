@@ -294,7 +294,8 @@ class ForLoop(LoopHead):
         self.value = value
 
     def restart(self, ctx):
-        self.iterator = cast(eval_expr(ctx, self.value), Iterator)
+        it = call(op_iter, [eval_expr(ctx, self.value)])
+        self.iterator = cast(it, Iterator)
         return self.step(ctx)
 
     def step(self, ctx):

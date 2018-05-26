@@ -164,7 +164,6 @@ of fibonacci and factorial.
     a.is_lower()
     a.is_space()
     a.is_upper()
-    a.join(seq)
     a.length
     a.lower()
     a.replace(x,y)
@@ -173,12 +172,10 @@ of fibonacci and factorial.
     a.startswith(b)
     a.upper()
     a[x]
-    a.center(width, fillchar=' ')
     hash(a)
     iter(a)
     a.ljust(width, fillchar=' ')
     a.rjust(width, fillchar=' ')
-    a.repeat(n)
 
  TODO: The same for dicts:
 
@@ -196,18 +193,13 @@ of fibonacci and factorial.
 
  TODO: the same for lists:
 
-    a.length
     a == b
     a ++ b
-    copy(a)
     a in b
-    a[b] (getitem and setitem)
-    iter(a)
-    a.append(b)
+    a[b] (setitem)
     a.extend(iterable)
     a.insert(index, obj)
     a.remove(obj)
-    a.pop([index])
     a.count(obj)
     a.reverse()
     a.sort(fcmp=cmp)

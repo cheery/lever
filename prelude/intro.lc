@@ -1,39 +1,102 @@
-test = ():
-    x = 0
-    while x < 15 repeat
-        print(x)
-        x += 1
+main = ():
+    nqueens = generator
+        stack = [-1]
+        while stack.length > 0 repeat
+            top = stack.pop()
+            top += 1
+            while stack.length < 8 and top < 8 repeat
+                if check(stack, top) then
+                    stack.append(top)
+                    top = 0
+                else
+                    top += 1
+            if stack.length == 8 then
+                yield copy(stack)
 
-    x = 0
-    while x < 15 repeat
-        print(x)
-        x (jittery_op)= 1
+    count = 0
+    solutions = []
+    for solution in nqueens repeat
+        solutions.append(solution)
+        if solutions.length == 3 then
+            print_solutions(solutions)
+            solutions = []
+        count += 1
+    if solutions.length > 0 then
+        print_solutions(solutions)
+    print('count:', count)
 
-jittery_op = (a, b):
-    if a & 1 == 1 then
-        return a + b * -1
-    else
-        return a + b * +3
+check = (queens, new):
+    ny = queens.length
+    for y in range(queens.length) repeat
+        if queens[y] == new then
+            return false
+        if queens[y] + (ny - y) == new then
+            return false
+        if queens[y] - (ny - y) == new then
+            return false
+    return true
 
-test()
+print_solutions = (solutions):
+    queens = []
+    for i in range(8) repeat queens.append([stringify(8-i).center(3)])
 
-# I just introduced eq/hash on tuples
-print((2,3) == (2,3))
+    toprow = "   " ++ ("a b c d e f g h   ".repeat(solutions.length))
 
-# and a syntax for lists. These are out of the way
-# when they're needed.
-list_item = [1,2,3]
-print("list length", list_item.length)
-print("first item",  list_item[0])
+    for solution in solutions
+    for i in range(8) repeat
+        row = queens[i]
+        k = solution[i]
+        for x in range(8) repeat
+            if x == k then
+                row.append("* ")
+            else
+                row.append(". ")
+        row.append("  ")
 
-slot_5 = slot(5)
+    print(toprow)
+    for row in queens repeat
+        print("".join(row))
+    print()
 
-print("a weird necessity", *slot_5)
 
-*slot_5 = 10
+main()
 
-print("you can set its value", *slot_5)
-
-print("first item in range", range(10) ==> *slot_5)
-for x in *slot_5 repeat
-    print("next", x)
+#test = ():
+#    x = 0
+#    while x < 15 repeat
+#        print(x)
+#        x += 1
+#
+#    x = 0
+#    while x < 15 repeat
+#        print(x)
+#        x (jittery_op)= 1
+#
+#jittery_op = (a, b):
+#    if a & 1 == 1 then
+#        return a + b * -1
+#    else
+#        return a + b * +3
+#
+#test()
+#
+## I just introduced eq/hash on tuples
+#print((2,3) == (2,3))
+#
+## and a syntax for lists. These are out of the way
+## when they're needed.
+#list_item = [1,2,3]
+#print("list length", list_item.length)
+#print("first item",  list_item[0])
+#
+#slot_5 = slot(5)
+#
+#print("a weird necessity", *slot_5)
+#
+#*slot_5 = 10
+#
+#print("you can set its value", *slot_5)
+#
+#print("first item in range", range(10) ==> *slot_5)
+#for x in *slot_5 repeat
+#    print("next", x)

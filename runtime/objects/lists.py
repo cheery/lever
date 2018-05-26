@@ -27,7 +27,7 @@ def List_concat(a, b):
 
 @method(List.interface, op_copy)
 def List_copy(a):
-    return List(list(cast(a, Dict).dict_val))
+    return List(list(cast(a, List).list_val))
 
 @method(List.interface, op_in)
 def List_in(item, a):
