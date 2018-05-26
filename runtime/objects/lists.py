@@ -1,6 +1,11 @@
 from rpython.rlib.listsort import make_timsort_class
 from common import *
 
+def construct_list(iterable):
+    l = fresh_list()
+    List_extend(l, iterable)
+    return l
+
 def fresh_list():
     return List([])
 

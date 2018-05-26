@@ -2,6 +2,11 @@ from rpython.rlib.objectmodel import r_dict
 from booleans import boolean
 from common import *
 
+def construct_set(iterable):
+    s = fresh_set()
+    Set_update(s, iterable)
+    return s
+
 def fresh_set():
     return Set(r_dict(eq_fn, hash_fn, force_non_null=True))
 
@@ -187,7 +192,7 @@ def Set_is_superset(a, items):
 def Set_union(a, items):
     a = cast(a, Set)
     result = fresh_set()
-    result.update(a.set_val)
+    result.set_val.update(a.set_val)
     Set_update(result, items)
     return result
 
@@ -196,7 +201,7 @@ def Set_union(a, items):
 def Set_intersection(a, items):
     a = cast(a, Set)
     result = fresh_set()
-    result.update(a.set_val)
+    result.set_val.update(a.set_val)
     Set_intersection_update(result, items)
     return result
 
@@ -205,7 +210,7 @@ def Set_intersection(a, items):
 def Set_difference(a, items):
     a = cast(a, Set)
     result = fresh_set()
-    result.update(a.set_val)
+    result.set_val.update(a.set_val)
     Set_difference_update(result, items)
     return result
 
@@ -214,6 +219,6 @@ def Set_difference(a, items):
 def Set_symmetric_difference(a, items):
     a = cast(a, Set)
     result = fresh_set()
-    result.update(a.set_val)
+    result.set_val.update(a.set_val)
     Set_symmetric_difference_update(result, items)
     return result

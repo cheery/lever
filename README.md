@@ -150,6 +150,8 @@ of fibonacci and factorial.
 
  TODO: Add modules (module scoping, mainly)
 
+ TODO: start converting suoml inside prelude.
+
  TODO: Consider writing a sample program that uses the whole palette
        of methods that are available for strings.
 
@@ -244,8 +246,6 @@ of fibonacci and factorial.
        them that it's not worthwhile anymore.
 
  TODO: Implement tools to derive methods for datatypes.
-
- TODO: start converting suoml inside prelude.
 
  TODO: adjust the grammar to handle `f((x): x*2)`
        the last expression in a call can be a

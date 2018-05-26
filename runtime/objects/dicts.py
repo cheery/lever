@@ -2,6 +2,11 @@ from rpython.rlib.objectmodel import r_dict
 from booleans import boolean
 from common import *
 
+def construct_dict(iterable):
+    d = fresh_dict()
+    Dict_update(d, iterable)
+    return d
+
 def fresh_dict():
     return Dict(r_dict(eq_fn, hash_fn, force_non_null=True))
 

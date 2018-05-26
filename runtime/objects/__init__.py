@@ -75,7 +75,7 @@ from common import (
 from booleans import boolean
 from integers import parse_integer
 import strings
-from lists import fresh_list
-from dicts import fresh_dict
-from sets import fresh_set
+from lists import construct_list, fresh_list
+from dicts import construct_dict, fresh_dict
+from sets import construct_set, fresh_set
 from slots import Slot

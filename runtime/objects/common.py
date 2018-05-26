@@ -476,6 +476,7 @@ def attr_method(face, name, vari=False):
         def _wrapper_(a):
             return prefill(w_fn, [a])
         face.getters[name] = python_bridge(_wrapper_)
+        return fn
     return _impl_
 
 # The operator handling needs operative coercion

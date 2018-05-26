@@ -150,4 +150,7 @@ base_stem = {
     u"false": false,
     u"range": w_range,
     u"slot": w_slot,
+    u"set": builtin()(construct_set),
+    u"dict": builtin()(construct_dict),
+    u"list": builtin()(construct_list),
 }
