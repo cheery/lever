@@ -146,11 +146,14 @@ of fibonacci and factorial.
 
 `samples/small/three_valued_logic.lc` defines a new datatype.
 
+`samples/small/eight_queens.lc` enumerates solutions to 8 queens puzzle.
+
 ## Unfinished tasks
 
- TODO: Add modules (module scoping, mainly)
-
  TODO: start converting suoml inside prelude.
+
+ TODO: Implement coeffects before it gets so hard to implement
+       them that it's not worthwhile anymore.
 
  TODO: Consider writing a sample program that uses the whole palette
        of methods that are available for strings.
@@ -230,7 +233,11 @@ of fibonacci and factorial.
     a.difference(iterable), a - b
     a.symmetric_difference(iterable), xor(a, b)
 
+
  TODO: Consider similar sample programs for lists, dicts, sets, slots.
+
+ TODO: If module load fails due to module not present, mark the
+       item not present and try again from higher scope.
 
  TODO: Provide a way to declare attributes and attribute methods.
 
@@ -241,9 +248,6 @@ of fibonacci and factorial.
  TODO: Ensure the datatypes are implemented well. This may require that
        we have some type inference with them already.
 
-
- TODO: Implement coeffects before it gets so hard to implement
-       them that it's not worthwhile anymore.
 
  TODO: Implement tools to derive methods for datatypes.
 

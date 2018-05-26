@@ -374,6 +374,11 @@ def eval_expr(ctx, val):
         slot = as_dict(attr(val, u"slot"))
         eval_slot(ctx, slot).store(ctx, expr)
         return null
+    elif tp == u"bind":
+        module = cast(eval_expr(ctx, as_dict(attr(val, u"module"))), Module)
+        for dst, src in as_dict(attr(val, u"bindings")).iteritems():
+            ctx.module.bind(as_string(dst), module, as_string(src))
+        return null
     elif tp == u"inplace_assign":
         op = eval_expr(ctx, as_dict(attr(val, u"op")))
         expr = eval_expr(ctx, as_dict(attr(val, u"value")))

@@ -1,0 +1,82 @@
+# This program enumerates all 92 solutions to eight queens puzzle.
+main = ():
+    # It places a queen for every row, checking at every step that
+    # the puzzle's constraints remains satisfied.
+    nqueens = generator
+        stack = [-1]
+        while stack.length > 0 repeat
+            top = stack.pop()
+            top += 1
+            while stack.length < 8 and top < 8 repeat
+                if check(stack, top) then
+                    stack.append(top)
+                    top = 0
+                else
+                    top += 1
+            if stack.length == 8 then
+                yield copy(stack)
+
+    # The solutions are printed out three columns at once,
+    # this adds some challenges to the printing.
+    count = 0
+    solutions = []
+    for solution in nqueens repeat
+        solutions.append(solution)
+        if solutions.length == 3 then
+            print_solutions(solutions)
+            solutions = []
+        count += 1
+    if solutions.length > 0 then
+        print_solutions(solutions)
+    print('count:', count)
+
+# In the 8 queens puzzle, the 8 queens have to be placed on a
+# chess board such that they do not threaten each other. So we
+# cannot have two queens on same row, same column or on same diagonal.
+check = (queens, new):
+    ny = queens.length
+    for y in range(queens.length) repeat
+        if queens[y] == new then
+            return false
+        if queens[y] + (ny - y) == new then
+            return false
+        if queens[y] - (ny - y) == new then
+            return false
+    return true
+
+# We also provide indices so that you recognize the charts as
+# chess boards if you're imaginative enough.
+print_solutions = (solutions):
+    queens = []
+    for i in range(8) repeat queens.append([stringify(8-i).center(3)])
+
+    toprow = "   " ++ ("a b c d e f g h   ".repeat(solutions.length))
+
+    for solution in solutions
+    for i in range(8) repeat
+        row = queens[i]
+        k = solution[i]
+        for x in range(8) repeat
+            if x == k then
+                row.append("* ")
+            else
+                row.append(". ")
+        row.append("  ")
+
+    print(toprow)
+    for row in queens repeat
+        print("".join(row))
+    print()
+
+# Example of the output:
+#
+#   a b c d e f g h   a b c d e f g h   
+# 8 . . . . . . . *   . . . . . . . *   
+# 7 . . * . . . . .   . . . * . . . .   
+# 6 * . . . . . . .   * . . . . . . .   
+# 5 . . . . . * . .   . . * . . . . .   
+# 4 . * . . . . . .   . . . . . * . .   
+# 3 . . . . * . . .   . * . . . . . .   
+# 2 . . . . . . * .   . . . . . . * .   
+# 1 . . . * . . . .   . . . . * . . .   
+#

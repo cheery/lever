@@ -140,7 +140,7 @@ class FunctionMemo:
     def get(self, argc, vari, opt):
         key = (argc, vari, opt)
         try:
-            return func_interfaces.memo[key]
+            return self.memo[key]
         except KeyError:
             face = self.cls(argc, vari, opt)
             self.memo[key] = face
@@ -554,9 +554,49 @@ class Module(Object):
             raise error(e_ModuleError())
         face.cells[name] = ModuleCell(value)
 
+    def bind(self, dst, other, src):
+        face_dst = self.module_face
+        face_src = other.module_face
+        if dst in face_dst.cells:
+            raise error(e_ModuleError())
+        if src not in face_src.cells:
+            raise error(e_TypeError())
+        face_dst.cells[dst] = face_src.cells[src]
+
 class ModuleCell:
     def __init__(self, val):
         self.val = val
+
+class ModuleSpace(Object):
+    def __init__(self, local, env, loader, parent=None):
+        self.local = local
+        self.env = env
+        self.loader = loader
+        self.parent = parent
+        self.loaded = {}
+
+    def is_closed(self):
+        return self.loader is None
+
+@builtin()
+def w_import(mspace, w_name):
+    mspace = cast(mspace, ModuleSpace)
+    name = cast(w_name, String).string_val
+    if name in mspace.loaded:
+        module = mspace.loaded[name]
+        if module is None:
+            raise error(e_ModuleError()) # disallow recursion.
+        return module
+    if mspace.is_closed():
+        raise error(e_ModuleError())
+    mspace.loaded[name] = None # Ensure recursion is catched.
+    try:
+        module = call(mspace.loader, [mspace, w_name])
+    except:
+        mspace.loaded.pop(name)
+        raise
+    mspace.loaded[name] = module
+    return module
 
 # Ending the common -module by defining equality and hash
 # methods for Unit. These are defined in case there are

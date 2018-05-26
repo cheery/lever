@@ -48,6 +48,13 @@ compile_file = (src, dst):
 # inferences them and then stores it all into an image.
 
 actions = {
+    "import": (name):
+        return Assign(Symbol(name),
+            Call(Symbol(u"import"), [Literal("string", name)]))
+    "import_bind": (name, bindings):
+        return Bind(
+            Call(Symbol(u"import"), [Literal("string", name)]),
+            bindings)
     "closure": (args, body):
         return Closure(args, body)
     "generator": (body):
@@ -405,6 +412,21 @@ class Argument
         return {
             slot = js(self.slot) }
 
+class Bind
+    +init = (self, module, bindings):
+        self.module = module
+        self.loc = null
+        self.bindings = dict(bindings)
+
+    traverse = (self, f):
+        f(self.module)
+
+    to_json = (self):
+        return {
+            type = "bind",
+            module = js(self.module),
+            bindings = self.bindings,
+            loc = js_loc(self.loc) }
 
 class Assign
     +init = (self, slot, value):

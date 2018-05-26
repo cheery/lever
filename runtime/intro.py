@@ -4,16 +4,18 @@ import interpreter
 import os
 
 def new_entry_point(config, interpret=False):
+
     base_module = Module()
     for name in base_stem:
         base_module.assign(name, base_stem[name])
 
     def entry_point_a(raw_argv):
         try:
-            obj = read_json_file(String(u"prelude/intro.lc.json"))
-            env = [base_module]
-            script = interpreter.read_script(obj, {}, env)
-            call(script, [])
+            mspace = ModuleSpace(
+                local = String(u'prelude'),
+                env = [base_module],
+                loader = w_json_loader)
+            call(w_import, [mspace, String(u"intro")])
         except Traceback as tb:
             os.write(0, "Traceback (most recent call last):\n")
             for loc, sources in reversed(tb.trace):
@@ -32,15 +34,28 @@ def new_entry_point(config, interpret=False):
     # if you want more traceback than what the earlier entry
     # point can do.
     def entry_point_b(raw_argv):
-        obj = read_json_file(String(u"prelude/intro.lc.json"))
-        env = [base_module]
-        script = interpreter.read_script(obj, {}, env)
-        call(script, [])
+        mspace = ModuleSpace(
+            local = String(u'prelude'),
+            env = [base_module],
+            loader = w_json_loader)
+        call(w_import, [mspace, String(u"intro")])
 
     if not interpret:
         return entry_point_a
     else:
         return entry_point_b
+
+@builtin()
+def w_json_loader(mspace, name):
+    mspace = cast(mspace, ModuleSpace)
+    name = cast(name, String).string_val
+    local = cast(mspace.local, String).string_val
+    src = local + u"/" + name + u".lc.json"
+    obj = read_json_file(String(src))
+    env = mspace.env
+    script = interpreter.read_script(obj,
+        {u'import': prefill(w_import, [mspace])}, env)
+    return call(script, [])
 
 # The stem for the base module is defined outside the entry
 # point generator. For now it is populated with 'print'.

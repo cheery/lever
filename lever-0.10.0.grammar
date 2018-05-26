@@ -1,6 +1,8 @@
 file: (=statement)+
 
 statement:
+    "import" symbol                                  / import
+    "from" symbol "import" join(symbol / [1,1], ",") / import_bind
     slot operator "=" >expr      / inplace_assign(., symbol(.), .)
     slot "(" pform ")" "=" >expr / inplace_assign
     slot "=" >expr / assign
