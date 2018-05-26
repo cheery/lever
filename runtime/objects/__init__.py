@@ -82,3 +82,5 @@ from lists import construct_list, fresh_list
 from dicts import construct_dict, fresh_dict
 from sets import construct_set, fresh_set
 from slots import Slot
+from records import (
+    construct_record )

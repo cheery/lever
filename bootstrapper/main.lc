@@ -55,6 +55,8 @@ actions = {
         return Bind(
             Call(Symbol(u"import"), [Literal("string", name)]),
             bindings)
+    "bind_coeffect": (fields, slot):
+        return BindCoeffect(fields, slot)
     "closure": (args, body):
         return Closure(args, body)
     "generator": (body):
@@ -141,6 +143,12 @@ actions = {
         return List(values)
     "deref": (value):
         return Deref(value)
+    "record": (fields):
+        return Record(fields)
+    "field": (name, value=null):
+        return Field(name, false, value)
+    "mutable_field": (name, value=null):
+        return Field(name, true, value)
     "rational": (repr):
         return Literal("rational", repr)
     "integer": (repr):
@@ -428,6 +436,23 @@ class Bind
             bindings = self.bindings,
             loc = js_loc(self.loc) }
 
+class BindCoeffect
+    +init = (self, fields, slot):
+        self.fields = fields
+        self.slot = slot
+        self.loc = null
+
+    traverse = (self, f):
+        for field in self.fields
+            f(field)
+        f(self.slot)
+
+    to_json = (self):
+        return {
+            type = "bind_coeffect",
+            fields = js(self.fields),
+            slot = js(self.slot) }
+
 class Assign
     +init = (self, slot, value):
         slot.slotconfig(true, true)
@@ -562,6 +587,38 @@ class Deref extends Expr
             kind = "deref",
             value = js(self.value),
             loc = js_loc(self.loc) }
+
+class Record extends Expr
+    +init = (self, fields):
+        self.fields = fields
+        self.loc = null
+
+    traverse = (self, f):
+        for field in self.fields
+            f(field)
+
+    to_json = (self):
+        return {
+            type = "record"
+            fields = js(self.fields)
+        }
+
+class Field
+    +init = (self, name, mutable, value=null):
+        self.name = name
+        self.mutable = mutable
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        if self.value
+            f(self.value)
+
+    to_json = (self):
+        if self.value
+            return {name=self.name, mutable=self.mutable, value=js(self.value)}
+        else
+            return {name=self.name, mutable=self.mutable}
 
 class Attr extends Expr
     +init = (self, base, name):

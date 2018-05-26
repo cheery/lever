@@ -551,8 +551,16 @@ class Module(Object):
     def assign(self, name, value):
         face = self.module_face
         if name in face.cells:
+            cell = face.cells[name]
+            cell.store(value)
+        else:
+            self.assign_cell(name, ConstantModuleCell(value))
+
+    def assign_cell(self, name, cell):
+        face = self.module_face
+        if name in face.cells:
             raise error(e_ModuleError())
-        face.cells[name] = ModuleCell(value)
+        face.cells[name] = cell
 
     def bind(self, dst, other, src):
         face_dst = self.module_face
@@ -564,8 +572,18 @@ class Module(Object):
         face_dst.cells[dst] = face_src.cells[src]
 
 class ModuleCell:
+    def load(self):
+        raise error(e_TypeError())
+
+    def store(self, value):
+        raise error(e_TypeError())
+
+class ConstantModuleCell(ModuleCell):
     def __init__(self, val):
         self.val = val
+
+    def load(self):
+        return self.val
 
 class ModuleSpace(Object):
     def __init__(self, local, env, loader, parent=None):
@@ -769,30 +787,30 @@ class Constructor(Object):
 @method(Constructor.interface, op_call, vari=True)
 def Constructor_call(constructor, fields):
     # TODO: Check the fields.
-    return TaggedRecord(constructor, fields)
+    return TaggedUnion(constructor, fields)
 
 @method(Constructor.interface, op_pattern)
 def Constructor_pattern(constructor):
-    check = prefill(w_tagrec_check, [constructor])
-    unpack = prefill(w_tagrec_unpack, [constructor])
+    check = prefill(w_tagu_check, [constructor])
+    unpack = prefill(w_tagu_unpack, [constructor])
     return Tuple([check, unpack])
 
 @python_bridge
-def w_tagrec_check(constructor, tagrec):
+def w_tagu_check(constructor, tagu):
     constructor = cast(constructor, Constructor)
-    tagrec = convert(tagrec, constructor.datatype)
-    if tagrec.record_cons is constructor:
+    tagu = convert(tagu, constructor.datatype)
+    if tagu.record_cons is constructor:
         return true
     else:
         return false
 
 @python_bridge
-def w_tagrec_unpack(constructor, tagrec):
+def w_tagu_unpack(constructor, tagu):
     constructor = cast(constructor, Constructor)
-    tagrec = convert(tagrec, constructor.datatype)
-    return Tuple(cast(tagrec, TaggedRecord).fields)
+    tagu = convert(tagu, constructor.datatype)
+    return Tuple(cast(tagu, TaggedUnion).fields)
 
-class TaggedRecord(Object):
+class TaggedUnion(Object):
     interface = None
     def __init__(self, record_cons, fields):
         self.record_cons = record_cons

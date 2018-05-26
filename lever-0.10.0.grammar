@@ -3,6 +3,7 @@ file: (=statement)+
 statement:
     "import" symbol                                  / import
     "from" symbol "import" join(symbol / [1,1], ",") / import_bind
+    "bind" sep(coeffect_field, ",") "as" slot_item   / bind_coeffect
     slot operator "=" >expr      / inplace_assign(., symbol(.), .)
     slot "(" pform ")" "=" >expr / inplace_assign
     slot "=" >expr / assign
@@ -18,6 +19,9 @@ statement:
         =("else" >(=statement)+)? / case
     expr
 
+coeffect_field:
+    symbol     / field
+    "!" symbol / mutable_field
 
 datatype_head:
     slot                           / [., []]
@@ -122,6 +126,7 @@ postfix:
 
 term:
     "(" pform ")"
+    "{" sep(record_field, ",") "}" / record
     "[" sep(expr_or, ",") "]" / list
     symbol  / symbol
     string  / string
@@ -136,6 +141,10 @@ pform:
 
 form:
     expr
+
+record_field:
+    symbol     ":" expr_or / field
+    "!" symbol ":" expr_or / mutable_field
 
 operator: ["+", "-", "*",
     "/", "//", "%", "~", "<<", ">>", "&", "|",

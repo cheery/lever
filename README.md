@@ -105,6 +105,9 @@ defined.
 `runtime/json_loader.py` provides a json-loader used to
 bootstrap.
 
+`runtime/context.py` describes the execution context that
+the programs require.
+
 ### Runtime objects
 
 `runtime/objects/__init__.py` collects runtime objects
@@ -124,6 +127,8 @@ the type and object space.
 `runtime/objects/sets.py` has methods for sets.
 
 `runtime/objects/dicts.py` has methods for dictionaries.
+
+`runtime/objects/records.py` has methods for records.
 
 ### Bootstrapper
 
@@ -151,9 +156,6 @@ of fibonacci and factorial.
 ## Unfinished tasks
 
  TODO: start converting suoml inside prelude.
-
- TODO: Implement coeffects before it gets so hard to implement
-       them that it's not worthwhile anymore.
 
  TODO: Consider writing a sample program that uses the whole palette
        of methods that are available for strings.
@@ -243,7 +245,10 @@ of fibonacci and factorial.
 
  TODO: Add direct conversions between types.
 
+ TODO: Add slot for record fields.
+
  TODO: Resume and correct the solve_scope in bootstrapper/main.lc
+       Also make the BindCoeffect work correctly with mutable fields.
 
  TODO: Ensure the datatypes are implemented well. This may require that
        we have some type inference with them already.

@@ -1,15 +1,28 @@
 from json_loader import read_json_file
 from objects import *
+from context import (
+    CoeffectModuleCell,
+    init_executioncontext,
+    construct_coeffect,
+    w_call_with_coeffects )
 import interpreter
 import os
 
 def new_entry_point(config, interpret=False):
-
     base_module = Module()
     for name in base_stem:
         base_module.assign(name, base_stem[name])
 
+    BasicIO = construct_coeffect([
+        (u"input", False), (u"print", False)], base_module)
+    base_module.assign(u"BasicIO", BasicIO)
+
     def entry_point_a(raw_argv):
+        init_executioncontext({
+            BasicIO: construct_record([
+                (u"input", False, w_input),
+                (u"print", False, w_print) ])
+        })
         try:
             mspace = ModuleSpace(
                 local = String(u'prelude'),
@@ -34,6 +47,11 @@ def new_entry_point(config, interpret=False):
     # if you want more traceback than what the earlier entry
     # point can do.
     def entry_point_b(raw_argv):
+        init_executioncontext({
+            BasicIO: construct_record([
+                (u"input", False, w_input),
+                (u"print", False, w_print) ])
+        })
         mspace = ModuleSpace(
             local = String(u'prelude'),
             env = [base_module],
@@ -57,20 +75,27 @@ def w_json_loader(mspace, name):
         {u'import': prefill(w_import, [mspace])}, env)
     return call(script, [])
 
-# The stem for the base module is defined outside the entry
-# point generator. For now it is populated with 'print'.
-# It provides some basic output that helps with testing that
-# the program works.
+# The BasicIO is our first coeffect. It provides some basic
+# input/output that helps when writing the early programs. 
+@builtin()
+def w_input(prompt):
+    os.write(0, cast(prompt, String).string_val.encode('utf-8'))
+    line = os.read(0, 1024)
+    return String(line.decode('utf-8'))
+
 @builtin(vari=True)
 def w_print(args):
     sp = ""
     for arg in args:
         s = cast(call(op_stringify, [arg]), String).string_val
         b = s.encode('utf-8')
-        os.write(0, sp + b)
+        os.write(1, sp + b)
         sp = " "
-    os.write(0, "\n")
+    os.write(1, "\n")
 
+# The stem for the base module is defined outside the entry
+# point generator. It has nearly every utility and handle that has
+# to appear in the base module.
 @builtin()
 def w_ne(a,b):
     result = call(op_eq, [a,b])
@@ -133,7 +158,6 @@ def w_slot(value):
     return Slot(value)
 
 base_stem = {
-    u"print": w_print,
     u"==": op_eq,
     u"!=": w_ne,
     u"hash": op_hash,
@@ -168,4 +192,5 @@ base_stem = {
     u"set": builtin()(construct_set),
     u"dict": builtin()(construct_dict),
     u"list": builtin()(construct_list),
+    u"call_with_coeffects": w_call_with_coeffects,
 }

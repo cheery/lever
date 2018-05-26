@@ -1,4 +1,5 @@
 from objects import *
+from context import construct_coeffect
 
 def read_script(code, preset, env):
     module = Module()
@@ -379,6 +380,17 @@ def eval_expr(ctx, val):
         for dst, src in as_dict(attr(val, u"bindings")).iteritems():
             ctx.module.bind(as_string(dst), module, as_string(src))
         return null
+    elif tp == u"bind_coeffect":
+        slot = eval_slot(ctx, as_dict(attr(val, u"slot")))
+        fields = []
+        for prop in as_list(attr(val, u"fields")):
+            prop = as_dict(prop)
+            name = as_string(attr(prop, u"name"))
+            mutable = convert(attr(prop, u"mutable"), Bool) is true
+            fields.append((name, mutable))
+        coeffect = construct_coeffect(fields, ctx.module)
+        slot.store(ctx, coeffect)
+        return null
     elif tp == u"inplace_assign":
         op = eval_expr(ctx, as_dict(attr(val, u"op")))
         expr = eval_expr(ctx, as_dict(attr(val, u"value")))
@@ -398,7 +410,7 @@ def eval_expr(ctx, val):
         except Traceback as tb:
             loc = as_list(attr(val, u"loc"))
             tb.trace.append((loc, ctx.sources))
-            raise tb
+            raise
     elif tp == u"closure":
         frame = []
         for index in as_list(attr(val, u"frame")):
@@ -463,6 +475,15 @@ def eval_expr(ctx, val):
         result, it = it.next()
         slot.store(ctx, it)
         return result
+    elif tp == u"record":
+        fields = []
+        for prop in as_list(attr(val, u"fields")):
+            prop = as_dict(prop)
+            name = as_string(attr(prop, u"name"))
+            mutable = convert(attr(prop, u"mutable"), Bool) is true
+            value = eval_expr(ctx, as_dict(attr(prop, u"value")))
+            fields.append((name, mutable, value))
+        return construct_record(fields)
     else:
         raise error(e_EvalError())
 
@@ -535,11 +556,11 @@ class GlobalSlot(Slot):
     def load(self, ctx):
         cell = ctx.module.face().cells.get(self.name, None)
         if cell is not None:
-            return cell.val
+            return cell.load()
         for module in ctx.env:
             cell = module.face().cells.get(self.name, None)
             if cell is not None:
-                return cell.val
+                return cell.load()
         else:
             tb = error(e_TypeError())
             tb.trace.append((self.loc, ctx.sources))
