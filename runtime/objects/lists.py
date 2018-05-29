@@ -47,7 +47,7 @@ def List_getitem(a, index):
     index = cast(index, Integer).toint()
     if index < len(a.list_val):
         return a.list_val[index]
-    raise error(e_PartialOnArgument())
+    raise error(e_NoIndex())
 
 @method(List.interface, op_setitem)
 def List_setitem(a, index, value):
@@ -55,7 +55,7 @@ def List_setitem(a, index, value):
     if index < len(a.list_val):
         a.list_val[index] = value
         return null
-    raise error(e_PartialOnArgument())
+    raise error(e_NoIndex())
 
 @method(List.interface, op_iter)
 def List_iter(a):
@@ -105,7 +105,7 @@ def List_remove(a, obj):
             a.list_val.pop(index)
             break
     else:
-        raise error(e_PartialOnArgument())
+        raise error(e_NoValue())
 
 @attr_method(List.interface, u"pop")
 def List_pop(a, index=None):
@@ -115,7 +115,7 @@ def List_pop(a, index=None):
     else:
         index = cast(index, Integer).toint()
     if not 0 <= index <= len(a.list_val):
-        raise error(e_PartialOnArgument())
+        raise error(e_NoIndex())
     return a.list_val.pop(index)
 
 @attr_method(List.interface, u"index")

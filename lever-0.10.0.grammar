@@ -17,6 +17,8 @@ statement:
         =(=datatype_declaration)* / datatype
     "case" expr "of" =(=case)+
         =("else" >(=statement)+)? / case
+    statement [^="except" expr ("as" slot)? "then"
+        >(=statement)+]+ / inline_except
     expr
 
 coeffect_field:

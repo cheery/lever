@@ -134,7 +134,7 @@ def Set_remove(a, item):
     try:
         del a.set_val[item]
     except KeyError:
-        raise error(e_PartialOnArgument())
+        raise error(e_NoValue())
 
 @attr_method(Set.interface, u"pop")
 def Set_pop(a):
@@ -142,7 +142,7 @@ def Set_pop(a):
     try:
         return a.set_val.popitem()[0]
     except KeyError:
-        raise error(e_PartialOnArgument())
+        raise error(e_NoItems())
 
 @attr_method(Set.interface, u"is_disjoint")
 def Set_is_disjoint(a, items):

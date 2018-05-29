@@ -1,3 +1,4 @@
+from objects import common
 from objects import *
 from context import construct_coeffect
 
@@ -7,7 +8,7 @@ def read_script(code, preset, env):
         module.assign(key, value)
     code = as_dict(code)
     sources = as_list(attr(code, u"sources"))
-    return Closure(code, module, env, [], sources)
+    return Closure(code, module, env, [], sources), module
 
 # Closures have similar challenges as what builtin functions
 # have.
@@ -16,6 +17,8 @@ class ClosureInterface(FunctionInterface):
         if op is op_call:
             return w_call_closure
         return FunctionInterface.method(self, op)
+
+attr_method(ClosureInterface.interface, u"params")(common.Function_params)
 
 closure_interfaces = FunctionMemo(ClosureInterface)
 
@@ -157,103 +160,131 @@ class EvaluationContext:
 def eval_program(ctx, stack):
     while len(stack) > 0:
         body, start, mod = stack.pop()
-        for i in range(start, len(body)):
-            stmt = as_dict(body[i])
-            tp = as_string(attr(stmt, u"type"))
-            if tp == u"return" and not ctx.is_generator:
-                expr = as_dict(attr(stmt, u"value"))
-                return eval_expr(ctx, expr)
-            elif tp == u"yield" and ctx.is_generator:
-                expr = as_dict(attr(stmt, u"value"))
-                stack.append((body, i+1, mod))
-                return eval_expr(ctx, expr)
-            elif tp == u"break":
-                while not isinstance(mod, Loop):
-                    if len(stack) == 0:
-                        raise error(e_EvalError())
-                    body, start, mod = stack.pop()
-                mod = None
-                break
-            elif tp == u"continue":
-                while not isinstance(mod, Loop):
-                    if len(stack) == 0:
-                        raise error(e_EvalError())
-                    body, start, mod = stack.pop()
-                break
-            elif tp == u"repeat":
-                fresh = as_list(attr(stmt, u"fresh"))
-                heads = as_list(attr(stmt, u"heads"))
-                stack.append((body, i+1, mod))
-                body = as_list(attr(stmt, u"body"))
-                mod  = eval_loop_header(ctx, heads, fresh)
-                break
-            elif tp == u"cond":
-                cond = as_dict(attr(stmt, u"cond"))
-                cond = eval_expr(ctx, cond)
-                if convert(cond, Bool) is true:
-                    stack.append((body, i+1, mod))
-                    body = as_list(attr(stmt, u"tbody"))
+        try:
+            eval_block(ctx, body, start, mod, stack)
+        except Traceback as tb:
+            while not isinstance(mod, Except):
+                if len(stack) == 0:
+                    raise
+                body, start, mod = stack.pop()
+            for row in mod.excepts:
+                row = as_dict(row)
+                exc = eval_expr(ctx, as_dict(attr(row, u"exc")))
+                if tb.error.face() is exc:
+                    slot = row.get(String(u"slot"), None)
+                    if slot is not None:
+                        eval_slot(ctx, as_dict(slot)).store(ctx, tb.error)
+                    body = as_list(attr(row, u"body"))
                     stack.append((body, 0, None))
-                    mod  = None
                     break
-                else:
-                    stack.append((body, i+1, mod))
-                    body = as_list(attr(stmt, u"fbody"))
-                    stack.append((body, 0, None))
-                    mod  = None
-                    break
-            elif tp == u"case":
-                value = eval_expr(ctx, as_dict(attr(stmt, u"value")))
-                cases = as_list(attr(stmt, u"cases"))
-                default = as_list(attr(stmt, u"default"))
-                body = eval_case(ctx, value, cases, default)
-                stack.append((body, 0, None))
-                mod = None
-                break
-            elif tp == u"datatype":
-                varc = len(as_list(attr(stmt, u"vars")))
-                dt = new_datatype(varc)
-                eval_slot(ctx, as_dict(attr(stmt, u"slot"))).store(ctx, dt)
-                for row in as_list(attr(stmt, u"rows")):
-                    row = as_list(row)
-                    if len(row) != 2:
-                        raise error(e_EvalError())
-                    row_slot = as_dict(row[0])
-                    row_params = as_list(row[1])
-                    params = []
-                    for param in row_params:
-                        params.append(eval_expr(ctx, as_dict(param)))
-                    if len(params) == 0:
-                        row = new_constant(dt)
-                    else:
-                        row = new_constructor(dt, params)
-                    eval_slot(ctx, row_slot).store(ctx, row)
-                for decl in as_list(attr(stmt, u"decls")):
-                    decl = as_dict(decl)
-                    eval_decl(ctx, dt, decl)
-                dt.close()
             else:
-                eval_expr(ctx, stmt)
-        if isinstance(mod, Loop):
-            count = len(mod.heads)
-            k, restart = mod.index, (mod.index == 0)
-            k -= int(not restart)
-            while 0 <= k < count:
-                if restart:
-                    restart = mod.heads[k].restart(ctx)
-                else:
-                    restart = mod.heads[k].step(ctx)
-                if restart:
-                    k += 1
-                else:
-                    k -= 1
-            if restart:
-                mod.index = k
-                for index in mod.fresh:
-                    index = as_integer(index)
-                    ctx.cellvars[index] = Cell()
-                stack.append((body, 0, mod))
+                raise
     return null
+
+def eval_block(ctx, body, start, mod, stack):
+    for i in range(start, len(body)):
+        stmt = as_dict(body[i])
+        tp = as_string(attr(stmt, u"type"))
+        if tp == u"return" and not ctx.is_generator:
+            expr = as_dict(attr(stmt, u"value"))
+            return eval_expr(ctx, expr)
+        elif tp == u"yield" and ctx.is_generator:
+            expr = as_dict(attr(stmt, u"value"))
+            stack.append((body, i+1, mod))
+            return eval_expr(ctx, expr)
+        elif tp == u"break":
+            while not isinstance(mod, Loop):
+                if len(stack) == 0:
+                    raise error(e_EvalError())
+                body, start, mod = stack.pop()
+            mod = None
+            break
+        elif tp == u"continue":
+            while not isinstance(mod, Loop):
+                if len(stack) == 0:
+                    raise error(e_EvalError())
+                body, start, mod = stack.pop()
+            break
+        elif tp == u"repeat":
+            fresh = as_list(attr(stmt, u"fresh"))
+            heads = as_list(attr(stmt, u"heads"))
+            stack.append((body, i+1, mod))
+            body = as_list(attr(stmt, u"body"))
+            mod  = eval_loop_header(ctx, heads, fresh)
+            break
+        elif tp == u"cond":
+            cond = as_dict(attr(stmt, u"cond"))
+            cond = eval_expr(ctx, cond)
+            if convert(cond, Bool) is true:
+                stack.append((body, i+1, mod))
+                body = as_list(attr(stmt, u"tbody"))
+                stack.append((body, 0, None))
+                mod  = None
+                break
+            else:
+                stack.append((body, i+1, mod))
+                body = as_list(attr(stmt, u"fbody"))
+                stack.append((body, 0, None))
+                mod  = None
+                break
+        elif tp == u"case":
+            value = eval_expr(ctx, as_dict(attr(stmt, u"value")))
+            cases = as_list(attr(stmt, u"cases"))
+            default = as_list(attr(stmt, u"default"))
+            body = eval_case(ctx, value, cases, default)
+            stack.append((body, 0, None))
+            mod = None
+            break
+        elif tp == u"datatype":
+            varc = len(as_list(attr(stmt, u"vars")))
+            dt = new_datatype(varc)
+            eval_slot(ctx, as_dict(attr(stmt, u"slot"))).store(ctx, dt)
+            for row in as_list(attr(stmt, u"rows")):
+                row = as_list(row)
+                if len(row) != 2:
+                    raise error(e_EvalError())
+                row_slot = as_dict(row[0])
+                row_params = as_list(row[1])
+                params = []
+                for param in row_params:
+                    params.append(eval_expr(ctx, as_dict(param)))
+                if len(params) == 0:
+                    row = new_constant(dt)
+                else:
+                    row = new_constructor(dt, params)
+                eval_slot(ctx, row_slot).store(ctx, row)
+            for decl in as_list(attr(stmt, u"decls")):
+                decl = as_dict(decl)
+                eval_decl(ctx, dt, decl)
+            dt.close()
+        elif tp == u"except":
+            stack.append((body, i+1, mod))
+            body = as_list(attr(stmt, u"body"))
+            excepts = as_list(attr(stmt, u"excepts"))
+            # exc, slot, body
+            stack.append((body, 0, Except(excepts)))
+            mod = None
+        else:
+            eval_expr(ctx, stmt)
+    if isinstance(mod, Loop):
+        count = len(mod.heads)
+        k, restart = mod.index, (mod.index == 0)
+        k -= int(not restart)
+        while 0 <= k < count:
+            if restart:
+                restart = mod.heads[k].restart(ctx)
+            else:
+                restart = mod.heads[k].step(ctx)
+            if restart:
+                k += 1
+            else:
+                k -= 1
+        if restart:
+            mod.index = k
+            for index in mod.fresh:
+                index = as_integer(index)
+                ctx.cellvars[index] = Cell()
+            stack.append((body, 0, mod))
 
 # Loops were finicky to implement due to the multiple heads
 # that I allow. Each loop may have multiple heads that have
@@ -275,7 +306,14 @@ def eval_loop_header(ctx, input_heads, fresh):
             heads.append(IfLoop(cond))
     return Loop(fresh, heads)
 
-class Loop:
+class StatementMod:
+    pass
+
+class Except(StatementMod):
+    def __init__(self, excepts):
+        self.excepts = excepts
+
+class Loop(StatementMod):
     def __init__(self, fresh, heads):
         self.fresh = fresh
         self.heads = heads
@@ -472,9 +510,13 @@ def eval_expr(ctx, val):
         value = eval_expr(ctx, as_dict(attr(val, u"value")))
         it = cast(call(op_iter, [value]), Iterator)
         slot = eval_slot(ctx, as_dict(attr(val, u"slot")))
-        result, it = it.next()
-        slot.store(ctx, it)
-        return result
+        try:
+            result, it = it.next()
+        except StopIteration:
+            raise error(e_NoItems())
+        else:
+            slot.store(ctx, it)
+            return result
     elif tp == u"record":
         fields = []
         for prop in as_list(attr(val, u"fields")):
@@ -510,7 +552,8 @@ def eval_slot(ctx, slot):
     elif kind == u"attr":
         base = eval_expr(ctx, as_dict(attr(slot, u"base")))
         name = as_string(attr(slot, u"name"))
-        return AttrSlot(base, name)
+        loc = as_list(attr(slot, u"loc"))
+        return AttrSlot(base, name, loc)
     elif kind == u"item":
         base = eval_expr(ctx, as_dict(attr(slot, u"base")))
         index = eval_expr(ctx, as_dict(attr(slot, u"index")))
@@ -588,15 +631,26 @@ class TupleSlot(Slot):
             self.slots[i].store(ctx, tup[i])
 
 class AttrSlot(Slot):
-    def __init__(self, base, name):
+    def __init__(self, base, name, loc):
         self.base = base
         self.name = name
+        self.loc = loc
 
     def load(self, ctx):
-        return call(self.base.face().getattr(self.name), [self.base])
+        try:
+            accessor = self.base.face().getattr(self.name)
+            return call(accessor, [self.base])
+        except Traceback as tb:
+            tb.trace.append((self.loc, ctx.sources))
+            raise
 
     def store(self, ctx, value):
-        return call(self.base.face().setattr(self.name), [self.base, value])
+        try:
+            accessor = self.base.face().getattr(self.name)
+            return call(accessor, [self.base, value])
+        except Traceback as tb:
+            tb.trace.append((self.loc, ctx.sources))
+            raise
 
 class ItemSlot(Slot):
     def __init__(self, base, index):

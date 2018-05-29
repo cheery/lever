@@ -30,7 +30,7 @@ def Dict_getitem(a, item):
     try:
         return a.dict_val[item]
     except KeyError:
-        raise error(e_PartialOnArgument())
+        raise error(e_NoIndex())
 
 @method(Dict.interface, op_getitem)
 def Dict_setitem(a, item, value):
@@ -57,7 +57,7 @@ def Dict_pop(a, key):
     try:
         return a.dict_val.pop(key)
     except KeyError:
-        raise error(e_PartialOnArgument())
+        raise error(e_NoIndex())
 
 @attr_method(Dict.interface, u"keys")
 def Dict_keys(a):

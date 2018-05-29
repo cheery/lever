@@ -1,263 +1,66 @@
 {
     "type": "script",
     "cellvars": [],
-    "localvars": [],
+    "localvars": [{"type": "cell", "deref": false, "name": "x", "defs": 1}],
     "body": [
         {
-            "type": "bind_coeffect",
-            "fields": [{"name": "line", "mutable": false}],
-            "slot": {
-                "type": "slot",
-                "kind": "global",
-                "name": "ParserState",
-                "loc": [13, 4, 24, 4, 0]
-            }
-        },
-        {
             "type": "assign",
             "slot": {
                 "type": "slot",
                 "kind": "global",
-                "name": "test_coeffects",
-                "loc": [0, 6, 14, 6, 0]
+                "name": "graph_utils",
+                "loc": [0, 1, 18, 1, 0]
             },
             "value": {
-                "type": "closure",
-                "cellvars": [],
-                "localvars": [],
-                "frame": [],
-                "args": [],
-                "body": [
-                    {
-                        "type": "call",
-                        "callee": {
-                            "type": "slot",
-                            "kind": "global",
-                            "name": "print",
-                            "loc": [4, 7, 9, 7, 0]
-                        },
-                        "args": [
-                            {
-                                "type": "literal",
-                                "kind": "string",
-                                "value": "current line:"
-                            },
-                            {
-                                "type": "slot",
-                                "kind": "global",
-                                "name": "line",
-                                "loc": [27, 7, 31, 7, 0]
-                            }
-                        ],
-                        "loc": [4, 7, 32, 7, 0]
-                    },
-                    {
-                        "type": "inplace_assign",
-                        "slot": {
-                            "type": "slot",
-                            "kind": "attr",
-                            "base": {
-                                "type": "slot",
-                                "kind": "global",
-                                "name": "state",
-                                "loc": [4, 8, 9, 8, 0]
-                            },
-                            "name": "line",
-                            "loc": [4, 8, 14, 8, 0]
-                        },
-                        "op": {
-                            "type": "slot",
-                            "kind": "global",
-                            "name": "+",
-                            "loc": [4, 8, 19, 8, 0]
-                        },
-                        "value": {
-                            "type": "literal",
-                            "kind": "integer",
-                            "value": "1"
-                        }
-                    },
-                    {
-                        "type": "call",
-                        "callee": {
-                            "type": "slot",
-                            "kind": "global",
-                            "name": "print",
-                            "loc": [4, 9, 9, 9, 0]
-                        },
-                        "args": [
-                            {
-                                "type": "literal",
-                                "kind": "string",
-                                "value": "current line:"
-                            },
-                            {
-                                "type": "slot",
-                                "kind": "global",
-                                "name": "line",
-                                "loc": [27, 9, 31, 9, 0]
-                            }
-                        ],
-                        "loc": [4, 9, 32, 9, 0]
-                    },
-                    {
-                        "type": "inplace_assign",
-                        "slot": {
-                            "type": "slot",
-                            "kind": "attr",
-                            "base": {
-                                "type": "slot",
-                                "kind": "global",
-                                "name": "state",
-                                "loc": [4, 10, 9, 10, 0]
-                            },
-                            "name": "line",
-                            "loc": [4, 10, 14, 10, 0]
-                        },
-                        "op": {
-                            "type": "slot",
-                            "kind": "global",
-                            "name": "+",
-                            "loc": [4, 10, 20, 10, 0]
-                        },
-                        "value": {
-                            "type": "literal",
-                            "kind": "integer",
-                            "value": "10"
-                        }
-                    },
-                    {
-                        "type": "call",
-                        "callee": {
-                            "type": "slot",
-                            "kind": "global",
-                            "name": "print",
-                            "loc": [4, 11, 9, 11, 0]
-                        },
-                        "args": [
-                            {
-                                "type": "literal",
-                                "kind": "string",
-                                "value": "current line:"
-                            },
-                            {
-                                "type": "slot",
-                                "kind": "global",
-                                "name": "line",
-                                "loc": [27, 11, 31, 11, 0]
-                            }
-                        ],
-                        "loc": [4, 11, 32, 11, 0]
-                    },
-                    {
-                        "type": "assign",
-                        "slot": {
-                            "type": "slot",
-                            "kind": "attr",
-                            "base": {
-                                "type": "slot",
-                                "kind": "global",
-                                "name": "state",
-                                "loc": [4, 12, 9, 12, 0]
-                            },
-                            "name": "line",
-                            "loc": [4, 12, 14, 12, 0]
-                        },
-                        "value": {
-                            "type": "literal",
-                            "kind": "integer",
-                            "value": "4"
-                        }
-                    },
-                    {
-                        "type": "call",
-                        "callee": {
-                            "type": "slot",
-                            "kind": "global",
-                            "name": "print",
-                            "loc": [4, 13, 9, 13, 0]
-                        },
-                        "args": [
-                            {
-                                "type": "literal",
-                                "kind": "string",
-                                "value": "current line:"
-                            },
-                            {
-                                "type": "slot",
-                                "kind": "global",
-                                "name": "line",
-                                "loc": [27, 13, 31, 13, 0]
-                            }
-                        ],
-                        "loc": [4, 13, 32, 13, 0]
-                    }
-                ],
-                "loc": [17, 6, 32, 13, 0]
-            }
-        },
-        {
-            "type": "assign",
-            "slot": {
-                "type": "slot",
-                "kind": "global",
-                "name": "state",
-                "loc": [0, 15, 5, 15, 0]
-            },
-            "value": {
-                "type": "record",
-                "fields": [
-                    {
-                        "name": "line",
-                        "mutable": true,
-                        "value": {
-                            "type": "literal",
-                            "kind": "integer",
-                            "value": "1"
-                        }
-                    }
-                ]
-            }
-        },
-        {
-            "type": "call",
-            "callee": {
-                "type": "slot",
-                "kind": "global",
-                "name": "call_with_coeffects",
-                "loc": [0, 18, 19, 18, 0]
-            },
-            "args": [
-                {
+                "type": "call",
+                "callee": {
                     "type": "slot",
                     "kind": "global",
-                    "name": "test_coeffects",
-                    "loc": [20, 18, 34, 18, 0]
+                    "name": "import",
+                    "loc": [0, 1, 18, 1, 0]
                 },
-                {
-                    "type": "list",
-                    "values": [
-                        {
-                            "type": "make_tuple",
-                            "items": [
-                                {
-                                    "type": "slot",
-                                    "kind": "global",
-                                    "name": "ParserState",
-                                    "loc": [6, 19, 17, 19, 0]
-                                },
-                                {
-                                    "type": "slot",
-                                    "kind": "global",
-                                    "name": "state",
-                                    "loc": [19, 19, 24, 19, 0]
-                                }
-                            ]
-                        }
-                    ]
-                }
-            ],
-            "loc": [0, 18, 27, 19, 0]
+                "args": [
+                    {
+                        "type": "literal",
+                        "kind": "string",
+                        "value": "graph_utils"
+                    }
+                ],
+                "loc": [0, 1, 18, 1, 0]
+            }
+        },
+        {
+            "type": "assign",
+            "slot": {
+                "type": "slot",
+                "kind": "global",
+                "name": "f",
+                "loc": [0, 3, 1, 3, 0]
+            },
+            "value": {
+                "type": "call",
+                "callee": {
+                    "type": "slot",
+                    "kind": "global",
+                    "name": "face",
+                    "loc": [4, 3, 8, 3, 0]
+                },
+                "args": [
+                    {
+                        "type": "slot",
+                        "kind": "attr",
+                        "base": {
+                            "type": "slot",
+                            "kind": "global",
+                            "name": "graph_utils",
+                            "loc": [9, 3, 20, 3, 0]
+                        },
+                        "name": "greedy_biclique_decomposition",
+                        "loc": [9, 3, 50, 3, 0]
+                    }
+                ],
+                "loc": [4, 3, 51, 3, 0]
+            }
         },
         {
             "type": "call",
@@ -265,28 +68,61 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "print",
-                "loc": [0, 20, 5, 20, 0]
+                "loc": [0, 4, 5, 4, 0]
             },
             "args": [
-                {
-                    "type": "literal",
-                    "kind": "string",
-                    "value": "line afterwards:"
-                },
+                {"type": "literal", "kind": "string", "value": "faa"},
                 {
                     "type": "slot",
-                    "kind": "attr",
-                    "base": {
-                        "type": "slot",
-                        "kind": "global",
-                        "name": "state",
-                        "loc": [26, 20, 31, 20, 0]
-                    },
-                    "name": "line",
-                    "loc": [26, 20, 36, 20, 0]
+                    "kind": "global",
+                    "name": "f",
+                    "loc": [13, 4, 14, 4, 0]
                 }
             ],
-            "loc": [0, 20, 37, 20, 0]
+            "loc": [0, 4, 15, 4, 0]
+        },
+        {
+            "type": "repeat",
+            "fresh": [],
+            "heads": [
+                {
+                    "type": "for",
+                    "slot": {"type": "slot", "kind": "local", "index": 0},
+                    "value": {
+                        "type": "call",
+                        "callee": {
+                            "type": "slot",
+                            "kind": "attr",
+                            "base": {
+                                "type": "slot",
+                                "kind": "global",
+                                "name": "f",
+                                "loc": [9, 5, 10, 5, 0]
+                            },
+                            "name": "params",
+                            "loc": [9, 5, 17, 5, 0]
+                        },
+                        "args": [],
+                        "loc": [9, 5, 19, 5, 0]
+                    }
+                }
+            ],
+            "body": [
+                {
+                    "type": "call",
+                    "callee": {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "print",
+                        "loc": [4, 6, 9, 6, 0]
+                    },
+                    "args": [
+                        {"type": "literal", "kind": "string", "value": "bar"},
+                        {"type": "slot", "kind": "local", "index": 0}
+                    ],
+                    "loc": [4, 6, 19, 6, 0]
+                }
+            ]
         }
     ],
     "sources": ["intro.lc"]

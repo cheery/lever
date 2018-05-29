@@ -79,6 +79,8 @@ actions = {
         return Method(op, value)
     "case": (value, cases, default=[]):
         return Case(value, cases, default)
+    "inline_except": (statement, excepts):
+        return Except([statement], excepts)
     "constant_case": (value, body):
         return ConstantCase(value, body)
     "pattern_case": (pattern, slots, body):
@@ -196,7 +198,7 @@ class Cell
 # The solve_scope is broken because after two subsequent loops we
 # may end up with a corrupted shadow and break the scope. The whole scope
 # handler has to resume to the drawing board, before we are finished..
-solve_scope = (function):
+solve_scope = (function, global_wd=set()):
     scope = function.scope
     shadow = set()
     locals = {}
@@ -209,6 +211,11 @@ solve_scope = (function):
                 this.scope.wd[var] = cell
             for var, cell in locals.items()
                 this.scope.wd[var] = cell
+        elif isinstance(this, BindCoeffect)
+            for field in this.fields
+                if field.mutable
+                    global_wd.add(field.name)
+            this.traverse(flow)
         elif isinstance(this, Symbol)
             if this.wronly
                 if this.deep and this.name in scope.wd
@@ -221,6 +228,8 @@ solve_scope = (function):
                     shadow.discard(this.name)
                     this.cell = locals[this.name]
                     this.cell.defs += 1
+                elif this.name in global_wd
+                    this.global = true
                 else
                     cell = Cell(this.name)
                     cells.append(cell)
@@ -320,7 +329,7 @@ solve_scope = (function):
                 this.scope.sh.discard(var)
             # The depend-set is built from 'rd', so we have to check
             # which depends should be carried over.
-            solve_scope(this)
+            solve_scope(this, global_wd)
             for dep in this.scope.depend
                 if dep in scope.rd
                     depend.add(d)
@@ -883,6 +892,38 @@ class Case
             value = js(self.value),
             cases = js(self.cases),
             default = js(self.default),
+            loc = js_loc(self.loc) }
+
+class Except
+    +init = (self, body, excepts):
+        self.body = body
+        self.excepts = excepts
+        for exc, slot, exc_body in self.excepts
+            if slot
+                slot.slotconfig(false, true)
+        self.loc = null
+
+    traverse = (self, f):
+        for stmt in self.body
+            f(stmt)
+        for exc, slot, exc_body in self.excepts
+            f(exc)
+            if slot
+                f(exc)
+            for stmt in exc_body
+                f(stmt)
+
+    to_json = (self):
+        excepts = []
+        for exc, slot, exc_body in self.excepts
+            if slot
+                excepts.append({exc = exc, slot = slot, body=exc_body})
+            else
+                excepts.append({exc = exc, body=exc_body})
+        return {
+            type = "except",
+            body = js(self.body),
+            excepts = js(excepts),
             loc = js_loc(self.loc) }
 
 class ConstantCase

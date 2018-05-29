@@ -139,5 +139,11 @@ the language.
 
 <h1>Coeffects</h1>
 
-TODO: Coeffects
+Coeffects manifest in structures that resemble dynamic scope
+variables. Each coeffect defines a set of variables in a
+module that have to be bound in the context where the function
+using them gets called. 
 
+The difference to the traditional dynamic scope is that the
+the access to the dynamic variables end up described in the
+type of the function if it is type inferenced.

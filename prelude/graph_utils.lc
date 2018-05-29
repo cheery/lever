@@ -1,0 +1,78 @@
+# Utilities for handling graphs
+
+greedy_biclique_decomposition = (graph, get_edges):
+    flow_edges = dict()
+    flow_variables = dict()
+
+    for vertex in graph repeat
+        edges = set()
+        for w in get_edges(vertex) if w in graph
+        repeat edges.add(w)
+        frow_edges[vertex] = edges
+        flow_variables[vertex] = []
+
+    var_id = 0
+    repeat
+        bicliques = generator for vertex in graph repeat
+            a = flow_edges[vertex]
+            b = flow_edges[a ==> rest]
+            except NoItems then continue
+            for w in rest repeat
+                b.intersection_update(flow_edges[w])
+            yield ((a,b), a.length * b.length)
+        best_biclique, best_score = bicliques ==> rest
+        except NoItems then break
+        for biclique, score in rest repeat
+            if best_score < score then
+                best_biclique = biclique
+                best_score = score
+        a,b = best_biclique
+        for n in a repeat
+            flow_variables[n].append(var_id)
+            flow_edges[n].difference_update(b)
+        for n in b repeat
+            flow_variables[n].append(var_id)
+            flow_edges[n].difference_update(b)
+        var_id += 1
+
+    return flow_variables
+
+## https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
+tarjan_find_scc = (graph):
+    table = dict()
+    index = 0
+    stack = []
+    output = []
+
+    strong_connect = (vertex):
+        # set depth index for v to the smallest unused index
+        stack.append(vertex)
+        v = {!index:index, !lowlink:index, !on_stack:true}
+        table[vertex] = v
+        index += 1
+        # consider successors of v
+        for succ_vertex in graph[vertex] repeat
+            if succ_vertex not in table then
+                w = strong_connect(succ_vertex)
+                v.lowlink = min(v.lowlink, w.lowlink)
+            else
+                w = table[succ_vertex]
+                if w.on_stack then
+                    v.lowlink = min(v.lowlink, w.index)
+            # otherwise, if w is not in stack, then (v,w) is a cross-edge
+            # in DFS and must be ignored.
+        # If v is a root node, pop the stack and generate an SCC
+        if v.lowlink == v.index then
+            scc = set()
+            repeat
+                p_vertex = stack.pop()
+                scc.add(p_vertex)
+                table[p_vertex].on_stack = false
+                if p_vertex == vertex then break
+            output.append(scc)
+        return v
+
+    for vertex in graph if vertex not in table
+    repeat strong_connect(vertex)
+
+    return output

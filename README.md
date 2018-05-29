@@ -235,6 +235,7 @@ of fibonacci and factorial.
     a.difference(iterable), a - b
     a.symmetric_difference(iterable), xor(a, b)
 
+ TODO: Exception handler is a bit like pattern matcher.
 
  TODO: Consider similar sample programs for lists, dicts, sets, slots.
 

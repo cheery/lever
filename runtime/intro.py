@@ -71,9 +71,10 @@ def w_json_loader(mspace, name):
     src = local + u"/" + name + u".lc.json"
     obj = read_json_file(String(src))
     env = mspace.env
-    script = interpreter.read_script(obj,
+    script, module = interpreter.read_script(obj,
         {u'import': prefill(w_import, [mspace])}, env)
-    return call(script, [])
+    call(script, [])
+    return module
 
 # The BasicIO is our first coeffect. It provides some basic
 # input/output that helps when writing the early programs. 
@@ -193,4 +194,10 @@ base_stem = {
     u"dict": builtin()(construct_dict),
     u"list": builtin()(construct_list),
     u"call_with_coeffects": w_call_with_coeffects,
+    u"NoItems": e_NoItems.interface,
+    u"face": builtin()(lambda x: x.face()),
+    u"Integer": Integer.interface,
+    u"Set": Set.interface,
+    u"Dict": Dict.interface,
+    u"Parameter": TypeParameter.interface,
 }

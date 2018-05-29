@@ -59,7 +59,7 @@ class InterfaceNOPA(Interface):
     def setattr(self, name):
         impl = self.setters.get(name, None)
         if impl is None:
-            return Interface.getattr(self, name)
+            return Interface.setattr(self, name)
         return impl
 
     def method(self, operator):
@@ -295,6 +295,15 @@ class e_IntegerBaseError(Object):
     pass
 
 class e_PartialOnArgument(Object):
+    pass
+
+class e_NoItems(Object):
+    pass
+
+class e_NoIndex(Object):
+    pass
+
+class e_NoValue(Object):
     pass
 
 # Operators are the next element to be implemented. They
@@ -540,6 +549,18 @@ class ModuleInterface(Interface):
     def __init__(self):
         self.cells = {}
 
+    def getattr(self, name):
+        if name in self.cells:
+            return prefill(w_load_cell, [String(name)])
+        else:
+            return Interface.getattr(self, name)
+
+    def setattr(self, name):
+        if name in self.cells:
+            return prefill(w_store_cell, [String(name)])
+        else:
+            return Interface.setattr(self, name)
+
 class Module(Object):
     interface = None
     def __init__(self):
@@ -570,6 +591,18 @@ class Module(Object):
         if src not in face_src.cells:
             raise error(e_TypeError())
         face_dst.cells[dst] = face_src.cells[src]
+
+@builtin()
+def w_load_cell(name, module):
+    face = cast(module.face(), ModuleInterface)
+    name = cast(name, String).string_val
+    return face.cells[name].load()
+
+@builtin()
+def w_store_cell(name, module, value):
+    face = cast(module.face(), ModuleInterface)
+    name = cast(name, String).string_val
+    face.cells[name].store(value)
 
 class ModuleCell:
     def load(self):
@@ -610,9 +643,8 @@ def w_import(mspace, w_name):
     mspace.loaded[name] = None # Ensure recursion is catched.
     try:
         module = call(mspace.loader, [mspace, w_name])
-    except:
+    finally:
         mspace.loaded.pop(name)
-        raise
     mspace.loaded[name] = module
     return module
 
@@ -819,7 +851,6 @@ class TaggedUnion(Object):
     def face(self):
         return self.record_cons.datatype
 
-
 # Provides hashtables to equality and hash.
 def eq_fn(a, b):
     result = convert(call(op_eq, [a,b]), Bool)
@@ -831,3 +862,52 @@ def eq_fn(a, b):
 def hash_fn(a):
     result = call(op_hash, [a])
     return intmask(cast(result, Integer).toint())
+
+# Type parameters are labels returned by interfaces.
+class TypeParameter(Object):
+    def __init__(self, pol):
+        self.pol = cast(pol, Integer)
+
+def make_parameter_group():
+    class TypeParameterGroup:
+        def __init__(self, pol):
+            self.pol = pol
+            self.memo = {}
+
+        def get(self, index):
+            try:
+                return self.memo[index]
+            except KeyError as _:
+                param = TypeParameter(self.pol)
+                self.memo[index] = param
+                return param
+    return TypeParameterGroup
+
+TypeParameterIndexGroup = make_parameter_group()
+TypeParameterNameGroup = make_parameter_group()
+
+# All functions have same type parameters.
+cod = TypeParameter(fresh_integer(+1))
+dom = TypeParameterIndexGroup(fresh_integer(-1))
+dom_vari = TypeParameterIndexGroup(fresh_integer(-1))
+
+@attr_method(FunctionInterface.interface, u"params")
+@attr_method(BuiltinInterface.interface, u"params")
+def Function_params(f):
+    f = cast(f, FunctionInterface)
+    out = []
+    for i in range(f.argc):
+        out.append(dom.get(fresh_integer(i)))
+    if f.vari:
+        out.append(dom_vari.get(fresh_integer(f.argc)))
+    out.append(cod)
+    return List(out)
+
+# Likewise, all records have their own parameter groups.
+attr_p = TypeParameterNameGroup(fresh_integer(+1))
+attr_n = TypeParameterNameGroup(fresh_integer(-1))
+
+# Temporary measure to see what is going on.
+def Any_stringify(a):
+    return String(a.__class__.__name__.decode('utf-8'))
+op_stringify.default = builtin()(Any_stringify)

@@ -31,6 +31,7 @@ from common import (
     e_EvalError,
     e_IntegerBaseError,
     e_PartialOnArgument,
+    e_NoItems,
     Operator,
     op_eq,
     op_hash,
@@ -57,6 +58,9 @@ from common import (
     op_xor,
     op_stringify,
     method,
+    getter,
+    setter,
+    attr_method,
     unique_coercion,
     has_coercion,
     convert,
@@ -74,7 +78,8 @@ from common import (
     new_constructor,
     add_method,
     eq_fn,
-    hash_fn )
+    hash_fn,
+    TypeParameter )
 from booleans import boolean
 from integers import parse_integer
 import strings
