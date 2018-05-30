@@ -77,6 +77,8 @@ from common import (
     new_constant,
     new_constructor,
     add_method,
+    add_attr,
+    add_attr_method,
     eq_fn,
     hash_fn,
     TypeParameter )

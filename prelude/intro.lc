@@ -5,5 +5,15 @@ print('faa', f)
 for x in f.params() repeat
     print('bar', x)
 
-#datatype State(a) = state(
-#    Integer, Set(a), Set(State(a)), Dict(Parameter, State(a)))
+datatype State(a) = state(
+    pol:         Integer,
+    heads:       Set(a), 
+    flow:        Set(State(a)), 
+    transitions: Dict(Parameter, State(a)))
+attribute method add_flow = (self, other):
+    self.flow.add(other)
+    other.flow.add(self)
+attribute method add_transition = (self, edge, other):
+    self.transitions[edge].add(other)
+    except NoIndex then
+        self.transitions[edge] = set([other])

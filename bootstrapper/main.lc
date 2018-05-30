@@ -75,8 +75,18 @@ actions = {
         return IfLoop(cond)
     "datatype": (head, rows, decls):
         return Datatype(head, rows, decls)
-    "method": (op, value):
-        return Method(op, value)
+    "no_label": (value):
+        return Label(null, value)
+    "with_label": (label, value):
+        return Label(label, value)
+    "method_declaration": (op, value):
+        return MethodDecl(op, value)
+    "attribute_declaration": (name, value):
+        return AttrDecl(name, value, "attr")
+    "attribute_set_declaration": (name, value):
+        return AttrDecl(name, value, "attr_set")
+    "attribute_method_declaration": (name, value):
+        return AttrDecl(name, value, "attr_method")
     "case": (value, cases, default=[]):
         return Case(value, cases, default)
     "inline_except": (statement, excepts):
@@ -856,7 +866,27 @@ class Datatype
             decls = js(self.decls),
             loc = js_loc(self.loc) }
 
-class Method
+class Label
+    +init = (self, label, value):
+        self.label = label
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.value)
+
+    to_json = (self):
+        if self.label
+            return {
+                type = "label",
+                name = self.label,
+                value = js(self.value) }
+        else
+            return {
+                type = "no_label",
+                value = js(self.value) }
+
+class MethodDecl
     +init = (self, op, value):
         self.op = op
         self.value = value
@@ -870,6 +900,22 @@ class Method
         return {
             type = "method",
             op = js(self.op),
+            value = js(self.value) }
+
+class AttrDecl
+    +init = (self, name, value, which):
+        self.name = name
+        self.value = value
+        self.which = which
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.value)
+
+    to_json = (self):
+        return {
+            type = self.which,
+            name = self.name,
             value = js(self.value) }
 
 class Case

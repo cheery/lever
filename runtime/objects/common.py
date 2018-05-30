@@ -763,6 +763,9 @@ class Datatype(Interface):
         self.constants = []
         self.constructors = []
         self.methods = {}
+        self.getters = {}
+        self.setters = {}
+        self.datatype_labels = {}
 
     def close(self):
         self.closed = True
@@ -773,8 +776,48 @@ class Datatype(Interface):
             return Interface.method(self, operator)
         return impl
 
+    def getattr(self, name):
+        if name in self.datatype_labels:
+            return prefill(w_tagu_accessor, [String(name)])
+        impl = self.getters.get(name, None)
+        if impl is None:
+            return Interface.getattr(self, name)
+        return impl
+
+    def setattr(self, name):
+        impl = self.setters.get(name, None)
+        if impl is None:
+            return Interface.setattr(self, name)
+        return impl
+
 def add_method(datatype, op, method):
     datatype.methods[op] = method
+
+def add_attr(datatype, name, method, is_setter):
+    if is_setter:
+        datatype.setters[name] = method
+    else:
+        datatype.getters[name] = method
+
+def add_attr_method(datatype, name, method):
+    datatype.getters[name] = Curry(method, [], 1)
+
+# Attribute methods need to add some parameters every
+# once and then.
+class Curry(Object):
+    def __init__(self, function, args, count):
+        self.curry_function = function
+        self.curry_args = args
+        self.curry_count = count
+
+@method(Curry.interface, op_call, vari=True)
+def Curry_call(a, args):
+    a = cast(a, Curry)
+    if a.curry_count < 0:
+        return call(a.curry_function, a.curry_args + args)
+    if a.curry_count != len(args):
+        raise error(e_TypeError())
+    return Curry(a.curry_function, args, -1)
 
 # We are going to need the constructors to determine the variance
 # of our new datatype.
@@ -784,7 +827,15 @@ def add_method(datatype, op, method):
 
 @method(Datatype.interface, op_call, vari=True)
 def Datatype_call(datatype, args):
+    datatype = cast(datatype, Datatype)
     if datatype.varc != len(args):
+        raise error(e_TypeError())
+    return TypeInstance(datatype, args)
+
+@method(InterfaceParametric.interface, op_call, vari=True)
+def InterfaceParametric_call(datatype, args):
+    datatype = cast(datatype, InterfaceParametric)
+    if len(datatype.variances) != len(args):
         raise error(e_TypeError())
     return TypeInstance(datatype, args)
 
@@ -804,17 +855,20 @@ def new_constant(datatype):
     datatype.constants.append(const)
     return const
     
-def new_constructor(datatype, params):
+def new_constructor(datatype, params, labels):
     if datatype.closed:
         raise error(e_EvalError())
-    cons = Constructor(datatype, params)
+    cons = Constructor(datatype, params, labels)
     datatype.constructors.append(cons)
+    for label in labels:
+        datatype.datatype_labels[label] = None
     return cons
 
 class Constructor(Object):
-    def __init__(self, datatype, fields):
+    def __init__(self, datatype, fields, cons_labels):
         self.datatype = datatype
         self.fields = fields
+        self.cons_labels = cons_labels
 
 @method(Constructor.interface, op_call, vari=True)
 def Constructor_call(constructor, fields):
@@ -831,7 +885,7 @@ def Constructor_pattern(constructor):
 def w_tagu_check(constructor, tagu):
     constructor = cast(constructor, Constructor)
     tagu = convert(tagu, constructor.datatype)
-    if tagu.record_cons is constructor:
+    if tagu.tagu_cons is constructor:
         return true
     else:
         return false
@@ -842,14 +896,23 @@ def w_tagu_unpack(constructor, tagu):
     tagu = convert(tagu, constructor.datatype)
     return Tuple(cast(tagu, TaggedUnion).fields)
 
+@python_bridge
+def w_tagu_accessor(name, tagu):
+    tagu = cast(tagu, TaggedUnion)
+    name = cast(name, String).string_val
+    try:
+        return tagu.fields[tagu.tagu_cons.cons_labels[name]]
+    except KeyError:
+        raise error(e_PartialOnArgument())
+
 class TaggedUnion(Object):
     interface = None
-    def __init__(self, record_cons, fields):
-        self.record_cons = record_cons
+    def __init__(self, tagu_cons, fields):
+        self.tagu_cons = tagu_cons
         self.fields = fields
 
     def face(self):
-        return self.record_cons.datatype
+        return self.tagu_cons.datatype
 
 # Provides hashtables to equality and hash.
 def eq_fn(a, b):
@@ -902,6 +965,10 @@ def Function_params(f):
         out.append(dom_vari.get(fresh_integer(f.argc)))
     out.append(cod)
     return List(out)
+
+@attr_method(InterfaceNOPA.interface, u"params")
+def NOPA_params(n):
+    return List([])
 
 # Likewise, all records have their own parameter groups.
 attr_p = TypeParameterNameGroup(fresh_integer(+1))

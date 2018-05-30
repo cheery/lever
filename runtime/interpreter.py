@@ -246,12 +246,23 @@ def eval_block(ctx, body, start, mod, stack):
                 row_slot = as_dict(row[0])
                 row_params = as_list(row[1])
                 params = []
-                for param in row_params:
-                    params.append(eval_expr(ctx, as_dict(param)))
+                labels = {}
+                for i, param in enumerate(row_params):
+                    param = as_dict(param)
+                    ptp = as_string(attr(param, u"type"))
+                    if ptp == u"label":
+                        labels[as_string(attr(param, u"name"))] = i
+                        params.append(eval_expr(ctx,
+                            as_dict(attr(param, u"value"))))
+                    elif ptp == u"no_label":
+                        params.append(eval_expr(ctx,
+                            as_dict(attr(param, u"value"))))
+                    else:
+                        raise error(e_EvalError())
                 if len(params) == 0:
                     row = new_constant(dt)
                 else:
-                    row = new_constructor(dt, params)
+                    row = new_constructor(dt, params, labels)
                 eval_slot(ctx, row_slot).store(ctx, row)
             for decl in as_list(attr(stmt, u"decls")):
                 decl = as_dict(decl)
@@ -399,6 +410,18 @@ def eval_decl(ctx, dt, decl):
         value = eval_expr(ctx, as_dict(attr(decl, u"value")))
         op = cast(op, Operator)
         add_method(dt, op, value)
+    elif tp == u"attr":
+        name = as_string(attr(decl, u"op"))
+        value = eval_expr(ctx, as_dict(attr(decl, u"value")))
+        add_attr(dt, name, value, is_setter=False)
+    elif tp == u"attr_set":
+        name = as_string(attr(decl, u"name"))
+        value = eval_expr(ctx, as_dict(attr(decl, u"value")))
+        add_attr(dt, name, value, is_setter=True)
+    elif tp == u"attr_method":
+        name = as_string(attr(decl, u"name"))
+        value = eval_expr(ctx, as_dict(attr(decl, u"value")))
+        add_attr_method(dt, name, value)
     else:
         raise error(e_EvalError())
 

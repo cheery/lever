@@ -1,7 +1,11 @@
 {
     "type": "script",
     "cellvars": [],
-    "localvars": [{"type": "cell", "deref": false, "name": "x", "defs": 1}],
+    "localvars": [
+        {"type": "cell", "deref": false, "name": "x", "defs": 1},
+        {"type": "cell", "deref": false, "name": "State", "defs": 1},
+        {"type": "cell", "deref": false, "name": "state", "defs": 1}
+    ],
     "body": [
         {
             "type": "assign",
@@ -123,6 +127,371 @@
                     "loc": [4, 6, 19, 6, 0]
                 }
             ]
+        },
+        {
+            "type": "datatype",
+            "slot": {"type": "slot", "kind": "local", "index": 1},
+            "vars": ["a"],
+            "rows": [
+                [
+                    {"type": "slot", "kind": "local", "index": 2},
+                    [
+                        {
+                            "type": "label",
+                            "name": "pol",
+                            "value": {
+                                "type": "slot",
+                                "kind": "global",
+                                "name": "Integer",
+                                "loc": [17, 9, 24, 9, 0]
+                            }
+                        },
+                        {
+                            "type": "label",
+                            "name": "heads",
+                            "value": {
+                                "type": "call",
+                                "callee": {
+                                    "type": "slot",
+                                    "kind": "global",
+                                    "name": "Set",
+                                    "loc": [17, 10, 20, 10, 0]
+                                },
+                                "args": [{"type": "var", "index": 0}],
+                                "loc": [17, 10, 23, 10, 0]
+                            }
+                        },
+                        {
+                            "type": "label",
+                            "name": "flow",
+                            "value": {
+                                "type": "call",
+                                "callee": {
+                                    "type": "slot",
+                                    "kind": "global",
+                                    "name": "Set",
+                                    "loc": [17, 11, 20, 11, 0]
+                                },
+                                "args": [
+                                    {
+                                        "type": "call",
+                                        "callee": {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 1
+                                        },
+                                        "args": [{"type": "var", "index": 0}],
+                                        "loc": [21, 11, 29, 11, 0]
+                                    }
+                                ],
+                                "loc": [17, 11, 30, 11, 0]
+                            }
+                        },
+                        {
+                            "type": "label",
+                            "name": "transitions",
+                            "value": {
+                                "type": "call",
+                                "callee": {
+                                    "type": "slot",
+                                    "kind": "global",
+                                    "name": "Dict",
+                                    "loc": [17, 12, 21, 12, 0]
+                                },
+                                "args": [
+                                    {
+                                        "type": "slot",
+                                        "kind": "global",
+                                        "name": "Parameter",
+                                        "loc": [22, 12, 31, 12, 0]
+                                    },
+                                    {
+                                        "type": "call",
+                                        "callee": {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 1
+                                        },
+                                        "args": [{"type": "var", "index": 0}],
+                                        "loc": [33, 12, 41, 12, 0]
+                                    }
+                                ],
+                                "loc": [17, 12, 42, 12, 0]
+                            }
+                        }
+                    ]
+                ]
+            ],
+            "decls": [
+                {
+                    "type": "attr_method",
+                    "name": "add_flow",
+                    "value": {
+                        "type": "closure",
+                        "cellvars": [],
+                        "localvars": [
+                            {
+                                "type": "cell",
+                                "deref": false,
+                                "name": "self",
+                                "defs": 1
+                            },
+                            {
+                                "type": "cell",
+                                "deref": false,
+                                "name": "other",
+                                "defs": 1
+                            }
+                        ],
+                        "frame": [],
+                        "args": [
+                            {
+                                "slot": {
+                                    "type": "slot",
+                                    "kind": "local",
+                                    "index": 0
+                                }
+                            },
+                            {
+                                "slot": {
+                                    "type": "slot",
+                                    "kind": "local",
+                                    "index": 1
+                                }
+                            }
+                        ],
+                        "body": [
+                            {
+                                "type": "call",
+                                "callee": {
+                                    "type": "slot",
+                                    "kind": "attr",
+                                    "base": {
+                                        "type": "slot",
+                                        "kind": "attr",
+                                        "base": {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 0
+                                        },
+                                        "name": "flow",
+                                        "loc": [4, 14, 13, 14, 0]
+                                    },
+                                    "name": "add",
+                                    "loc": [4, 14, 17, 14, 0]
+                                },
+                                "args": [
+                                    {
+                                        "type": "slot",
+                                        "kind": "local",
+                                        "index": 1
+                                    }
+                                ],
+                                "loc": [4, 14, 24, 14, 0]
+                            },
+                            {
+                                "type": "call",
+                                "callee": {
+                                    "type": "slot",
+                                    "kind": "attr",
+                                    "base": {
+                                        "type": "slot",
+                                        "kind": "attr",
+                                        "base": {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 1
+                                        },
+                                        "name": "flow",
+                                        "loc": [4, 15, 14, 15, 0]
+                                    },
+                                    "name": "add",
+                                    "loc": [4, 15, 18, 15, 0]
+                                },
+                                "args": [
+                                    {
+                                        "type": "slot",
+                                        "kind": "local",
+                                        "index": 0
+                                    }
+                                ],
+                                "loc": [4, 15, 24, 15, 0]
+                            }
+                        ],
+                        "loc": [28, 13, 24, 15, 0]
+                    }
+                },
+                {
+                    "type": "attr_method",
+                    "name": "add_transition",
+                    "value": {
+                        "type": "closure",
+                        "cellvars": [],
+                        "localvars": [
+                            {
+                                "type": "cell",
+                                "deref": false,
+                                "name": "self",
+                                "defs": 1
+                            },
+                            {
+                                "type": "cell",
+                                "deref": false,
+                                "name": "edge",
+                                "defs": 1
+                            },
+                            {
+                                "type": "cell",
+                                "deref": false,
+                                "name": "other",
+                                "defs": 1
+                            }
+                        ],
+                        "frame": [],
+                        "args": [
+                            {
+                                "slot": {
+                                    "type": "slot",
+                                    "kind": "local",
+                                    "index": 0
+                                }
+                            },
+                            {
+                                "slot": {
+                                    "type": "slot",
+                                    "kind": "local",
+                                    "index": 1
+                                }
+                            },
+                            {
+                                "slot": {
+                                    "type": "slot",
+                                    "kind": "local",
+                                    "index": 2
+                                }
+                            }
+                        ],
+                        "body": [
+                            {
+                                "type": "except",
+                                "body": [
+                                    {
+                                        "type": "call",
+                                        "callee": {
+                                            "type": "slot",
+                                            "kind": "attr",
+                                            "base": {
+                                                "type": "slot",
+                                                "kind": "item",
+                                                "base": {
+                                                    "type": "slot",
+                                                    "kind": "attr",
+                                                    "base": {
+                                                        "type": "slot",
+                                                        "kind": "local",
+                                                        "index": 0
+                                                    },
+                                                    "name": "transitions",
+                                                    "loc": [4, 17, 20, 17, 0]
+                                                },
+                                                "index": {
+                                                    "type": "slot",
+                                                    "kind": "local",
+                                                    "index": 1
+                                                },
+                                                "loc": [4, 17, 26, 17, 0]
+                                            },
+                                            "name": "add",
+                                            "loc": [4, 17, 30, 17, 0]
+                                        },
+                                        "args": [
+                                            {
+                                                "type": "slot",
+                                                "kind": "local",
+                                                "index": 2
+                                            }
+                                        ],
+                                        "loc": [4, 17, 37, 17, 0]
+                                    }
+                                ],
+                                "excepts": [
+                                    {
+                                        "exc": {
+                                            "type": "slot",
+                                            "kind": "global",
+                                            "name": "NoIndex",
+                                            "loc": [11, 18, 18, 18, 0]
+                                        },
+                                        "body": [
+                                            {
+                                                "type": "assign",
+                                                "slot": {
+                                                    "type": "slot",
+                                                    "kind": "item",
+                                                    "base": {
+                                                        "type": "slot",
+                                                        "kind": "attr",
+                                                        "base": {
+                                                            "type": "slot",
+                                                            "kind": "local",
+                                                            "index": 0
+                                                        },
+                                                        "name": "transitions",
+                                                        "loc": [
+                                                            8,
+                                                            19,
+                                                            24,
+                                                            19,
+                                                            0
+                                                        ]
+                                                    },
+                                                    "index": {
+                                                        "type": "slot",
+                                                        "kind": "local",
+                                                        "index": 1
+                                                    },
+                                                    "loc": [8, 19, 30, 19, 0]
+                                                },
+                                                "value": {
+                                                    "type": "call",
+                                                    "callee": {
+                                                        "type": "slot",
+                                                        "kind": "global",
+                                                        "name": "set",
+                                                        "loc": [
+                                                            33,
+                                                            19,
+                                                            36,
+                                                            19,
+                                                            0
+                                                        ]
+                                                    },
+                                                    "args": [
+                                                        {
+                                                            "type": "list",
+                                                            "values": [
+                                                                {
+                                                                    "type": "slot",
+                                                                    "kind": "local",
+                                                                    "index": 2
+                                                                }
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "loc": [33, 19, 45, 19, 0]
+                                                }
+                                            }
+                                        ]
+                                    }
+                                ],
+                                "loc": [4, 17, 45, 19, 0]
+                            }
+                        ],
+                        "loc": [34, 16, 45, 19, 0]
+                    }
+                }
+            ],
+            "loc": [0, 8, 45, 19, 0]
         }
     ],
     "sources": ["intro.lc"]

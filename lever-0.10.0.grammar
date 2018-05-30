@@ -17,8 +17,8 @@ statement:
         =(=datatype_declaration)* / datatype
     "case" expr "of" =(=case)+
         =("else" >(=statement)+)? / case
-    statement [^="except" expr ("as" slot)? "then"
-        >(=statement)+]+ / inline_except
+    statement =(^="except" expr ("as" slot)? "then"
+        >(=statement)+)+ / inline_except
     expr
 
 coeffect_field:
@@ -30,11 +30,15 @@ datatype_head:
     slot "(" join(symbol, ",") ")" / [.,  .]
 
 datatype_row:
-    slot                            / [., []]
-    slot "(" join(expr_or, ",") ")" / [.,  .]
+    slot                                                    / [., []]
+    slot "(" join(expr_or            / no_label, ",") ")"   / [.,  .]
+    slot "(" join(symbol ":" expr_or / with_label, ",") ")" / [.,  .]
 
 datatype_declaration:
-    "method" term "=" expr / method
+    "method" term "=" expr               / method_declaration
+    "attribute" symbol "=" expr          / attribute_declaration
+    "attribute" "!" symbol "=" expr      / attribute_set_declaration
+    "attribute" "method" symbol "=" expr / attribute_method_declaration
 
 case:
     term                              "then" >(=statement)+ / constant_case
