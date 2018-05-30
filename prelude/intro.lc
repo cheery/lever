@@ -1,19 +1,38 @@
 import graph_utils
 
-f = face(graph_utils.greedy_biclique_decomposition)
-print('faa', f)
-for x in f.params() repeat
-    print('bar', x)
-
 datatype State(a) = state(
     pol:         Integer,
     heads:       Set(a), 
     flow:        Set(State(a)), 
     transitions: Dict(Parameter, State(a)))
+method hash, (==): by_reference
 attribute method add_flow = (self, other):
     self.flow.add(other)
     other.flow.add(self)
-attribute method add_transition = (self, edge, other):
-    self.transitions[edge].add(other)
+attribute method add_transition = (self, parameter, other):
+    self.transitions[parameter].add(other)
     except NoIndex then
-        self.transitions[edge] = set([other])
+        self.transitions[parameter] = set([other])
+
+fresh_state = (pol):
+    return state(pol, set([]), set([]), dict([]))
+
+foo = dict([])
+print('foo', foo)
+print('foo', foo.length)
+foo[1] = 2
+print(foo[1])
+
+
+test1 = state(+1, set([]), set([]), dict([]))
+test2 = state(-1, set([]), set([]), dict([]))
+test1.add_flow(test2)
+
+
+print(fresh_state(+1))
+
+test3 = fresh_state(+1)
+fn = face(graph_utils.greedy_biclique_decomposition)
+test3.heads.add(fn)
+for param in fn.params() repeat
+    test3.add_transition(param, fresh_state(param.pol))

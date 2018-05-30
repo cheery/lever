@@ -32,7 +32,7 @@ def Dict_getitem(a, item):
     except KeyError:
         raise error(e_NoIndex())
 
-@method(Dict.interface, op_getitem)
+@method(Dict.interface, op_setitem)
 def Dict_setitem(a, item, value):
     a = cast(a, Dict)
     a.dict_val[item] = value

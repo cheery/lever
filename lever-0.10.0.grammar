@@ -36,6 +36,7 @@ datatype_row:
 
 datatype_declaration:
     "method" term "=" expr               / method_declaration
+    "method" join(term, ",") ":" expr    / derived_declaration
     "attribute" symbol "=" expr          / attribute_declaration
     "attribute" "!" symbol "=" expr      / attribute_set_declaration
     "attribute" "method" symbol "=" expr / attribute_method_declaration

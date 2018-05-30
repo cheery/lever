@@ -195,9 +195,12 @@ base_stem = {
     u"list": builtin()(construct_list),
     u"call_with_coeffects": w_call_with_coeffects,
     u"NoItems": e_NoItems.interface,
+    u"NoIndex": e_NoIndex.interface,
     u"face": builtin()(lambda x: x.face()),
     u"Integer": Integer.interface,
     u"Set": Set.interface,
     u"Dict": Dict.interface,
     u"Parameter": TypeParameter.interface,
+    u"by_reference": w_by_reference,
+    u"by_value": w_by_value,
 }

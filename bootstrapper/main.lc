@@ -81,6 +81,8 @@ actions = {
         return Label(label, value)
     "method_declaration": (op, value):
         return MethodDecl(op, value)
+    "derived_declaration": (ops, value):
+        return DerivedDecl(ops, value)
     "attribute_declaration": (name, value):
         return AttrDecl(name, value, "attr")
     "attribute_set_declaration": (name, value):
@@ -900,6 +902,23 @@ class MethodDecl
         return {
             type = "method",
             op = js(self.op),
+            value = js(self.value) }
+
+class DerivedDecl
+    +init = (self, ops, value):
+        self.ops = ops
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        for op in self.ops
+            f(op)
+        f(self.value)
+
+    to_json = (self):
+        return {
+            type = "derived",
+            ops = js(self.ops),
             value = js(self.value) }
 
 class AttrDecl

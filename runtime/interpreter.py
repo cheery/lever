@@ -18,7 +18,12 @@ class ClosureInterface(FunctionInterface):
             return w_call_closure
         return FunctionInterface.method(self, op)
 
-attr_method(ClosureInterface.interface, u"params")(common.Function_params)
+attr_method(ClosureInterface.interface,
+    u"params")(common.FunctionInterface_params)
+method(ClosureInterface.interface,
+    op_eq)(common.FunctionInterface_eq)
+method(ClosureInterface.interface,
+    op_hash)(common.FunctionInterface_hash)
 
 closure_interfaces = FunctionMemo(ClosureInterface)
 
@@ -161,7 +166,7 @@ def eval_program(ctx, stack):
     while len(stack) > 0:
         body, start, mod = stack.pop()
         try:
-            eval_block(ctx, body, start, mod, stack)
+            return eval_block(ctx, body, start, mod, stack)
         except Traceback as tb:
             while not isinstance(mod, Except):
                 if len(stack) == 0:
@@ -410,6 +415,11 @@ def eval_decl(ctx, dt, decl):
         value = eval_expr(ctx, as_dict(attr(decl, u"value")))
         op = cast(op, Operator)
         add_method(dt, op, value)
+    elif tp == u"derived":
+        value = eval_expr(ctx, as_dict(attr(decl, u"value")))
+        for op in as_list(attr(decl, u"ops")):
+            op = eval_expr(ctx, as_dict(op))
+            add_method(dt, op, call(value, [dt, op]))
     elif tp == u"attr":
         name = as_string(attr(decl, u"op"))
         value = eval_expr(ctx, as_dict(attr(decl, u"value")))

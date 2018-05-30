@@ -455,6 +455,8 @@ w_operator_call = python_bridge(operator_call, vari=True)
 
 # Helper decorator for describing new operators
 def method(face, operator, vari=False):
+    if not isinstance(face, Interface):
+        face = face.interface
     def _impl_(fn):
         face.methods[operator] = python_bridge(fn, vari)
         return fn
@@ -462,6 +464,8 @@ def method(face, operator, vari=False):
 
 # And the same tools for describing methods.
 def getter(face, name, vari=False):
+    if not isinstance(face, Interface):
+        face = face.interface
     if isinstance(name, str):
         name = name.decode('utf-8')
     def _impl_(fn):
@@ -470,6 +474,8 @@ def getter(face, name, vari=False):
     return _impl_
 
 def setter(face, name, vari=False):
+    if not isinstance(face, Interface):
+        face = face.interface
     if isinstance(name, str):
         name = name.decode('utf-8')
     def _impl_(fn):
@@ -478,6 +484,8 @@ def setter(face, name, vari=False):
     return _impl_
 
 def attr_method(face, name, vari=False):
+    if not isinstance(face, Interface):
+        face = face.interface
     if isinstance(name, str):
         name = name.decode('utf-8')
     def _impl_(fn):
@@ -522,7 +530,35 @@ BIV = BIVARIANT     = 3
 class InterfaceParametric(InterfaceNOPA):
     def __init__(self, variances):
         self.variances = variances
+        self.interface_params = []
+        for v in variances:
+            if v & 1 != 0:
+                self.interface_params.append(TypeParameter(fresh_integer(+1)))
+            if v & 2 != 0:
+                self.interface_params.append(TypeParameter(fresh_integer(-1)))
+            if v & 3 != v:
+                raise error(e_TypeError())
         InterfaceNOPA.__init__(self)
+
+# Type parameters are labels returned by interfaces.
+class TypeParameter(Object):
+    def __init__(self, pol):
+        self.pol = cast(pol, Integer)
+
+@method(TypeParameter.interface, op_eq)
+def TypeParameter_eq(a, b):
+    if a is b:
+        return true
+    else:
+        return false
+
+@method(TypeParameter.interface, op_hash)
+def TypeParameter_hash(a):
+    return fresh_integer(compute_hash(a))
+
+@getter(TypeParameter.interface, u"pol")
+def TypeParameter_get_pol(a):
+    return cast(a, TypeParameter).pol
 
 # If we provide R/W flags, we can make these structures
 # immutable, but it would be hard to ensure such constraints
@@ -926,11 +962,7 @@ def hash_fn(a):
     result = call(op_hash, [a])
     return intmask(cast(result, Integer).toint())
 
-# Type parameters are labels returned by interfaces.
-class TypeParameter(Object):
-    def __init__(self, pol):
-        self.pol = cast(pol, Integer)
-
+# For some purposes we need type parameter groups.
 def make_parameter_group():
     class TypeParameterGroup:
         def __init__(self, pol):
@@ -956,7 +988,7 @@ dom_vari = TypeParameterIndexGroup(fresh_integer(-1))
 
 @attr_method(FunctionInterface.interface, u"params")
 @attr_method(BuiltinInterface.interface, u"params")
-def Function_params(f):
+def FunctionInterface_params(f):
     f = cast(f, FunctionInterface)
     out = []
     for i in range(f.argc):
@@ -966,9 +998,40 @@ def Function_params(f):
     out.append(cod)
     return List(out)
 
+@method(FunctionInterface.interface, op_eq)
+@method(BuiltinInterface.interface, op_eq)
+def FunctionInterface_eq(a, b):
+    return true if a is b else false
+
+@method(FunctionInterface.interface, op_hash)
+@method(BuiltinInterface.interface, op_hash)
+def FunctionInterface_hash(a):
+    return fresh_integer(compute_hash(a))
+
 @attr_method(InterfaceNOPA.interface, u"params")
 def NOPA_params(n):
     return List([])
+
+@method(FunctionInterface.interface, op_eq)
+@method(BuiltinInterface.interface, op_eq)
+def NOPA_eq(a, b):
+    return true if a is b else false
+
+@method(InterfaceNOPA.interface, op_hash)
+def NOPA_hash(a):
+    return fresh_integer(compute_hash(a))
+
+@attr_method(InterfaceParametric.interface, u"params")
+def InterfaceParametric_params(a):
+    return List(cast(a, InterfaceParametric).interface_params)
+
+@method(InterfaceParametric.interface, op_eq)
+def InterfaceParametric_eq(a, b):
+    return true if a is b else false
+
+@method(InterfaceParametric.interface, op_hash)
+def InterfaceParametric_hash(a):
+    return fresh_integer(compute_hash(a))
 
 # Likewise, all records have their own parameter groups.
 attr_p = TypeParameterNameGroup(fresh_integer(+1))
@@ -978,3 +1041,59 @@ attr_n = TypeParameterNameGroup(fresh_integer(-1))
 def Any_stringify(a):
     return String(a.__class__.__name__.decode('utf-8'))
 op_stringify.default = builtin()(Any_stringify)
+
+# Derivators are functions that produce methods for datatypes
+# by some predefined rule.
+@python_bridge
+def w_by_reference(datatype, op):
+    if op is op_eq:
+        return w_eq_by_reference
+    elif op is op_hash:
+        return w_hash_by_reference
+    else:
+        raise error(e_PartialOnArgument())
+
+@python_bridge
+def w_eq_by_reference(a, b):
+    if a is b:
+        return true
+    else:
+        return false
+
+@python_bridge
+def w_hash_by_reference(a):
+    return fresh_integer(compute_hash(a))
+
+@python_bridge
+def w_by_value(datatype, op):
+    if op is op_eq:
+        return w_eq_by_value
+    elif op is op_hash:
+        return w_hash_by_value
+    else:
+        raise error(e_PartialOnArgument())
+
+@python_bridge
+def w_eq_by_value(a, b):
+    a = cast(a, TaggedUnion)
+    b = cast(b, TaggedUnion)
+    if not (a.tagu_cons is b.tagu_cons):
+        return false
+    for i in range(len(a.fields)):
+        if call(op_eq, [a.fields[i], b.fields[i]]) is false:
+            return false
+    return true
+
+@python_bridge
+def w_hash_by_value(a):
+    a = cast(a, TaggedUnion)
+    mult = 1000003
+    x = 0x345678
+    z = len(a.fields)
+    for item in a.fields:
+        y = cast(call(op_hash, [item]), Integer).toint()
+        x = (x ^ y) * mult
+        z -= 1
+        mult += 82520 + z + z
+    x += 97531
+    return fresh_integer(intmask(x))

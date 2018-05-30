@@ -32,6 +32,8 @@ from common import (
     e_IntegerBaseError,
     e_PartialOnArgument,
     e_NoItems,
+    e_NoIndex,
+    e_NoValue,
     Operator,
     op_eq,
     op_hash,
@@ -81,7 +83,9 @@ from common import (
     add_attr_method,
     eq_fn,
     hash_fn,
-    TypeParameter )
+    TypeParameter,
+    w_by_reference,
+    w_by_value )
 from booleans import boolean
 from integers import parse_integer
 import strings

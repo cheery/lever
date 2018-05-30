@@ -242,20 +242,15 @@ of fibonacci and factorial.
  TODO: If module load fails due to module not present, mark the
        item not present and try again from higher scope.
 
- TODO: Provide a way to declare attributes and attribute methods.
-
  TODO: Add direct conversions between types.
 
- TODO: Add slot for record fields.
+ TODO: Add slot syntax for record fields.
 
  TODO: Resume and correct the solve_scope in bootstrapper/main.lc
        Also make the BindCoeffect work correctly with mutable fields.
 
  TODO: Ensure the datatypes are implemented well. This may require that
        we have some type inference with them already.
-
-
- TODO: Implement tools to derive methods for datatypes.
 
  TODO: adjust the grammar to handle `f((x): x*2)`
        the last expression in a call can be a
