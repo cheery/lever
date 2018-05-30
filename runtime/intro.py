@@ -158,6 +158,13 @@ class RangeIterator(Iterator):
 def w_slot(value):
     return Slot(value)
 
+@builtin()
+def w_get_function_header(argc, vari, opt):
+    argc = cast(argc, Integer).toint()
+    vari = convert(vari, Bool) is true
+    opt = cast(opt, Integer).toint()
+    return func_interfaces.get(argc, vari, opt)
+
 base_stem = {
     u"==": op_eq,
     u"!=": w_ne,
@@ -203,4 +210,6 @@ base_stem = {
     u"Parameter": TypeParameter.interface,
     u"by_reference": w_by_reference,
     u"by_value": w_by_value,
+    u"parameter": builtin()(lambda x: TypeParameter(cast(x, Integer))),
+    u"get_function_header": w_get_function_header,
 }

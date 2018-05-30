@@ -1,5 +1,8 @@
 import graph_utils
 
+# The type inferencer forms a state machine. States have flow
+# edges and transitions. Most of this is described in
+# Stephen Dolan's MLsub thesis.
 datatype State(a) = state(
     pol:         Integer,
     heads:       Set(a), 
@@ -7,29 +10,77 @@ datatype State(a) = state(
     transitions: Dict(Parameter, State(a)))
 method hash, (==): by_reference
 attribute method add_flow = (self, other):
+    assert self.pol != other.pol as "polarity conflict"
     self.flow.add(other)
     other.flow.add(self)
+# The type parameters described in the runtime/objects/common.py
+# form the items used in constructing types.
 attribute method add_transition = (self, parameter, other):
+    assert (parameter.pol >= 0) == (self.pol == other.pol) as
+        "polarity conflict"
     self.transitions[parameter].add(other)
     except NoIndex then
         self.transitions[parameter] = set([other])
 
+# Heads are Interface -objects, they are accompanied by
+# sink -objects.
+
+# This is where we do not follow Dolan's paper.
+# Call sites have main purpose in resolving operators,
+# and operators are the main source of constraints. Therefore
+# we mostly have sinks and sites on the negative states and
+# actual types on positive states.
+datatype Site(op, a) = site(
+    op: op,
+    coerces: Set((a, Integer, a)),
+    param: Parameter,
+    expect: a,
+    operators: Dict(a, {input: State(a), output: State(a)}),
+    slots: Dict(Integer, Set(a)))
+method hash, (==): by_reference
+attribute method transfer = (self, fn):
+    coerces = set(self.coerces)
+    expect = self.expect
+    param = parameter(+1)
+    operators = dict([])
+    slots = copy(self.slots)
+    for index, slot in self.operators repeat
+        operators[index] = {input:fn(slot.input), output:fn(slot.output)}
+    return site(self.op, coerces, expect, param, operators, slots)
+
+datatype Sink(op, a) = sink(index: Integer, site: Site(op, a))
+method hash, (==): by_value
+    
 fresh_state = (pol):
     return state(pol, set([]), set([]), dict([]))
 
-foo = dict([])
-print('foo', foo)
-print('foo', foo.length)
-foo[1] = 2
-print(foo[1])
+fresh_operator = (op, indices, argc):
+    coerces = set()
+    expect = get_function_header(argc)
+    param = parameter(+1)
+    operators = dict()
+    slots = dict()
+    for index in indices repeat
+        slots[index] = set()
+    return site(op, coerces, expect, param, operators, slots)
 
+fresh_port = ():
+    input = fresh_state(-1)
+    output = fresh_state(+1)
+    input.add_flow(output)
+    return {input, output}
+
+fresh_free_port = (graph):
+    port = fresh_port()
+    graph.add(port.input)
+    graph.add(port.output)
+    return port
+
+#get_function_header(argc, vari, opt)
 
 test1 = state(+1, set([]), set([]), dict([]))
 test2 = state(-1, set([]), set([]), dict([]))
 test1.add_flow(test2)
-
-
-print(fresh_state(+1))
 
 test3 = fresh_state(+1)
 fn = face(graph_utils.greedy_biclique_decomposition)

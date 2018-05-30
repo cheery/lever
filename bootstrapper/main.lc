@@ -93,6 +93,10 @@ actions = {
         return Case(value, cases, default)
     "inline_except": (statement, excepts):
         return Except([statement], excepts)
+    "assert": (cond, value):
+        return Assert(cond, value)
+    "raise": (value):
+        return Raise(value)
     "constant_case": (value, body):
         return ConstantCase(value, body)
     "pattern_case": (pattern, slots, body):
@@ -159,6 +163,10 @@ actions = {
         return Deref(value)
     "record": (fields):
         return Record(fields)
+    "record_shorthand": (label):
+        return Field(name, false, Symbol(name))
+    "mutable_record_shorthand": (label):
+        return Field(name, true, Symbol(name))
     "field": (name, value=null):
         return Field(name, false, value)
     "mutable_field": (name, value=null):
@@ -989,6 +997,36 @@ class Except
             type = "except",
             body = js(self.body),
             excepts = js(excepts),
+            loc = js_loc(self.loc) }
+
+class Assert
+    +init = (self, cond, value):
+        self.cond = cond
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.cond)
+        f(self.value)
+
+    to_json = (self):
+        return {
+            type = "assert",
+            cond = js(self.cond),
+            value = js(self.value),
+            loc = js_loc(self.loc) }
+
+class Raise
+    +init = (self, value):
+        self.value = value
+
+    traverse = (self, f):
+        f(self.value)
+
+    to_json = (self):
+        return {
+            type = "raise",
+            value = js(self.value),
             loc = js_loc(self.loc) }
 
 class ConstantCase

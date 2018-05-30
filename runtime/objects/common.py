@@ -306,6 +306,10 @@ class e_NoIndex(Object):
 class e_NoValue(Object):
     pass
 
+class e_AssertTriggered(Object):
+    def __init__(self, message):
+        self.message = message
+
 # Operators are the next element to be implemented. They
 # form the foundations for the whole object system here.
 class OperatorInterface(Interface): 

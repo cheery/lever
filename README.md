@@ -155,7 +155,10 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- TODO: start converting suoml inside prelude.
+ TODO: Document the interpreter code and expose its structures
+       through a function, so that the type inference can proceed.
+
+ TODO: Start with 'biunify' and 'to_raw_type'
 
  TODO: Consider writing a sample program that uses the whole palette
        of methods that are available for strings.
@@ -235,9 +238,11 @@ of fibonacci and factorial.
     a.difference(iterable), a - b
     a.symmetric_difference(iterable), xor(a, b)
 
+ TODO: Consider similar sample programs for lists, dicts, sets, slots.
+
  TODO: Exception handler is a bit like pattern matcher.
 
- TODO: Consider similar sample programs for lists, dicts, sets, slots.
+ TODO: Figure out how to handle mutually recursive definitions of types.
 
  TODO: If module load fails due to module not present, mark the
        item not present and try again from higher scope.
@@ -309,7 +314,7 @@ of fibonacci and factorial.
 
 Notable things there is in the previous version, not present here yet.
 
- * exception handling, generation, (except/finally)
+ * full exception handling (full except/finally)
  * libuv bindings systemwide.
  * continuations
  * logging utilities

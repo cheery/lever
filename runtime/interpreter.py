@@ -469,6 +469,21 @@ def eval_expr(ctx, val):
         slot = eval_slot(ctx, slot)
         slot.store(ctx, call(op, [slot.load(ctx), expr]))
         return null
+    elif tp == u"assert":
+        cond = convert(eval_expr(ctx, as_dict(attr(val, u"cond"))), Bool)
+        if cond is false:
+            expr = eval_expr(ctx, as_dict(attr(val, u"value")))
+            loc = as_list(attr(val, u"loc"))
+            tb = Traceback(e_AssertTriggered(expr))
+            tb.trace.append((loc, ctx.sources))
+            raise tb
+        return null
+    elif tp == u"raise":
+        expr = eval_expr(ctx, as_dict(attr(val, u"value")))
+        loc = as_list(attr(val, u"loc"))
+        tb = Traceback(expr)
+        tb.trace.append((loc, ctx.sources))
+        raise tb
     elif tp == u"call":
         callee = as_dict(attr(val, u"callee"))
         args = as_list(attr(val, u"args"))

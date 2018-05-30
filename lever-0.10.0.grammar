@@ -19,6 +19,8 @@ statement:
         =("else" >(=statement)+)? / case
     statement =(^="except" expr ("as" slot)? "then"
         >(=statement)+)+ / inline_except
+    "assert" expr "as" expr / assert
+    "raise" expr / raise
     expr
 
 coeffect_field:
@@ -150,6 +152,8 @@ form:
     expr
 
 record_field:
+    symbol                 / record_shorthand
+    "!" symbol             / mutable_record_shorthand
     symbol     ":" expr_or / field
     "!" symbol ":" expr_or / mutable_field
 
