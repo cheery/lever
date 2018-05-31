@@ -8,7 +8,7 @@ greedy_biclique_decomposition = (graph, get_edges):
         edges = set()
         for w in get_edges(vertex) if w in graph
         repeat edges.add(w)
-        frow_edges[vertex] = edges
+        flow_edges[vertex] = edges
         flow_variables[vertex] = []
 
     var_id = 0

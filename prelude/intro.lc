@@ -1,4 +1,5 @@
-import graph_utils
+from graph_utils import
+    greedy_biclique_decomposition
 
 # The type inferencer forms a state machine. States have flow
 # edges and transitions. Most of this is described in
@@ -76,14 +77,140 @@ fresh_free_port = (graph):
     graph.add(port.output)
     return port
 
+biunify = (pair, visited):
+    if pair in visited then
+        return
+    visited.add(pair)
+    p, q = pair
+    assert p.pol > q.pol as "polarity conflict"
+    for x in p.heads for y in q.heads repeat
+        assert fit_subtype(p, q, x, y, visited) as
+            "type error"
+    for s in q.flow repeat
+        merge(s, p)
+    for s in p.flow repeat
+        merge(s, q)
+    for param, ws in p.transitions repeat
+        wu = q.transitions.get(param, dict())
+        if param.pol > 0 then
+            for s in ws for u in wu repeat
+                biunify((s, u), visited)
+        else
+            for u in wu for s in ws repeat
+                biunify((u, s), visited)
+
+fit_subtype = (p, q, x, y, visited):
+    if x == y then
+        return true
+    #else if y --> sink(index, site) then
+    #    inference_coerce(x, q, index, site, visited)
+    #    return true
+    else
+        return false
+
+merge = (dst, src):
+    assert dst.pol == src.pol as "polarity conflict"
+    for head in src.heads repeat
+        dst.heads.add(head)
+    for state in src.flow repeat
+        dst.add_flow(state)
+    for param, ws in src.transitions repeat
+        dst.transitions[param].update(ws)
+        except NoIndex then
+            dst.transitions[param] = set(ws)
+
+# For subtyping, type variables represent flows,
+# this means that only-covariant or only-contravariant
+# type variables are superfluous.
+
+to_raw_type = (scheme):
+    flow_variables = greedy_biclique_decomposition(
+        scheme.generic,
+        ((vertex): vertex.flow))
+    # recursive types are common and acceptable.
+    # 'visi' and 'mapi' ensure that recursive clauses are
+    # detected and annotated.
+    visi = set()
+    mapi = dict()
+    rvar_id = 0
+
+    trail = dict()
+
+    s_visit = (state, in_trail):
+        assert state in scheme.generic as
+            "raw type cannot print schemes with free variables in them"
+        if state in visi then
+            sym = "rec.r" ++ stringify(rvar_id)
+            mapi[state] = "let.r" ++ stringify(rvar_id)
+            rvar_id += 1
+            return sym
+        visi.add(state)
+
+        if state.pol > 0 then
+            operator = " | "
+        else
+            operator = " & "
+
+        typedecl = []
+        for head in state.heads repeat
+            # TODO: Sink headers should get a specific treatment.
+#            if isinstance(head, types.SinkHeader)
+#                name = repr(head.site.op)
+#                w = k_visit(state, head.site.edge)
+#                if w not in visi
+#                    line = s_visit(w, true)
+#                    trail[w] = "\n  " ++ name ++ " : " ++ line
+#                if name not in typedecl
+#                    typedecl.append(name)
+#                continue
+            typedecl.append(r_visit(head, state, in_trail))
+        for v in flow_variables[state] repeat
+            typedecl.append(stringify(v+10, 36))
+        if state in mapi then
+            typedecl.insert(0, mapi.pop(state))
+        visi.discard(state)
+        print(typedecl)
+        print(operator)
+        print(operator.join(typedecl))
+        return "(" ++ operator.join(typedecl) ++ ")"
+
+    r_visit = (head, state, in_trail):
+        px = dict()
+        for edge in head.params() repeat
+            px[edge] = e_visit(state, edge, in_trail)
+        print('CRASH')
+        return head.format(px)
+
+    e_visit = (state, edge, in_trail):
+        w = k_visit(state, edge)
+        return s_visit(w, in_trail)
+
+    k_visit = (state, edge):
+        if edge not in state.transitions then
+            return "(error?)"
+        ws = state.transitions[edge]
+        if ws.length == 0 then
+            return "()"
+        return single(ws)
+
+    return s_visit(scheme.root, false) # ++ "".join(trail.values())
+
 #get_function_header(argc, vari, opt)
 
-test1 = state(+1, set([]), set([]), dict([]))
-test2 = state(-1, set([]), set([]), dict([]))
-test1.add_flow(test2)
+test1 = fresh_state(+1)
+test1.heads.add(Integer)
+test1_scheme = {
+    generic: set([test1]),
+    root:    test1 }
 
-test3 = fresh_state(+1)
-fn = face(graph_utils.greedy_biclique_decomposition)
-test3.heads.add(fn)
-for param in fn.params() repeat
-    test3.add_transition(param, fresh_state(param.pol))
+print(to_raw_type(test1_scheme))
+
+#test1 = state(+1, set([]), set([]), dict([]))
+#test2 = state(-1, set([]), set([]), dict([]))
+#test1.add_flow(test2)
+#
+#test3 = fresh_state(+1)
+#fn = face(graph_utils.greedy_biclique_decomposition)
+#test3.heads.add(fn)
+#for param in fn.params() repeat
+#    test3.add_transition(param, fresh_state(param.pol))

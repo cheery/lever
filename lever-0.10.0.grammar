@@ -9,7 +9,7 @@ statement:
     slot "=" >expr / assign
     "if" expr "then" >(=statement)+
              ["else" >(=statement)+]? / cond
-    "return" expr? / return
+    "return" >expr? / return
     "yield" expr   / yield
     "break"        / break
     "continue"     / continue

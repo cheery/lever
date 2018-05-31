@@ -82,11 +82,15 @@ def call_closure(closure, args):
         eval_slot(ctx, slot).store(ctx, args[i])
     stack = [(closure.body, 0, None)]
     try:
-        res = eval_program(ctx, stack)
+        eval_program(ctx, stack)
+    except Return as r:
+        return r.value
+    except Yield:
+        raise error(e_TypeError())
     finally:
         while len(stack) > 0:
             stack.pop()
-    return res
+    return null
 
 w_call_closure = python_bridge(call_closure, vari=True)
 
@@ -120,15 +124,12 @@ class GeneratorTip:
             self.module, self.env, self.sources,
             is_generator=True)
         try:
-            result = eval_program(ctx, self.stack)
-        except:
-            while len(self.stack) > 0:
-                self.stack.pop()
-            raise
-        if len(self.stack) == 0:
-            raise StopIteration()
-        else:
-            return result
+            eval_program(ctx, self.stack)
+        except Yield as y:
+            return y.value
+        except Return:
+            raise error(e_TypeError())
+        raise StopIteration()
 
 class Generator(Iterator):
     interface = Iterator.interface
@@ -166,7 +167,7 @@ def eval_program(ctx, stack):
     while len(stack) > 0:
         body, start, mod = stack.pop()
         try:
-            return eval_block(ctx, body, start, mod, stack)
+            eval_block(ctx, body, start, mod, stack)
         except Traceback as tb:
             while not isinstance(mod, Except):
                 if len(stack) == 0:
@@ -184,7 +185,14 @@ def eval_program(ctx, stack):
                     break
             else:
                 raise
-    return null
+
+class Return(Exception):
+    def __init__(self, value):
+        self.value = value
+
+class Yield(Exception):
+    def __init__(self, value):
+        self.value = value
 
 def eval_block(ctx, body, start, mod, stack):
     for i in range(start, len(body)):
@@ -192,11 +200,11 @@ def eval_block(ctx, body, start, mod, stack):
         tp = as_string(attr(stmt, u"type"))
         if tp == u"return" and not ctx.is_generator:
             expr = as_dict(attr(stmt, u"value"))
-            return eval_expr(ctx, expr)
+            raise Return(eval_expr(ctx, expr))
         elif tp == u"yield" and ctx.is_generator:
             expr = as_dict(attr(stmt, u"value"))
             stack.append((body, i+1, mod))
-            return eval_expr(ctx, expr)
+            raise Yield(eval_expr(ctx, expr))
         elif tp == u"break":
             while not isinstance(mod, Loop):
                 if len(stack) == 0:
@@ -224,14 +232,12 @@ def eval_block(ctx, body, start, mod, stack):
                 stack.append((body, i+1, mod))
                 body = as_list(attr(stmt, u"tbody"))
                 stack.append((body, 0, None))
-                mod  = None
-                break
             else:
                 stack.append((body, i+1, mod))
                 body = as_list(attr(stmt, u"fbody"))
                 stack.append((body, 0, None))
-                mod  = None
-                break
+            mod  = None
+            break
         elif tp == u"case":
             value = eval_expr(ctx, as_dict(attr(stmt, u"value")))
             cases = as_list(attr(stmt, u"cases"))
@@ -280,6 +286,7 @@ def eval_block(ctx, body, start, mod, stack):
             # exc, slot, body
             stack.append((body, 0, Except(excepts)))
             mod = None
+            break
         else:
             eval_expr(ctx, stmt)
     if isinstance(mod, Loop):

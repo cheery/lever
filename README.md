@@ -155,13 +155,27 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
+ TODO: Implement 'single(a)'
+
+ TODO: Implement operator def.
+    operator [n]
+    method Type = ...
+    method * = ...
+
+    into grammar
+    into bootstrapper
+    into runtime
+
  TODO: Document the interpreter, eg. which forms there are for statements,
        scripts, etc. What are their contents, so on...
 
  TODO: Expose the interpreter code and parameters through an interface,
        so that the type inference can take place.
 
- TODO: Continue with 'biunify' and 'to_raw_type'
+ TODO: Continue with 'to_raw_type'
+
+ TODO: x --> sink(index, site)
+       uncomment things from 'fit_subtype' once done.
 
 
  TODO: Consider writing a sample program that uses the whole palette

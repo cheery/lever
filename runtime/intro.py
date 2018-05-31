@@ -165,6 +165,38 @@ def w_get_function_header(argc, vari, opt):
     opt = cast(opt, Integer).toint()
     return func_interfaces.get(argc, vari, opt)
 
+@python_bridge
+def w_construct_set(items=None):
+    if items is None:
+        return fresh_set()
+    return construct_set(items)
+
+@python_bridge
+def w_construct_dict(pairs=None):
+    if pairs is None:
+        return fresh_dict()
+    return construct_dict(pairs)
+
+@python_bridge
+def w_construct_list(items=None):
+    if items is None:
+        return fresh_list()
+    return construct_list(items)
+
+@python_bridge
+def w_single(items):
+    it = cast(call(op_iter, [items]), Iterator)
+    try:
+        x, it = it.next()
+    except StopIteration:
+        raise error(e_PartialOnArgument())
+    try:
+        y, it = it.next()
+    except StopIteration:
+        return x
+    else:
+        raise error(e_PartialOnArgument())
+
 base_stem = {
     u"==": op_eq,
     u"!=": w_ne,
@@ -197,9 +229,9 @@ base_stem = {
     u"false": false,
     u"range": w_range,
     u"slot": w_slot,
-    u"set": builtin()(construct_set),
-    u"dict": builtin()(construct_dict),
-    u"list": builtin()(construct_list),
+    u"set": w_construct_set,
+    u"dict": w_construct_dict,
+    u"list": w_construct_list,
     u"call_with_coeffects": w_call_with_coeffects,
     u"NoItems": e_NoItems.interface,
     u"NoIndex": e_NoIndex.interface,
@@ -212,4 +244,5 @@ base_stem = {
     u"by_value": w_by_value,
     u"parameter": builtin()(lambda x: TypeParameter(cast(x, Integer))),
     u"get_function_header": w_get_function_header,
+    u"single": w_single,
 }

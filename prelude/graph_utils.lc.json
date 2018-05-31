@@ -242,9 +242,8 @@
                                     "kind": "item",
                                     "base": {
                                         "type": "slot",
-                                        "kind": "global",
-                                        "name": "frow_edges",
-                                        "loc": [8, 11, 18, 11, 0]
+                                        "kind": "cell",
+                                        "index": 1
                                     },
                                     "index": {
                                         "type": "slot",
@@ -463,7 +462,7 @@
                                                             },
                                                             "body": [
                                                                 {
-                                                                    "type": "break"
+                                                                    "type": "continue"
                                                                 }
                                                             ]
                                                         }

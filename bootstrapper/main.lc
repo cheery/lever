@@ -1109,7 +1109,7 @@ class Continue
         null
 
     to_json = (self):
-        return { type = "break" }
+        return { type = "continue" }
 
 class Call extends Expr
     +init = (self, callee, args):
