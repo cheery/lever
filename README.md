@@ -155,10 +155,14 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- TODO: Document the interpreter code and expose its structures
-       through a function, so that the type inference can proceed.
+ TODO: Document the interpreter, eg. which forms there are for statements,
+       scripts, etc. What are their contents, so on...
 
- TODO: Start with 'biunify' and 'to_raw_type'
+ TODO: Expose the interpreter code and parameters through an interface,
+       so that the type inference can take place.
+
+ TODO: Continue with 'biunify' and 'to_raw_type'
+
 
  TODO: Consider writing a sample program that uses the whole palette
        of methods that are available for strings.
