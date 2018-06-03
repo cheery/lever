@@ -155,16 +155,12 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- TODO: Implement 'single(a)'
-
- TODO: Implement operator def.
-    operator [n]
-    method Type = ...
-    method * = ...
-
-    into grammar
-    into bootstrapper
-    into runtime
+ TODO: Implement 'head.format()' for
+    'InterfaceNOPA'
+    'InterfaceParametric'
+    'FunctionInterface'
+    'BuiltinInterface'
+    'ClosureInterface'
 
  TODO: Document the interpreter, eg. which forms there are for statements,
        scripts, etc. What are their contents, so on...
@@ -173,10 +169,6 @@ of fibonacci and factorial.
        so that the type inference can take place.
 
  TODO: Continue with 'to_raw_type'
-
- TODO: x --> sink(index, site)
-       uncomment things from 'fit_subtype' once done.
-
 
  TODO: Consider writing a sample program that uses the whole palette
        of methods that are available for strings.
@@ -261,6 +253,8 @@ of fibonacci and factorial.
  TODO: Exception handler is a bit like pattern matcher.
 
  TODO: Figure out how to handle mutually recursive definitions of types.
+
+ TODO: Add documentation reference building into modules.
 
  TODO: If module load fails due to module not present, mark the
        item not present and try again from higher scope.

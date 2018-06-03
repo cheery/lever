@@ -20,7 +20,7 @@ def Dict_in(item, a):
     return boolean(item in a.dict_val)
 
 @method(Dict.interface, op_iter)
-def Dict_iter(item, a):
+def Dict_iter(a):
     a = cast(a, Dict).dict_val
     return DictIterator(a.iteritems())
 

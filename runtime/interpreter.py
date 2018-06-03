@@ -10,6 +10,23 @@ def read_script(code, preset, env):
     sources = as_list(attr(code, u"sources"))
     return Closure(code, module, env, [], sources), module
 
+@builtin()
+def w_inspect(closure):
+    closure = cast(closure, Closure)
+    frame = []
+    for cell in closure.frame:
+        frame.append(cell.val)
+    return construct_record([
+        (u"module", False, closure.module),
+        (u"env", False, List(list(closure.env))),
+        (u"frame", False, List(frame)),
+        (u"sources", False, List(list(closure.sources))),
+        (u"cellvars", False, List(closure.cellvars)),
+        (u"localvars", False, List(closure.localvars)),
+        (u"args", False, List(closure.args)),
+        (u"body", False, List(closure.body)),
+        (u"loc", False, List(closure.loc)) ])
+
 # Closures have similar challenges as what builtin functions
 # have.
 class ClosureInterface(FunctionInterface):
@@ -279,6 +296,30 @@ def eval_block(ctx, body, start, mod, stack):
                 decl = as_dict(decl)
                 eval_decl(ctx, dt, decl)
             dt.close()
+        elif tp == u"operator":
+            slot = eval_slot(ctx, as_dict(attr(stmt, u"slot")))
+            selector = eval_expr(ctx, as_dict(attr(stmt, u"selector")))
+            it = cast(call(op_iter, [selector]), Iterator)
+            selectors = []
+            while True:
+                try:
+                    x, it = it.next()
+                    selectors.append(cast(x, Integer).toint())
+                except StopIteration:
+                    break
+            op = Operator(selectors)
+            for decl in as_list(attr(stmt, u"decls")):
+                decl = as_dict(decl)
+                dtp = as_string(attr(decl, u"type"))
+                if dtp == u"method":
+                    face = eval_expr(ctx, as_dict(attr(decl, u"op")))
+                    value = eval_expr(ctx, as_dict(attr(decl, u"value")))
+                    op.methods[cast(face, Interface)] = value
+                elif dtp == u"default_method":
+                    op.default = eval_expr(ctx, as_dict(attr(decl, u"value")))
+                else:
+                    raise error(e_EvalError())
+            slot.store(ctx, op)
         elif tp == u"except":
             stack.append((body, i+1, mod))
             body = as_list(attr(stmt, u"body"))

@@ -137,6 +137,7 @@ to_raw_type = (scheme):
     trail = dict()
 
     s_visit = (state, in_trail):
+        print('test', state)
         assert state in scheme.generic as
             "raw type cannot print schemes with free variables in them"
         if state in visi then
@@ -147,9 +148,9 @@ to_raw_type = (scheme):
         visi.add(state)
 
         if state.pol > 0 then
-            operator = " | "
+            op = " | "
         else
-            operator = " & "
+            op = " & "
 
         typedecl = []
         for head in state.heads repeat
@@ -169,41 +170,97 @@ to_raw_type = (scheme):
         if state in mapi then
             typedecl.insert(0, mapi.pop(state))
         visi.discard(state)
-        print(typedecl)
-        print(operator)
-        print(operator.join(typedecl))
-        return "(" ++ operator.join(typedecl) ++ ")"
+        return "(" ++ op.join(typedecl) ++ ")"
 
     r_visit = (head, state, in_trail):
         px = dict()
         for edge in head.params() repeat
             px[edge] = e_visit(state, edge, in_trail)
-        print('CRASH')
-        return head.format(px)
+        return "foo[" ++ ":".join(px.values()) ++ "]"
+        #print('CRASH')
+        #return head.format(px)
 
     e_visit = (state, edge, in_trail):
-        w = k_visit(state, edge)
-        return s_visit(w, in_trail)
-
-    k_visit = (state, edge):
         if edge not in state.transitions then
             return "(error?)"
         ws = state.transitions[edge]
         if ws.length == 0 then
             return "()"
-        return single(ws)
+        return s_visit(single(ws), in_trail)
 
-    return s_visit(scheme.root, false) # ++ "".join(trail.values())
+    k_visit = (state, edge):
+        assert false as "not implemented"
+
+    return s_visit(scheme.root, false) ++ "".join(trail.values())
+
+operator format [0]
+method List = (a, d):
+    if d == 0 then return "[...]"
+    items = generator
+        for item in a repeat yield format(item, d-1)
+    return "[" ++ ", ".join(items) ++ "]"
+        
+method Dict = (a, d):
+    if d == 0 then return "dict([...])"
+    items = generator
+        for key, value in a.items() repeat
+            yield "(" ++ format(key, d-1) ++ "," ++ format(value, d-1) ++ ")"
+    return "dict([" ++ ", ".join(items) ++ "])"
+
+method Bool = (a, d):
+    return stringify(a)
+
+method Integer = (a, d):
+    return stringify(a)
+
+method String = (a, d):
+    # Yes, should escape the string first...
+    return '"' ++ stringify(a) ++ '"'
+    
+method * = (a, d):
+    return 'some item'
+
+f = inspect(greedy_biclique_decomposition)
+for item in f.body repeat
+    print(format(item, 1))
+
 
 #get_function_header(argc, vari, opt)
 
-test1 = fresh_state(+1)
-test1.heads.add(Integer)
-test1_scheme = {
-    generic: set([test1]),
-    root:    test1 }
+#test1 = fresh_state(+1)
+#test1.heads.add(Integer)
+#test1_scheme = {
+#    generic: set([test1]),
+#    root:    test1 }
+#
+#print(to_raw_type(test1_scheme))
+#
+#test2_generic = set()
+#test2 = fresh_state(+1)
+#fn = face(greedy_biclique_decomposition)
+#test2.heads.add(fn)
+#for param in fn.params() repeat
+#    st = fresh_state(param.pol)
+#    test2.add_transition(param, st)
+#    test2_generic.add(st)
+#test2_generic.add(test2)
+#
+#test2_scheme = {
+#    generic: test2_generic,
+#    root:    test2 }
+#
+#print(to_raw_type(test2_scheme))
+#
+#test = ():
+#    a = fn.params()
+#    b = fn.params()
+#    repeat
+#        print('paramcheck ', (a ==> a) == (b ==> b))
+#        except NoItems then
+#            break
+#
+#test()
 
-print(to_raw_type(test1_scheme))
 
 #test1 = state(+1, set([]), set([]), dict([]))
 #test2 = state(-1, set([]), set([]), dict([]))

@@ -658,6 +658,9 @@ class ConstantModuleCell(ModuleCell):
     def load(self):
         return self.val
 
+    def store(self, value):
+        raise error(e_TypeError())
+
 class ModuleSpace(Object):
     def __init__(self, local, env, loader, parent=None):
         self.local = local
@@ -996,9 +999,9 @@ def FunctionInterface_params(f):
     f = cast(f, FunctionInterface)
     out = []
     for i in range(f.argc):
-        out.append(dom.get(fresh_integer(i)))
+        out.append(dom.get(i))
     if f.vari:
-        out.append(dom_vari.get(fresh_integer(f.argc)))
+        out.append(dom_vari.get(f.argc))
     out.append(cod)
     return List(out)
 

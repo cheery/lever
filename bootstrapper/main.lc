@@ -75,12 +75,16 @@ actions = {
         return IfLoop(cond)
     "datatype": (head, rows, decls):
         return Datatype(head, rows, decls)
+    "operator": (slot, selector, decls):
+        return OperatorDecl(slot, selector, decls)
     "no_label": (value):
         return Label(null, value)
     "with_label": (label, value):
         return Label(label, value)
     "method_declaration": (op, value):
         return MethodDecl(op, value)
+    "default_method_declaration": (value):
+        return DefaultMethodDecl(value)
     "derived_declaration": (ops, value):
         return DerivedDecl(ops, value)
     "attribute_declaration": (name, value):
@@ -213,6 +217,9 @@ class Cell
             deref = self.deref,
             name = self.name,
             defs = self.defs }
+
+    +repr = (self):
+        return "Cell(" ++ repr(self.name) ++ ")"
 
 
 # The solve_scope is broken because after two subsequent loops we
@@ -854,9 +861,9 @@ class Datatype
         self.rows = rows
         self.decls = decls
         self.loc = null
-        self.slot.slotconfig(false, true)
+        self.slot.slotconfig(true, true)
         for constructor, fields in self.rows
-            constructor.slotconfig(false, true)
+            constructor.slotconfig(true, true)
 
     traverse = (self, f):
         f(self.slot)
@@ -873,6 +880,28 @@ class Datatype
             slot = js(self.slot),
             vars = js(self.vars),
             rows = js(self.rows),
+            decls = js(self.decls),
+            loc = js_loc(self.loc) }
+
+class OperatorDecl
+    +init = (self, slot, selector, decls):
+        self.slot = slot
+        self.selector = selector
+        self.decls = decls
+        self.loc = null
+        self.slot.slotconfig(true, true)
+
+    traverse = (self, f):
+        f(self.slot)
+        f(self.selector)
+        for decl in self.decls
+            f(decl)
+
+    to_json = (self):
+        return {
+            type = "operator",
+            slot = js(self.slot),
+            selector = js(self.selector),
             decls = js(self.decls),
             loc = js_loc(self.loc) }
 
@@ -910,6 +939,19 @@ class MethodDecl
         return {
             type = "method",
             op = js(self.op),
+            value = js(self.value) }
+
+class DefaultMethodDecl
+    +init = (self, value):
+        self.value = value
+        self.loc = null
+
+    traverse = (self, f):
+        f(self.value)
+
+    to_json = (self):
+        return {
+            type = "default_method",
             value = js(self.value) }
 
 class DerivedDecl

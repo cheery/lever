@@ -21,6 +21,7 @@ statement:
         >(=statement)+)+ / inline_except
     "assert" expr "as" expr / assert
     "raise" expr / raise
+    "operator" slot_item expr =(operator_row)* / operator
     expr
 
 coeffect_field:
@@ -42,6 +43,10 @@ datatype_declaration:
     "attribute" symbol "=" expr          / attribute_declaration
     "attribute" "!" symbol "=" expr      / attribute_set_declaration
     "attribute" "method" symbol "=" expr / attribute_method_declaration
+
+operator_row:
+    "method" expr "=" expr / method_declaration
+    "method" "*" "=" expr / default_method_declaration
 
 case:
     term                              "then" >(=statement)+ / constant_case
