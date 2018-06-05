@@ -993,6 +993,30 @@ cod = TypeParameter(fresh_integer(+1))
 dom = TypeParameterIndexGroup(fresh_integer(-1))
 dom_vari = TypeParameterIndexGroup(fresh_integer(-1))
 
+@attr_method(FunctionInterface.interface, u"format")
+def FunctionInterface_format(f, px, prefix=None):
+    f = cast(f, FunctionInterface)
+    out = []
+    for i in range(f.argc-f.opt):
+        text = call(op_getitem, [px, dom.get(i)])
+        out.append(cast(text, String).string_val)
+    for i in range(f.argc-f.opt, f.argc):
+        text = call(op_getitem, [px, dom.get(i)])
+        out.append(cast(text, String).string_val + u"?")
+    if f.vari:
+        text = call(op_getitem, [px, dom_vari.get(f.argc)])
+        out.append(cast(text, String).string_val + u"...")
+    text = call(op_getitem, [px, cod])
+    signature = u"(" + u", ".join(out) + u") -> " + cast(text, String).string_val
+    if prefix is not None:
+        prefix = cast(prefix, String).string_val
+        return String(prefix + u"(" + signature + u")")
+    return String(signature)
+
+@attr_method(BuiltinInterface.interface, u"format")
+def BuiltinInterface_format(f, px):
+    return FunctionInterface_format(f, px, String(u"builtin"))
+
 @attr_method(FunctionInterface.interface, u"params")
 @attr_method(BuiltinInterface.interface, u"params")
 def FunctionInterface_params(f):
@@ -1019,6 +1043,12 @@ def FunctionInterface_hash(a):
 def NOPA_params(n):
     return List([])
 
+@attr_method(InterfaceNOPA.interface, u"format")
+def InterfaceNOPA_format(f, px):
+    # TODO: Module names should be implemented next.
+    prefix = cast(call(op_stringify, [f]), String).string_val
+    return String(prefix)
+
 @method(FunctionInterface.interface, op_eq)
 @method(BuiltinInterface.interface, op_eq)
 def NOPA_eq(a, b):
@@ -1031,6 +1061,33 @@ def NOPA_hash(a):
 @attr_method(InterfaceParametric.interface, u"params")
 def InterfaceParametric_params(a):
     return List(cast(a, InterfaceParametric).interface_params)
+
+@attr_method(InterfaceParametric.interface, u"format")
+def InterfaceParametric_format(f, px):
+    f = cast(f, InterfaceParametric)
+    out = []
+    i = 0
+    for v in f.variances:
+        if v & 3 != 0:
+            neg = call(op_getitem, [px, f.interface_params[i+0]])
+            pos = call(op_getitem, [px, f.interface_params[i+1]])
+            n = cast(neg, String).string_val
+            p = cast(pos, String).string_val
+            out.append(u"{-" + n + u", +" + p + u"}")
+            i += 2
+        elif v & 1 != 0:
+            pos = call(op_getitem, [px, f.interface_params[i]])
+            out.append(cast(pos, String).string_val)
+            i += 1
+        elif v & 2 != 0:
+            neg = call(op_getitem, [px, f.interface_params[i]])
+            out.append(cast(neg, String).string_val)
+            i += 1
+        if v & 3 != v:
+            raise error(e_TypeError())
+    # TODO: Module names should be implemented next.
+    prefix = cast(call(op_stringify, [f]), String).string_val
+    return String(prefix + u"(" + u", ".join(out) + u")")
 
 @method(InterfaceParametric.interface, op_eq)
 def InterfaceParametric_eq(a, b):

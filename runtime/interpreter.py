@@ -42,6 +42,10 @@ method(ClosureInterface.interface,
 method(ClosureInterface.interface,
     op_hash)(common.FunctionInterface_hash)
 
+@attr_method(ClosureInterface.interface, u"format")
+def ClosureInterface_format(f, px):
+    return common.FunctionInterface_format(f, px, String(u"closure"))
+
 closure_interfaces = FunctionMemo(ClosureInterface)
 
 class Closure(Object):

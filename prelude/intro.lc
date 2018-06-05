@@ -137,7 +137,6 @@ to_raw_type = (scheme):
     trail = dict()
 
     s_visit = (state, in_trail):
-        print('test', state)
         assert state in scheme.generic as
             "raw type cannot print schemes with free variables in them"
         if state in visi then
@@ -176,9 +175,7 @@ to_raw_type = (scheme):
         px = dict()
         for edge in head.params() repeat
             px[edge] = e_visit(state, edge, in_trail)
-        return "foo[" ++ ":".join(px.values()) ++ "]"
-        #print('CRASH')
-        #return head.format(px)
+        return head.format(px)
 
     e_visit = (state, edge, in_trail):
         if edge not in state.transitions then
@@ -193,81 +190,70 @@ to_raw_type = (scheme):
 
     return s_visit(scheme.root, false) ++ "".join(trail.values())
 
-operator format [0]
-method List = (a, d):
-    if d == 0 then return "[...]"
-    items = generator
-        for item in a repeat yield format(item, d-1)
-    return "[" ++ ", ".join(items) ++ "]"
-        
-method Dict = (a, d):
-    if d == 0 then return "dict([...])"
-    items = generator
-        for key, value in a.items() repeat
-            yield "(" ++ format(key, d-1) ++ "," ++ format(value, d-1) ++ ")"
-    return "dict([" ++ ", ".join(items) ++ "])"
-
-method Bool = (a, d):
-    return stringify(a)
-
-method Integer = (a, d):
-    return stringify(a)
-
-method String = (a, d):
-    # Yes, should escape the string first...
-    return '"' ++ stringify(a) ++ '"'
-    
-method * = (a, d):
-    return 'some item'
-
-f = inspect(greedy_biclique_decomposition)
-for item in f.body repeat
-    print(format(item, 1))
+#operator format [0]
+#method List = (a, d):
+#    if d == 0 then return "[...]"
+#    items = generator
+#        for item in a repeat yield format(item, d-1)
+#    return "[" ++ ", ".join(items) ++ "]"
+#        
+#method Dict = (a, d):
+#    if d == 0 then return "dict([...])"
+#    items = generator
+#        for key, value in a.items() repeat
+#            yield "(" ++ format(key, d-1) ++ "," ++ format(value, d-1) ++ ")"
+#    return "dict([" ++ ", ".join(items) ++ "])"
+#
+#method Bool = (a, d):
+#    return stringify(a)
+#
+#method Integer = (a, d):
+#    return stringify(a)
+#
+#method String = (a, d):
+#    # Yes, should escape the string first...
+#    return '"' ++ stringify(a) ++ '"'
+#    
+#method * = (a, d):
+#    return 'some item'
+#
+#f = inspect(greedy_biclique_decomposition)
+#for item in f.body repeat
+#    print(format(item, 1))
 
 
 #get_function_header(argc, vari, opt)
 
-#test1 = fresh_state(+1)
-#test1.heads.add(Integer)
-#test1_scheme = {
-#    generic: set([test1]),
-#    root:    test1 }
-#
-#print(to_raw_type(test1_scheme))
-#
-#test2_generic = set()
-#test2 = fresh_state(+1)
-#fn = face(greedy_biclique_decomposition)
-#test2.heads.add(fn)
-#for param in fn.params() repeat
-#    st = fresh_state(param.pol)
-#    test2.add_transition(param, st)
-#    test2_generic.add(st)
-#test2_generic.add(test2)
-#
-#test2_scheme = {
-#    generic: test2_generic,
-#    root:    test2 }
-#
-#print(to_raw_type(test2_scheme))
-#
-#test = ():
-#    a = fn.params()
-#    b = fn.params()
-#    repeat
-#        print('paramcheck ', (a ==> a) == (b ==> b))
-#        except NoItems then
-#            break
-#
-#test()
+test1 = fresh_state(+1)
+test1.heads.add(Integer)
+test1_scheme = {
+    generic: set([test1]),
+    root:    test1 }
+print(to_raw_type(test1_scheme))
 
+test2_generic = set()
+test2 = fresh_state(+1)
+fn = face(greedy_biclique_decomposition)
+test2.heads.add(fn)
+for param in fn.params() repeat
+    st = fresh_state(param.pol)
+    test2.add_transition(param, st)
+    test2_generic.add(st)
+test2_generic.add(test2)
+test2_scheme = {
+    generic: test2_generic,
+    root:    test2 }
+print(to_raw_type(test2_scheme))
 
-#test1 = state(+1, set([]), set([]), dict([]))
-#test2 = state(-1, set([]), set([]), dict([]))
-#test1.add_flow(test2)
-#
-#test3 = fresh_state(+1)
-#fn = face(graph_utils.greedy_biclique_decomposition)
-#test3.heads.add(fn)
-#for param in fn.params() repeat
-#    test3.add_transition(param, fresh_state(param.pol))
+test3_generic = set()
+test3 = fresh_state(+1)
+test3.heads.add(List)
+for param in List.params() repeat
+    st = fresh_state(param.pol)
+    test3.add_transition(param, st)
+    test3_generic.add(st)
+test3_generic.add(test3)
+test3_scheme = {
+    generic: test3_generic,
+    root:    test3 }
+print(to_raw_type(test3_scheme))

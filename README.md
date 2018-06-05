@@ -155,20 +155,15 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- TODO: Implement 'head.format()' for
-    'InterfaceNOPA'
-    'InterfaceParametric'
-    'FunctionInterface'
-    'BuiltinInterface'
-    'ClosureInterface'
+ TODO: Lets play with seven bridges and euler walk generator.
 
  TODO: Document the interpreter, eg. which forms there are for statements,
        scripts, etc. What are their contents, so on...
 
- TODO: Expose the interpreter code and parameters through an interface,
-       so that the type inference can take place.
-
  TODO: Continue with 'to_raw_type'
+
+ TODO: Implement some binary format for binary data,
+       and try serialization.
 
  TODO: Consider writing a sample program that uses the whole palette
        of methods that are available for strings.
@@ -253,6 +248,8 @@ of fibonacci and factorial.
  TODO: Exception handler is a bit like pattern matcher.
 
  TODO: Figure out how to handle mutually recursive definitions of types.
+       Create a function wrapper around each constructor,
+       which then gets called when the type is tried for the first time.
 
  TODO: Add documentation reference building into modules.
 
