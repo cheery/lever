@@ -40,7 +40,7 @@
                 "name": "State",
                 "loc": [9, 7, 14, 7, 0]
             },
-            "vars": ["a"],
+            "varc": 1,
             "rows": [
                 [
                     {
@@ -49,93 +49,140 @@
                         "name": "state",
                         "loc": [20, 7, 25, 7, 0]
                     },
-                    [
-                        {
-                            "type": "label",
-                            "name": "pol",
-                            "value": {
-                                "type": "slot",
-                                "kind": "global",
-                                "name": "Integer",
-                                "loc": [17, 8, 24, 8, 0]
+                    4,
+                    {"pol": 0, "heads": 1, "flow": 2, "transitions": 3},
+                    {
+                        "type": "closure",
+                        "cellvars": [],
+                        "localvars": [
+                            {
+                                "type": "cell",
+                                "deref": false,
+                                "name": "a",
+                                "defs": 1
                             }
-                        },
-                        {
-                            "type": "label",
-                            "name": "heads",
-                            "value": {
-                                "type": "call",
-                                "callee": {
+                        ],
+                        "frame": [],
+                        "args": [
+                            {
+                                "slot": {
                                     "type": "slot",
-                                    "kind": "global",
-                                    "name": "Set",
-                                    "loc": [17, 9, 20, 9, 0]
-                                },
-                                "args": [{"type": "var", "index": 0}],
-                                "loc": [17, 9, 23, 9, 0]
+                                    "kind": "local",
+                                    "index": 0
+                                }
                             }
-                        },
-                        {
-                            "type": "label",
-                            "name": "flow",
-                            "value": {
-                                "type": "call",
-                                "callee": {
-                                    "type": "slot",
-                                    "kind": "global",
-                                    "name": "Set",
-                                    "loc": [17, 10, 20, 10, 0]
-                                },
-                                "args": [
-                                    {
-                                        "type": "call",
-                                        "callee": {
+                        ],
+                        "body": [
+                            {
+                                "type": "return",
+                                "value": {
+                                    "type": "make_tuple",
+                                    "items": [
+                                        {
                                             "type": "slot",
                                             "kind": "global",
-                                            "name": "State",
-                                            "loc": [21, 10, 26, 10, 0]
+                                            "name": "Integer",
+                                            "loc": [17, 8, 24, 8, 0]
                                         },
-                                        "args": [{"type": "var", "index": 0}],
-                                        "loc": [21, 10, 29, 10, 0]
-                                    }
-                                ],
-                                "loc": [17, 10, 30, 10, 0]
-                            }
-                        },
-                        {
-                            "type": "label",
-                            "name": "transitions",
-                            "value": {
-                                "type": "call",
-                                "callee": {
-                                    "type": "slot",
-                                    "kind": "global",
-                                    "name": "Dict",
-                                    "loc": [17, 11, 21, 11, 0]
-                                },
-                                "args": [
-                                    {
-                                        "type": "slot",
-                                        "kind": "global",
-                                        "name": "Parameter",
-                                        "loc": [22, 11, 31, 11, 0]
-                                    },
-                                    {
-                                        "type": "call",
-                                        "callee": {
-                                            "type": "slot",
-                                            "kind": "global",
-                                            "name": "State",
-                                            "loc": [33, 11, 38, 11, 0]
+                                        {
+                                            "type": "call",
+                                            "callee": {
+                                                "type": "slot",
+                                                "kind": "global",
+                                                "name": "Set",
+                                                "loc": [17, 9, 20, 9, 0]
+                                            },
+                                            "args": [
+                                                {
+                                                    "type": "slot",
+                                                    "kind": "local",
+                                                    "index": 0
+                                                }
+                                            ],
+                                            "loc": [17, 9, 23, 9, 0]
                                         },
-                                        "args": [{"type": "var", "index": 0}],
-                                        "loc": [33, 11, 41, 11, 0]
-                                    }
-                                ],
-                                "loc": [17, 11, 42, 11, 0]
+                                        {
+                                            "type": "call",
+                                            "callee": {
+                                                "type": "slot",
+                                                "kind": "global",
+                                                "name": "Set",
+                                                "loc": [17, 10, 20, 10, 0]
+                                            },
+                                            "args": [
+                                                {
+                                                    "type": "call",
+                                                    "callee": {
+                                                        "type": "slot",
+                                                        "kind": "global",
+                                                        "name": "State",
+                                                        "loc": [
+                                                            21,
+                                                            10,
+                                                            26,
+                                                            10,
+                                                            0
+                                                        ]
+                                                    },
+                                                    "args": [
+                                                        {
+                                                            "type": "slot",
+                                                            "kind": "local",
+                                                            "index": 0
+                                                        }
+                                                    ],
+                                                    "loc": [21, 10, 29, 10, 0]
+                                                }
+                                            ],
+                                            "loc": [17, 10, 30, 10, 0]
+                                        },
+                                        {
+                                            "type": "call",
+                                            "callee": {
+                                                "type": "slot",
+                                                "kind": "global",
+                                                "name": "Dict",
+                                                "loc": [17, 11, 21, 11, 0]
+                                            },
+                                            "args": [
+                                                {
+                                                    "type": "slot",
+                                                    "kind": "global",
+                                                    "name": "Parameter",
+                                                    "loc": [22, 11, 31, 11, 0]
+                                                },
+                                                {
+                                                    "type": "call",
+                                                    "callee": {
+                                                        "type": "slot",
+                                                        "kind": "global",
+                                                        "name": "State",
+                                                        "loc": [
+                                                            33,
+                                                            11,
+                                                            38,
+                                                            11,
+                                                            0
+                                                        ]
+                                                    },
+                                                    "args": [
+                                                        {
+                                                            "type": "slot",
+                                                            "kind": "local",
+                                                            "index": 0
+                                                        }
+                                                    ],
+                                                    "loc": [33, 11, 41, 11, 0]
+                                                }
+                                            ],
+                                            "loc": [17, 11, 42, 11, 0]
+                                        }
+                                    ]
+                                }
                             }
-                        }
-                    ]
+                        ],
+                        "loc": [0, 7, 50, 24, 0]
+                    }
                 ]
             ],
             "decls": [
@@ -574,7 +621,7 @@
                 "name": "Site",
                 "loc": [9, 34, 13, 34, 0]
             },
-            "vars": ["op", "a"],
+            "varc": 2,
             "rows": [
                 [
                     {
@@ -583,164 +630,245 @@
                         "name": "site",
                         "loc": [23, 34, 27, 34, 0]
                     },
-                    [
-                        {
-                            "type": "label",
-                            "name": "op",
-                            "value": {"type": "var", "index": 0}
-                        },
-                        {
-                            "type": "label",
-                            "name": "coerces",
-                            "value": {
-                                "type": "call",
-                                "callee": {
+                    6,
+                    {
+                        "op": 0,
+                        "coerces": 1,
+                        "param": 2,
+                        "expect": 3,
+                        "operators": 4,
+                        "slots": 5
+                    },
+                    {
+                        "type": "closure",
+                        "cellvars": [],
+                        "localvars": [
+                            {
+                                "type": "cell",
+                                "deref": false,
+                                "name": "op",
+                                "defs": 1
+                            },
+                            {
+                                "type": "cell",
+                                "deref": false,
+                                "name": "a",
+                                "defs": 1
+                            }
+                        ],
+                        "frame": [],
+                        "args": [
+                            {
+                                "slot": {
                                     "type": "slot",
-                                    "kind": "global",
-                                    "name": "Set",
-                                    "loc": [13, 36, 16, 36, 0]
-                                },
-                                "args": [
-                                    {
-                                        "type": "make_tuple",
-                                        "items": [
-                                            {"type": "var", "index": 0},
-                                            {
+                                    "kind": "local",
+                                    "index": 0
+                                }
+                            },
+                            {
+                                "slot": {
+                                    "type": "slot",
+                                    "kind": "local",
+                                    "index": 1
+                                }
+                            }
+                        ],
+                        "body": [
+                            {
+                                "type": "return",
+                                "value": {
+                                    "type": "make_tuple",
+                                    "items": [
+                                        {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 0
+                                        },
+                                        {
+                                            "type": "call",
+                                            "callee": {
                                                 "type": "slot",
                                                 "kind": "global",
-                                                "name": "Integer",
-                                                "loc": [21, 36, 28, 36, 0]
+                                                "name": "Set",
+                                                "loc": [13, 36, 16, 36, 0]
                                             },
-                                            {"type": "var", "index": 0}
-                                        ]
-                                    }
-                                ],
-                                "loc": [13, 36, 33, 36, 0]
-                            }
-                        },
-                        {
-                            "type": "label",
-                            "name": "param",
-                            "value": {
-                                "type": "slot",
-                                "kind": "global",
-                                "name": "Parameter",
-                                "loc": [11, 37, 20, 37, 0]
-                            }
-                        },
-                        {
-                            "type": "label",
-                            "name": "expect",
-                            "value": {"type": "var", "index": 0}
-                        },
-                        {
-                            "type": "label",
-                            "name": "operators",
-                            "value": {
-                                "type": "call",
-                                "callee": {
-                                    "type": "slot",
-                                    "kind": "global",
-                                    "name": "Dict",
-                                    "loc": [15, 39, 19, 39, 0]
-                                },
-                                "args": [
-                                    {"type": "var", "index": 0},
-                                    {
-                                        "type": "record",
-                                        "fields": [
-                                            {
-                                                "name": "input",
-                                                "mutable": false,
-                                                "value": {
-                                                    "type": "call",
-                                                    "callee": {
-                                                        "type": "slot",
-                                                        "kind": "global",
-                                                        "name": "State",
-                                                        "loc": [
-                                                            31,
-                                                            39,
-                                                            36,
-                                                            39,
-                                                            0
-                                                        ]
-                                                    },
-                                                    "args": [
+                                            "args": [
+                                                {
+                                                    "type": "make_tuple",
+                                                    "items": [
                                                         {
-                                                            "type": "var",
-                                                            "index": 0
-                                                        }
-                                                    ],
-                                                    "loc": [31, 39, 39, 39, 0]
-                                                }
-                                            },
-                                            {
-                                                "name": "output",
-                                                "mutable": false,
-                                                "value": {
-                                                    "type": "call",
-                                                    "callee": {
-                                                        "type": "slot",
-                                                        "kind": "global",
-                                                        "name": "State",
-                                                        "loc": [
-                                                            49,
-                                                            39,
-                                                            54,
-                                                            39,
-                                                            0
-                                                        ]
-                                                    },
-                                                    "args": [
+                                                            "type": "slot",
+                                                            "kind": "local",
+                                                            "index": 1
+                                                        },
                                                         {
-                                                            "type": "var",
-                                                            "index": 0
+                                                            "type": "slot",
+                                                            "kind": "global",
+                                                            "name": "Integer",
+                                                            "loc": [
+                                                                21,
+                                                                36,
+                                                                28,
+                                                                36,
+                                                                0
+                                                            ]
+                                                        },
+                                                        {
+                                                            "type": "slot",
+                                                            "kind": "local",
+                                                            "index": 1
                                                         }
-                                                    ],
-                                                    "loc": [49, 39, 57, 39, 0]
+                                                    ]
                                                 }
-                                            }
-                                        ]
-                                    }
-                                ],
-                                "loc": [15, 39, 59, 39, 0]
-                            }
-                        },
-                        {
-                            "type": "label",
-                            "name": "slots",
-                            "value": {
-                                "type": "call",
-                                "callee": {
-                                    "type": "slot",
-                                    "kind": "global",
-                                    "name": "Dict",
-                                    "loc": [11, 40, 15, 40, 0]
-                                },
-                                "args": [
-                                    {
-                                        "type": "slot",
-                                        "kind": "global",
-                                        "name": "Integer",
-                                        "loc": [16, 40, 23, 40, 0]
-                                    },
-                                    {
-                                        "type": "call",
-                                        "callee": {
+                                            ],
+                                            "loc": [13, 36, 33, 36, 0]
+                                        },
+                                        {
                                             "type": "slot",
                                             "kind": "global",
-                                            "name": "Set",
-                                            "loc": [25, 40, 28, 40, 0]
+                                            "name": "Parameter",
+                                            "loc": [11, 37, 20, 37, 0]
                                         },
-                                        "args": [{"type": "var", "index": 0}],
-                                        "loc": [25, 40, 31, 40, 0]
-                                    }
-                                ],
-                                "loc": [11, 40, 32, 40, 0]
+                                        {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 1
+                                        },
+                                        {
+                                            "type": "call",
+                                            "callee": {
+                                                "type": "slot",
+                                                "kind": "global",
+                                                "name": "Dict",
+                                                "loc": [15, 39, 19, 39, 0]
+                                            },
+                                            "args": [
+                                                {
+                                                    "type": "slot",
+                                                    "kind": "local",
+                                                    "index": 1
+                                                },
+                                                {
+                                                    "type": "record",
+                                                    "fields": [
+                                                        {
+                                                            "name": "input",
+                                                            "mutable": false,
+                                                            "value": {
+                                                                "type": "call",
+                                                                "callee": {
+                                                                    "type": "slot",
+                                                                    "kind": "global",
+                                                                    "name": "State",
+                                                                    "loc": [
+                                                                        31,
+                                                                        39,
+                                                                        36,
+                                                                        39,
+                                                                        0
+                                                                    ]
+                                                                },
+                                                                "args": [
+                                                                    {
+                                                                        "type": "slot",
+                                                                        "kind": "local",
+                                                                        "index": 1
+                                                                    }
+                                                                ],
+                                                                "loc": [
+                                                                    31,
+                                                                    39,
+                                                                    39,
+                                                                    39,
+                                                                    0
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "name": "output",
+                                                            "mutable": false,
+                                                            "value": {
+                                                                "type": "call",
+                                                                "callee": {
+                                                                    "type": "slot",
+                                                                    "kind": "global",
+                                                                    "name": "State",
+                                                                    "loc": [
+                                                                        49,
+                                                                        39,
+                                                                        54,
+                                                                        39,
+                                                                        0
+                                                                    ]
+                                                                },
+                                                                "args": [
+                                                                    {
+                                                                        "type": "slot",
+                                                                        "kind": "local",
+                                                                        "index": 1
+                                                                    }
+                                                                ],
+                                                                "loc": [
+                                                                    49,
+                                                                    39,
+                                                                    57,
+                                                                    39,
+                                                                    0
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            "loc": [15, 39, 59, 39, 0]
+                                        },
+                                        {
+                                            "type": "call",
+                                            "callee": {
+                                                "type": "slot",
+                                                "kind": "global",
+                                                "name": "Dict",
+                                                "loc": [11, 40, 15, 40, 0]
+                                            },
+                                            "args": [
+                                                {
+                                                    "type": "slot",
+                                                    "kind": "global",
+                                                    "name": "Integer",
+                                                    "loc": [16, 40, 23, 40, 0]
+                                                },
+                                                {
+                                                    "type": "call",
+                                                    "callee": {
+                                                        "type": "slot",
+                                                        "kind": "global",
+                                                        "name": "Set",
+                                                        "loc": [
+                                                            25,
+                                                            40,
+                                                            28,
+                                                            40,
+                                                            0
+                                                        ]
+                                                    },
+                                                    "args": [
+                                                        {
+                                                            "type": "slot",
+                                                            "kind": "local",
+                                                            "index": 1
+                                                        }
+                                                    ],
+                                                    "loc": [25, 40, 31, 40, 0]
+                                                }
+                                            ],
+                                            "loc": [11, 40, 32, 40, 0]
+                                        }
+                                    ]
+                                }
                             }
-                        }
-                    ]
+                        ],
+                        "loc": [0, 34, 66, 50, 0]
+                    }
                 ]
             ],
             "decls": [
@@ -1188,7 +1316,7 @@
                 "name": "Sink",
                 "loc": [9, 52, 13, 52, 0]
             },
-            "vars": ["op", "a"],
+            "varc": 2,
             "rows": [
                 [
                     {
@@ -1197,36 +1325,82 @@
                         "name": "sink",
                         "loc": [23, 52, 27, 52, 0]
                     },
-                    [
-                        {
-                            "type": "label",
-                            "name": "index",
-                            "value": {
-                                "type": "slot",
-                                "kind": "global",
-                                "name": "Integer",
-                                "loc": [35, 52, 42, 52, 0]
+                    2,
+                    {"index": 0, "site": 1},
+                    {
+                        "type": "closure",
+                        "cellvars": [],
+                        "localvars": [
+                            {
+                                "type": "cell",
+                                "deref": false,
+                                "name": "op",
+                                "defs": 1
+                            },
+                            {
+                                "type": "cell",
+                                "deref": false,
+                                "name": "a",
+                                "defs": 1
                             }
-                        },
-                        {
-                            "type": "label",
-                            "name": "site",
-                            "value": {
-                                "type": "call",
-                                "callee": {
+                        ],
+                        "frame": [],
+                        "args": [
+                            {
+                                "slot": {
                                     "type": "slot",
-                                    "kind": "global",
-                                    "name": "Site",
-                                    "loc": [50, 52, 54, 52, 0]
-                                },
-                                "args": [
-                                    {"type": "var", "index": 0},
-                                    {"type": "var", "index": 0}
-                                ],
-                                "loc": [50, 52, 61, 52, 0]
+                                    "kind": "local",
+                                    "index": 0
+                                }
+                            },
+                            {
+                                "slot": {
+                                    "type": "slot",
+                                    "kind": "local",
+                                    "index": 1
+                                }
                             }
-                        }
-                    ]
+                        ],
+                        "body": [
+                            {
+                                "type": "return",
+                                "value": {
+                                    "type": "make_tuple",
+                                    "items": [
+                                        {
+                                            "type": "slot",
+                                            "kind": "global",
+                                            "name": "Integer",
+                                            "loc": [35, 52, 42, 52, 0]
+                                        },
+                                        {
+                                            "type": "call",
+                                            "callee": {
+                                                "type": "slot",
+                                                "kind": "global",
+                                                "name": "Site",
+                                                "loc": [50, 52, 54, 52, 0]
+                                            },
+                                            "args": [
+                                                {
+                                                    "type": "slot",
+                                                    "kind": "local",
+                                                    "index": 0
+                                                },
+                                                {
+                                                    "type": "slot",
+                                                    "kind": "local",
+                                                    "index": 1
+                                                }
+                                            ],
+                                            "loc": [50, 52, 61, 52, 0]
+                                        }
+                                    ]
+                                }
+                            }
+                        ],
+                        "loc": [0, 52, 27, 53, 0]
+                    }
                 ]
             ],
             "decls": [

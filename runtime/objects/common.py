@@ -803,6 +803,7 @@ class Datatype(Interface):
     def __init__(self, varc):
         self.varc = varc
         self.closed = False
+        self.builders = []
         self.constants = []
         self.constructors = []
         self.methods = {}
@@ -810,8 +811,18 @@ class Datatype(Interface):
         self.setters = {}
         self.datatype_labels = {}
 
-    def close(self):
+    def must_close(self):
+        if self.closed:
+            return
         self.closed = True
+        args = []
+        for i in range(self.varc):
+            args.append(Freevar(i))
+        for builder, cons in self.builders:
+            cons.fields = cast(call(builder, args), Tuple).tuple_val
+            if cons.fieldc != len(cons.fields):
+                raise error(e_TypeError())
+        self.builders = []
 
     def method(self, operator):
         impl = self.methods.get(operator, None)
@@ -871,6 +882,7 @@ def Curry_call(a, args):
 @method(Datatype.interface, op_call, vari=True)
 def Datatype_call(datatype, args):
     datatype = cast(datatype, Datatype)
+    datatype.must_close()
     if datatype.varc != len(args):
         raise error(e_TypeError())
     return TypeInstance(datatype, args)
@@ -898,23 +910,29 @@ def new_constant(datatype):
     datatype.constants.append(const)
     return const
     
-def new_constructor(datatype, params, labels):
+def new_constructor(datatype, labels, fieldc, builder):
     if datatype.closed:
         raise error(e_EvalError())
-    cons = Constructor(datatype, params, labels)
+    cons = Constructor(datatype, labels, fieldc)
+    datatype.builders.append((builder, cons))
     datatype.constructors.append(cons)
     for label in labels:
         datatype.datatype_labels[label] = None
     return cons
 
 class Constructor(Object):
-    def __init__(self, datatype, fields, cons_labels):
+    def __init__(self, datatype, cons_labels, fieldc):
         self.datatype = datatype
-        self.fields = fields
         self.cons_labels = cons_labels
+        self.fieldc = fieldc
+        self.fields = []
 
 @method(Constructor.interface, op_call, vari=True)
 def Constructor_call(constructor, fields):
+    constructor = cast(constructor, Constructor)
+    constructor.datatype.must_close()
+    if constructor.fieldc != len(fields):
+        raise error(e_TypeError())
     # TODO: Check the fields.
     return TaggedUnion(constructor, fields)
 

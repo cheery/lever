@@ -311,24 +311,27 @@ solve_scope = (function, global_wd=set()):
             locals := p_locals
             this.scope = scope
             scope.module = tmp_module
-        elif isinstance(this, Datatype)
-            # The macro mechanism was added for the datatypes.
-            # It is supposed to replace the parameters with
-            # variables and ensure they're visible only inside the 
-            # datatype declaration.
-            flow(this.slot)
-            p_macro = macro
-            macro := dict(p_macro)
-            for i in range(this.vars.length)
-                name = this.vars[i]
-                macro[name] = { type = "var", index = 0 }
-            for constructor, fields in this.rows
-                flow(constructor)
-                for field in fields
-                    flow(field)
-            macro := p_macro
-            for decl in this.decls
-                flow(decl)
+        #elif isinstance(this, Datatype)
+        #    # The macro mechanism was added for the datatypes.
+        #    # It is supposed to replace the parameters with
+        #    # variables and ensure they're visible only inside the 
+        #    # datatype declaration.
+        
+             # This was not needed afterwards when
+             # constructors were wrapped with closures.
+        #    flow(this.slot)
+        #    p_macro = macro
+        #    macro := dict(p_macro)
+        #    for i in range(this.vars.length)
+        #        name = this.vars[i]
+        #        macro[name] = { type = "var", index = 0 }
+        #    for constructor, fields in this.rows
+        #        flow(constructor)
+        #        for field in fields
+        #            flow(field)
+        #    macro := p_macro
+        #    for decl in this.decls
+        #        flow(decl)
         else
             this.traverse(flow)
     function.traverse(flow)
@@ -857,20 +860,36 @@ class IfLoop
 class Datatype
     +init = (self, head, rows, decls):
         self.slot = head[0]
-        self.vars = head[1]
-        self.rows = rows
+        self.varc = head[1].length
         self.decls = decls
         self.loc = null
         self.slot.slotconfig(true, true)
-        for constructor, fields in self.rows
+        args = []
+        for var in head[1]
+            args.append(Argument(Symbol(var)))
+        self.rows = []
+        for constructor, fields in rows
             constructor.slotconfig(true, true)
+            labels = {}
+            body = []
+            i = 0
+            for field in fields
+                if field.label
+                    labels[field.label] = i
+                body.append( field.value )
+                i += 1
+            builder = Closure(args, [Return(MakeTuple(body))])
+            self.rows.append([
+                constructor,
+                fields.length
+                labels,
+                builder ])
 
     traverse = (self, f):
         f(self.slot)
-        for constructor, fields in self.rows
+        for constructor, fieldc, labels, builder in self.rows
             f(constructor)
-            for field in fields
-                f(field)
+            f(builder)
         for decl in self.decls
             f(decl)
 
@@ -878,7 +897,7 @@ class Datatype
         return {
             type = "datatype",
             slot = js(self.slot),
-            vars = js(self.vars),
+            varc = js(self.varc),
             rows = js(self.rows),
             decls = js(self.decls),
             loc = js_loc(self.loc) }

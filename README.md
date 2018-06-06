@@ -247,10 +247,6 @@ of fibonacci and factorial.
 
  TODO: Exception handler is a bit like pattern matcher.
 
- TODO: Figure out how to handle mutually recursive definitions of types.
-       Create a function wrapper around each constructor,
-       which then gets called when the type is tried for the first time.
-
  TODO: Add documentation reference building into modules.
 
  TODO: If module load fails due to module not present, mark the

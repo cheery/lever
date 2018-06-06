@@ -268,38 +268,29 @@ def eval_block(ctx, body, start, mod, stack):
             mod = None
             break
         elif tp == u"datatype":
-            varc = len(as_list(attr(stmt, u"vars")))
+            varc = as_integer(attr(stmt, u"varc"))
             dt = new_datatype(varc)
             eval_slot(ctx, as_dict(attr(stmt, u"slot"))).store(ctx, dt)
             for row in as_list(attr(stmt, u"rows")):
                 row = as_list(row)
-                if len(row) != 2:
+                if len(row) != 4:
                     raise error(e_EvalError())
                 row_slot = as_dict(row[0])
-                row_params = as_list(row[1])
-                params = []
+                row_fieldc = as_integer(row[1])
+                row_labels = as_dict(row[2])
+                row_builder = as_dict(row[3])
                 labels = {}
-                for i, param in enumerate(row_params):
-                    param = as_dict(param)
-                    ptp = as_string(attr(param, u"type"))
-                    if ptp == u"label":
-                        labels[as_string(attr(param, u"name"))] = i
-                        params.append(eval_expr(ctx,
-                            as_dict(attr(param, u"value"))))
-                    elif ptp == u"no_label":
-                        params.append(eval_expr(ctx,
-                            as_dict(attr(param, u"value"))))
-                    else:
-                        raise error(e_EvalError())
-                if len(params) == 0:
+                for key, value in row_labels.items():
+                    labels[as_string(key)] = as_integer(value)
+                if row_fieldc == 0:
                     row = new_constant(dt)
                 else:
-                    row = new_constructor(dt, params, labels)
+                    builder = eval_expr(ctx, row_builder)
+                    row = new_constructor(dt, labels, row_fieldc, builder)
                 eval_slot(ctx, row_slot).store(ctx, row)
             for decl in as_list(attr(stmt, u"decls")):
                 decl = as_dict(decl)
                 eval_decl(ctx, dt, decl)
-            dt.close()
         elif tp == u"operator":
             slot = eval_slot(ctx, as_dict(attr(stmt, u"slot")))
             selector = eval_expr(ctx, as_dict(attr(stmt, u"selector")))
@@ -603,9 +594,9 @@ def eval_expr(ctx, val):
         for value in as_list(attr(val, u"values")):
             l.list_val.append(eval_expr(ctx, as_dict(value)))
         return l
-    elif tp == u"var":
-        var_index = as_integer(attr(val, u"index"))
-        return Freevar(var_index)
+    #elif tp == u"var":
+    #    var_index = as_integer(attr(val, u"index"))
+    #    return Freevar(var_index)
     elif tp == u"iter_once":
         value = eval_expr(ctx, as_dict(attr(val, u"value")))
         it = cast(call(op_iter, [value]), Iterator)
