@@ -155,15 +155,10 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- TODO: Lets play with seven bridges and euler walk generator.
-
  TODO: Document the interpreter, eg. which forms there are for statements,
        scripts, etc. What are their contents, so on...
 
- TODO: Continue with 'to_raw_type'
-
- TODO: Implement some binary format for binary data,
-       and try serialization.
+ TODO: Start exploring the buildup of the inferencer.
 
  TODO: Consider writing a sample program that uses the whole palette
        of methods that are available for strings.
@@ -244,6 +239,9 @@ of fibonacci and factorial.
     a.symmetric_difference(iterable), xor(a, b)
 
  TODO: Consider similar sample programs for lists, dicts, sets, slots.
+
+ TODO: Implement some binary format for binary data,
+       and try serialization.
 
  TODO: Exception handler is a bit like pattern matcher.
 

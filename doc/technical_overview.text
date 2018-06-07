@@ -129,7 +129,38 @@ case clauses cover all possibilities there are.
 
 <h1>Scoping rules</h1>
 
-TODO: Scoping rules
+The scope is lexical and it is divided into three parts:
+
+<ul>
+    <li>Shadow: Variables defined earlier in local scope, but
+        not necessarily live.</li>
+    <li>Live: Variables that have been written and
+        are verified to be live.</li>
+    <li>All: All variables defined in current scope.</li>
+</ul>
+
+The liveness for variables is calculated by flow analysis. The
+details of how this is specifically done during parsing is
+still partially open.
+
+A closure will obtain cells that are writable and readable
+in its scope, from the point where it is defined. 'All' variables
+defined in the scope form the part that are readable. 'Live' forms
+the set of variables that are writable.
+
+If a variable inside closure is not writable in closure's upscope,
+the closure will define a local variable.
+
+If a variable is defined within a loop, it does not escape
+that loop, and it is referenced upscope, that variable gets a
+small subscope that ensures that every closure produced within
+a loop gets an unique reference.
+
+On the topmost level of a script, the local scope is only used
+within loops, and assignments end up stored in the module.
+
+The details of the scope are abstracted before the code
+reaches interpreter.
 
 <h1>Parsing</h1>
 
