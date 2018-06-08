@@ -155,10 +155,10 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- TODO: Document the interpreter, eg. which forms there are for statements,
-       scripts, etc. What are their contents, so on...
-
  TODO: Start exploring the buildup of the inferencer.
+
+ TODO: Add the 'generalize', 'instantiate_type' into the prelude program.
+       export 'unique_coercion' from the runtime.
 
  TODO: Consider writing a sample program that uses the whole palette
        of methods that are available for strings.
@@ -237,6 +237,12 @@ of fibonacci and factorial.
     a.intersection(iterable), a & b
     a.difference(iterable), a - b
     a.symmetric_difference(iterable), xor(a, b)
+
+ TODO: The technical documentation has few remaining formats
+       not described.
+
+ TODO: The technical documentation should describe how the
+       forms end up evaluated.
 
  TODO: Consider similar sample programs for lists, dicts, sets, slots.
 

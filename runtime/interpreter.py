@@ -263,6 +263,7 @@ def eval_block(ctx, body, start, mod, stack):
             value = eval_expr(ctx, as_dict(attr(stmt, u"value")))
             cases = as_list(attr(stmt, u"cases"))
             default = as_list(attr(stmt, u"default"))
+            stack.append((body, i+1, mod))
             body = eval_case(ctx, value, cases, default)
             stack.append((body, 0, None))
             mod = None

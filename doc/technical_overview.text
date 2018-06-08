@@ -178,3 +178,110 @@ using them gets called.
 The difference to the traditional dynamic scope is that the
 the access to the dynamic variables end up described in the
 type of the function if it is type inferenced.
+
+<h1>Intepretation</h1>
+
+The primary method used here to evaluate programs is through
+interpreting them. As a temporary measure the interpretation
+happens by loading JSON files and stepping through their
+contents.
+
+The loader assumes that the topmost object is a script that
+produces a module. It retrieves a dictionary of preset
+values for the modules, and the environment consisting of
+stack of modules.
+
+<ul>
+ <li>type: "script"</li>
+ <li>body: the block that produces the module.</li>
+ <li>sources: list of paths to source scripts, relative to
+ the directory of the json-encoded file.</li>
+ <li>cellvars: list of cell variable declarations</li>
+ <li>localvars: list of local variable declarations</li>
+</ul>
+
+Programs are constructed from statement blocks, expressions
+and slots.
+
+The 'loc' field is omitted in the following descriptions.
+If an operation may fail, it can provide 'loc' -field to
+provide source location information. This is a list
+consisting of 5 values:
+[start_col,start_lno, stop_col,stop_lno, source_index]
+
+'localvars', 'cellvars' are not covered for now, it is
+assumed they are list of objects and contain
+debugging-related information.
+
+Statement blocks are lists, consisting of statements, they
+include:
+
+<ul>
+    <li>{type:"inplace_assign", slot:slot,
+         op:expression,
+         value:expression}</li>
+    <li>{type:"repeat", fresh, heads, body:block}</li>
+    <li>{type:"cond", cond:expression, tbody:block, fbody:block}</li>
+    <li>{type:"case", cases, default:block}</li>
+    <li>{type:"datatype", slot:slot, rows, decls}</li>
+    <li>{type:"operator", slot:slot, selector:expression, decls}</li>
+    <li>{type:"except", body:block, excepts}</li>
+    <li>{type:"assign", slot:slot, value:expression}</li>
+    <li>{type:"bind", module:expression,
+         bindings:dict([[dst:string,src:string]])}</li>
+    <li>{type:"bind_coeffect", slot:slot,
+         fields:[{name:string,mutable:bool}]}</li>
+    <li>{type:"assert", cond:expression, value:expression}</li>
+</ul>
+
+Terminating statements:
+
+<ul>
+    <li>{type:"return", value:expression}</li>
+    <li>{type:"yield", value:expression}</li>
+    <li>{type:"break"}</li>
+    <li>{type:"continue"}</li>
+    <li>{type:"raise", value:expression}</li>
+</ul>
+
+Expressions are clauses that can be evaluated and they
+return a result or throw an exception.
+
+<ul>
+    <li>{type:"literal"}</li>
+    <li>{type:"call", callee:expression, args:expressions}</li>
+    <li>{type:"cmp", exprs:expressions, ops:expressions}</li>
+    <li>{type:"and", lhs:expression, rhs:expression}</li>
+    <li>{type:"or", lhs:expression, rhs:expression}</li>
+    <li>{type:"not", value:expression}</li>
+    <li>{type:"closure", frame, cellvars, localvars,
+        args, body:block}</li>
+    <li>{type:"generator", frame, cellvars, localvars,
+        body:block}</li>
+    <li>{type:"make_tuple", items:expressions}</li>
+    <li>{type:"list", values:expressions}</li>
+    <li>{type:"iter_once", value:expression, slot:slot}</li>
+    <li>{type:"record",
+         fields:[{name:string,mutable:bool,value:expression}]}</li>
+</ul>
+
+Slots are clauses that evaluate into a slot object. Slot
+defines a load and store operation.
+
+<ul>
+    <li>{kind:"local", index:integer}</li>
+    <li>{kind:"cell", index:integer}</li>
+    <li>{kind:"global", name:string}</li>
+    <li>{kind:"tuple", slots:slots}</li>
+    <li>{kind:"attr", base:expression, name:string}</li>
+    <li>{kind:"item", base:expression, index:expression}</li>
+    <li>{kind:"deref", value:expression}</li>
+</ul>
+
+TODO: Describe repeat: fresh, heads
+TODO: Describe case:   cases
+TODO: Describe datatype: rows, decls
+TODO: Describe operator: decls
+TODO: Describe except: excepts
+TODO: Describe bind: bindings
+TODO: Describe closure, generator: frame, args
