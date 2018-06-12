@@ -155,8 +155,15 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- THE NEXT TASK:
-    The technical documentation has few remaining formats not described.
+ THE NEXT TASK: {"call", callee, args}
+
+prelude/intro.lc:362: add call inference.
+
+
+See how many times the variadic arguments are used and where.
+Consider dropping varargs.
+
+Tune pattern matchers usable without case construct.
 
 
  TODO: The technical documentation should describe how the

@@ -214,6 +214,13 @@ def w_unique_coercion(items):
         raise error(e_NoValue())
     return face
 
+@python_bridge
+def w_is_closure(item):
+    if isinstance(item.face(), FunctionInterface):
+        return true
+    else:
+        return false
+
 base_stem = {
     u"==": op_eq,
     u"!=": w_ne,
@@ -270,4 +277,5 @@ base_stem = {
     u"single": w_single,
     u"inspect": interpreter.w_inspect,
     u"unique_coercion": w_unique_coercion,
+    u"is_closure": w_is_closure,
 }

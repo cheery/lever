@@ -203,7 +203,7 @@ generalize = (root, env):
         case env of
         environ_end then
             return set()
-        environ(schemes, parent, env_free) then
+        environ(schemes, locals, parent, env_free) then
             free = recalculate_free(parent)
             # Nodes free in parent do not need to appear in free set
             env_free.difference_update(free)
@@ -304,11 +304,12 @@ instantiate_type = (scheme):
 
 datatype Env(op, a) = environ(
     schemes: Dict(String, {generic: Set(State(op, a)), root: State(op, a)}),
+    locals: Dict(String, {input: State(op,a), output: State(op, a)}),
     parent: Env(op, a),
     free: Set(State(op, a))) | environ_end
 method getitem = (env, name):
     case env of
-    environ(schemes, parent, free) then
+    environ(schemes, locals, parent, free) then
         return schemes[name]
         except NoIndex then
             return parent[name]
@@ -316,16 +317,18 @@ method getitem = (env, name):
         return dict()[name]
 
 inference_function = (fn, env, visited):
+    env = environ(dict(), dict(), env, set())
     head = face(fn)
     info = inspect(fn)
     out = fresh_state(+1)
     out.heads.add(faucet(head))
-    assert info.args.length == 0 as "arguments not supported yet"
     params = head.params()
-    for i in range(info.args.length) repeat
+    for arg in info.args repeat
         port = fresh_port()
         dom = params ==> params
         out.add_transition(dom, port.input)
+        slot = inference_slot(arg['slot'], env, visited)
+        slot.set(port.output)
     retval = inference_program(info.body, env, visited)
     out.add_transition(params ==> params, retval)
     return out
@@ -354,21 +357,39 @@ inference_expr = (a, env, visited):
         else
             assert false as "missing inference for literal"
         return result
+    "slot" then
+        return inference_slot(a, env, visited).get()
     else
         print(a['type'], "missing")
         assert false as "missing inference for expression"
 
+inference_slot = (a, env, visited):
+    case a['kind'] of
+    "local" then
+        key = 'local' ++ stringify(a['index'])
+        port = env.schemes[key]
+        except NoIndex then
+            port = fresh_free_port(env.free)
+            env.schemes[key] = port
+        return {
+            set: ((a): biunify((a, port.input), visited)),
+            get: ((): return port.output) }
+    else
+        print(a['kind'], "missing")
+        assert false as "missing inference for expression"
 
-foo = ():
-    return 5
 
-env = environ(dict(), environ_end, set())
+
+foo = (bar):
+    return bar + 5
+
+env = environ(dict(), dict(), environ_end, set())
 visited = set()
 
+print(is_closure(foo))
 out = inference_function(foo, env, visited)
 out_scheme = generalize(out, env)
 print(to_raw_type(out_scheme))
-
 
 #operator format [0]
 #method List = (a, d):

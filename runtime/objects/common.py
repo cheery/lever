@@ -20,7 +20,7 @@ class Object:
     class __metaclass__(type):
         def __init__(cls, name, bases, dict):
             if 'interface' not in dict:
-                cls.interface = InterfaceNOPA()
+                cls.interface = InterfaceParametric()
 
     # .face() is the only method that is common for every
     # object in the system because the method resolution
@@ -42,10 +42,27 @@ class Interface(Object):
     def method(self, operator):
         return operator.resolution_trampoline(self)
 
-# NOPA stands for a non-parametric interface
-class InterfaceNOPA(Interface):
+# The important concept in this new object system is the
+# variances of different kinds. First we have parametric
+# variance such as here.
+INV = INVARIANT     = 0
+COV = COVARIANT     = 1
+CNV = CONTRAVARIANT = 2
+BIV = BIVARIANT     = 3
+
+# The type parameters are provided later.
+class InterfaceParametric(Interface):
     interface = None
-    def __init__(self):
+    def __init__(self, variances = None):
+        self.variances = [] if variances is None else variances
+        self.interface_params = []
+        for v in self.variances:
+            if v & 1 != 0:
+                self.interface_params.append(TypeParameter(fresh_integer(+1)))
+            if v & 2 != 0:
+                self.interface_params.append(TypeParameter(fresh_integer(-1)))
+            if v & 3 != v:
+                raise error(e_TypeError())
         self.methods = {}
         self.getters = {}
         self.setters = {}
@@ -71,7 +88,7 @@ class InterfaceNOPA(Interface):
 # The object should never return itself as a face, but
 # we have to cut our type hierarchy to something. We do it
 # when there is no longer any type information present in the type.
-InterfaceNOPA.interface = InterfaceNOPA()
+InterfaceParametric.interface = InterfaceParametric()
 
 # An alternative to this would be to produce an interface of
 # an interface, which is numbered by how many times 'face'
@@ -90,10 +107,10 @@ class Constant(Object):
 # A function may return 'null'. Like saying 'never', it
 # implies that there is no information transmitted in the
 # value that is passed around.
-Unit = InterfaceNOPA()
+Unit = InterfaceParametric()
 null = Constant(Unit)
 
-Bool = InterfaceNOPA()
+Bool = InterfaceParametric()
 true  = Constant(Bool)
 false = Constant(Bool)
 
@@ -122,7 +139,7 @@ class String(Object):
 # opt tells how many of the arguments are optional.
 # On callsites the opt must be 0.
 class FunctionInterface(Interface):
-    interface = InterfaceNOPA()
+    interface = InterfaceParametric()
     def __init__(self, argc, vari, opt):
         self.argc = argc
         self.vari = vari
@@ -535,27 +552,6 @@ def convert(x, face):
     if x.face() is not face:
         raise error(e_TypeError())
     return x
-
-# The important concept in this new object system is the
-# variances of different kinds. First we have parametric
-# variance such as here.
-INV = INVARIANT     = 0
-COV = COVARIANT     = 1
-CNV = CONTRAVARIANT = 2
-BIV = BIVARIANT     = 3
-
-class InterfaceParametric(InterfaceNOPA):
-    def __init__(self, variances):
-        self.variances = variances
-        self.interface_params = []
-        for v in variances:
-            if v & 1 != 0:
-                self.interface_params.append(TypeParameter(fresh_integer(+1)))
-            if v & 2 != 0:
-                self.interface_params.append(TypeParameter(fresh_integer(-1)))
-            if v & 3 != v:
-                raise error(e_TypeError())
-        InterfaceNOPA.__init__(self)
 
 # Type parameters are labels returned by interfaces.
 class TypeParameter(Object):
@@ -1079,24 +1075,10 @@ def FunctionInterface_eq(a, b):
 def FunctionInterface_hash(a):
     return fresh_integer(compute_hash(a))
 
-@attr_method(InterfaceNOPA.interface, u"params")
-def NOPA_params(n):
-    return List([])
-
-@attr_method(InterfaceNOPA.interface, u"format")
-def InterfaceNOPA_format(f, px):
-    # TODO: Module names should be implemented next.
-    prefix = cast(call(op_stringify, [f]), String).string_val
-    return String(prefix)
-
 @method(FunctionInterface.interface, op_eq)
 @method(BuiltinInterface.interface, op_eq)
-def NOPA_eq(a, b):
+def FunctionInterface_eq(a, b):
     return true if a is b else false
-
-@method(InterfaceNOPA.interface, op_hash)
-def NOPA_hash(a):
-    return fresh_integer(compute_hash(a))
 
 @attr_method(InterfaceParametric.interface, u"params")
 def InterfaceParametric_params(a):
@@ -1105,6 +1087,10 @@ def InterfaceParametric_params(a):
 @attr_method(InterfaceParametric.interface, u"format")
 def InterfaceParametric_format(f, px):
     f = cast(f, InterfaceParametric)
+    if len(f.variances) == 0:
+        # TODO: Module names should be implemented next.
+        prefix = cast(call(op_stringify, [f]), String).string_val
+        return String(prefix)
     out = []
     i = 0
     for v in f.variances:

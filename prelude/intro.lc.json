@@ -4966,6 +4966,12 @@
                                 {
                                     "type": "cell",
                                     "deref": false,
+                                    "name": "locals",
+                                    "defs": 1
+                                },
+                                {
+                                    "type": "cell",
+                                    "deref": false,
                                     "name": "parent",
                                     "defs": 1
                                 },
@@ -5087,6 +5093,11 @@
                                                     },
                                                     {
                                                         "type": "slot",
+                                                        "kind": "local",
+                                                        "index": 3
+                                                    },
+                                                    {
+                                                        "type": "slot",
                                                         "kind": "cell",
                                                         "index": 1
                                                     }
@@ -5112,7 +5123,7 @@
                                                             {
                                                                 "type": "slot",
                                                                 "kind": "local",
-                                                                "index": 2
+                                                                "index": 3
                                                             }
                                                         ],
                                                         "loc": [
@@ -5157,7 +5168,7 @@
                                                     "slot": {
                                                         "type": "slot",
                                                         "kind": "local",
-                                                        "index": 3
+                                                        "index": 4
                                                     },
                                                     "value": {
                                                         "type": "closure",
@@ -5304,7 +5315,7 @@
                                                             "slot": {
                                                                 "type": "slot",
                                                                 "kind": "local",
-                                                                "index": 4
+                                                                "index": 5
                                                             },
                                                             "value": {
                                                                 "type": "slot",
@@ -5323,7 +5334,7 @@
                                                                     "slot": {
                                                                         "type": "slot",
                                                                         "kind": "local",
-                                                                        "index": 5
+                                                                        "index": 6
                                                                     },
                                                                     "value": {
                                                                         "type": "slot",
@@ -5331,7 +5342,7 @@
                                                                         "base": {
                                                                             "type": "slot",
                                                                             "kind": "local",
-                                                                            "index": 4
+                                                                            "index": 5
                                                                         },
                                                                         "name": "flow",
                                                                         "loc": [
@@ -5350,13 +5361,13 @@
                                                                     "callee": {
                                                                         "type": "slot",
                                                                         "kind": "local",
-                                                                        "index": 3
+                                                                        "index": 4
                                                                     },
                                                                     "args": [
                                                                         {
                                                                             "type": "slot",
                                                                             "kind": "local",
-                                                                            "index": 5
+                                                                            "index": 6
                                                                         }
                                                                     ],
                                                                     "loc": [
@@ -5382,12 +5393,12 @@
                                                                             {
                                                                                 "type": "slot",
                                                                                 "kind": "local",
-                                                                                "index": 6
+                                                                                "index": 7
                                                                             },
                                                                             {
                                                                                 "type": "slot",
                                                                                 "kind": "local",
-                                                                                "index": 7
+                                                                                "index": 8
                                                                             }
                                                                         ],
                                                                         "loc": [
@@ -5404,7 +5415,7 @@
                                                                         "base": {
                                                                             "type": "slot",
                                                                             "kind": "local",
-                                                                            "index": 4
+                                                                            "index": 5
                                                                         },
                                                                         "name": "transitions",
                                                                         "loc": [
@@ -5421,12 +5432,12 @@
                                                                     "slot": {
                                                                         "type": "slot",
                                                                         "kind": "local",
-                                                                        "index": 8
+                                                                        "index": 9
                                                                     },
                                                                     "value": {
                                                                         "type": "slot",
                                                                         "kind": "local",
-                                                                        "index": 7
+                                                                        "index": 8
                                                                     }
                                                                 }
                                                             ],
@@ -5436,13 +5447,13 @@
                                                                     "callee": {
                                                                         "type": "slot",
                                                                         "kind": "local",
-                                                                        "index": 3
+                                                                        "index": 4
                                                                     },
                                                                     "args": [
                                                                         {
                                                                             "type": "slot",
                                                                             "kind": "local",
-                                                                            "index": 8
+                                                                            "index": 9
                                                                         }
                                                                     ],
                                                                     "loc": [
@@ -8431,8 +8442,8 @@
                         "name": "environ",
                         "loc": [22, 305, 29, 305, 0]
                     },
-                    3,
-                    {"schemes": 0, "parent": 1, "free": 2},
+                    4,
+                    {"schemes": 0, "locals": 1, "parent": 2, "free": 3},
                     {
                         "type": "closure",
                         "cellvars": [],
@@ -8601,8 +8612,107 @@
                                             "callee": {
                                                 "type": "slot",
                                                 "kind": "global",
+                                                "name": "Dict",
+                                                "loc": [12, 307, 16, 307, 0]
+                                            },
+                                            "args": [
+                                                {
+                                                    "type": "slot",
+                                                    "kind": "global",
+                                                    "name": "String",
+                                                    "loc": [17, 307, 23, 307, 0]
+                                                },
+                                                {
+                                                    "type": "record",
+                                                    "fields": [
+                                                        {
+                                                            "name": "input",
+                                                            "mutable": false,
+                                                            "value": {
+                                                                "type": "call",
+                                                                "callee": {
+                                                                    "type": "slot",
+                                                                    "kind": "global",
+                                                                    "name": "State",
+                                                                    "loc": [
+                                                                        33,
+                                                                        307,
+                                                                        38,
+                                                                        307,
+                                                                        0
+                                                                    ]
+                                                                },
+                                                                "args": [
+                                                                    {
+                                                                        "type": "slot",
+                                                                        "kind": "local",
+                                                                        "index": 0
+                                                                    },
+                                                                    {
+                                                                        "type": "slot",
+                                                                        "kind": "local",
+                                                                        "index": 1
+                                                                    }
+                                                                ],
+                                                                "loc": [
+                                                                    33,
+                                                                    307,
+                                                                    44,
+                                                                    307,
+                                                                    0
+                                                                ]
+                                                            }
+                                                        },
+                                                        {
+                                                            "name": "output",
+                                                            "mutable": false,
+                                                            "value": {
+                                                                "type": "call",
+                                                                "callee": {
+                                                                    "type": "slot",
+                                                                    "kind": "global",
+                                                                    "name": "State",
+                                                                    "loc": [
+                                                                        54,
+                                                                        307,
+                                                                        59,
+                                                                        307,
+                                                                        0
+                                                                    ]
+                                                                },
+                                                                "args": [
+                                                                    {
+                                                                        "type": "slot",
+                                                                        "kind": "local",
+                                                                        "index": 0
+                                                                    },
+                                                                    {
+                                                                        "type": "slot",
+                                                                        "kind": "local",
+                                                                        "index": 1
+                                                                    }
+                                                                ],
+                                                                "loc": [
+                                                                    54,
+                                                                    307,
+                                                                    66,
+                                                                    307,
+                                                                    0
+                                                                ]
+                                                            }
+                                                        }
+                                                    ]
+                                                }
+                                            ],
+                                            "loc": [12, 307, 68, 307, 0]
+                                        },
+                                        {
+                                            "type": "call",
+                                            "callee": {
+                                                "type": "slot",
+                                                "kind": "global",
                                                 "name": "Env",
-                                                "loc": [12, 307, 15, 307, 0]
+                                                "loc": [12, 308, 15, 308, 0]
                                             },
                                             "args": [
                                                 {
@@ -8616,7 +8726,7 @@
                                                     "index": 1
                                                 }
                                             ],
-                                            "loc": [12, 307, 22, 307, 0]
+                                            "loc": [12, 308, 22, 308, 0]
                                         },
                                         {
                                             "type": "call",
@@ -8624,7 +8734,7 @@
                                                 "type": "slot",
                                                 "kind": "global",
                                                 "name": "Set",
-                                                "loc": [10, 308, 13, 308, 0]
+                                                "loc": [10, 309, 13, 309, 0]
                                             },
                                             "args": [
                                                 {
@@ -8635,9 +8745,9 @@
                                                         "name": "State",
                                                         "loc": [
                                                             14,
-                                                            308,
+                                                            309,
                                                             19,
-                                                            308,
+                                                            309,
                                                             0
                                                         ]
                                                     },
@@ -8653,16 +8763,16 @@
                                                             "index": 1
                                                         }
                                                     ],
-                                                    "loc": [14, 308, 26, 308, 0]
+                                                    "loc": [14, 309, 26, 309, 0]
                                                 }
                                             ],
-                                            "loc": [10, 308, 27, 308, 0]
+                                            "loc": [10, 309, 27, 309, 0]
                                         }
                                     ]
                                 }
                             }
                         ],
-                        "loc": [0, 305, 27, 316, 0]
+                        "loc": [0, 305, 27, 317, 0]
                     }
                 ],
                 [
@@ -8670,7 +8780,7 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "environ_end",
-                        "loc": [31, 308, 42, 308, 0]
+                        "loc": [31, 309, 42, 309, 0]
                     },
                     0,
                     {},
@@ -8714,7 +8824,7 @@
                                 "value": {"type": "make_tuple", "items": []}
                             }
                         ],
-                        "loc": [0, 305, 27, 316, 0]
+                        "loc": [0, 305, 27, 317, 0]
                     }
                 ]
             ],
@@ -8725,7 +8835,7 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "getitem",
-                        "loc": [7, 309, 14, 309, 0]
+                        "loc": [7, 310, 14, 310, 0]
                     },
                     "value": {
                         "type": "closure",
@@ -8747,6 +8857,12 @@
                                 "type": "cell",
                                 "deref": false,
                                 "name": "schemes",
+                                "defs": 1
+                            },
+                            {
+                                "type": "cell",
+                                "deref": false,
+                                "name": "locals",
                                 "defs": 1
                             },
                             {
@@ -8794,7 +8910,7 @@
                                             "type": "slot",
                                             "kind": "global",
                                             "name": "environ",
-                                            "loc": [4, 311, 11, 311, 0]
+                                            "loc": [4, 312, 11, 312, 0]
                                         },
                                         "slot": {
                                             "type": "slot",
@@ -8814,9 +8930,14 @@
                                                     "type": "slot",
                                                     "kind": "local",
                                                     "index": 4
+                                                },
+                                                {
+                                                    "type": "slot",
+                                                    "kind": "local",
+                                                    "index": 5
                                                 }
                                             ],
-                                            "loc": [4, 311, 31, 314, 0]
+                                            "loc": [4, 312, 31, 315, 0]
                                         },
                                         "body": [
                                             {
@@ -8839,9 +8960,9 @@
                                                             },
                                                             "loc": [
                                                                 15,
-                                                                312,
+                                                                313,
                                                                 28,
-                                                                312,
+                                                                313,
                                                                 0
                                                             ]
                                                         }
@@ -8855,9 +8976,9 @@
                                                             "name": "NoIndex",
                                                             "loc": [
                                                                 15,
-                                                                313,
+                                                                314,
                                                                 22,
-                                                                313,
+                                                                314,
                                                                 0
                                                             ]
                                                         },
@@ -8870,7 +8991,7 @@
                                                                     "base": {
                                                                         "type": "slot",
                                                                         "kind": "local",
-                                                                        "index": 3
+                                                                        "index": 4
                                                                     },
                                                                     "index": {
                                                                         "type": "slot",
@@ -8879,9 +9000,9 @@
                                                                     },
                                                                     "loc": [
                                                                         19,
-                                                                        314,
+                                                                        315,
                                                                         31,
-                                                                        314,
+                                                                        315,
                                                                         0
                                                                     ]
                                                                 }
@@ -8889,10 +9010,10 @@
                                                         ]
                                                     }
                                                 ],
-                                                "loc": [8, 312, 31, 314, 0]
+                                                "loc": [8, 313, 31, 315, 0]
                                             }
                                         ],
-                                        "loc": [4, 311, 31, 314, 0]
+                                        "loc": [4, 312, 31, 315, 0]
                                     },
                                     {
                                         "type": "constant",
@@ -8900,7 +9021,7 @@
                                             "type": "slot",
                                             "kind": "global",
                                             "name": "environ_end",
-                                            "loc": [4, 315, 15, 315, 0]
+                                            "loc": [4, 316, 15, 316, 0]
                                         },
                                         "body": [
                                             {
@@ -8916,18 +9037,18 @@
                                                             "name": "dict",
                                                             "loc": [
                                                                 15,
-                                                                316,
+                                                                317,
                                                                 19,
-                                                                316,
+                                                                317,
                                                                 0
                                                             ]
                                                         },
                                                         "args": [],
                                                         "loc": [
                                                             15,
-                                                            316,
+                                                            317,
                                                             21,
-                                                            316,
+                                                            317,
                                                             0
                                                         ]
                                                     },
@@ -8936,22 +9057,22 @@
                                                         "kind": "local",
                                                         "index": 1
                                                     },
-                                                    "loc": [15, 316, 27, 316, 0]
+                                                    "loc": [15, 317, 27, 317, 0]
                                                 }
                                             }
                                         ],
-                                        "loc": [4, 315, 27, 316, 0]
+                                        "loc": [4, 316, 27, 317, 0]
                                     }
                                 ],
                                 "default": [],
-                                "loc": [4, 310, 27, 316, 0]
+                                "loc": [4, 311, 27, 317, 0]
                             }
                         ],
-                        "loc": [17, 309, 27, 316, 0]
+                        "loc": [17, 310, 27, 317, 0]
                     }
                 }
             ],
-            "loc": [0, 305, 27, 316, 0]
+            "loc": [0, 305, 27, 317, 0]
         },
         {
             "type": "assign",
@@ -8959,14 +9080,14 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "inference_function",
-                "loc": [0, 318, 18, 318, 0]
+                "loc": [0, 319, 18, 319, 0]
             },
             "value": {
                 "type": "closure",
                 "cellvars": [],
                 "localvars": [
                     {"type": "cell", "deref": false, "name": "fn", "defs": 1},
-                    {"type": "cell", "deref": false, "name": "env", "defs": 1},
+                    {"type": "cell", "deref": false, "name": "env", "defs": 2},
                     {
                         "type": "cell",
                         "deref": false,
@@ -8982,9 +9103,10 @@
                         "name": "params",
                         "defs": 3
                     },
-                    {"type": "cell", "deref": false, "name": "i", "defs": 1},
+                    {"type": "cell", "deref": false, "name": "arg", "defs": 1},
                     {"type": "cell", "deref": false, "name": "port", "defs": 1},
                     {"type": "cell", "deref": false, "name": "dom", "defs": 1},
+                    {"type": "cell", "deref": false, "name": "slot", "defs": 1},
                     {
                         "type": "cell",
                         "deref": false,
@@ -9001,6 +9123,56 @@
                 "body": [
                     {
                         "type": "assign",
+                        "slot": {"type": "slot", "kind": "local", "index": 1},
+                        "value": {
+                            "type": "call",
+                            "callee": {
+                                "type": "slot",
+                                "kind": "global",
+                                "name": "environ",
+                                "loc": [10, 320, 17, 320, 0]
+                            },
+                            "args": [
+                                {
+                                    "type": "call",
+                                    "callee": {
+                                        "type": "slot",
+                                        "kind": "global",
+                                        "name": "dict",
+                                        "loc": [18, 320, 22, 320, 0]
+                                    },
+                                    "args": [],
+                                    "loc": [18, 320, 24, 320, 0]
+                                },
+                                {
+                                    "type": "call",
+                                    "callee": {
+                                        "type": "slot",
+                                        "kind": "global",
+                                        "name": "dict",
+                                        "loc": [26, 320, 30, 320, 0]
+                                    },
+                                    "args": [],
+                                    "loc": [26, 320, 32, 320, 0]
+                                },
+                                {"type": "slot", "kind": "local", "index": 1},
+                                {
+                                    "type": "call",
+                                    "callee": {
+                                        "type": "slot",
+                                        "kind": "global",
+                                        "name": "set",
+                                        "loc": [39, 320, 42, 320, 0]
+                                    },
+                                    "args": [],
+                                    "loc": [39, 320, 44, 320, 0]
+                                }
+                            ],
+                            "loc": [10, 320, 45, 320, 0]
+                        }
+                    },
+                    {
+                        "type": "assign",
                         "slot": {"type": "slot", "kind": "local", "index": 3},
                         "value": {
                             "type": "call",
@@ -9008,12 +9180,12 @@
                                 "type": "slot",
                                 "kind": "global",
                                 "name": "face",
-                                "loc": [11, 319, 15, 319, 0]
+                                "loc": [11, 321, 15, 321, 0]
                             },
                             "args": [
                                 {"type": "slot", "kind": "local", "index": 0}
                             ],
-                            "loc": [11, 319, 19, 319, 0]
+                            "loc": [11, 321, 19, 321, 0]
                         }
                     },
                     {
@@ -9025,12 +9197,12 @@
                                 "type": "slot",
                                 "kind": "global",
                                 "name": "inspect",
-                                "loc": [11, 320, 18, 320, 0]
+                                "loc": [11, 322, 18, 322, 0]
                             },
                             "args": [
                                 {"type": "slot", "kind": "local", "index": 0}
                             ],
-                            "loc": [11, 320, 22, 320, 0]
+                            "loc": [11, 322, 22, 322, 0]
                         }
                     },
                     {
@@ -9042,7 +9214,7 @@
                                 "type": "slot",
                                 "kind": "global",
                                 "name": "fresh_state",
-                                "loc": [10, 321, 21, 321, 0]
+                                "loc": [10, 323, 21, 323, 0]
                             },
                             "args": [
                                 {
@@ -9051,7 +9223,7 @@
                                         "type": "slot",
                                         "kind": "global",
                                         "name": "+expr",
-                                        "loc": [22, 321, 24, 321, 0]
+                                        "loc": [22, 323, 24, 323, 0]
                                     },
                                     "args": [
                                         {
@@ -9060,10 +9232,10 @@
                                             "value": "1"
                                         }
                                     ],
-                                    "loc": [22, 321, 24, 321, 0]
+                                    "loc": [22, 323, 24, 323, 0]
                                 }
                             ],
-                            "loc": [10, 321, 25, 321, 0]
+                            "loc": [10, 323, 25, 323, 0]
                         }
                     },
                     {
@@ -9080,10 +9252,10 @@
                                     "index": 5
                                 },
                                 "name": "heads",
-                                "loc": [4, 322, 13, 322, 0]
+                                "loc": [4, 324, 13, 324, 0]
                             },
                             "name": "add",
-                            "loc": [4, 322, 17, 322, 0]
+                            "loc": [4, 324, 17, 324, 0]
                         },
                         "args": [
                             {
@@ -9092,7 +9264,7 @@
                                     "type": "slot",
                                     "kind": "global",
                                     "name": "faucet",
-                                    "loc": [18, 322, 24, 322, 0]
+                                    "loc": [18, 324, 24, 324, 0]
                                 },
                                 "args": [
                                     {
@@ -9101,55 +9273,10 @@
                                         "index": 3
                                     }
                                 ],
-                                "loc": [18, 322, 30, 322, 0]
+                                "loc": [18, 324, 30, 324, 0]
                             }
                         ],
-                        "loc": [4, 322, 31, 322, 0]
-                    },
-                    {
-                        "type": "assert",
-                        "cond": {
-                            "type": "cmp",
-                            "exprs": [
-                                {
-                                    "type": "slot",
-                                    "kind": "attr",
-                                    "base": {
-                                        "type": "slot",
-                                        "kind": "attr",
-                                        "base": {
-                                            "type": "slot",
-                                            "kind": "local",
-                                            "index": 4
-                                        },
-                                        "name": "args",
-                                        "loc": [11, 323, 20, 323, 0]
-                                    },
-                                    "name": "length",
-                                    "loc": [11, 323, 27, 323, 0]
-                                },
-                                {
-                                    "type": "literal",
-                                    "kind": "integer",
-                                    "value": "0"
-                                }
-                            ],
-                            "ops": [
-                                {
-                                    "type": "slot",
-                                    "kind": "global",
-                                    "name": "==",
-                                    "loc": [11, 323, 32, 323, 0]
-                                }
-                            ],
-                            "loc": [11, 323, 32, 323, 0]
-                        },
-                        "value": {
-                            "type": "literal",
-                            "kind": "string",
-                            "value": "arguments not supported yet"
-                        },
-                        "loc": [4, 323, 65, 323, 0]
+                        "loc": [4, 324, 31, 324, 0]
                     },
                     {
                         "type": "assign",
@@ -9165,10 +9292,10 @@
                                     "index": 3
                                 },
                                 "name": "params",
-                                "loc": [13, 324, 24, 324, 0]
+                                "loc": [13, 325, 24, 325, 0]
                             },
                             "args": [],
-                            "loc": [13, 324, 26, 324, 0]
+                            "loc": [13, 325, 26, 325, 0]
                         }
                     },
                     {
@@ -9183,33 +9310,15 @@
                                     "index": 7
                                 },
                                 "value": {
-                                    "type": "call",
-                                    "callee": {
+                                    "type": "slot",
+                                    "kind": "attr",
+                                    "base": {
                                         "type": "slot",
-                                        "kind": "global",
-                                        "name": "range",
-                                        "loc": [13, 325, 18, 325, 0]
+                                        "kind": "local",
+                                        "index": 4
                                     },
-                                    "args": [
-                                        {
-                                            "type": "slot",
-                                            "kind": "attr",
-                                            "base": {
-                                                "type": "slot",
-                                                "kind": "attr",
-                                                "base": {
-                                                    "type": "slot",
-                                                    "kind": "local",
-                                                    "index": 4
-                                                },
-                                                "name": "args",
-                                                "loc": [19, 325, 28, 325, 0]
-                                            },
-                                            "name": "length",
-                                            "loc": [19, 325, 35, 325, 0]
-                                        }
-                                    ],
-                                    "loc": [13, 325, 36, 325, 0]
+                                    "name": "args",
+                                    "loc": [15, 326, 24, 326, 0]
                                 }
                             }
                         ],
@@ -9227,10 +9336,10 @@
                                         "type": "slot",
                                         "kind": "global",
                                         "name": "fresh_port",
-                                        "loc": [15, 326, 25, 326, 0]
+                                        "loc": [15, 327, 25, 327, 0]
                                     },
                                     "args": [],
-                                    "loc": [15, 326, 27, 326, 0]
+                                    "loc": [15, 327, 27, 327, 0]
                                 }
                             },
                             {
@@ -9252,7 +9361,7 @@
                                         "kind": "local",
                                         "index": 6
                                     },
-                                    "loc": [14, 327, 31, 327, 0]
+                                    "loc": [14, 328, 31, 328, 0]
                                 }
                             },
                             {
@@ -9266,7 +9375,7 @@
                                         "index": 5
                                     },
                                     "name": "add_transition",
-                                    "loc": [8, 328, 26, 328, 0]
+                                    "loc": [8, 329, 26, 329, 0]
                                 },
                                 "args": [
                                     {
@@ -9283,23 +9392,96 @@
                                             "index": 8
                                         },
                                         "name": "input",
-                                        "loc": [32, 328, 42, 328, 0]
+                                        "loc": [32, 329, 42, 329, 0]
                                     }
                                 ],
-                                "loc": [8, 328, 43, 328, 0]
+                                "loc": [8, 329, 43, 329, 0]
+                            },
+                            {
+                                "type": "assign",
+                                "slot": {
+                                    "type": "slot",
+                                    "kind": "local",
+                                    "index": 10
+                                },
+                                "value": {
+                                    "type": "call",
+                                    "callee": {
+                                        "type": "slot",
+                                        "kind": "global",
+                                        "name": "inference_slot",
+                                        "loc": [15, 330, 29, 330, 0]
+                                    },
+                                    "args": [
+                                        {
+                                            "type": "slot",
+                                            "kind": "item",
+                                            "base": {
+                                                "type": "slot",
+                                                "kind": "local",
+                                                "index": 7
+                                            },
+                                            "index": {
+                                                "type": "literal",
+                                                "kind": "string",
+                                                "value": "slot"
+                                            },
+                                            "loc": [30, 330, 41, 330, 0]
+                                        },
+                                        {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 1
+                                        },
+                                        {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 2
+                                        }
+                                    ],
+                                    "loc": [15, 330, 56, 330, 0]
+                                }
+                            },
+                            {
+                                "type": "call",
+                                "callee": {
+                                    "type": "slot",
+                                    "kind": "attr",
+                                    "base": {
+                                        "type": "slot",
+                                        "kind": "local",
+                                        "index": 10
+                                    },
+                                    "name": "set",
+                                    "loc": [8, 331, 16, 331, 0]
+                                },
+                                "args": [
+                                    {
+                                        "type": "slot",
+                                        "kind": "attr",
+                                        "base": {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 8
+                                        },
+                                        "name": "output",
+                                        "loc": [17, 331, 28, 331, 0]
+                                    }
+                                ],
+                                "loc": [8, 331, 29, 331, 0]
                             }
                         ]
                     },
                     {
                         "type": "assign",
-                        "slot": {"type": "slot", "kind": "local", "index": 10},
+                        "slot": {"type": "slot", "kind": "local", "index": 11},
                         "value": {
                             "type": "call",
                             "callee": {
                                 "type": "slot",
                                 "kind": "global",
                                 "name": "inference_program",
-                                "loc": [13, 329, 30, 329, 0]
+                                "loc": [13, 332, 30, 332, 0]
                             },
                             "args": [
                                 {
@@ -9311,12 +9493,12 @@
                                         "index": 4
                                     },
                                     "name": "body",
-                                    "loc": [31, 329, 40, 329, 0]
+                                    "loc": [31, 332, 40, 332, 0]
                                 },
                                 {"type": "slot", "kind": "local", "index": 1},
                                 {"type": "slot", "kind": "local", "index": 2}
                             ],
-                            "loc": [13, 329, 55, 329, 0]
+                            "loc": [13, 332, 55, 332, 0]
                         }
                     },
                     {
@@ -9330,7 +9512,7 @@
                                 "index": 5
                             },
                             "name": "add_transition",
-                            "loc": [4, 330, 22, 330, 0]
+                            "loc": [4, 333, 22, 333, 0]
                         },
                         "args": [
                             {
@@ -9345,18 +9527,18 @@
                                     "kind": "local",
                                     "index": 6
                                 },
-                                "loc": [23, 330, 40, 330, 0]
+                                "loc": [23, 333, 40, 333, 0]
                             },
-                            {"type": "slot", "kind": "local", "index": 10}
+                            {"type": "slot", "kind": "local", "index": 11}
                         ],
-                        "loc": [4, 330, 49, 330, 0]
+                        "loc": [4, 333, 49, 333, 0]
                     },
                     {
                         "type": "return",
                         "value": {"type": "slot", "kind": "local", "index": 5}
                     }
                 ],
-                "loc": [21, 318, 14, 331, 0]
+                "loc": [21, 319, 14, 334, 0]
             }
         },
         {
@@ -9365,7 +9547,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "inference_program",
-                "loc": [0, 333, 17, 333, 0]
+                "loc": [0, 336, 17, 336, 0]
             },
             "value": {
                 "type": "closure",
@@ -9404,10 +9586,10 @@
                                 "type": "slot",
                                 "kind": "global",
                                 "name": "fresh_port",
-                                "loc": [13, 334, 23, 334, 0]
+                                "loc": [13, 337, 23, 337, 0]
                             },
                             "args": [],
-                            "loc": [13, 334, 25, 334, 0]
+                            "loc": [13, 337, 25, 337, 0]
                         }
                     },
                     {
@@ -9444,7 +9626,7 @@
                                         "kind": "string",
                                         "value": "type"
                                     },
-                                    "loc": [13, 336, 25, 336, 0]
+                                    "loc": [13, 339, 25, 339, 0]
                                 },
                                 "cases": [
                                     {
@@ -9470,9 +9652,9 @@
                                                         "name": "inference_expr",
                                                         "loc": [
                                                             20,
-                                                            338,
+                                                            341,
                                                             34,
-                                                            338,
+                                                            341,
                                                             0
                                                         ]
                                                     },
@@ -9492,9 +9674,9 @@
                                                             },
                                                             "loc": [
                                                                 35,
-                                                                338,
+                                                                341,
                                                                 48,
-                                                                338,
+                                                                341,
                                                                 0
                                                             ]
                                                         },
@@ -9509,7 +9691,7 @@
                                                             "index": 2
                                                         }
                                                     ],
-                                                    "loc": [20, 338, 63, 338, 0]
+                                                    "loc": [20, 341, 63, 341, 0]
                                                 }
                                             },
                                             {
@@ -9518,7 +9700,7 @@
                                                     "type": "slot",
                                                     "kind": "global",
                                                     "name": "biunify",
-                                                    "loc": [12, 339, 19, 339, 0]
+                                                    "loc": [12, 342, 19, 342, 0]
                                                 },
                                                 "args": [
                                                     {
@@ -9540,9 +9722,9 @@
                                                                 "name": "input",
                                                                 "loc": [
                                                                     28,
-                                                                    339,
+                                                                    342,
                                                                     40,
-                                                                    339,
+                                                                    342,
                                                                     0
                                                                 ]
                                                             }
@@ -9554,10 +9736,10 @@
                                                         "index": 2
                                                     }
                                                 ],
-                                                "loc": [12, 339, 51, 339, 0]
+                                                "loc": [12, 342, 51, 342, 0]
                                             }
                                         ],
-                                        "loc": [8, 337, 51, 339, 0]
+                                        "loc": [8, 340, 51, 342, 0]
                                     }
                                 ],
                                 "default": [
@@ -9567,7 +9749,7 @@
                                             "type": "slot",
                                             "kind": "global",
                                             "name": "print",
-                                            "loc": [12, 341, 17, 341, 0]
+                                            "loc": [12, 344, 17, 344, 0]
                                         },
                                         "args": [
                                             {
@@ -9583,7 +9765,7 @@
                                                     "kind": "string",
                                                     "value": "type"
                                                 },
-                                                "loc": [18, 341, 30, 341, 0]
+                                                "loc": [18, 344, 30, 344, 0]
                                             },
                                             {
                                                 "type": "literal",
@@ -9591,7 +9773,7 @@
                                                 "value": "missing"
                                             }
                                         ],
-                                        "loc": [12, 341, 42, 341, 0]
+                                        "loc": [12, 344, 42, 344, 0]
                                     },
                                     {
                                         "type": "assert",
@@ -9599,17 +9781,17 @@
                                             "type": "slot",
                                             "kind": "global",
                                             "name": "false",
-                                            "loc": [19, 342, 24, 342, 0]
+                                            "loc": [19, 345, 24, 345, 0]
                                         },
                                         "value": {
                                             "type": "literal",
                                             "kind": "string",
                                             "value": "missing inference for stmt"
                                         },
-                                        "loc": [12, 342, 56, 342, 0]
+                                        "loc": [12, 345, 56, 345, 0]
                                     }
                                 ],
-                                "loc": [8, 336, 56, 342, 0]
+                                "loc": [8, 339, 56, 345, 0]
                             }
                         ]
                     },
@@ -9624,11 +9806,11 @@
                                 "index": 3
                             },
                             "name": "output",
-                            "loc": [11, 343, 24, 343, 0]
+                            "loc": [11, 346, 24, 346, 0]
                         }
                     }
                 ],
-                "loc": [20, 333, 24, 343, 0]
+                "loc": [20, 336, 24, 346, 0]
             }
         },
         {
@@ -9637,7 +9819,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "inference_expr",
-                "loc": [0, 345, 14, 345, 0]
+                "loc": [0, 348, 14, 348, 0]
             },
             "value": {
                 "type": "closure",
@@ -9680,7 +9862,7 @@
                                 "kind": "string",
                                 "value": "type"
                             },
-                            "loc": [9, 346, 18, 346, 0]
+                            "loc": [9, 349, 18, 349, 0]
                         },
                         "cases": [
                             {
@@ -9704,7 +9886,7 @@
                                                 "type": "slot",
                                                 "kind": "global",
                                                 "name": "fresh_state",
-                                                "loc": [17, 348, 28, 348, 0]
+                                                "loc": [17, 351, 28, 351, 0]
                                             },
                                             "args": [
                                                 {
@@ -9715,9 +9897,9 @@
                                                         "name": "+expr",
                                                         "loc": [
                                                             29,
-                                                            348,
+                                                            351,
                                                             31,
-                                                            348,
+                                                            351,
                                                             0
                                                         ]
                                                     },
@@ -9728,10 +9910,10 @@
                                                             "value": "1"
                                                         }
                                                     ],
-                                                    "loc": [29, 348, 31, 348, 0]
+                                                    "loc": [29, 351, 31, 351, 0]
                                                 }
                                             ],
-                                            "loc": [17, 348, 32, 348, 0]
+                                            "loc": [17, 351, 32, 351, 0]
                                         }
                                     },
                                     {
@@ -9749,7 +9931,7 @@
                                                 "kind": "string",
                                                 "value": "kind"
                                             },
-                                            "loc": [13, 349, 22, 349, 0]
+                                            "loc": [13, 352, 22, 352, 0]
                                         },
                                         "cases": [
                                             {
@@ -9776,18 +9958,18 @@
                                                                 "name": "heads",
                                                                 "loc": [
                                                                     12,
-                                                                    351,
+                                                                    354,
                                                                     24,
-                                                                    351,
+                                                                    354,
                                                                     0
                                                                 ]
                                                             },
                                                             "name": "add",
                                                             "loc": [
                                                                 12,
-                                                                351,
+                                                                354,
                                                                 28,
-                                                                351,
+                                                                354,
                                                                 0
                                                             ]
                                                         },
@@ -9800,9 +9982,9 @@
                                                                     "name": "faucet",
                                                                     "loc": [
                                                                         29,
-                                                                        351,
+                                                                        354,
                                                                         35,
-                                                                        351,
+                                                                        354,
                                                                         0
                                                                     ]
                                                                 },
@@ -9813,32 +9995,32 @@
                                                                         "name": "String",
                                                                         "loc": [
                                                                             36,
-                                                                            351,
+                                                                            354,
                                                                             42,
-                                                                            351,
+                                                                            354,
                                                                             0
                                                                         ]
                                                                     }
                                                                 ],
                                                                 "loc": [
                                                                     29,
-                                                                    351,
+                                                                    354,
                                                                     43,
-                                                                    351,
+                                                                    354,
                                                                     0
                                                                 ]
                                                             }
                                                         ],
                                                         "loc": [
                                                             12,
-                                                            351,
+                                                            354,
                                                             44,
-                                                            351,
+                                                            354,
                                                             0
                                                         ]
                                                     }
                                                 ],
-                                                "loc": [8, 350, 44, 351, 0]
+                                                "loc": [8, 353, 44, 354, 0]
                                             },
                                             {
                                                 "type": "constant",
@@ -9864,18 +10046,18 @@
                                                                 "name": "heads",
                                                                 "loc": [
                                                                     12,
-                                                                    353,
+                                                                    356,
                                                                     24,
-                                                                    353,
+                                                                    356,
                                                                     0
                                                                 ]
                                                             },
                                                             "name": "add",
                                                             "loc": [
                                                                 12,
-                                                                353,
+                                                                356,
                                                                 28,
-                                                                353,
+                                                                356,
                                                                 0
                                                             ]
                                                         },
@@ -9888,9 +10070,9 @@
                                                                     "name": "faucet",
                                                                     "loc": [
                                                                         29,
-                                                                        353,
+                                                                        356,
                                                                         35,
-                                                                        353,
+                                                                        356,
                                                                         0
                                                                     ]
                                                                 },
@@ -9901,32 +10083,32 @@
                                                                         "name": "Integer",
                                                                         "loc": [
                                                                             36,
-                                                                            353,
+                                                                            356,
                                                                             43,
-                                                                            353,
+                                                                            356,
                                                                             0
                                                                         ]
                                                                     }
                                                                 ],
                                                                 "loc": [
                                                                     29,
-                                                                    353,
+                                                                    356,
                                                                     44,
-                                                                    353,
+                                                                    356,
                                                                     0
                                                                 ]
                                                             }
                                                         ],
                                                         "loc": [
                                                             12,
-                                                            353,
+                                                            356,
                                                             45,
-                                                            353,
+                                                            356,
                                                             0
                                                         ]
                                                     }
                                                 ],
-                                                "loc": [8, 352, 45, 353, 0]
+                                                "loc": [8, 355, 45, 356, 0]
                                             }
                                         ],
                                         "default": [
@@ -9936,17 +10118,17 @@
                                                     "type": "slot",
                                                     "kind": "global",
                                                     "name": "false",
-                                                    "loc": [19, 355, 24, 355, 0]
+                                                    "loc": [19, 358, 24, 358, 0]
                                                 },
                                                 "value": {
                                                     "type": "literal",
                                                     "kind": "string",
                                                     "value": "missing inference for literal"
                                                 },
-                                                "loc": [12, 355, 59, 355, 0]
+                                                "loc": [12, 358, 59, 358, 0]
                                             }
                                         ],
-                                        "loc": [8, 349, 59, 355, 0]
+                                        "loc": [8, 352, 59, 358, 0]
                                     },
                                     {
                                         "type": "return",
@@ -9957,7 +10139,65 @@
                                         }
                                     }
                                 ],
-                                "loc": [4, 347, 21, 356, 0]
+                                "loc": [4, 350, 21, 359, 0]
+                            },
+                            {
+                                "type": "constant",
+                                "value": {
+                                    "type": "literal",
+                                    "kind": "string",
+                                    "value": "slot"
+                                },
+                                "body": [
+                                    {
+                                        "type": "return",
+                                        "value": {
+                                            "type": "call",
+                                            "callee": {
+                                                "type": "slot",
+                                                "kind": "attr",
+                                                "base": {
+                                                    "type": "call",
+                                                    "callee": {
+                                                        "type": "slot",
+                                                        "kind": "global",
+                                                        "name": "inference_slot",
+                                                        "loc": [
+                                                            15,
+                                                            361,
+                                                            29,
+                                                            361,
+                                                            0
+                                                        ]
+                                                    },
+                                                    "args": [
+                                                        {
+                                                            "type": "slot",
+                                                            "kind": "local",
+                                                            "index": 0
+                                                        },
+                                                        {
+                                                            "type": "slot",
+                                                            "kind": "local",
+                                                            "index": 1
+                                                        },
+                                                        {
+                                                            "type": "slot",
+                                                            "kind": "local",
+                                                            "index": 2
+                                                        }
+                                                    ],
+                                                    "loc": [15, 361, 46, 361, 0]
+                                                },
+                                                "name": "get",
+                                                "loc": [15, 361, 50, 361, 0]
+                                            },
+                                            "args": [],
+                                            "loc": [15, 361, 52, 361, 0]
+                                        }
+                                    }
+                                ],
+                                "loc": [4, 360, 52, 361, 0]
                             }
                         ],
                         "default": [
@@ -9967,7 +10207,7 @@
                                     "type": "slot",
                                     "kind": "global",
                                     "name": "print",
-                                    "loc": [8, 358, 13, 358, 0]
+                                    "loc": [8, 363, 13, 363, 0]
                                 },
                                 "args": [
                                     {
@@ -9983,7 +10223,7 @@
                                             "kind": "string",
                                             "value": "type"
                                         },
-                                        "loc": [14, 358, 23, 358, 0]
+                                        "loc": [14, 363, 23, 363, 0]
                                     },
                                     {
                                         "type": "literal",
@@ -9991,7 +10231,7 @@
                                         "value": "missing"
                                     }
                                 ],
-                                "loc": [8, 358, 35, 358, 0]
+                                "loc": [8, 363, 35, 363, 0]
                             },
                             {
                                 "type": "assert",
@@ -9999,20 +10239,505 @@
                                     "type": "slot",
                                     "kind": "global",
                                     "name": "false",
-                                    "loc": [15, 359, 20, 359, 0]
+                                    "loc": [15, 364, 20, 364, 0]
                                 },
                                 "value": {
                                     "type": "literal",
                                     "kind": "string",
                                     "value": "missing inference for expression"
                                 },
-                                "loc": [8, 359, 58, 359, 0]
+                                "loc": [8, 364, 58, 364, 0]
                             }
                         ],
-                        "loc": [4, 346, 58, 359, 0]
+                        "loc": [4, 349, 58, 364, 0]
                     }
                 ],
-                "loc": [17, 345, 58, 359, 0]
+                "loc": [17, 348, 58, 364, 0]
+            }
+        },
+        {
+            "type": "assign",
+            "slot": {
+                "type": "slot",
+                "kind": "global",
+                "name": "inference_slot",
+                "loc": [0, 366, 14, 366, 0]
+            },
+            "value": {
+                "type": "closure",
+                "cellvars": [
+                    {
+                        "type": "cell",
+                        "deref": true,
+                        "name": "visited",
+                        "defs": 1
+                    },
+                    {"type": "cell", "deref": true, "name": "port", "defs": 2}
+                ],
+                "localvars": [
+                    {"type": "cell", "deref": false, "name": "a", "defs": 1},
+                    {"type": "cell", "deref": false, "name": "env", "defs": 1},
+                    {"type": "cell", "deref": false, "name": "key", "defs": 1}
+                ],
+                "frame": [],
+                "args": [
+                    {"slot": {"type": "slot", "kind": "local", "index": 0}},
+                    {"slot": {"type": "slot", "kind": "local", "index": 1}},
+                    {"slot": {"type": "slot", "kind": "cell", "index": 0}}
+                ],
+                "body": [
+                    {
+                        "type": "case",
+                        "value": {
+                            "type": "slot",
+                            "kind": "item",
+                            "base": {
+                                "type": "slot",
+                                "kind": "local",
+                                "index": 0
+                            },
+                            "index": {
+                                "type": "literal",
+                                "kind": "string",
+                                "value": "kind"
+                            },
+                            "loc": [9, 367, 18, 367, 0]
+                        },
+                        "cases": [
+                            {
+                                "type": "constant",
+                                "value": {
+                                    "type": "literal",
+                                    "kind": "string",
+                                    "value": "local"
+                                },
+                                "body": [
+                                    {
+                                        "type": "assign",
+                                        "slot": {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 2
+                                        },
+                                        "value": {
+                                            "type": "call",
+                                            "callee": {
+                                                "type": "slot",
+                                                "kind": "global",
+                                                "name": "++",
+                                                "loc": [14, 369, 46, 369, 0]
+                                            },
+                                            "args": [
+                                                {
+                                                    "type": "literal",
+                                                    "kind": "string",
+                                                    "value": "local"
+                                                },
+                                                {
+                                                    "type": "call",
+                                                    "callee": {
+                                                        "type": "slot",
+                                                        "kind": "global",
+                                                        "name": "stringify",
+                                                        "loc": [
+                                                            25,
+                                                            369,
+                                                            34,
+                                                            369,
+                                                            0
+                                                        ]
+                                                    },
+                                                    "args": [
+                                                        {
+                                                            "type": "slot",
+                                                            "kind": "item",
+                                                            "base": {
+                                                                "type": "slot",
+                                                                "kind": "local",
+                                                                "index": 0
+                                                            },
+                                                            "index": {
+                                                                "type": "literal",
+                                                                "kind": "string",
+                                                                "value": "index"
+                                                            },
+                                                            "loc": [
+                                                                35,
+                                                                369,
+                                                                45,
+                                                                369,
+                                                                0
+                                                            ]
+                                                        }
+                                                    ],
+                                                    "loc": [25, 369, 46, 369, 0]
+                                                }
+                                            ],
+                                            "loc": [14, 369, 46, 369, 0]
+                                        }
+                                    },
+                                    {
+                                        "type": "except",
+                                        "body": [
+                                            {
+                                                "type": "assign",
+                                                "slot": {
+                                                    "type": "slot",
+                                                    "kind": "cell",
+                                                    "index": 1
+                                                },
+                                                "value": {
+                                                    "type": "slot",
+                                                    "kind": "item",
+                                                    "base": {
+                                                        "type": "slot",
+                                                        "kind": "attr",
+                                                        "base": {
+                                                            "type": "slot",
+                                                            "kind": "local",
+                                                            "index": 1
+                                                        },
+                                                        "name": "schemes",
+                                                        "loc": [
+                                                            15,
+                                                            370,
+                                                            26,
+                                                            370,
+                                                            0
+                                                        ]
+                                                    },
+                                                    "index": {
+                                                        "type": "slot",
+                                                        "kind": "local",
+                                                        "index": 2
+                                                    },
+                                                    "loc": [15, 370, 31, 370, 0]
+                                                }
+                                            }
+                                        ],
+                                        "excepts": [
+                                            {
+                                                "exc": {
+                                                    "type": "slot",
+                                                    "kind": "global",
+                                                    "name": "NoIndex",
+                                                    "loc": [15, 371, 22, 371, 0]
+                                                },
+                                                "body": [
+                                                    {
+                                                        "type": "assign",
+                                                        "slot": {
+                                                            "type": "slot",
+                                                            "kind": "cell",
+                                                            "index": 1
+                                                        },
+                                                        "value": {
+                                                            "type": "call",
+                                                            "callee": {
+                                                                "type": "slot",
+                                                                "kind": "global",
+                                                                "name": "fresh_free_port",
+                                                                "loc": [
+                                                                    19,
+                                                                    372,
+                                                                    34,
+                                                                    372,
+                                                                    0
+                                                                ]
+                                                            },
+                                                            "args": [
+                                                                {
+                                                                    "type": "slot",
+                                                                    "kind": "attr",
+                                                                    "base": {
+                                                                        "type": "slot",
+                                                                        "kind": "local",
+                                                                        "index": 1
+                                                                    },
+                                                                    "name": "free",
+                                                                    "loc": [
+                                                                        35,
+                                                                        372,
+                                                                        43,
+                                                                        372,
+                                                                        0
+                                                                    ]
+                                                                }
+                                                            ],
+                                                            "loc": [
+                                                                19,
+                                                                372,
+                                                                44,
+                                                                372,
+                                                                0
+                                                            ]
+                                                        }
+                                                    },
+                                                    {
+                                                        "type": "assign",
+                                                        "slot": {
+                                                            "type": "slot",
+                                                            "kind": "item",
+                                                            "base": {
+                                                                "type": "slot",
+                                                                "kind": "attr",
+                                                                "base": {
+                                                                    "type": "slot",
+                                                                    "kind": "local",
+                                                                    "index": 1
+                                                                },
+                                                                "name": "schemes",
+                                                                "loc": [
+                                                                    12,
+                                                                    373,
+                                                                    23,
+                                                                    373,
+                                                                    0
+                                                                ]
+                                                            },
+                                                            "index": {
+                                                                "type": "slot",
+                                                                "kind": "local",
+                                                                "index": 2
+                                                            },
+                                                            "loc": [
+                                                                12,
+                                                                373,
+                                                                28,
+                                                                373,
+                                                                0
+                                                            ]
+                                                        },
+                                                        "value": {
+                                                            "type": "slot",
+                                                            "kind": "cell",
+                                                            "index": 1
+                                                        }
+                                                    }
+                                                ]
+                                            }
+                                        ],
+                                        "loc": [8, 370, 35, 373, 0]
+                                    },
+                                    {
+                                        "type": "return",
+                                        "value": {
+                                            "type": "record",
+                                            "fields": [
+                                                {
+                                                    "name": "set",
+                                                    "mutable": false,
+                                                    "value": {
+                                                        "type": "closure",
+                                                        "cellvars": [
+                                                            {
+                                                                "type": "cell",
+                                                                "deref": true,
+                                                                "name": "port",
+                                                                "defs": 2
+                                                            },
+                                                            {
+                                                                "type": "cell",
+                                                                "deref": true,
+                                                                "name": "visited",
+                                                                "defs": 1
+                                                            }
+                                                        ],
+                                                        "localvars": [
+                                                            {
+                                                                "type": "cell",
+                                                                "deref": false,
+                                                                "name": "a",
+                                                                "defs": 1
+                                                            }
+                                                        ],
+                                                        "frame": [1, 0],
+                                                        "args": [
+                                                            {
+                                                                "slot": {
+                                                                    "type": "slot",
+                                                                    "kind": "local",
+                                                                    "index": 0
+                                                                }
+                                                            }
+                                                        ],
+                                                        "body": [
+                                                            {
+                                                                "type": "return",
+                                                                "value": {
+                                                                    "type": "call",
+                                                                    "callee": {
+                                                                        "type": "slot",
+                                                                        "kind": "global",
+                                                                        "name": "biunify",
+                                                                        "loc": [
+                                                                            23,
+                                                                            375,
+                                                                            30,
+                                                                            375,
+                                                                            0
+                                                                        ]
+                                                                    },
+                                                                    "args": [
+                                                                        {
+                                                                            "type": "make_tuple",
+                                                                            "items": [
+                                                                                {
+                                                                                    "type": "slot",
+                                                                                    "kind": "local",
+                                                                                    "index": 0
+                                                                                },
+                                                                                {
+                                                                                    "type": "slot",
+                                                                                    "kind": "attr",
+                                                                                    "base": {
+                                                                                        "type": "slot",
+                                                                                        "kind": "cell",
+                                                                                        "index": 0
+                                                                                    },
+                                                                                    "name": "input",
+                                                                                    "loc": [
+                                                                                        35,
+                                                                                        375,
+                                                                                        45,
+                                                                                        375,
+                                                                                        0
+                                                                                    ]
+                                                                                }
+                                                                            ]
+                                                                        },
+                                                                        {
+                                                                            "type": "slot",
+                                                                            "kind": "cell",
+                                                                            "index": 1
+                                                                        }
+                                                                    ],
+                                                                    "loc": [
+                                                                        23,
+                                                                        375,
+                                                                        56,
+                                                                        375,
+                                                                        0
+                                                                    ]
+                                                                }
+                                                            }
+                                                        ],
+                                                        "loc": [
+                                                            18,
+                                                            375,
+                                                            56,
+                                                            375,
+                                                            0
+                                                        ]
+                                                    }
+                                                },
+                                                {
+                                                    "name": "get",
+                                                    "mutable": false,
+                                                    "value": {
+                                                        "type": "closure",
+                                                        "cellvars": [
+                                                            {
+                                                                "type": "cell",
+                                                                "deref": true,
+                                                                "name": "port",
+                                                                "defs": 2
+                                                            }
+                                                        ],
+                                                        "localvars": [],
+                                                        "frame": [1],
+                                                        "args": [],
+                                                        "body": [
+                                                            {
+                                                                "type": "return",
+                                                                "value": {
+                                                                    "type": "slot",
+                                                                    "kind": "attr",
+                                                                    "base": {
+                                                                        "type": "slot",
+                                                                        "kind": "cell",
+                                                                        "index": 0
+                                                                    },
+                                                                    "name": "output",
+                                                                    "loc": [
+                                                                        29,
+                                                                        376,
+                                                                        40,
+                                                                        376,
+                                                                        0
+                                                                    ]
+                                                                }
+                                                            }
+                                                        ],
+                                                        "loc": [
+                                                            18,
+                                                            376,
+                                                            40,
+                                                            376,
+                                                            0
+                                                        ]
+                                                    }
+                                                }
+                                            ]
+                                        }
+                                    }
+                                ],
+                                "loc": [4, 368, 43, 376, 0]
+                            }
+                        ],
+                        "default": [
+                            {
+                                "type": "call",
+                                "callee": {
+                                    "type": "slot",
+                                    "kind": "global",
+                                    "name": "print",
+                                    "loc": [8, 378, 13, 378, 0]
+                                },
+                                "args": [
+                                    {
+                                        "type": "slot",
+                                        "kind": "item",
+                                        "base": {
+                                            "type": "slot",
+                                            "kind": "local",
+                                            "index": 0
+                                        },
+                                        "index": {
+                                            "type": "literal",
+                                            "kind": "string",
+                                            "value": "kind"
+                                        },
+                                        "loc": [14, 378, 23, 378, 0]
+                                    },
+                                    {
+                                        "type": "literal",
+                                        "kind": "string",
+                                        "value": "missing"
+                                    }
+                                ],
+                                "loc": [8, 378, 35, 378, 0]
+                            },
+                            {
+                                "type": "assert",
+                                "cond": {
+                                    "type": "slot",
+                                    "kind": "global",
+                                    "name": "false",
+                                    "loc": [15, 379, 20, 379, 0]
+                                },
+                                "value": {
+                                    "type": "literal",
+                                    "kind": "string",
+                                    "value": "missing inference for expression"
+                                },
+                                "loc": [8, 379, 58, 379, 0]
+                            }
+                        ],
+                        "loc": [4, 367, 58, 379, 0]
+                    }
+                ],
+                "loc": [17, 366, 58, 379, 0]
             }
         },
         {
@@ -10021,25 +10746,42 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "foo",
-                "loc": [0, 362, 3, 362, 0]
+                "loc": [0, 383, 3, 383, 0]
             },
             "value": {
                 "type": "closure",
                 "cellvars": [],
-                "localvars": [],
+                "localvars": [
+                    {"type": "cell", "deref": false, "name": "bar", "defs": 1}
+                ],
                 "frame": [],
-                "args": [],
+                "args": [
+                    {"slot": {"type": "slot", "kind": "local", "index": 0}}
+                ],
                 "body": [
                     {
                         "type": "return",
                         "value": {
-                            "type": "literal",
-                            "kind": "integer",
-                            "value": "5"
+                            "type": "call",
+                            "callee": {
+                                "type": "slot",
+                                "kind": "global",
+                                "name": "+",
+                                "loc": [11, 384, 18, 384, 0]
+                            },
+                            "args": [
+                                {"type": "slot", "kind": "local", "index": 0},
+                                {
+                                    "type": "literal",
+                                    "kind": "integer",
+                                    "value": "5"
+                                }
+                            ],
+                            "loc": [11, 384, 18, 384, 0]
                         }
                     }
                 ],
-                "loc": [6, 362, 12, 363, 0]
+                "loc": [6, 383, 18, 384, 0]
             }
         },
         {
@@ -10048,7 +10790,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "env",
-                "loc": [0, 365, 3, 365, 0]
+                "loc": [0, 386, 3, 386, 0]
             },
             "value": {
                 "type": "call",
@@ -10056,7 +10798,7 @@
                     "type": "slot",
                     "kind": "global",
                     "name": "environ",
-                    "loc": [6, 365, 13, 365, 0]
+                    "loc": [6, 386, 13, 386, 0]
                 },
                 "args": [
                     {
@@ -10065,16 +10807,27 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "dict",
-                            "loc": [14, 365, 18, 365, 0]
+                            "loc": [14, 386, 18, 386, 0]
                         },
                         "args": [],
-                        "loc": [14, 365, 20, 365, 0]
+                        "loc": [14, 386, 20, 386, 0]
+                    },
+                    {
+                        "type": "call",
+                        "callee": {
+                            "type": "slot",
+                            "kind": "global",
+                            "name": "dict",
+                            "loc": [22, 386, 26, 386, 0]
+                        },
+                        "args": [],
+                        "loc": [22, 386, 28, 386, 0]
                     },
                     {
                         "type": "slot",
                         "kind": "global",
                         "name": "environ_end",
-                        "loc": [22, 365, 33, 365, 0]
+                        "loc": [30, 386, 41, 386, 0]
                     },
                     {
                         "type": "call",
@@ -10082,13 +10835,13 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "set",
-                            "loc": [35, 365, 38, 365, 0]
+                            "loc": [43, 386, 46, 386, 0]
                         },
                         "args": [],
-                        "loc": [35, 365, 40, 365, 0]
+                        "loc": [43, 386, 48, 386, 0]
                     }
                 ],
-                "loc": [6, 365, 41, 365, 0]
+                "loc": [6, 386, 49, 386, 0]
             }
         },
         {
@@ -10097,7 +10850,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "visited",
-                "loc": [0, 366, 7, 366, 0]
+                "loc": [0, 387, 7, 387, 0]
             },
             "value": {
                 "type": "call",
@@ -10105,82 +10858,10 @@
                     "type": "slot",
                     "kind": "global",
                     "name": "set",
-                    "loc": [10, 366, 13, 366, 0]
+                    "loc": [10, 387, 13, 387, 0]
                 },
                 "args": [],
-                "loc": [10, 366, 15, 366, 0]
-            }
-        },
-        {
-            "type": "assign",
-            "slot": {
-                "type": "slot",
-                "kind": "global",
-                "name": "out",
-                "loc": [0, 368, 3, 368, 0]
-            },
-            "value": {
-                "type": "call",
-                "callee": {
-                    "type": "slot",
-                    "kind": "global",
-                    "name": "inference_function",
-                    "loc": [6, 368, 24, 368, 0]
-                },
-                "args": [
-                    {
-                        "type": "slot",
-                        "kind": "global",
-                        "name": "foo",
-                        "loc": [25, 368, 28, 368, 0]
-                    },
-                    {
-                        "type": "slot",
-                        "kind": "global",
-                        "name": "env",
-                        "loc": [30, 368, 33, 368, 0]
-                    },
-                    {
-                        "type": "slot",
-                        "kind": "global",
-                        "name": "visited",
-                        "loc": [35, 368, 42, 368, 0]
-                    }
-                ],
-                "loc": [6, 368, 43, 368, 0]
-            }
-        },
-        {
-            "type": "assign",
-            "slot": {
-                "type": "slot",
-                "kind": "global",
-                "name": "out_scheme",
-                "loc": [0, 369, 10, 369, 0]
-            },
-            "value": {
-                "type": "call",
-                "callee": {
-                    "type": "slot",
-                    "kind": "global",
-                    "name": "generalize",
-                    "loc": [13, 369, 23, 369, 0]
-                },
-                "args": [
-                    {
-                        "type": "slot",
-                        "kind": "global",
-                        "name": "out",
-                        "loc": [24, 369, 27, 369, 0]
-                    },
-                    {
-                        "type": "slot",
-                        "kind": "global",
-                        "name": "env",
-                        "loc": [29, 369, 32, 369, 0]
-                    }
-                ],
-                "loc": [13, 369, 33, 369, 0]
+                "loc": [10, 387, 15, 387, 0]
             }
         },
         {
@@ -10189,7 +10870,109 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "print",
-                "loc": [0, 370, 5, 370, 0]
+                "loc": [0, 389, 5, 389, 0]
+            },
+            "args": [
+                {
+                    "type": "call",
+                    "callee": {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "is_closure",
+                        "loc": [6, 389, 16, 389, 0]
+                    },
+                    "args": [
+                        {
+                            "type": "slot",
+                            "kind": "global",
+                            "name": "foo",
+                            "loc": [17, 389, 20, 389, 0]
+                        }
+                    ],
+                    "loc": [6, 389, 21, 389, 0]
+                }
+            ],
+            "loc": [0, 389, 22, 389, 0]
+        },
+        {
+            "type": "assign",
+            "slot": {
+                "type": "slot",
+                "kind": "global",
+                "name": "out",
+                "loc": [0, 390, 3, 390, 0]
+            },
+            "value": {
+                "type": "call",
+                "callee": {
+                    "type": "slot",
+                    "kind": "global",
+                    "name": "inference_function",
+                    "loc": [6, 390, 24, 390, 0]
+                },
+                "args": [
+                    {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "foo",
+                        "loc": [25, 390, 28, 390, 0]
+                    },
+                    {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "env",
+                        "loc": [30, 390, 33, 390, 0]
+                    },
+                    {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "visited",
+                        "loc": [35, 390, 42, 390, 0]
+                    }
+                ],
+                "loc": [6, 390, 43, 390, 0]
+            }
+        },
+        {
+            "type": "assign",
+            "slot": {
+                "type": "slot",
+                "kind": "global",
+                "name": "out_scheme",
+                "loc": [0, 391, 10, 391, 0]
+            },
+            "value": {
+                "type": "call",
+                "callee": {
+                    "type": "slot",
+                    "kind": "global",
+                    "name": "generalize",
+                    "loc": [13, 391, 23, 391, 0]
+                },
+                "args": [
+                    {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "out",
+                        "loc": [24, 391, 27, 391, 0]
+                    },
+                    {
+                        "type": "slot",
+                        "kind": "global",
+                        "name": "env",
+                        "loc": [29, 391, 32, 391, 0]
+                    }
+                ],
+                "loc": [13, 391, 33, 391, 0]
+            }
+        },
+        {
+            "type": "call",
+            "callee": {
+                "type": "slot",
+                "kind": "global",
+                "name": "print",
+                "loc": [0, 392, 5, 392, 0]
             },
             "args": [
                 {
@@ -10198,20 +10981,20 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "to_raw_type",
-                        "loc": [6, 370, 17, 370, 0]
+                        "loc": [6, 392, 17, 392, 0]
                     },
                     "args": [
                         {
                             "type": "slot",
                             "kind": "global",
                             "name": "out_scheme",
-                            "loc": [18, 370, 28, 370, 0]
+                            "loc": [18, 392, 28, 392, 0]
                         }
                     ],
-                    "loc": [6, 370, 29, 370, 0]
+                    "loc": [6, 392, 29, 392, 0]
                 }
             ],
-            "loc": [0, 370, 30, 370, 0]
+            "loc": [0, 392, 30, 392, 0]
         },
         {
             "type": "assign",
@@ -10219,7 +11002,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "test1",
-                "loc": [0, 407, 5, 407, 0]
+                "loc": [0, 428, 5, 428, 0]
             },
             "value": {
                 "type": "call",
@@ -10227,7 +11010,7 @@
                     "type": "slot",
                     "kind": "global",
                     "name": "fresh_state",
-                    "loc": [8, 407, 19, 407, 0]
+                    "loc": [8, 428, 19, 428, 0]
                 },
                 "args": [
                     {
@@ -10236,15 +11019,15 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "+expr",
-                            "loc": [20, 407, 22, 407, 0]
+                            "loc": [20, 428, 22, 428, 0]
                         },
                         "args": [
                             {"type": "literal", "kind": "integer", "value": "1"}
                         ],
-                        "loc": [20, 407, 22, 407, 0]
+                        "loc": [20, 428, 22, 428, 0]
                     }
                 ],
-                "loc": [8, 407, 23, 407, 0]
+                "loc": [8, 428, 23, 428, 0]
             }
         },
         {
@@ -10259,13 +11042,13 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "test1",
-                        "loc": [0, 408, 5, 408, 0]
+                        "loc": [0, 429, 5, 429, 0]
                     },
                     "name": "heads",
-                    "loc": [0, 408, 11, 408, 0]
+                    "loc": [0, 429, 11, 429, 0]
                 },
                 "name": "add",
-                "loc": [0, 408, 15, 408, 0]
+                "loc": [0, 429, 15, 429, 0]
             },
             "args": [
                 {
@@ -10274,20 +11057,20 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "faucet",
-                        "loc": [16, 408, 22, 408, 0]
+                        "loc": [16, 429, 22, 429, 0]
                     },
                     "args": [
                         {
                             "type": "slot",
                             "kind": "global",
                             "name": "Integer",
-                            "loc": [23, 408, 30, 408, 0]
+                            "loc": [23, 429, 30, 429, 0]
                         }
                     ],
-                    "loc": [16, 408, 31, 408, 0]
+                    "loc": [16, 429, 31, 429, 0]
                 }
             ],
-            "loc": [0, 408, 32, 408, 0]
+            "loc": [0, 429, 32, 429, 0]
         },
         {
             "type": "assign",
@@ -10295,7 +11078,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "test1_scheme",
-                "loc": [0, 409, 12, 409, 0]
+                "loc": [0, 430, 12, 430, 0]
             },
             "value": {
                 "type": "record",
@@ -10309,7 +11092,7 @@
                                 "type": "slot",
                                 "kind": "global",
                                 "name": "set",
-                                "loc": [13, 410, 16, 410, 0]
+                                "loc": [13, 431, 16, 431, 0]
                             },
                             "args": [
                                 {
@@ -10319,12 +11102,12 @@
                                             "type": "slot",
                                             "kind": "global",
                                             "name": "test1",
-                                            "loc": [18, 410, 23, 410, 0]
+                                            "loc": [18, 431, 23, 431, 0]
                                         }
                                     ]
                                 }
                             ],
-                            "loc": [13, 410, 25, 410, 0]
+                            "loc": [13, 431, 25, 431, 0]
                         }
                     },
                     {
@@ -10334,7 +11117,7 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "test1",
-                            "loc": [13, 411, 18, 411, 0]
+                            "loc": [13, 432, 18, 432, 0]
                         }
                     }
                 ]
@@ -10346,7 +11129,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "print",
-                "loc": [0, 412, 5, 412, 0]
+                "loc": [0, 433, 5, 433, 0]
             },
             "args": [
                 {
@@ -10355,20 +11138,20 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "to_raw_type",
-                        "loc": [6, 412, 17, 412, 0]
+                        "loc": [6, 433, 17, 433, 0]
                     },
                     "args": [
                         {
                             "type": "slot",
                             "kind": "global",
                             "name": "test1_scheme",
-                            "loc": [18, 412, 30, 412, 0]
+                            "loc": [18, 433, 30, 433, 0]
                         }
                     ],
-                    "loc": [6, 412, 31, 412, 0]
+                    "loc": [6, 433, 31, 433, 0]
                 }
             ],
-            "loc": [0, 412, 32, 412, 0]
+            "loc": [0, 433, 32, 433, 0]
         },
         {
             "type": "assign",
@@ -10376,7 +11159,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "test2_generic",
-                "loc": [0, 414, 13, 414, 0]
+                "loc": [0, 435, 13, 435, 0]
             },
             "value": {
                 "type": "call",
@@ -10384,10 +11167,10 @@
                     "type": "slot",
                     "kind": "global",
                     "name": "set",
-                    "loc": [16, 414, 19, 414, 0]
+                    "loc": [16, 435, 19, 435, 0]
                 },
                 "args": [],
-                "loc": [16, 414, 21, 414, 0]
+                "loc": [16, 435, 21, 435, 0]
             }
         },
         {
@@ -10396,7 +11179,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "test2",
-                "loc": [0, 415, 5, 415, 0]
+                "loc": [0, 436, 5, 436, 0]
             },
             "value": {
                 "type": "call",
@@ -10404,7 +11187,7 @@
                     "type": "slot",
                     "kind": "global",
                     "name": "fresh_state",
-                    "loc": [8, 415, 19, 415, 0]
+                    "loc": [8, 436, 19, 436, 0]
                 },
                 "args": [
                     {
@@ -10413,15 +11196,15 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "+expr",
-                            "loc": [20, 415, 22, 415, 0]
+                            "loc": [20, 436, 22, 436, 0]
                         },
                         "args": [
                             {"type": "literal", "kind": "integer", "value": "1"}
                         ],
-                        "loc": [20, 415, 22, 415, 0]
+                        "loc": [20, 436, 22, 436, 0]
                     }
                 ],
-                "loc": [8, 415, 23, 415, 0]
+                "loc": [8, 436, 23, 436, 0]
             }
         },
         {
@@ -10430,7 +11213,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "fn",
-                "loc": [0, 416, 2, 416, 0]
+                "loc": [0, 437, 2, 437, 0]
             },
             "value": {
                 "type": "call",
@@ -10438,17 +11221,17 @@
                     "type": "slot",
                     "kind": "global",
                     "name": "face",
-                    "loc": [5, 416, 9, 416, 0]
+                    "loc": [5, 437, 9, 437, 0]
                 },
                 "args": [
                     {
                         "type": "slot",
                         "kind": "global",
                         "name": "greedy_biclique_decomposition",
-                        "loc": [10, 416, 39, 416, 0]
+                        "loc": [10, 437, 39, 437, 0]
                     }
                 ],
-                "loc": [5, 416, 40, 416, 0]
+                "loc": [5, 437, 40, 437, 0]
             }
         },
         {
@@ -10463,13 +11246,13 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "test2",
-                        "loc": [0, 417, 5, 417, 0]
+                        "loc": [0, 438, 5, 438, 0]
                     },
                     "name": "heads",
-                    "loc": [0, 417, 11, 417, 0]
+                    "loc": [0, 438, 11, 438, 0]
                 },
                 "name": "add",
-                "loc": [0, 417, 15, 417, 0]
+                "loc": [0, 438, 15, 438, 0]
             },
             "args": [
                 {
@@ -10478,20 +11261,20 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "faucet",
-                        "loc": [16, 417, 22, 417, 0]
+                        "loc": [16, 438, 22, 438, 0]
                     },
                     "args": [
                         {
                             "type": "slot",
                             "kind": "global",
                             "name": "fn",
-                            "loc": [23, 417, 25, 417, 0]
+                            "loc": [23, 438, 25, 438, 0]
                         }
                     ],
-                    "loc": [16, 417, 26, 417, 0]
+                    "loc": [16, 438, 26, 438, 0]
                 }
             ],
-            "loc": [0, 417, 27, 417, 0]
+            "loc": [0, 438, 27, 438, 0]
         },
         {
             "type": "repeat",
@@ -10509,13 +11292,13 @@
                                 "type": "slot",
                                 "kind": "global",
                                 "name": "fn",
-                                "loc": [13, 418, 15, 418, 0]
+                                "loc": [13, 439, 15, 439, 0]
                             },
                             "name": "params",
-                            "loc": [13, 418, 22, 418, 0]
+                            "loc": [13, 439, 22, 439, 0]
                         },
                         "args": [],
-                        "loc": [13, 418, 24, 418, 0]
+                        "loc": [13, 439, 24, 439, 0]
                     }
                 }
             ],
@@ -10529,7 +11312,7 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "fresh_state",
-                            "loc": [9, 419, 20, 419, 0]
+                            "loc": [9, 440, 20, 440, 0]
                         },
                         "args": [
                             {
@@ -10541,10 +11324,10 @@
                                     "index": 0
                                 },
                                 "name": "pol",
-                                "loc": [21, 419, 30, 419, 0]
+                                "loc": [21, 440, 30, 440, 0]
                             }
                         ],
-                        "loc": [9, 419, 31, 419, 0]
+                        "loc": [9, 440, 31, 440, 0]
                     }
                 },
                 {
@@ -10556,16 +11339,16 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "test2",
-                            "loc": [4, 420, 9, 420, 0]
+                            "loc": [4, 441, 9, 441, 0]
                         },
                         "name": "add_transition",
-                        "loc": [4, 420, 24, 420, 0]
+                        "loc": [4, 441, 24, 441, 0]
                     },
                     "args": [
                         {"type": "slot", "kind": "local", "index": 0},
                         {"type": "slot", "kind": "local", "index": 1}
                     ],
-                    "loc": [4, 420, 35, 420, 0]
+                    "loc": [4, 441, 35, 441, 0]
                 },
                 {
                     "type": "call",
@@ -10576,13 +11359,13 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "test2_generic",
-                            "loc": [4, 421, 17, 421, 0]
+                            "loc": [4, 442, 17, 442, 0]
                         },
                         "name": "add",
-                        "loc": [4, 421, 21, 421, 0]
+                        "loc": [4, 442, 21, 442, 0]
                     },
                     "args": [{"type": "slot", "kind": "local", "index": 1}],
-                    "loc": [4, 421, 25, 421, 0]
+                    "loc": [4, 442, 25, 442, 0]
                 }
             ]
         },
@@ -10595,20 +11378,20 @@
                     "type": "slot",
                     "kind": "global",
                     "name": "test2_generic",
-                    "loc": [0, 422, 13, 422, 0]
+                    "loc": [0, 443, 13, 443, 0]
                 },
                 "name": "add",
-                "loc": [0, 422, 17, 422, 0]
+                "loc": [0, 443, 17, 443, 0]
             },
             "args": [
                 {
                     "type": "slot",
                     "kind": "global",
                     "name": "test2",
-                    "loc": [18, 422, 23, 422, 0]
+                    "loc": [18, 443, 23, 443, 0]
                 }
             ],
-            "loc": [0, 422, 24, 422, 0]
+            "loc": [0, 443, 24, 443, 0]
         },
         {
             "type": "assign",
@@ -10616,7 +11399,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "test2_scheme",
-                "loc": [0, 423, 12, 423, 0]
+                "loc": [0, 444, 12, 444, 0]
             },
             "value": {
                 "type": "record",
@@ -10628,7 +11411,7 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "test2_generic",
-                            "loc": [13, 424, 26, 424, 0]
+                            "loc": [13, 445, 26, 445, 0]
                         }
                     },
                     {
@@ -10638,7 +11421,7 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "test2",
-                            "loc": [13, 425, 18, 425, 0]
+                            "loc": [13, 446, 18, 446, 0]
                         }
                     }
                 ]
@@ -10650,7 +11433,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "print",
-                "loc": [0, 426, 5, 426, 0]
+                "loc": [0, 447, 5, 447, 0]
             },
             "args": [
                 {
@@ -10659,20 +11442,20 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "to_raw_type",
-                        "loc": [6, 426, 17, 426, 0]
+                        "loc": [6, 447, 17, 447, 0]
                     },
                     "args": [
                         {
                             "type": "slot",
                             "kind": "global",
                             "name": "test2_scheme",
-                            "loc": [18, 426, 30, 426, 0]
+                            "loc": [18, 447, 30, 447, 0]
                         }
                     ],
-                    "loc": [6, 426, 31, 426, 0]
+                    "loc": [6, 447, 31, 447, 0]
                 }
             ],
-            "loc": [0, 426, 32, 426, 0]
+            "loc": [0, 447, 32, 447, 0]
         },
         {
             "type": "assign",
@@ -10680,7 +11463,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "test3_generic",
-                "loc": [0, 428, 13, 428, 0]
+                "loc": [0, 449, 13, 449, 0]
             },
             "value": {
                 "type": "call",
@@ -10688,10 +11471,10 @@
                     "type": "slot",
                     "kind": "global",
                     "name": "set",
-                    "loc": [16, 428, 19, 428, 0]
+                    "loc": [16, 449, 19, 449, 0]
                 },
                 "args": [],
-                "loc": [16, 428, 21, 428, 0]
+                "loc": [16, 449, 21, 449, 0]
             }
         },
         {
@@ -10700,7 +11483,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "test3",
-                "loc": [0, 429, 5, 429, 0]
+                "loc": [0, 450, 5, 450, 0]
             },
             "value": {
                 "type": "call",
@@ -10708,7 +11491,7 @@
                     "type": "slot",
                     "kind": "global",
                     "name": "fresh_state",
-                    "loc": [8, 429, 19, 429, 0]
+                    "loc": [8, 450, 19, 450, 0]
                 },
                 "args": [
                     {
@@ -10717,15 +11500,15 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "+expr",
-                            "loc": [20, 429, 22, 429, 0]
+                            "loc": [20, 450, 22, 450, 0]
                         },
                         "args": [
                             {"type": "literal", "kind": "integer", "value": "1"}
                         ],
-                        "loc": [20, 429, 22, 429, 0]
+                        "loc": [20, 450, 22, 450, 0]
                     }
                 ],
-                "loc": [8, 429, 23, 429, 0]
+                "loc": [8, 450, 23, 450, 0]
             }
         },
         {
@@ -10740,13 +11523,13 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "test3",
-                        "loc": [0, 430, 5, 430, 0]
+                        "loc": [0, 451, 5, 451, 0]
                     },
                     "name": "heads",
-                    "loc": [0, 430, 11, 430, 0]
+                    "loc": [0, 451, 11, 451, 0]
                 },
                 "name": "add",
-                "loc": [0, 430, 15, 430, 0]
+                "loc": [0, 451, 15, 451, 0]
             },
             "args": [
                 {
@@ -10755,20 +11538,20 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "faucet",
-                        "loc": [16, 430, 22, 430, 0]
+                        "loc": [16, 451, 22, 451, 0]
                     },
                     "args": [
                         {
                             "type": "slot",
                             "kind": "global",
                             "name": "List",
-                            "loc": [23, 430, 27, 430, 0]
+                            "loc": [23, 451, 27, 451, 0]
                         }
                     ],
-                    "loc": [16, 430, 28, 430, 0]
+                    "loc": [16, 451, 28, 451, 0]
                 }
             ],
-            "loc": [0, 430, 29, 430, 0]
+            "loc": [0, 451, 29, 451, 0]
         },
         {
             "type": "repeat",
@@ -10786,13 +11569,13 @@
                                 "type": "slot",
                                 "kind": "global",
                                 "name": "List",
-                                "loc": [13, 431, 17, 431, 0]
+                                "loc": [13, 452, 17, 452, 0]
                             },
                             "name": "params",
-                            "loc": [13, 431, 24, 431, 0]
+                            "loc": [13, 452, 24, 452, 0]
                         },
                         "args": [],
-                        "loc": [13, 431, 26, 431, 0]
+                        "loc": [13, 452, 26, 452, 0]
                     }
                 }
             ],
@@ -10806,7 +11589,7 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "fresh_state",
-                            "loc": [9, 432, 20, 432, 0]
+                            "loc": [9, 453, 20, 453, 0]
                         },
                         "args": [
                             {
@@ -10818,10 +11601,10 @@
                                     "index": 2
                                 },
                                 "name": "pol",
-                                "loc": [21, 432, 30, 432, 0]
+                                "loc": [21, 453, 30, 453, 0]
                             }
                         ],
-                        "loc": [9, 432, 31, 432, 0]
+                        "loc": [9, 453, 31, 453, 0]
                     }
                 },
                 {
@@ -10833,16 +11616,16 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "test3",
-                            "loc": [4, 433, 9, 433, 0]
+                            "loc": [4, 454, 9, 454, 0]
                         },
                         "name": "add_transition",
-                        "loc": [4, 433, 24, 433, 0]
+                        "loc": [4, 454, 24, 454, 0]
                     },
                     "args": [
                         {"type": "slot", "kind": "local", "index": 2},
                         {"type": "slot", "kind": "local", "index": 3}
                     ],
-                    "loc": [4, 433, 35, 433, 0]
+                    "loc": [4, 454, 35, 454, 0]
                 },
                 {
                     "type": "call",
@@ -10853,13 +11636,13 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "test3_generic",
-                            "loc": [4, 434, 17, 434, 0]
+                            "loc": [4, 455, 17, 455, 0]
                         },
                         "name": "add",
-                        "loc": [4, 434, 21, 434, 0]
+                        "loc": [4, 455, 21, 455, 0]
                     },
                     "args": [{"type": "slot", "kind": "local", "index": 3}],
-                    "loc": [4, 434, 25, 434, 0]
+                    "loc": [4, 455, 25, 455, 0]
                 }
             ]
         },
@@ -10872,20 +11655,20 @@
                     "type": "slot",
                     "kind": "global",
                     "name": "test3_generic",
-                    "loc": [0, 435, 13, 435, 0]
+                    "loc": [0, 456, 13, 456, 0]
                 },
                 "name": "add",
-                "loc": [0, 435, 17, 435, 0]
+                "loc": [0, 456, 17, 456, 0]
             },
             "args": [
                 {
                     "type": "slot",
                     "kind": "global",
                     "name": "test3",
-                    "loc": [18, 435, 23, 435, 0]
+                    "loc": [18, 456, 23, 456, 0]
                 }
             ],
-            "loc": [0, 435, 24, 435, 0]
+            "loc": [0, 456, 24, 456, 0]
         },
         {
             "type": "assign",
@@ -10893,7 +11676,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "test3_scheme",
-                "loc": [0, 436, 12, 436, 0]
+                "loc": [0, 457, 12, 457, 0]
             },
             "value": {
                 "type": "record",
@@ -10905,7 +11688,7 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "test3_generic",
-                            "loc": [13, 437, 26, 437, 0]
+                            "loc": [13, 458, 26, 458, 0]
                         }
                     },
                     {
@@ -10915,7 +11698,7 @@
                             "type": "slot",
                             "kind": "global",
                             "name": "test3",
-                            "loc": [13, 438, 18, 438, 0]
+                            "loc": [13, 459, 18, 459, 0]
                         }
                     }
                 ]
@@ -10927,7 +11710,7 @@
                 "type": "slot",
                 "kind": "global",
                 "name": "print",
-                "loc": [0, 439, 5, 439, 0]
+                "loc": [0, 460, 5, 460, 0]
             },
             "args": [
                 {
@@ -10936,20 +11719,20 @@
                         "type": "slot",
                         "kind": "global",
                         "name": "to_raw_type",
-                        "loc": [6, 439, 17, 439, 0]
+                        "loc": [6, 460, 17, 460, 0]
                     },
                     "args": [
                         {
                             "type": "slot",
                             "kind": "global",
                             "name": "test3_scheme",
-                            "loc": [18, 439, 30, 439, 0]
+                            "loc": [18, 460, 30, 460, 0]
                         }
                     ],
-                    "loc": [6, 439, 31, 439, 0]
+                    "loc": [6, 460, 31, 460, 0]
                 }
             ],
-            "loc": [0, 439, 32, 439, 0]
+            "loc": [0, 460, 32, 460, 0]
         }
     ],
     "sources": ["intro.lc"]

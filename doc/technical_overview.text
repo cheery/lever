@@ -278,10 +278,58 @@ defines a load and store operation.
     <li>{kind:"deref", value:expression}</li>
 </ul>
 
-TODO: Describe repeat: fresh, heads
-TODO: Describe case:   cases
-TODO: Describe datatype: rows, decls
-TODO: Describe operator: decls
-TODO: Describe except: excepts
-TODO: Describe bind: bindings
-TODO: Describe closure, generator: frame, args
+Repeat has two elements unique to looping statements.
+'fresh' and 'heads'. 'fresh' is a set of cells that are
+initialized as fresh when the loop begins. This allows
+production of closures within a loop, without introducing
+interference between them.
+
+Heads is the sequence of modifiers for the loop. We have
+following loop headers:
+
+<ul>
+    <li>{type:"for",   slot, value:expression}</li>
+    <li>{type:"while", cond:expression}</li>
+    <li>{type:"if",    cond:expression}</li>
+</ul>
+
+Cases associate an expression or pattern into a block in
+case statement.
+
+<ul>
+    <li>{type:"constant", value:expression, body:block}</li>
+    <li>{type:"pattern",  value:expression, slot, body:block}</li>
+</ul>
+
+'frame' in closure is the list of indices of the cell
+variables that are lifted up from the scope where closure is
+created in.
+
+Closure arguments are a fixed record: {slot, default:expression} 
+The default only appears if the closure has optional arguments.
+
+Datatypes are described as rows and declarations on those
+rows.
+
+Format for rows: [slot, fieldc, labels:Dict(String, Integer), builder] 
+
+Following forms are valid datatype declarations:
+
+<ul>
+    <li>{type:"method", op:expression, value:expression}</li>
+    <li>{type:"derived", ops:expression, value:expression}</li>
+    <li>{type:"attr",     name:String, value:expression}</li>
+    <li>{type:"attr_set", name:String, value:expression}</li>
+    <li>{type:"attr_method", name:String, value:expression}</li>
+</ul>
+
+Operator declarations have following valid declarations:
+
+<ul>
+    <li>{type:"method", op:expression, value:expression}</li>
+    <li>{type:"default_method",        value:expression}</li>
+</ul>
+
+Exceptions have the following format,
+slot is optional: {exc:expression, slot, body:block}
+

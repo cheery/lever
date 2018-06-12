@@ -5,7 +5,7 @@ from rpython.rlib.rarithmetic import intmask
 from common import (
     Object,
     Interface,
-    InterfaceNOPA,
+    InterfaceParametric,
     Constant,
     Unit, null,
     Bool, true, false,

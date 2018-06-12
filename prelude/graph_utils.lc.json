@@ -541,25 +541,10 @@
                                                     ]
                                                 },
                                                 {
-                                                    "type": "yield",
-                                                    "value": {
-                                                        "type": "make_tuple",
-                                                        "items": [
-                                                            {
-                                                                "type": "make_tuple",
-                                                                "items": [
-                                                                    {
-                                                                        "type": "slot",
-                                                                        "kind": "local",
-                                                                        "index": 1
-                                                                    },
-                                                                    {
-                                                                        "type": "slot",
-                                                                        "kind": "local",
-                                                                        "index": 2
-                                                                    }
-                                                                ]
-                                                            },
+                                                    "type": "cond",
+                                                    "cond": {
+                                                        "type": "cmp",
+                                                        "exprs": [
                                                             {
                                                                 "type": "call",
                                                                 "callee": {
@@ -567,9 +552,9 @@
                                                                     "kind": "global",
                                                                     "name": "*",
                                                                     "loc": [
-                                                                        26,
+                                                                        15,
                                                                         22,
-                                                                        45,
+                                                                        34,
                                                                         22,
                                                                         0
                                                                     ]
@@ -585,9 +570,9 @@
                                                                         },
                                                                         "name": "length",
                                                                         "loc": [
-                                                                            26,
+                                                                            15,
                                                                             22,
-                                                                            34,
+                                                                            23,
                                                                             22,
                                                                             0
                                                                         ]
@@ -602,24 +587,183 @@
                                                                         },
                                                                         "name": "length",
                                                                         "loc": [
-                                                                            37,
+                                                                            26,
                                                                             22,
-                                                                            45,
+                                                                            34,
                                                                             22,
                                                                             0
                                                                         ]
                                                                     }
                                                                 ],
                                                                 "loc": [
-                                                                    26,
+                                                                    15,
                                                                     22,
-                                                                    45,
+                                                                    34,
+                                                                    22,
+                                                                    0
+                                                                ]
+                                                            },
+                                                            {
+                                                                "type": "literal",
+                                                                "kind": "integer",
+                                                                "value": "0"
+                                                            }
+                                                        ],
+                                                        "ops": [
+                                                            {
+                                                                "type": "slot",
+                                                                "kind": "global",
+                                                                "name": "!=",
+                                                                "loc": [
+                                                                    15,
+                                                                    22,
+                                                                    39,
                                                                     22,
                                                                     0
                                                                 ]
                                                             }
+                                                        ],
+                                                        "loc": [
+                                                            15,
+                                                            22,
+                                                            39,
+                                                            22,
+                                                            0
                                                         ]
-                                                    }
+                                                    },
+                                                    "tbody": [
+                                                        {
+                                                            "type": "yield",
+                                                            "value": {
+                                                                "type": "make_tuple",
+                                                                "items": [
+                                                                    {
+                                                                        "type": "make_tuple",
+                                                                        "items": [
+                                                                            {
+                                                                                "type": "call",
+                                                                                "callee": {
+                                                                                    "type": "slot",
+                                                                                    "kind": "global",
+                                                                                    "name": "copy",
+                                                                                    "loc": [
+                                                                                        24,
+                                                                                        23,
+                                                                                        28,
+                                                                                        23,
+                                                                                        0
+                                                                                    ]
+                                                                                },
+                                                                                "args": [
+                                                                                    {
+                                                                                        "type": "slot",
+                                                                                        "kind": "local",
+                                                                                        "index": 1
+                                                                                    }
+                                                                                ],
+                                                                                "loc": [
+                                                                                    24,
+                                                                                    23,
+                                                                                    31,
+                                                                                    23,
+                                                                                    0
+                                                                                ]
+                                                                            },
+                                                                            {
+                                                                                "type": "call",
+                                                                                "callee": {
+                                                                                    "type": "slot",
+                                                                                    "kind": "global",
+                                                                                    "name": "copy",
+                                                                                    "loc": [
+                                                                                        32,
+                                                                                        23,
+                                                                                        36,
+                                                                                        23,
+                                                                                        0
+                                                                                    ]
+                                                                                },
+                                                                                "args": [
+                                                                                    {
+                                                                                        "type": "slot",
+                                                                                        "kind": "local",
+                                                                                        "index": 2
+                                                                                    }
+                                                                                ],
+                                                                                "loc": [
+                                                                                    32,
+                                                                                    23,
+                                                                                    39,
+                                                                                    23,
+                                                                                    0
+                                                                                ]
+                                                                            }
+                                                                        ]
+                                                                    },
+                                                                    {
+                                                                        "type": "call",
+                                                                        "callee": {
+                                                                            "type": "slot",
+                                                                            "kind": "global",
+                                                                            "name": "*",
+                                                                            "loc": [
+                                                                                42,
+                                                                                23,
+                                                                                61,
+                                                                                23,
+                                                                                0
+                                                                            ]
+                                                                        },
+                                                                        "args": [
+                                                                            {
+                                                                                "type": "slot",
+                                                                                "kind": "attr",
+                                                                                "base": {
+                                                                                    "type": "slot",
+                                                                                    "kind": "local",
+                                                                                    "index": 1
+                                                                                },
+                                                                                "name": "length",
+                                                                                "loc": [
+                                                                                    42,
+                                                                                    23,
+                                                                                    50,
+                                                                                    23,
+                                                                                    0
+                                                                                ]
+                                                                            },
+                                                                            {
+                                                                                "type": "slot",
+                                                                                "kind": "attr",
+                                                                                "base": {
+                                                                                    "type": "slot",
+                                                                                    "kind": "local",
+                                                                                    "index": 2
+                                                                                },
+                                                                                "name": "length",
+                                                                                "loc": [
+                                                                                    53,
+                                                                                    23,
+                                                                                    61,
+                                                                                    23,
+                                                                                    0
+                                                                                ]
+                                                                            }
+                                                                        ],
+                                                                        "loc": [
+                                                                            42,
+                                                                            23,
+                                                                            61,
+                                                                            23,
+                                                                            0
+                                                                        ]
+                                                                    }
+                                                                ]
+                                                            }
+                                                        }
+                                                    ],
+                                                    "fbody": [],
+                                                    "loc": [12, 22, 62, 23, 0]
                                                 }
                                             ]
                                         }
@@ -646,7 +790,7 @@
                                                     "index": 8
                                                 }
                                             ],
-                                            "loc": [8, 23, 33, 23, 0]
+                                            "loc": [8, 24, 33, 24, 0]
                                         },
                                         "value": {
                                             "type": "iter_once",
@@ -660,7 +804,7 @@
                                                 "kind": "local",
                                                 "index": 9
                                             },
-                                            "loc": [36, 23, 54, 23, 0]
+                                            "loc": [36, 24, 54, 24, 0]
                                         }
                                     }
                                 ],
@@ -670,12 +814,12 @@
                                             "type": "slot",
                                             "kind": "global",
                                             "name": "NoItems",
-                                            "loc": [15, 24, 22, 24, 0]
+                                            "loc": [15, 25, 22, 25, 0]
                                         },
                                         "body": [{"type": "break"}]
                                     }
                                 ],
-                                "loc": [8, 23, 33, 24, 0]
+                                "loc": [8, 24, 33, 25, 0]
                             },
                             {
                                 "type": "repeat",
@@ -698,7 +842,7 @@
                                                     "index": 11
                                                 }
                                             ],
-                                            "loc": [12, 25, 27, 25, 0]
+                                            "loc": [12, 26, 27, 26, 0]
                                         },
                                         "value": {
                                             "type": "slot",
@@ -729,10 +873,10 @@
                                                     "type": "slot",
                                                     "kind": "global",
                                                     "name": "<",
-                                                    "loc": [15, 26, 33, 26, 0]
+                                                    "loc": [15, 27, 33, 27, 0]
                                                 }
                                             ],
-                                            "loc": [15, 26, 33, 26, 0]
+                                            "loc": [15, 27, 33, 27, 0]
                                         },
                                         "tbody": [
                                             {
@@ -763,7 +907,7 @@
                                             }
                                         ],
                                         "fbody": [],
-                                        "loc": [12, 26, 34, 28, 0]
+                                        "loc": [12, 27, 34, 29, 0]
                                     }
                                 ]
                             },
@@ -784,7 +928,7 @@
                                             "index": 13
                                         }
                                     ],
-                                    "loc": [8, 29, 11, 29, 0]
+                                    "loc": [8, 30, 11, 30, 0]
                                 },
                                 "value": {
                                     "type": "slot",
@@ -829,10 +973,10 @@
                                                     "kind": "local",
                                                     "index": 14
                                                 },
-                                                "loc": [12, 31, 29, 31, 0]
+                                                "loc": [12, 32, 29, 32, 0]
                                             },
                                             "name": "append",
-                                            "loc": [12, 31, 36, 31, 0]
+                                            "loc": [12, 32, 36, 32, 0]
                                         },
                                         "args": [
                                             {
@@ -841,7 +985,7 @@
                                                 "index": 5
                                             }
                                         ],
-                                        "loc": [12, 31, 44, 31, 0]
+                                        "loc": [12, 32, 44, 32, 0]
                                     },
                                     {
                                         "type": "call",
@@ -861,10 +1005,10 @@
                                                     "kind": "local",
                                                     "index": 14
                                                 },
-                                                "loc": [12, 32, 25, 32, 0]
+                                                "loc": [12, 33, 25, 33, 0]
                                             },
                                             "name": "difference_update",
-                                            "loc": [12, 32, 43, 32, 0]
+                                            "loc": [12, 33, 43, 33, 0]
                                         },
                                         "args": [
                                             {
@@ -873,7 +1017,7 @@
                                                 "index": 13
                                             }
                                         ],
-                                        "loc": [12, 32, 46, 32, 0]
+                                        "loc": [12, 33, 46, 33, 0]
                                     }
                                 ]
                             },
@@ -914,10 +1058,10 @@
                                                     "kind": "local",
                                                     "index": 15
                                                 },
-                                                "loc": [12, 34, 29, 34, 0]
+                                                "loc": [12, 35, 29, 35, 0]
                                             },
                                             "name": "append",
-                                            "loc": [12, 34, 36, 34, 0]
+                                            "loc": [12, 35, 36, 35, 0]
                                         },
                                         "args": [
                                             {
@@ -926,7 +1070,7 @@
                                                 "index": 5
                                             }
                                         ],
-                                        "loc": [12, 34, 44, 34, 0]
+                                        "loc": [12, 35, 44, 35, 0]
                                     },
                                     {
                                         "type": "call",
@@ -946,19 +1090,19 @@
                                                     "kind": "local",
                                                     "index": 15
                                                 },
-                                                "loc": [12, 35, 25, 35, 0]
+                                                "loc": [12, 36, 25, 36, 0]
                                             },
                                             "name": "difference_update",
-                                            "loc": [12, 35, 43, 35, 0]
+                                            "loc": [12, 36, 43, 36, 0]
                                         },
                                         "args": [
                                             {
                                                 "type": "slot",
                                                 "kind": "local",
-                                                "index": 13
+                                                "index": 12
                                             }
                                         ],
-                                        "loc": [12, 35, 46, 35, 0]
+                                        "loc": [12, 36, 46, 36, 0]
                                     }
                                 ]
                             },
@@ -973,7 +1117,7 @@
                                     "type": "slot",
                                     "kind": "global",
                                     "name": "+",
-                                    "loc": [8, 36, 19, 36, 0]
+                                    "loc": [8, 37, 19, 37, 0]
                                 },
                                 "value": {
                                     "type": "literal",

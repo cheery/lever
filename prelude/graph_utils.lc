@@ -19,7 +19,8 @@ greedy_biclique_decomposition = (graph, get_edges):
             except NoItems then continue
             for w in rest repeat
                 b.intersection_update(flow_edges[w])
-            yield ((a,b), a.length * b.length)
+            if a.length * b.length != 0 then
+                yield ((copy(a),copy(b)), a.length * b.length)
         best_biclique, best_score = bicliques ==> rest
         except NoItems then break
         for biclique, score in rest repeat
@@ -32,9 +33,8 @@ greedy_biclique_decomposition = (graph, get_edges):
             flow_edges[n].difference_update(b)
         for n in b repeat
             flow_variables[n].append(var_id)
-            flow_edges[n].difference_update(b)
+            flow_edges[n].difference_update(a)
         var_id += 1
-
     return flow_variables
 
 ## https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
