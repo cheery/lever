@@ -4,11 +4,11 @@ from graph_utils import
 # The type inferencer forms a state machine. States have flow
 # edges and transitions. Most of this is described in
 # Stephen Dolan's MLsub thesis.
-datatype State(a) = state(
+datatype State(op, a) = state(
     pol:         Integer,
-    heads:       Set(a), 
-    flow:        Set(State(a)), 
-    transitions: Dict(Parameter, State(a)))
+    heads:       Set(Sink(op, a)), 
+    flow:        Set(State(op, a)), 
+    transitions: Dict(Parameter, State(op, a)))
 method hash, (==): by_reference
 attribute method add_flow = (self, other):
     assert self.pol != other.pol as "polarity conflict"
@@ -36,7 +36,7 @@ datatype Site(op, a) = site(
     coerces: Set((a, Integer, a)),
     param: Parameter,
     expect: a,
-    operators: Dict(a, {input: State(a), output: State(a)}),
+    operators: Dict(a, {input: State(op, a), output: State(op, a)}),
     slots: Dict(Integer, Set(a)))
 method hash, (==): by_reference
 attribute method transfer = (self, fn):
@@ -49,9 +49,10 @@ attribute method transfer = (self, fn):
         operators[index] = {input:fn(slot.input), output:fn(slot.output)}
     return site(self.op, coerces, expect, param, operators, slots)
 
-datatype Sink(op, a) = sink(index: Integer, site: Site(op, a))
+datatype Sink(op, a) =
+    sink(index: Integer, site: Site(op, a)) | faucet(a)
 method hash, (==): by_value
-    
+
 fresh_state = (pol):
     return state(pol, set([]), set([]), dict([]))
 
@@ -69,7 +70,7 @@ fresh_port = ():
     input = fresh_state(-1)
     output = fresh_state(+1)
     input.add_flow(output)
-    return {input, output}
+    return {input: input, output: output}
 
 fresh_free_port = (graph):
     port = fresh_port()
@@ -100,13 +101,14 @@ biunify = (pair, visited):
                 biunify((u, s), visited)
 
 fit_subtype = (p, q, x, y, visited):
-    if x == y then
-        return true
-    #else if y --> sink(index, site) then
-    #    inference_coerce(x, q, index, site, visited)
-    #    return true
-    else
-        return false
+    case q of
+    sink(index, site) then
+        inference_coerce(x, q, index, site, visited)
+    faucet(_) then
+        if x == y then
+            return true
+        else
+            return false
 
 merge = (dst, src):
     assert dst.pol == src.pol as "polarity conflict"
@@ -153,9 +155,10 @@ to_raw_type = (scheme):
 
         typedecl = []
         for head in state.heads repeat
-            # TODO: Sink headers should get a specific treatment.
-#            if isinstance(head, types.SinkHeader)
-#                name = repr(head.site.op)
+            case head of
+            sink(index, site) then
+                name = stringify(site.op)
+                assert false as "TODO: implement"
 #                w = k_visit(state, head.site.edge)
 #                if w not in visi
 #                    line = s_visit(w, true)
@@ -163,7 +166,8 @@ to_raw_type = (scheme):
 #                if name not in typedecl
 #                    typedecl.append(name)
 #                continue
-            typedecl.append(r_visit(head, state, in_trail))
+            faucet(x) then
+                typedecl.append(r_visit(x, state, in_trail))
         for v in flow_variables[state] repeat
             typedecl.append(stringify(v+10, 36))
         if state in mapi then
@@ -171,11 +175,11 @@ to_raw_type = (scheme):
         visi.discard(state)
         return "(" ++ op.join(typedecl) ++ ")"
 
-    r_visit = (head, state, in_trail):
+    r_visit = (face, state, in_trail):
         px = dict()
-        for edge in head.params() repeat
+        for edge in face.params() repeat
             px[edge] = e_visit(state, edge, in_trail)
-        return head.format(px)
+        return face.format(px)
 
     e_visit = (state, edge, in_trail):
         if edge not in state.transitions then
@@ -189,6 +193,182 @@ to_raw_type = (scheme):
         assert false as "not implemented"
 
     return s_visit(scheme.root, false) ++ "".join(trail.values())
+
+# The generalize recalculates the 'free' state sets in the environment by
+# extending it. Then it runs a subset construction that takes everything
+# not in 'free' and constructs a new graph. 'generic' ends up labeling the
+# states present in this new sub-graph.
+generalize = (root, env):
+    recalculate_free = (env):
+        case env of
+        environ_end then
+            return set()
+        environ(schemes, parent, env_free) then
+            free = recalculate_free(parent)
+            # Nodes free in parent do not need to appear in free set
+            env_free.difference_update(free)
+            visit = (state):
+                if state not in free then
+                    env_free.add(state)
+            # type_env.free fills up while we discover new states.
+            for state in env_free repeat
+                for w in state.flow repeat visit(w)
+                for edge, ws in state.transitions
+                for w in ws repeat visit(w)
+
+            free.update(env_free)
+            return free
+
+    free = recalculate_free(env)
+
+    subsets = dict()    # : {Set(Node) : Node}
+    membership = dict() # : {Node : Set(Node)}
+
+    reduce_site_port = (port):
+        return reduce_subset(port.pol, set([port]))
+    reduce_subset = (pol, subset):
+        subset = freeze(subset)
+        if subset in subsets then
+            return subsets[subset]
+        s = fresh_state(pol)
+        subsets[subset] = s
+        rw_edge = dict()
+        transitions = dict()
+        for n in subset repeat
+            assert n not in free as "bug: subset must not contain free states"
+            for head in n.heads repeat
+                case head of
+                sink(index, site) then
+                    n_site = site.transfer(reduce_site_port)
+                    rw_edge[site.edge] = n_site.edge
+                    s.heads.add(sink(index, n_site))
+                faucet(_) then
+                    s.heads.add(head)
+            membership[n].append(s)
+            except NoIndex then
+                membership[n] = [s]
+            for edge, ws in n.transitions
+            for w in ws repeat
+                transitions[edge].add(w)
+                except NoIndex then
+                    transitions[edge] = set([w])
+
+        for edge, ws in transitions repeat
+            edge = rw_edge.get(edge, edge)
+            extern = set()
+            for w in ws if w in free repeat
+                extern.add(w)
+            ws.difference_update(extern)
+            s.transitions[edge] = set([reduce_subset(pol*edge.pol, ws)]) | extern
+        return s
+
+    if root in free then
+        return {generic:set(), root:root}
+    root = reduce_subset(root.pol, set([root]))
+    for state, ss in membership repeat
+        if state.pol > 0 then continue
+        for w in state.flow repeat
+            assert w not in free as "bug: free state that is not marked free"
+            qq = membership.get(w, [])
+            for s in ss for q in qq repeat
+                s.add_flow(q)
+    return {generic:set(subsets.values()), root:root}
+
+instantiate_type = (scheme):
+    mapping = dict()
+    copy_state = (n):
+        if n not in scheme.generic then return n
+        return mapping[n]
+        except KeyError then
+            m = fresh_state(n.pol)
+            mapping[n] = m
+            rw_edge = dict()
+            for head in n.heads repeat
+                case head of
+                sink(index, site) then
+                    n_site = site.transfer(reduce_site_port)
+                    rw_edge[site.edge] = n_site.edge
+                    s.heads.add(sink(index, n_site))
+                faucet(_) then
+                    s.heads.add(head)
+            for w in n.flow repeat
+                m.flow.add(copy_state(w))
+            for edge, ws in n.transitions repeat
+                edge = rw_edge.get(edge, edge)
+                for w in ws repeat
+                    m.add_transition(edge, copy_state(w))
+            return m
+    root = copy_state(scheme.root)
+    return {root: root}
+
+
+datatype Env(op, a) = environ(
+    schemes: Dict(String, {generic: Set(State(op, a)), root: State(op, a)}),
+    parent: Env(op, a),
+    free: Set(State(op, a))) | environ_end
+method getitem = (env, name):
+    case env of
+    environ(schemes, parent, free) then
+        return schemes[name]
+        except NoIndex then
+            return parent[name]
+    environ_end then
+        return dict()[name]
+
+inference_function = (fn, env, visited):
+    head = face(fn)
+    info = inspect(fn)
+    out = fresh_state(+1)
+    out.heads.add(faucet(head))
+    assert info.args.length == 0 as "arguments not supported yet"
+    params = head.params()
+    for i in range(info.args.length) repeat
+        port = fresh_port()
+        dom = params ==> params
+        out.add_transition(dom, port.input)
+    retval = inference_program(info.body, env, visited)
+    out.add_transition(params ==> params, retval)
+    return out
+
+inference_program = (body, env, visited):
+    result = fresh_port()
+    for stmt in body repeat
+        case stmt['type'] of
+        "return" then
+            value = inference_expr(stmt['value'], env, visited)
+            biunify((value, result.input), visited)
+        else
+            print(stmt['type'], "missing")
+            assert false as "missing inference for stmt"
+    return result.output
+
+inference_expr = (a, env, visited):
+    case a['type'] of
+    "literal" then
+        result = fresh_state(+1)
+        case a['kind'] of
+        "string" then
+            result.heads.add(faucet(String))
+        "integer" then
+            result.heads.add(faucet(Integer))
+        else
+            assert false as "missing inference for literal"
+        return result
+    else
+        print(a['type'], "missing")
+        assert false as "missing inference for expression"
+
+
+foo = ():
+    return 5
+
+env = environ(dict(), environ_end, set())
+visited = set()
+
+out = inference_function(foo, env, visited)
+out_scheme = generalize(out, env)
+print(to_raw_type(out_scheme))
+
 
 #operator format [0]
 #method List = (a, d):
@@ -225,7 +405,7 @@ to_raw_type = (scheme):
 #get_function_header(argc, vari, opt)
 
 test1 = fresh_state(+1)
-test1.heads.add(Integer)
+test1.heads.add(faucet(Integer))
 test1_scheme = {
     generic: set([test1]),
     root:    test1 }
@@ -234,7 +414,7 @@ print(to_raw_type(test1_scheme))
 test2_generic = set()
 test2 = fresh_state(+1)
 fn = face(greedy_biclique_decomposition)
-test2.heads.add(fn)
+test2.heads.add(faucet(fn))
 for param in fn.params() repeat
     st = fresh_state(param.pol)
     test2.add_transition(param, st)
@@ -247,7 +427,7 @@ print(to_raw_type(test2_scheme))
 
 test3_generic = set()
 test3 = fresh_state(+1)
-test3.heads.add(List)
+test3.heads.add(faucet(List))
 for param in List.params() repeat
     st = fresh_state(param.pol)
     test3.add_transition(param, st)

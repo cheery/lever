@@ -197,6 +197,23 @@ def w_single(items):
     else:
         raise error(e_PartialOnArgument())
 
+@python_bridge
+def w_unique_coercion(items):
+    faces = {}
+    it = cast(call(op_iter, [items]), Iterator)
+    while True:
+        try:
+            x, it = it.next()
+            if not isinstance(x, Interface):
+                raise error(e_TypeError())
+            faces[x] = None
+        except StopIteration:
+            break
+    face = unique_coercion(faces)
+    if face is None:
+        raise error(e_NoValue())
+    return face
+
 base_stem = {
     u"==": op_eq,
     u"!=": w_ne,
@@ -223,6 +240,7 @@ base_stem = {
     u"|": op_or,
     u"xor": op_xor,
     u"stringify": op_stringify,
+    u"freeze": op_freeze,
     u"parse_integer": builtin()(parse_integer),
     u"null": null,
     u"true" : true,
@@ -233,8 +251,10 @@ base_stem = {
     u"dict": w_construct_dict,
     u"list": w_construct_list,
     u"call_with_coeffects": w_call_with_coeffects,
+    u"TypeError": e_TypeError.interface,
     u"NoItems": e_NoItems.interface,
     u"NoIndex": e_NoIndex.interface,
+    u"NoValue": e_NoValue.interface,
     u"face": builtin()(lambda x: x.face()),
     u"Bool": Bool,
     u"Integer": Integer.interface,
@@ -249,4 +269,5 @@ base_stem = {
     u"get_function_header": w_get_function_header,
     u"single": w_single,
     u"inspect": interpreter.w_inspect,
+    u"unique_coercion": w_unique_coercion,
 }

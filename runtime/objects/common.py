@@ -431,6 +431,19 @@ op_xor = Operator([0,1]) # xor(a,b)
 # things stringifyable have nothing else to do with strings.
 op_stringify = Operator([0])
 
+# The purpose of op_freeze is to ensure that we
+# get an object that we can hash.
+op_freeze = Operator([0])
+
+def Any_freeze(a):
+    fn_hash = a.face().method(op_hash)
+    if fn_hash is None:
+        raise error(e_TypeError())
+    fn_eq = a.face().method(op_eq)
+    if fn_eq is None:
+        raise error(e_TypeError())
+    return a
+op_freeze.default = python_bridge(Any_freeze)
 
 # Every operator is resolved by selectors, in the same
 # manner. If the interface doesn't provide an
@@ -581,6 +594,12 @@ class Set(Object):
     interface = InterfaceParametric([BIV])
     def __init__(self, set_val):
         self.set_val = set_val
+
+class FrozenList(List):
+    interface = InterfaceParametric([COV])
+
+class FrozenSet(Set):
+    interface = InterfaceParametric([COV])
 
 # Each module becomes their own interface, the system has
 # been purposefully designed such that you get an access to
@@ -819,7 +838,7 @@ class Datatype(Interface):
         for i in range(self.varc):
             args.append(Freevar(i))
         for builder, cons in self.builders:
-            cons.fields = cast(call(builder, args), Tuple).tuple_val
+            cons.fields = cast(call(builder, list(args)), Tuple).tuple_val
             if cons.fieldc != len(cons.fields):
                 raise error(e_TypeError())
         self.builders = []
@@ -954,8 +973,11 @@ def w_tagu_check(constructor, tagu):
 @python_bridge
 def w_tagu_unpack(constructor, tagu):
     constructor = cast(constructor, Constructor)
-    tagu = convert(tagu, constructor.datatype)
-    return Tuple(cast(tagu, TaggedUnion).fields)
+    tagu = cast(convert(tagu, constructor.datatype), TaggedUnion)
+    if len(tagu.fields) == 1:
+        return tagu.fields[0]
+    else:
+        return Tuple(tagu.fields)
 
 @python_bridge
 def w_tagu_accessor(name, tagu):

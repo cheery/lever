@@ -43,7 +43,7 @@ def Dict_copy(a):
     c.dict_val.update(cast(a, Dict).dict_val)
     return c
 
-@attr_method(Dict.interface, u"dict")
+@attr_method(Dict.interface, u"get")
 def get(a, item, default):
     a = cast(a, Dict)
     try:

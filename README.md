@@ -155,10 +155,14 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- TODO: Start exploring the buildup of the inferencer.
+ THE NEXT TASK:
+    The technical documentation has few remaining formats not described.
 
- TODO: Add the 'generalize', 'instantiate_type' into the prelude program.
-       export 'unique_coercion' from the runtime.
+
+ TODO: The technical documentation should describe how the
+       forms end up evaluated.
+
+ TODO: Start exploring the buildup of the inferencer.
 
  TODO: Consider writing a sample program that uses the whole palette
        of methods that are available for strings.
@@ -238,12 +242,6 @@ of fibonacci and factorial.
     a.difference(iterable), a - b
     a.symmetric_difference(iterable), xor(a, b)
 
- TODO: The technical documentation has few remaining formats
-       not described.
-
- TODO: The technical documentation should describe how the
-       forms end up evaluated.
-
  TODO: Consider similar sample programs for lists, dicts, sets, slots.
 
  TODO: Implement some binary format for binary data,
@@ -281,8 +279,6 @@ of fibonacci and factorial.
  Add read and write indexers.
 
  TODO: https://srfi.schemers.org/srfi-41/srfi-41.html
-
- TODO: Provide an util to produce an iterator from functions.
 
  TODO: Create stringbuilders.
 

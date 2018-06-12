@@ -1,4 +1,5 @@
 from rpython.rlib.listsort import make_timsort_class
+from rpython.rlib.rarithmetic import intmask, r_uint
 from common import *
 
 def construct_list(iterable):
@@ -10,10 +11,13 @@ def fresh_list():
     return List([])
 
 @getter(List.interface, u"length")
+@getter(FrozenList.interface, u"length")
 def List_get_length(a):
-    return fresh_integer(len(a.list_val))
+    a = cast(a, List).list_val
+    return fresh_integer(len(a))
 
 @method(List.interface, op_eq)
+@method(FrozenList.interface, op_eq)
 def List_eq(a, b):
     a = cast(a, List).list_val
     b = cast(b, List).list_val
@@ -24,7 +28,22 @@ def List_eq(a, b):
             return false
     return true
 
+@method(FrozenList.interface, op_hash)
+def FrozenList_hash(a):
+    a = cast(a, List).list_val
+    mult = 1000003
+    x = 0x345678
+    z = len(a)
+    for w_item in a:
+        y = cast(call(op_hash, [w_item]), Integer).toint()
+        x = (x ^ y) * mult
+        z -= 1
+        mult += 82520 + z + z
+    x += 97531
+    return fresh_integer(intmask(x))
+
 @method(List.interface, op_concat)
+@method(FrozenList.interface, op_concat)
 def List_concat(a, b):
     a = cast(a, List).list_val
     b = cast(b, List).list_val
@@ -34,7 +53,17 @@ def List_concat(a, b):
 def List_copy(a):
     return List(list(cast(a, List).list_val))
 
+@method(List.interface, op_freeze)
+def List_freeze(a):
+    a = cast(a, List).list_val
+    return FrozenList(list(a))
+
+@method(FrozenList.interface, op_copy)
+def FrozenList_copy(a):
+    return a
+
 @method(List.interface, op_in)
+@method(FrozenList.interface, op_in)
 def List_in(item, a):
     a = cast(a, List).list_val
     if item in a:
@@ -43,6 +72,7 @@ def List_in(item, a):
         return false
 
 @method(List.interface, op_getitem)
+@method(FrozenList.interface, op_getitem)
 def List_getitem(a, index):
     index = cast(index, Integer).toint()
     if index < len(a.list_val):
@@ -58,6 +88,7 @@ def List_setitem(a, index, value):
     raise error(e_NoIndex())
 
 @method(List.interface, op_iter)
+@method(FrozenList.interface, op_iter)
 def List_iter(a):
     return ListIterator(0, a.list_val)
 
@@ -119,6 +150,7 @@ def List_pop(a, index=None):
     return a.list_val.pop(index)
 
 @attr_method(List.interface, u"index")
+@attr_method(FrozenList.interface, u"index")
 def List_index(a, obj):
     a = cast(a, List)
     for index, item in enumerate(a.list_val):
@@ -127,6 +159,7 @@ def List_index(a, obj):
     raise error(e_PartialOnArgument())
 
 @attr_method(List.interface, u"count")
+@attr_method(FrozenList.interface, u"count")
 def List_count(a, obj):
     count = 0
     for item in a.list_val:
