@@ -185,7 +185,6 @@ inference_coerce = (head, q, slot_idx, site, visited):
 
         for h,i in coercions if (h,i,c) not in site.coerces repeat
             site.coerces.add((h,i,c))
-            #print('coerce', h, i, c)
  
             k = get_coercion_function_type(h, c)
             cf = get_function_header(1, false, 0)
@@ -201,10 +200,13 @@ inference_coerce = (head, q, slot_idx, site, visited):
                 biunify((w, port.input), visited)
 
 binary_operator = (op, head, expect):
-    # 'op' is the thing being called.
-    print(op)
-    print(head)
-    print(expect)
+    # 'op' is the operation being invoked.
+    # 'head' is the element we query
+    # 'expect' described a prefered format for the thing.
+    if op == call and head == face((+)) then
+        print('hello from (+)!')
+        assert false as "especially not implemented"
+
     assert false as "not implemented"
 
 # binary_operator = (op, head, expect):
@@ -695,7 +697,6 @@ foo = (bar):
 env = environ(dict(), dict(), environ_end, set())
 visited = set()
 
-print(is_closure(foo))
 out = inference_function(foo, env, visited)
 out_scheme = generalize(out, env)
 print(to_raw_type(out_scheme))

@@ -40,7 +40,7 @@ def new_entry_point(config, interpret=False):
                 lno1 = cast(loc[3], Integer).toint()
                 srci = cast(loc[4], Integer).toint()
                 src = cast(sources[srci], String).string_val.encode('utf-8')
-                s = "  %s:%d:\n%s\n" % (src, lno0+1,
+                s = "  %s:%d:\n%s\n" % (src, lno0,
                     format_source_location(col0, lno0, col1, lno1, src))
                 os.write(0, s)
             os.write(0, tb.error.__class__.__name__ + "\n")
@@ -66,6 +66,8 @@ def new_entry_point(config, interpret=False):
     else:
         return entry_point_b
 
+# Especially when tired and frustrated, well-formatted information
+# can be such a morale boost, that one shouldn't skimp on it.
 def format_source_location(col0, lno0, col1, lno1, src):
     try:
         fd = rfile.create_file(src, 'rb')
@@ -96,7 +98,6 @@ def format_source_location(col0, lno0, col1, lno1, src):
     else:
         trail = " "*(col0-trim) + "^" + "-"*(col1-col0-2) + "^"
     return "    " + "\n    ".join(show_lines + [trail])
-
 
 @builtin()
 def w_json_loader(mspace, name):
