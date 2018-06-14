@@ -578,8 +578,13 @@ def eval_expr(ctx, val):
         for i in range(0, len(i_ops)):
             op = eval_expr(ctx, as_dict(i_ops[i]))
             r_expr = eval_expr(ctx, as_dict(i_exprs[i+1]))
-            if convert(call(op, [l_expr, r_expr]), Bool) is false:
-                return false
+            try:
+                if convert(call(op, [l_expr, r_expr]), Bool) is false:
+                    return false
+            except Traceback as tb:
+                loc = as_list(attr(val, u"loc"))
+                tb.trace.append((loc, ctx.sources))
+                raise tb
             l_expr = r_expr
         return true
     elif tp == u"and":
@@ -736,7 +741,11 @@ class TupleSlot(Slot):
         return Tuple([slot.load(ctx) for slot in self.slots])
 
     def store(self, ctx, value):
-        tup = cast(call(op_product, [value]), Tuple).tuple_val
+        try:
+            tup = cast(call(op_product, [value]), Tuple).tuple_val
+        except Traceback as tb:
+            tb.trace.append((self.loc, ctx.sources))
+            raise tb
         if len(tup) != len(self.slots):
             tb = error(e_TypeError())
             tb.trace.append((self.loc, ctx.sources))

@@ -155,15 +155,19 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- THE NEXT TASK: {"call", callee, args}
+ THE NEXT TASK: Implement documentation names. 
+  
 
-prelude/intro.lc:362: add call inference.
+Consider what the format should be for 'binary_operator'
+and 'get_coercion_function_type'...
 
+
+Add immutable constructs, but provide them such that they don't cause
+much ado.
 
 Consider dropping varargs.
 
 Tune pattern matchers usable without case construct.
-
 
  TODO: The technical documentation should describe how the
        forms end up evaluated.

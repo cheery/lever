@@ -465,6 +465,8 @@ def operator_call(op, args):
             faces[args[index].face()] = None
         face = unique_coercion(faces)
         if face is None:
+            if op.default is not None:
+                return call(op.default, args)
             raise error(e_TypeError())
         impl = face.method(op)
         args = list(args)

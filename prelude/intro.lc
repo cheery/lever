@@ -156,10 +156,10 @@ inference_coerce = (head, q, slot_idx, site, visited):
         c = unique_coercion(heads)
         for i in site.slots.keys() repeat
             if i == slot_idx then
-                coercions.add([head, i])
+                coercions.add((unwrap(head), i))
             else
                 for u in site.slots[i] if u in heads repeat
-                    coercions.add([u,i])
+                    coercions.add((u,i))
         if c in site.operators then
             ports = site.operators[c]
         else
@@ -167,7 +167,7 @@ inference_coerce = (head, q, slot_idx, site, visited):
             fn = binary_operator(site.op, c, site.expect)
             ports = dict()
             site.operators[c] = ports
-            out = frest_state(+1)
+            out = fresh_state(+1)
             out.heads.update(fn.heads)
             for e,ws in fn.transitions.items() repeat
                 if e in doms then
@@ -180,7 +180,7 @@ inference_coerce = (head, q, slot_idx, site, visited):
                     ports[e] = {input:rr, output:yy}
                 else
                     out.transitions[e] = ws
-            for w in q.transitions[site.edge] repeat
+            for w in q.transitions[site.param] repeat
                 biunify((out, w), visited)
 
         for h,i in coercions if (h,i,c) not in site.coerces repeat
@@ -188,7 +188,7 @@ inference_coerce = (head, q, slot_idx, site, visited):
  
             k = get_coercion_function_type(h, c)
             cf = get_function_header(1, false, 0)
-            assert k.heads == set([cf]) as "type error"
+            assert k.heads == set([faucet(cf)]) as "type error"
             z = fresh_state(-1)
             for w in k.transitions[get_dom(0)] repeat
                 merge(z, w)
@@ -204,8 +204,38 @@ binary_operator = (op, head, expect):
     # 'head' is the element we query
     # 'expect' described a prefered format for the thing.
     if op == call and head == face((+)) then
-        print('hello from (+)!')
-        assert false as "especially not implemented"
+        # expect.argc should be 3, we cannot check for now,
+        #   because Function headers do not expose their elements.
+        f = fresh_state(+1)
+        f.heads.add(faucet(expect))
+
+        z = fresh_state(-1)
+        z.heads.add(faucet(head))
+        f.add_transition(get_dom(0), z)
+
+        op_site = fresh_operator((+), [0,1], 2)
+
+        sink0 = fresh_port()
+        sink0.input.heads.add(sink(0, op_site))
+        f.add_transition(get_dom(1), sink0.input)
+
+        sink1 = fresh_port()
+        sink1.input.heads.add(sink(1, op_site))
+        f.add_transition(get_dom(2), sink1.input)
+
+        result = fresh_port()
+
+        calltype = fresh_state(-1)
+        calltype.heads.add(faucet(op_site.expect))
+        calltype.add_transition(get_dom(0), sink0.output)
+        calltype.add_transition(get_dom(1), sink1.output)
+        calltype.add_transition(cod, result.input)
+        f.add_transition(cod, result.output)
+ 
+        sink0.input.add_transition(op_site.param, calltype)
+        sink1.input.add_transition(op_site.param, calltype)
+ 
+        return f
 
     assert false as "not implemented"
 
@@ -250,36 +280,6 @@ binary_operator = (op, head, expect):
 #         result = new_port()
 #         calltype.add_transition(cod, result.input)
 #         f.add_transition(cod, result.output)
-#         return f
-#     if op == t_call and head in [t_add,t_sub] and expect.argc == 3
-#         f = State(+1)
-#         f.heads.add(expect)
-#         z = State(-1)
-#         z.heads.add(head)
-#         f.add_transition(dom[0], z)
-# 
-#         op_site = new_operator(t_add, [0,1], 2)
-# 
-#         sink0 = new_port()
-#         sink0.input.heads.add(SinkHeader(0, op_site))
-#         f.add_transition(dom[1], sink0.input)
-# 
-#         sink1 = new_port()
-#         sink1.input.heads.add(SinkHeader(1, op_site))
-#         f.add_transition(dom[2], sink1.input)
-# 
-#         result = new_port()
-# 
-#         calltype = State(-1)
-#         calltype.heads.add(op_site.expect)
-#         calltype.add_transition(dom[0], sink0.output)
-#         calltype.add_transition(dom[1], sink1.output)
-#         calltype.add_transition(cod, result.input)
-#         f.add_transition(cod, result.output)
-# 
-#         sink0.input.add_transition(op_site.edge, calltype)
-#         sink1.input.add_transition(op_site.edge, calltype)
-# 
 #         return f
 # 
 #     if op == t_call and head == t_gt and expect.argc == 3
@@ -369,25 +369,26 @@ binary_operator = (op, head, expect):
 #     #f.add_transition(dom[1], z)
 #     #f.add_transition(cod, r)
 #     #return f
-# 
+
 get_coercion_function_type = (a, b):
+    print(a, b)
+    if a == b then
+        f = fresh_state(+1)
+        f.heads.add(faucet(get_function_header(1, false, 0)))
+        z = fresh_state(-1)
+        z.heads.add(faucet(a))
+        r = fresh_state(+1)
+        r.heads.add(faucet(b))
+        for param in a.params() repeat
+            p = fresh_state(+param.pol)
+            q = fresh_state(-param.pol)
+            p.add_flow(q)
+            r.add_transition(param, p)
+            z.add_transition(param, q)
+        f.add_transition(get_dom(0), z)
+        f.add_transition(cod, r)
+        return f
     assert false as "not implemented"
-#     if a == b
-#         f = State(+1)
-#         f.heads.add(get_function_header(1))
-#         z = State(-1)
-#         z.heads.add(a)
-#         r = State(+1)
-#         r.heads.add(b)
-#         for edge in a.params()
-#             p = State(+edge.pol)
-#             q = State(-edge.pol)
-#             p.add_flow(q)
-#             r.add_transition(edge, p)
-#             z.add_transition(edge, q)
-#         f.add_transition(dom[0], z)
-#         f.add_transition(cod, r)
-#         return f
 #     if a == t_int and b == t_rational
 #         f = State(+1)
 #         f.heads.add(get_function_header(1))
@@ -398,8 +399,6 @@ get_coercion_function_type = (a, b):
 #         f.add_transition(dom[0], z)
 #         f.add_transition(cod, r)
 #         return f
-# 
-#     assert false, ['coercion', a,b]
 
 # For subtyping, type variables represent flows,
 # this means that only-covariant or only-contravariant
@@ -438,14 +437,12 @@ to_raw_type = (scheme):
             case head of
             sink(index, site) then
                 name = stringify(site.op)
-                assert false as "TODO: implement"
-#                w = k_visit(state, head.site.param)
-#                if w not in visi
-#                    line = s_visit(w, true)
-#                    trail[w] = "\n  " ++ name ++ " : " ++ line
-#                if name not in typedecl
-#                    typedecl.append(name)
-#                continue
+                w = k_visit(state, head.site.param)
+                if w not in visi then
+                    line = s_visit(w, true)
+                    trail[w] = "\n  " ++ name ++ " : " ++ line
+                if name not in typedecl then
+                    typedecl.append(name)
             faucet(x) then
                 typedecl.append(r_visit(x, state, in_trail))
         for v in flow_variables[state] repeat
@@ -470,7 +467,8 @@ to_raw_type = (scheme):
         return s_visit(single(ws), in_trail)
 
     k_visit = (state, edge):
-        assert false as "not implemented"
+        ws = state.transitions[edge]
+        return single(ws)
 
     return s_visit(scheme.root, false) ++ "".join(trail.values())
 
@@ -519,7 +517,7 @@ generalize = (root, env):
                 case head of
                 sink(index, site) then
                     n_site = site.transfer(reduce_site_port)
-                    rw_edge[site.edge] = n_site.edge
+                    rw_edge[site.param] = n_site.param
                     s.heads.add(sink(index, n_site))
                 faucet(_) then
                     s.heads.add(head)
@@ -646,7 +644,7 @@ inference_expr = (a, env, visited):
         sinky.input.heads.add(sink(0, op_site))
 
         calltype = fresh_state(-1)
-        calltype.heads.add(op_site.expect)
+        calltype.heads.add(faucet(op_site.expect))
 
         dom_0 = op_site.expect.params() ==> params
         calltype.add_transition(dom_0, sinky.output)
