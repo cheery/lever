@@ -1,14 +1,36 @@
 from objects import common
 from objects import *
 from context import construct_coeffect
+import os
 
-def read_script(code, preset, env):
+def read_script(code, preset, env, src):
     module = Module()
     for key, value in preset.items():
         module.assign(key, value)
     code = as_dict(code)
-    sources = as_list(attr(code, u"sources"))
+    # At first I thought that I wouldn't do this right yet, but one weekday
+    # when Internet connection was cut out, I decided I'd like some better
+    # error messages.
+    sources = []
+    src_dir = os.path.abspath(rpython_dirname(src.encode('utf-8')))
+    for w_src in as_list(attr(code, u"sources")):
+        abs_src = os.path.join(src_dir, 
+            cast(w_src, String).string_val.encode('utf-8'))
+        sources.append(String(abs_src.decode('utf-8')))
     return Closure(code, module, env, [], sources), module
+
+# RPython cannot ensure that the 'i' is nonzero, so it refuses to compile this
+# without modifications.
+def rpython_dirname(p):
+    """Returns the directory component of a pathname"""
+    i = p.rfind('/') + 1
+    if i >= 0:
+        head = p[:i]
+    else:
+        head = ""
+    if head and head != '/'*len(head):
+        head = head.rstrip('/')
+    return head
 
 @builtin()
 def w_inspect(closure):

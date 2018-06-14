@@ -47,24 +47,29 @@ attribute method transfer = (self, fn):
     slots = copy(self.slots)
     for index, slot in self.operators repeat
         operators[index] = {input:fn(slot.input), output:fn(slot.output)}
-    return site(self.op, coerces, expect, param, operators, slots)
+    return site(self.op, coerces, param, expect, operators, slots)
 
 datatype Sink(op, a) =
     sink(index: Integer, site: Site(op, a)) | faucet(a)
 method hash, (==): by_value
+
+unwrap = (item):
+    case item of
+    faucet(a) then return a
+
 
 fresh_state = (pol):
     return state(pol, set([]), set([]), dict([]))
 
 fresh_operator = (op, indices, argc):
     coerces = set()
-    expect = get_function_header(argc)
+    expect = get_function_header(argc, false, 0)
     param = parameter(+1)
     operators = dict()
     slots = dict()
     for index in indices repeat
         slots[index] = set()
-    return site(op, coerces, expect, param, operators, slots)
+    return site(op, coerces, param, expect, operators, slots)
 
 fresh_port = ():
     input = fresh_state(-1)
@@ -85,7 +90,8 @@ biunify = (pair, visited):
     p, q = pair
     assert p.pol > q.pol as "polarity conflict"
     for x in p.heads for y in q.heads repeat
-        assert fit_subtype(p, q, x, y, visited) as
+        ok = fit_subtype(p, q, x, y, visited)
+        assert ok as
             "type error"
     for s in q.flow repeat
         merge(s, p)
@@ -101,9 +107,10 @@ biunify = (pair, visited):
                 biunify((u, s), visited)
 
 fit_subtype = (p, q, x, y, visited):
-    case q of
+    case y of
     sink(index, site) then
         inference_coerce(x, q, index, site, visited)
+        return true
     faucet(_) then
         if x == y then
             return true
@@ -120,6 +127,277 @@ merge = (dst, src):
         dst.transitions[param].update(ws)
         except NoIndex then
             dst.transitions[param] = set(ws)
+
+# inference_coerce is the main element here.
+
+inference_coerce = (head, q, slot_idx, site, visited):
+    k = set([set([unwrap(head)])])
+
+    for i in site.slots.keys() repeat
+        if i == slot_idx then continue
+        n = set()
+        for t in site.slots[i] for h in k repeat
+            n.add(h.union([t]))
+        k = n
+    site.slots[slot_idx].add(unwrap(head))
+
+    doms = set()
+    for i in site.slots.keys() repeat
+        doms.add(get_dom(i))
+ 
+    coercions = set()
+    for heads in k repeat
+        # In "proper" implementation, unique_coercion and
+        # binary_operator may fail, and there may be
+        # a default function listed for operation.
+        # If implemented, the coercion target should be
+        # marked 'default', and operator should be chosen
+        # as 'default'.
+        c = unique_coercion(heads)
+        for i in site.slots.keys() repeat
+            if i == slot_idx then
+                coercions.add([head, i])
+            else
+                for u in site.slots[i] if u in heads repeat
+                    coercions.add([u,i])
+        if c in site.operators then
+            ports = site.operators[c]
+        else
+            #print('operator for', c)
+            fn = binary_operator(site.op, c, site.expect)
+            ports = dict()
+            site.operators[c] = ports
+            out = frest_state(+1)
+            out.heads.update(fn.heads)
+            for e,ws in fn.transitions.items() repeat
+                if e in doms then
+                    xx = fresh_state(-1)
+                    out.add_transition(e, xx)
+                    yy = fresh_state(+1)
+                    xx.add_flow(yy)
+                    rr = fresh_state(-1)
+                    for w in ws repeat merge(rr, w)
+                    ports[e] = {input:rr, output:yy}
+                else
+                    out.transitions[e] = ws
+            for w in q.transitions[site.edge] repeat
+                biunify((out, w), visited)
+
+        for h,i in coercions if (h,i,c) not in site.coerces repeat
+            site.coerces.add((h,i,c))
+            #print('coerce', h, i, c)
+ 
+            k = get_coercion_function_type(h, c)
+            cf = get_function_header(1, false, 0)
+            assert k.heads == set([cf]) as "type error"
+            z = fresh_state(-1)
+            for w in k.transitions[get_dom(0)] repeat
+                merge(z, w)
+            z.heads.clear()
+
+            port = ports[get_dom(i)]
+            biunify((port.output, z), visited)
+            for w in k.transitions[cod] repeat
+                biunify((w, port.input), visited)
+
+binary_operator = (op, head, expect):
+    # 'op' is the thing being called.
+    print(op)
+    print(head)
+    print(expect)
+    assert false as "not implemented"
+
+# binary_operator = (op, head, expect):
+#     if op == t_call and isinstance(head, FunctionHeader)
+#         f = State(+1)
+#         f.heads.add(expect)
+#         z = State(-1)
+#         z.heads.add(get_function_header(expect.argc - 1))
+# 
+#         f.add_transition(dom[0], z)
+#         for i in range(1, expect.argc)
+#             port = new_port()
+#             z.add_transition(dom[i-1], port.output)
+#             f.add_transition(dom[i], port.input)
+#         port = new_port()
+#         z.add_transition(cod, port.input)
+#         f.add_transition(cod, port.output)
+#         return f
+#     if op == t_call and head == t_call
+#         f = State(+1)
+#         f.heads.add(expect)
+#         z = State(-1)
+#         z.heads.add(head)
+#         f.add_transition(dom[0], z)
+# 
+#         op_site = new_operator(t_call, [0], expect.argc-1)
+#         sink = new_port()
+#         sink.input.heads.add(SinkHeader(0, op_site))
+#         f.add_transition(dom[1], sink.input)
+# 
+#         calltype = State(-1)
+#         calltype.heads.add(op_site.expect)
+#         calltype.add_transition(dom[0], sink.output)
+#         sink.input.add_transition(op_site.edge, calltype)
+# 
+#         for i in range(expect.argc-2)
+#             port = new_port()
+#             f.add_transition(dom[i+2], port.input)
+#             calltype.add_transition(dom[i+1], port.output)
+# 
+#         result = new_port()
+#         calltype.add_transition(cod, result.input)
+#         f.add_transition(cod, result.output)
+#         return f
+#     if op == t_call and head in [t_add,t_sub] and expect.argc == 3
+#         f = State(+1)
+#         f.heads.add(expect)
+#         z = State(-1)
+#         z.heads.add(head)
+#         f.add_transition(dom[0], z)
+# 
+#         op_site = new_operator(t_add, [0,1], 2)
+# 
+#         sink0 = new_port()
+#         sink0.input.heads.add(SinkHeader(0, op_site))
+#         f.add_transition(dom[1], sink0.input)
+# 
+#         sink1 = new_port()
+#         sink1.input.heads.add(SinkHeader(1, op_site))
+#         f.add_transition(dom[2], sink1.input)
+# 
+#         result = new_port()
+# 
+#         calltype = State(-1)
+#         calltype.heads.add(op_site.expect)
+#         calltype.add_transition(dom[0], sink0.output)
+#         calltype.add_transition(dom[1], sink1.output)
+#         calltype.add_transition(cod, result.input)
+#         f.add_transition(cod, result.output)
+# 
+#         sink0.input.add_transition(op_site.edge, calltype)
+#         sink1.input.add_transition(op_site.edge, calltype)
+# 
+#         return f
+# 
+#     if op == t_call and head == t_gt and expect.argc == 3
+#         f = State(+1)
+#         f.heads.add(expect)
+#         z = State(-1)
+#         z.heads.add(head)
+#         f.add_transition(dom[0], z)
+# 
+#         op_site = new_operator(t_gt, [0,1], 2)
+# 
+#         sink0 = new_port()
+#         sink0.input.heads.add(SinkHeader(0, op_site))
+#         f.add_transition(dom[1], sink0.input)
+# 
+#         sink1 = new_port()
+#         sink1.input.heads.add(SinkHeader(1, op_site))
+#         f.add_transition(dom[2], sink1.input)
+# 
+#         result = new_port()
+#         result.input.heads.add(t_bool)
+#         result.output.heads.add(t_bool)
+# 
+#         calltype = State(-1)
+#         calltype.heads.add(op_site.expect)
+#         calltype.add_transition(dom[0], sink0.output)
+#         calltype.add_transition(dom[1], sink1.output)
+#         calltype.add_transition(cod, result.input)
+#         f.add_transition(cod, result.output)
+# 
+#         sink0.input.add_transition(op_site.edge, calltype)
+#         sink1.input.add_transition(op_site.edge, calltype)
+# 
+#         return f
+# 
+#     if op in [t_add,t_sub] and head == t_rational
+#         f = State(+1)
+#         f.heads.add(get_function_header(2))
+#         z1 = State(-1)
+#         z1.heads.add(t_rational)
+#         z2 = State(-1)
+#         z2.heads.add(t_rational)
+#         r = State(+1)
+#         r.heads.add(t_rational)
+#         f.add_transition(dom[0], z1)
+#         f.add_transition(dom[1], z2)
+#         f.add_transition(cod, r)
+#         return f
+# 
+#     if op in [t_add,t_sub] and head == t_int
+#         f = State(+1)
+#         f.heads.add(get_function_header(2))
+#         z1 = State(-1)
+#         z1.heads.add(t_int)
+#         z2 = State(-1)
+#         z2.heads.add(t_int)
+#         r = State(+1)
+#         r.heads.add(t_int)
+#         f.add_transition(dom[0], z1)
+#         f.add_transition(dom[1], z2)
+#         f.add_transition(cod, r)
+#         return f
+# 
+#     if op in [t_gt] and head == t_int
+#         f = State(+1)
+#         f.heads.add(get_function_header(2))
+#         z1 = State(-1)
+#         z1.heads.add(t_int)
+#         z2 = State(-1)
+#         z2.heads.add(t_int)
+#         r = State(+1)
+#         r.heads.add(t_bool)
+#         f.add_transition(dom[0], z1)
+#         f.add_transition(dom[1], z2)
+#         f.add_transition(cod, r)
+#         return f
+# 
+#     assert false, [op, head, expect]
+# 
+#     #f = State(+1)
+#     #f.heads.add(get_function_header(2))
+#     #z = State(-1)
+#     #z.heads.add(head)
+#     #r = State(+1)
+#     #r.heads.add(head)
+#     #f.add_transition(dom[0], z)
+#     #f.add_transition(dom[1], z)
+#     #f.add_transition(cod, r)
+#     #return f
+# 
+get_coercion_function_type = (a, b):
+    assert false as "not implemented"
+#     if a == b
+#         f = State(+1)
+#         f.heads.add(get_function_header(1))
+#         z = State(-1)
+#         z.heads.add(a)
+#         r = State(+1)
+#         r.heads.add(b)
+#         for edge in a.params()
+#             p = State(+edge.pol)
+#             q = State(-edge.pol)
+#             p.add_flow(q)
+#             r.add_transition(edge, p)
+#             z.add_transition(edge, q)
+#         f.add_transition(dom[0], z)
+#         f.add_transition(cod, r)
+#         return f
+#     if a == t_int and b == t_rational
+#         f = State(+1)
+#         f.heads.add(get_function_header(1))
+#         z = State(-1)
+#         z.heads.add(a)
+#         r = State(+1)
+#         r.heads.add(b)
+#         f.add_transition(dom[0], z)
+#         f.add_transition(cod, r)
+#         return f
+# 
+#     assert false, ['coercion', a,b]
 
 # For subtyping, type variables represent flows,
 # this means that only-covariant or only-contravariant
@@ -159,7 +437,7 @@ to_raw_type = (scheme):
             sink(index, site) then
                 name = stringify(site.op)
                 assert false as "TODO: implement"
-#                w = k_visit(state, head.site.edge)
+#                w = k_visit(state, head.site.param)
 #                if w not in visi
 #                    line = s_visit(w, true)
 #                    trail[w] = "\n  " ++ name ++ " : " ++ line
@@ -227,7 +505,6 @@ generalize = (root, env):
     reduce_site_port = (port):
         return reduce_subset(port.pol, set([port]))
     reduce_subset = (pol, subset):
-        subset = freeze(subset)
         if subset in subsets then
             return subsets[subset]
         s = fresh_state(pol)
@@ -287,7 +564,7 @@ instantiate_type = (scheme):
                 case head of
                 sink(index, site) then
                     n_site = site.transfer(reduce_site_port)
-                    rw_edge[site.edge] = n_site.edge
+                    rw_edge[site.param] = n_site.edge
                     s.heads.add(sink(index, n_site))
                 faucet(_) then
                     s.heads.add(head)
@@ -338,7 +615,8 @@ inference_program = (body, env, visited):
     for stmt in body repeat
         case stmt['type'] of
         "return" then
-            value = inference_expr(stmt['value'], env, visited)
+            value = stmt['value']
+            value = inference_expr(value, env, visited)
             biunify((value, result.input), visited)
         else
             print(stmt['type'], "missing")
@@ -359,6 +637,26 @@ inference_expr = (a, env, visited):
         return result
     "slot" then
         return inference_slot(a, env, visited).get()
+    "call" then
+        callee = inference_expr(a['callee'], env, visited)
+        op_site = fresh_operator(call, [0], 1 + a['args'].length)
+        sinky = fresh_port()
+        sinky.input.heads.add(sink(0, op_site))
+
+        calltype = fresh_state(-1)
+        calltype.heads.add(op_site.expect)
+
+        dom_0 = op_site.expect.params() ==> params
+        calltype.add_transition(dom_0, sinky.output)
+        for arg in a['args'] repeat
+            arg = inference_expr(arg, env, visited)
+            calltype.add_transition(params ==> params, arg)
+        result = fresh_port()
+        calltype.add_transition(params ==> params, result.input)
+        sinky.input.add_transition(op_site.param, calltype)
+        biunify((callee, sinky.input), visited)
+
+        return result.output
     else
         print(a['type'], "missing")
         assert false as "missing inference for expression"
@@ -374,6 +672,17 @@ inference_slot = (a, env, visited):
         return {
             set: ((a): biunify((a, port.input), visited)),
             get: ((): return port.output) }
+    "global" then
+        name = a['name']
+        return {
+            set: ((a): assert false as "not supported"),
+            get: (():
+                if name == "+" then
+                    f = fresh_state(+1)
+                    f.heads.add(faucet(face((+))))
+                    return f
+                assert false as "not supported")
+            }
     else
         print(a['kind'], "missing")
         assert false as "missing inference for expression"

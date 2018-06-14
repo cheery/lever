@@ -160,7 +160,6 @@ of fibonacci and factorial.
 prelude/intro.lc:362: add call inference.
 
 
-See how many times the variadic arguments are used and where.
 Consider dropping varargs.
 
 Tune pattern matchers usable without case construct.
@@ -250,6 +249,9 @@ Tune pattern matchers usable without case construct.
     a.symmetric_difference(iterable), xor(a, b)
 
  TODO: Consider similar sample programs for lists, dicts, sets, slots.
+
+ TODO: Split lists/sets/dicts properly into immutable/mutable
+       constructs.
 
  TODO: Implement some binary format for binary data,
        and try serialization.

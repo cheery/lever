@@ -60,7 +60,6 @@ from common import (
     op_or,
     op_xor,
     op_stringify,
-    op_freeze,
     method,
     getter,
     setter,

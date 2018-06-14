@@ -12,19 +12,16 @@ def fresh_set():
     return Set(r_dict(eq_fn, hash_fn, force_non_null=True))
 
 @getter(Set.interface, u"length")
-@getter(FrozenSet.interface, u"length")
 def Set_get_length(a):
     a = cast(a, Set).set_val
     return fresh_integer(len(a))
 
 @method(Set.interface, op_in)
-@method(FrozenSet.interface, op_in)
 def Set_in(item, a):
     a = cast(a, Set).set_val
     return boolean(item in a)
 
 @method(Set.interface, op_iter)
-@method(FrozenSet.interface, op_iter)
 def Set_iter(a):
     a = cast(a, Set).set_val
     return SetIterator(a.iterkeys())
@@ -44,7 +41,6 @@ class SetIterator(Iterator):
         return self.value, self.tail
 
 @method(Set.interface, op_eq)
-@method(FrozenSet.interface, op_eq)
 def Set_eq(a, b):
     a = cast(a, Set).set_val
     b = cast(b, Set).set_val
@@ -55,8 +51,8 @@ def Set_eq(a, b):
             return false
     return true
 
-@method(FrozenSet.interface, op_hash)
-def FrozenSet_hash(a):
+@method(Set.interface, op_hash)
+def Set_hash(a):
     a = cast(a, Set).set_val
     multi = r_uint(1822399083) + r_uint(1822399083) + 1
     hash = r_uint(1927868237)
@@ -75,17 +71,6 @@ def Set_copy(a):
     c = fresh_set()
     c.set_val.update(cast(a, Set).set_val)
     return c
-
-@method(Set.interface, op_freeze)
-def Set_freeze(a):
-    a = cast(a, Set).set_val
-    new_set_val = r_dict(eq_fn, hash_fn, force_non_null=True)
-    new_set_val.update(a)
-    return FrozenSet(new_set_val)
-
-@method(FrozenSet.interface, op_copy)
-def FrozenSet_copy(a):
-    return a
 
 @attr_method(Set.interface, u"clear")
 def Set_clear(a):
@@ -177,7 +162,6 @@ def Set_pop(a):
         raise error(e_NoItems())
 
 @attr_method(Set.interface, u"is_disjoint")
-@attr_method(FrozenSet.interface, u"is_disjoint")
 def Set_is_disjoint(a, items):
     a = cast(a, Set)
     it = call(op_iter, [items])
@@ -192,7 +176,6 @@ def Set_is_disjoint(a, items):
     return true
 
 @attr_method(Set.interface, u"is_subset")
-@attr_method(FrozenSet.interface, u"is_subset")
 def Set_is_subset(a, items):
     a = cast(a, Set)
     it = call(op_iter, [items])
@@ -208,7 +191,6 @@ def Set_is_subset(a, items):
     return boolean(count == len(a.set_val))
 
 @attr_method(Set.interface, u"is_superset")
-@attr_method(FrozenSet.interface, u"is_superset")
 def Set_is_superset(a, items):
     a = cast(a, Set)
     it = call(op_iter, [items])
@@ -223,9 +205,7 @@ def Set_is_superset(a, items):
     return true
 
 @attr_method(Set.interface, u"union")
-@attr_method(FrozenSet.interface, u"union")
 @method(Set.interface, op_or)
-@method(FrozenSet.interface, op_or)
 def Set_union(a, items):
     a = cast(a, Set)
     result = fresh_set()
@@ -234,9 +214,7 @@ def Set_union(a, items):
     return result
 
 @attr_method(Set.interface, u"intersection")
-@attr_method(FrozenSet.interface, u"intersection")
 @method(Set.interface, op_and)
-@method(FrozenSet.interface, op_and)
 def Set_intersection(a, items):
     a = cast(a, Set)
     result = fresh_set()
@@ -245,9 +223,7 @@ def Set_intersection(a, items):
     return result
 
 @attr_method(Set.interface, u"difference")
-@attr_method(FrozenSet.interface, u"difference")
 @method(Set.interface, op_sub)
-@method(FrozenSet.interface, op_sub)
 def Set_difference(a, items):
     a = cast(a, Set)
     result = fresh_set()
@@ -256,9 +232,7 @@ def Set_difference(a, items):
     return result
 
 @attr_method(Set.interface, u"symmetric_difference")
-@attr_method(FrozenSet.interface, u"symmetric_difference")
 @method(Set.interface, op_xor)
-@method(FrozenSet.interface, op_xor)
 def Set_symmetric_difference(a, items):
     a = cast(a, Set)
     result = fresh_set()

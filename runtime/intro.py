@@ -1,4 +1,6 @@
+from rpython.rlib import rfile
 from json_loader import read_json_file
+from objects import common
 from objects import *
 from context import (
     CoeffectModuleCell,
@@ -37,8 +39,9 @@ def new_entry_point(config, interpret=False):
                 col1 = cast(loc[2], Integer).toint()
                 lno1 = cast(loc[3], Integer).toint()
                 srci = cast(loc[4], Integer).toint()
-                src = sources[srci].string_val.encode('utf-8')
-                s = "  %d %d %d %d %s\n" % (col0, lno0, col1, lno1, src)
+                src = cast(sources[srci], String).string_val.encode('utf-8')
+                s = "  %s:%d:\n%s\n" % (src, lno0+1,
+                    format_source_location(col0, lno0, col1, lno1, src))
                 os.write(0, s)
             os.write(0, tb.error.__class__.__name__ + "\n")
         return 0
@@ -63,6 +66,38 @@ def new_entry_point(config, interpret=False):
     else:
         return entry_point_b
 
+def format_source_location(col0, lno0, col1, lno1, src):
+    try:
+        fd = rfile.create_file(src, 'rb')
+        try:
+            lines = fd.read().splitlines()
+        finally:
+            fd.close()
+    except IOError as io:
+        return "    *** %s ***" % os.strerror(io.errno)
+    lno0 = min(len(lines), max(0, lno0-1))
+    lno1 = min(len(lines), max(0, lno1))
+    assert lno0 >= 0 # RPython was unable to check this
+    show_lines = lines[lno0:lno1]
+    # Indentation is dropped such that the line plants neatly down.
+    trim = 0
+    for line in show_lines:
+        trim = max(trim, len(line))
+    for line in show_lines:
+        max_trim = len(line) - len(line.lstrip())
+        if max_trim != len(line): # Skip blank lines
+            trim = min(trim, max_trim)
+    assert trim >= 0 # RPython was unable to check this
+    show_lines = [line[trim:] for line in show_lines]
+    # The trail points out the column location, it is helpful
+    # in identifying the source of error.
+    if col1 - col0 < 2:
+        trail = " "*(col0-trim) + "^"
+    else:
+        trail = " "*(col0-trim) + "^" + "-"*(col1-col0-2) + "^"
+    return "    " + "\n    ".join(show_lines + [trail])
+
+
 @builtin()
 def w_json_loader(mspace, name):
     mspace = cast(mspace, ModuleSpace)
@@ -72,7 +107,7 @@ def w_json_loader(mspace, name):
     obj = read_json_file(String(src))
     env = mspace.env
     script, module = interpreter.read_script(obj,
-        {u'import': prefill(w_import, [mspace])}, env)
+        {u'import': prefill(w_import, [mspace])}, env, src)
     call(script, [])
     return module
 
@@ -247,7 +282,6 @@ base_stem = {
     u"|": op_or,
     u"xor": op_xor,
     u"stringify": op_stringify,
-    u"freeze": op_freeze,
     u"parse_integer": builtin()(parse_integer),
     u"null": null,
     u"true" : true,
@@ -278,4 +312,6 @@ base_stem = {
     u"inspect": interpreter.w_inspect,
     u"unique_coercion": w_unique_coercion,
     u"is_closure": w_is_closure,
+    u"get_dom": builtin()(lambda i: common.dom.get(cast(i, Integer).toint())),
+    u"cod": common.cod,
 }

@@ -448,20 +448,6 @@ op_xor = Operator([0,1]) # xor(a,b)
 # things stringifyable have nothing else to do with strings.
 op_stringify = Operator([0])
 
-# The purpose of op_freeze is to ensure that we
-# get an object that we can hash.
-op_freeze = Operator([0])
-
-def Any_freeze(a):
-    fn_hash = a.face().method(op_hash)
-    if fn_hash is None:
-        raise error(e_TypeError())
-    fn_eq = a.face().method(op_eq)
-    if fn_eq is None:
-        raise error(e_TypeError())
-    return a
-op_freeze.default = python_bridge(Any_freeze)
-
 # Every operator is resolved by selectors, in the same
 # manner. If the interface doesn't provide an
 # implementation, it will attempt to obtain implementation
@@ -1065,24 +1051,31 @@ def FunctionInterface_params(f):
     out.append(cod)
     return List(out)
 
-@method(FunctionInterface.interface, op_eq)
-@method(BuiltinInterface.interface, op_eq)
-def FunctionInterface_eq(a, b):
-    return true if a is b else false
+@attr_method(OperatorInterface.interface, u"params")
+def OperatorInterface_params(f):
+    return List([])
 
 @method(FunctionInterface.interface, op_hash)
 @method(BuiltinInterface.interface, op_hash)
+@method(OperatorInterface.interface, op_hash)
 def FunctionInterface_hash(a):
     return fresh_integer(compute_hash(a))
 
 @method(FunctionInterface.interface, op_eq)
 @method(BuiltinInterface.interface, op_eq)
+@method(OperatorInterface.interface, op_eq)
 def FunctionInterface_eq(a, b):
     return true if a is b else false
 
 @attr_method(InterfaceParametric.interface, u"params")
 def InterfaceParametric_params(a):
     return List(cast(a, InterfaceParametric).interface_params)
+
+@attr_method(OperatorInterface.interface, u"format")
+def OperatorInterface_format(f, px):
+    # TODO: Module names should be implemented next.
+    prefix = cast(call(op_stringify, [f]), String).string_val
+    return String(prefix)
 
 @attr_method(InterfaceParametric.interface, u"format")
 def InterfaceParametric_format(f, px):
