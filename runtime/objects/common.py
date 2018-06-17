@@ -71,6 +71,9 @@ class InterfaceParametric(Interface):
         self.setters = {}
         self.doc = None
 
+    def face(self):
+        return InterfaceParametricInterface(len(self.variances), 0)
+
     def getattr(self, name):
         impl = self.getters.get(name, None)
         if impl is None:
@@ -94,10 +97,12 @@ class InterfaceParametric(Interface):
             self.doc = doc
         return self.doc
 
+# The interface-parametric-interface causes some oddity here.
+
 # The object should never return itself as a face, but
 # we have to cut our type hierarchy to something. We do it
 # when there is no longer any type information present in the type.
-InterfaceParametric.interface = InterfaceParametric()
+# InterfaceParametric.interface = InterfaceParametric()
 
 # An alternative to this would be to produce an interface of
 # an interface, which is numbered by how many times 'face'
@@ -144,15 +149,38 @@ class String(Object):
 
 # The next interface binds callsites to functions.
 # argc tells how many arguments there are.
-# vari tells if variadic number of arguments are accepted.
 # opt tells how many of the arguments are optional.
 # On callsites the opt must be 0.
 class FunctionInterface(Interface):
     interface = InterfaceParametric()
-    def __init__(self, argc, vari, opt):
+    def __init__(self, argc, opt):
         self.argc = argc
-        self.vari = vari
         self.opt = opt
+
+    def call(self, callee, args):
+        raise error(e_TypeError())
+
+class InterfaceParametricInterface(FunctionInterface):
+    interface = InterfaceParametric()
+    def call(self, callee, args):
+        datatype = cast(callee, InterfaceParametric)
+        if self.argc != len(args):
+            raise error(e_TypeError())
+        return TypeInstance(datatype, args)
+
+    def getattr(self, name):
+        if name == u"params":
+            return Curry(InterfaceParametric_params, [], 1)
+        if name == u"format":
+            return Curry(InterfaceParametric_format, [], 1)
+        return FunctionInterface.getattr(self, name)
+
+    def method(self, op):
+        if op is op_eq:
+            return InterfaceParametric_eq
+        if op is op_hash:
+            return InterfaceParametric_hash
+        return FunctionInterface.method(self, op)
 
 # Documentation references provide naming information
 # and tells where to find the documentation on the element.
@@ -178,12 +206,12 @@ class FunctionMemo:
         self.memo = {}
         self.cls = cls
 
-    def get(self, argc, vari, opt):
-        key = (argc, vari, opt)
+    def get(self, argc, opt):
+        key = (argc, opt)
         try:
             return self.memo[key]
         except KeyError:
-            face = self.cls(argc, vari, opt)
+            face = self.cls(argc, opt)
             self.memo[key] = face
             return face
 
@@ -191,9 +219,11 @@ func_interfaces = FunctionMemo(FunctionInterface)
 
 class BuiltinInterface(FunctionInterface):
     def method(self, op):
-        if op is op_call:
-            return w_call
         return FunctionInterface.method(self, op)
+
+    def call(self, callee, args):
+        callee = cast(callee, Builtin)
+        return callee.builtin_func(callee.prefill + args)
 
 builtin_interfaces = FunctionMemo(BuiltinInterface)
 
@@ -207,6 +237,7 @@ class Builtin(Object):
         self.builtin_face = builtin_face
         self.prefill = prefill
         self.doc = None
+        assert isinstance(self.builtin_face, BuiltinInterface)
 
     def face(self):
         return self.builtin_face
@@ -216,33 +247,31 @@ class Builtin(Object):
             self.doc = doc
         return self.doc
 
-# Every call made by the interpreter eventually must resolve
-# to a builtin command.
+# Every call made by the interpreter must resolve to a builtin command.
 def call(callee, args):
-    while not isinstance(callee, Builtin):
-        args.insert(0, callee)
-        callee = callee.face().method(op_call)
-    return callee.builtin_func(callee.prefill + args)
+    face = callee.face()
+    if not isinstance(face, FunctionInterface):
+        raise error(e_TypeError())
+    return face.call(callee, args)
 
 # In few places in the runtime we have to provide "closures" for
 # builtin functions. I added the functionality into the builtin objects.
 def prefill(builtin, args):
     face = builtin.builtin_face
     argc = face.argc - 1
-    vari = face.vari
     opt = min(argc, face.opt)
     return Builtin(
         builtin.builtin_func,
-        func_interfaces.get(argc, vari, opt),
+        builtin_interfaces.get(argc, opt),
         prefill=builtin.prefill + args)
 
 # This decorator replaces the function with a builtin
 # representing that function. This is likely not going to be
 # used much because it makes it harder to access the
 # function from within other builtins.
-def builtin(vari=False):
+def builtin():
     def _impl_(func):
-        return python_bridge(func, vari)
+        return python_bridge(func)
     return _impl_
 
 # The runtime uses lists to pass values in a call, but
@@ -250,11 +279,11 @@ def builtin(vari=False):
 # This way every builtin does not need to retrieve their
 # arguments from lists in the beginning of the program.
 @not_rpython
-def python_bridge(function, vari=False):
+def python_bridge(function):
     args, varargs, keywords = getargs(function.__code__)
     defaults = function.__defaults__ or ()
-    argc = max(len(args) - int(vari), 0)
-    opt = max(len(defaults) - int(vari), 0)
+    argc = max(len(args), 0)
+    opt = max(len(defaults), 0)
     argi = unroll.unrolling_iterable(range(argc-opt))
     argj = unroll.unrolling_iterable(range(argc-opt, argc))
     def py_bridge(argv):
@@ -262,7 +291,7 @@ def python_bridge(function, vari=False):
         length = len(argv)
         if length < argc - opt:
             raise error(e_TypeError())
-        if argc < length and not vari:
+        if argc < length:
             raise error(e_TypeError())
         for i in argi:
             args += (argv[i],)
@@ -271,20 +300,13 @@ def python_bridge(function, vari=False):
                 args += (argv[i],)
             else:
                 args += (defaults[i+opt-argc],)
-        if vari:
-            args += (argv[min(argc, length):],)
         result = function(*args)
         if result is None:
             return null
         return result
-    face = builtin_interfaces.get(argc, opt, vari)
+    face = builtin_interfaces.get(argc, opt)
     py_bridge.__name__ = function.__name__
     return Builtin(py_bridge, face)
-
-# If the builtin ends up being called through op_call,
-# it needs an access to this raw operation in order to
-# resolve.
-w_call = python_bridge(call, vari=True)
 
 # Many of the builtin functions still require specific
 # records or group of records that we have to provide them.
@@ -359,21 +381,24 @@ class e_AssertTriggered(Object):
 
 # Operators are the next element to be implemented. They
 # form the foundations for the whole object system here.
-class OperatorInterface(Interface): 
-    def __init__(self, operator):
+class OperatorInterface(FunctionInterface): 
+    def __init__(self, operator, argc, opt):
         self.operator = operator
+        FunctionInterface.__init__(self, argc, opt)
 
     def method(self, operator):
-        if operator is op_call:
-            return w_operator_call
         return Interface.method(self, operator)
+
+    def call(self, callee, args):
+        callee = cast(callee, Operator)
+        return operator_call(callee, args)
 
 # Every operator has an unique type, but generally they are
 # callable and try to resolve themselves based on the
 # arguments they receive.
 class Operator(Object):
-    def __init__(self, selectors):
-        self.operator_face = OperatorInterface(self)
+    def __init__(self, selectors, argc):
+        self.operator_face = OperatorInterface(self, argc, 0)
         self.selectors = selectors
         self.default = None
         self.doc = None
@@ -402,87 +427,78 @@ class Operator(Object):
         return impl
 
 # Equality and hashing is crucial for dictionaries and sets.
-op_eq = Operator([0, 1])
+op_eq = Operator([0, 1], 2)
 def op_eq_default(a, b):
     if a is b:
         return true
     return false
 op_eq.default = python_bridge(op_eq_default)
 
-op_hash = Operator([0])
+op_hash = Operator([0], 1)
 
-# Without the call operator we would be unable to provide
-# closures that can be called.
-op_call = Operator([0])
-
-# op_call is slightly more special than others because it
-# corresponds with the 'call' -function here. The 'call' is
-# actually called by the interpreter, but it corresponds
-# with the 'op_call'.
-
-# All the remaining operators defined by the runtime are not
-# as important for proper functioning of the runtime, but
+# All the operators defined by the runtime are not
+# important for proper functioning of the runtime, but
 # without them the runtime would not have much it can do.
 
-op_in = Operator([1])
-op_getitem = Operator([0])
-op_setitem = Operator([0])
-op_iter = Operator([0])
+op_in = Operator([1], 2)
+op_getitem = Operator([0], 2)
+op_setitem = Operator([0], 3)
+op_iter = Operator([0], 1)
 
-op_getslot = Operator([0])
-op_setslot = Operator([0])
+op_getslot = Operator([0], 1)
+op_setslot = Operator([0], 2)
 
 # op_product cannot be a conversion because tuple is not a
 # single type but many types.
-op_product = Operator([0])
+op_product = Operator([0], 1)
 
 # These may actually be conversion. 'iter' might be as well.
-op_pattern = Operator([0]) # case _ of a(...) then ...
-#op_form    = Operator([0]) repr(a)
+op_pattern = Operator([0], 1) # case _ of a(...) then ...
+#op_form    = Operator([0], 1) repr(a)
 
 # Some of these are not implemented yet.
-#op_shl = Operator([0]) # a << _
-#op_shr = Operator([0]) # a >> _
+#op_shl = Operator([0], 2) # a << _
+#op_shr = Operator([0], 2) # a >> _
 
-op_cmp = Operator([0,1])
+op_cmp = Operator([0,1], 2)
 # all comparison operations are derived from the op_cmp
 
-op_concat = Operator([0,1])
-op_copy = Operator([0])
+op_concat = Operator([0,1], 2)
+op_copy = Operator([0], 1)
 
-op_neg = Operator([0])
-op_pos = Operator([0])
+op_neg = Operator([0], 1)
+op_pos = Operator([0], 1)
 
-op_add = Operator([0,1])
-op_sub = Operator([0,1])
-op_mul = Operator([0,1])
+op_add = Operator([0,1], 2)
+op_sub = Operator([0,1], 2)
+op_mul = Operator([0,1], 2)
 
-#op_div = Operator([0,1])
-#op_mod = Operator([0,1])
-#op_floordiv = Operator([0,1]) # floordiv(a, b)
+#op_div = Operator([0,1], 2)
+#op_mod = Operator([0,1], 2)
+#op_floordiv = Operator([0,1], 2) # floordiv(a, b)
 
-#op_divrem = Operator([0,1])
+#op_divrem = Operator([0,1], 2)
 
-op_not = Operator([0])   # ~
-op_and = Operator([0,1]) # &
-op_or  = Operator([0,1]) # |
-op_xor = Operator([0,1]) # xor(a,b)
+op_not = Operator([0], 1)   # ~
+op_and = Operator([0,1], 2) # &
+op_or  = Operator([0,1], 2) # |
+op_xor = Operator([0,1], 2) # xor(a,b)
 
 
-#op_clamp = Operator([0]) clamp(a, min,max)
-#op_abs = Operator([0])
-#op_length = Operator([0])
-#op_normalize = Operator([0])
-#op_distance = Operator([0,1])
-#op_dot = Operator([0,1])
-#op_reflect = Operator([0,1])
-#op_refract = Operator([0,1]) refract(a,b,eta)
-#op_pow = Operator([0,1])
+#op_clamp = Operator([0], 3) clamp(a, min,max)
+#op_abs = Operator([0], 1)
+#op_length = Operator([0], 1)
+#op_normalize = Operator([0], 1)
+#op_distance = Operator([0,1], 2)
+#op_dot = Operator([0,1], 2)
+#op_reflect = Operator([0,1], 2)
+#op_refract = Operator([0,1], 3) refract(a,b,eta)
+#op_pow = Operator([0,1], 2)
 
 # Stringify is provided so that we can print and show
 # values. I don't think it's a conversion because many
 # things stringifyable have nothing else to do with strings.
-op_stringify = Operator([0])
+op_stringify = Operator([0], 1)
 
 # Every operator is resolved by selectors, in the same
 # manner. If the interface doesn't provide an
@@ -509,45 +525,44 @@ def operator_call(op, args):
         for index in op.selectors:
             args[index] = convert(args[index], face)
     return call(impl, args)
-w_operator_call = python_bridge(operator_call, vari=True)
 
 # Helper decorator for describing new operators
-def method(face, operator, vari=False):
+def method(face, operator):
     if not isinstance(face, Interface):
         face = face.interface
     def _impl_(fn):
-        face.methods[operator] = python_bridge(fn, vari)
+        face.methods[operator] = python_bridge(fn)
         return fn
     return _impl_
 
 # And the same tools for describing methods.
-def getter(face, name, vari=False):
+def getter(face, name):
     if not isinstance(face, Interface):
         face = face.interface
     if isinstance(name, str):
         name = name.decode('utf-8')
     def _impl_(fn):
-        face.getters[name] = python_bridge(fn, vari)
+        face.getters[name] = python_bridge(fn)
         return fn
     return _impl_
 
-def setter(face, name, vari=False):
+def setter(face, name):
     if not isinstance(face, Interface):
         face = face.interface
     if isinstance(name, str):
         name = name.decode('utf-8')
     def _impl_(fn):
-        face.setters[name] = python_bridge(fn, vari)
+        face.setters[name] = python_bridge(fn)
         return fn
     return _impl_
 
-def attr_method(face, name, vari=False):
+def attr_method(face, name):
     if not isinstance(face, Interface):
         face = face.interface
     if isinstance(name, str):
         name = name.decode('utf-8')
     def _impl_(fn):
-        w_fn = python_bridge(fn, vari=vari)
+        w_fn = python_bridge(fn)
         def _wrapper_(a):
             return prefill(w_fn, [a])
         face.getters[name] = python_bridge(_wrapper_)
@@ -838,9 +853,21 @@ class Tuple(Object):
 def new_datatype(varc):
     return Datatype(varc)
 
+class DatatypeInterface(FunctionInterface):
+    def __init__(self, varc):
+        FunctionInterface.__init__(self, varc, 0)
+
+    def call(self, callee, args):
+        datatype = cast(callee, Datatype)
+        datatype.must_close()
+        if self.argc != len(args):
+            raise error(e_TypeError())
+        return TypeInstance(datatype, args)
+
 # This is probably going to need a datatype that has
 # parameters and one that does not have them.
 class Datatype(Interface):
+    interface = None
     def __init__(self, varc):
         self.varc = varc
         self.closed = False
@@ -851,6 +878,10 @@ class Datatype(Interface):
         self.getters = {}
         self.setters = {}
         self.datatype_labels = {}
+        self.datatype_face = DatatypeInterface(varc)
+
+    def face(self):
+        return self.datatype_face
 
     def must_close(self):
         if self.closed:
@@ -899,41 +930,37 @@ def add_attr_method(datatype, name, method):
 
 # Attribute methods need to add some parameters every
 # once and then.
+class CurryInterface(FunctionInterface):
+    def call(self, callee, args):
+        a = cast(callee, Curry)
+        if a.curry_count < 0:
+            return call(a.curry_function, a.curry_args + args)
+        if a.curry_count != len(args):
+            raise error(e_TypeError())
+        return Curry(a.curry_function, args, -1)
+
 class Curry(Object):
     def __init__(self, function, args, count):
         self.curry_function = function
         self.curry_args = args
         self.curry_count = count
+        if count < 0:
+            face = function.face()
+            assert isinstance(face, FunctionInterface)
+            argc = face.argc - len(args)
+            opt = min(argc, face.opt)
+            self.curry_interface = CurryInterface(argc, opt)
+        else:
+            self.curry_interface = CurryInterface(count, 0)
 
-@method(Curry.interface, op_call, vari=True)
-def Curry_call(a, args):
-    a = cast(a, Curry)
-    if a.curry_count < 0:
-        return call(a.curry_function, a.curry_args + args)
-    if a.curry_count != len(args):
-        raise error(e_TypeError())
-    return Curry(a.curry_function, args, -1)
+    def face(self):
+        return self.curry_interface
 
 # We are going to need the constructors to determine the variance
 # of our new datatype.
 
 # Also proposing: if an object has bivariants or contravariants, then
 # it cannot have conversions.
-
-@method(Datatype.interface, op_call, vari=True)
-def Datatype_call(datatype, args):
-    datatype = cast(datatype, Datatype)
-    datatype.must_close()
-    if datatype.varc != len(args):
-        raise error(e_TypeError())
-    return TypeInstance(datatype, args)
-
-@method(InterfaceParametric.interface, op_call, vari=True)
-def InterfaceParametric_call(datatype, args):
-    datatype = cast(datatype, InterfaceParametric)
-    if len(datatype.variances) != len(args):
-        raise error(e_TypeError())
-    return TypeInstance(datatype, args)
 
 class TypeInstance(Object):
     def __init__(self, datatype, args):
@@ -961,24 +988,35 @@ def new_constructor(datatype, labels, fieldc, builder):
         datatype.datatype_labels[label] = None
     return cons
 
+class ConstructorInterface(FunctionInterface):
+    def call(self, callee, fields):
+        constructor = cast(callee, Constructor)
+        constructor.datatype.must_close()
+        if constructor.fieldc != len(fields):
+            raise error(e_TypeError())
+        # TODO: Check the fields.
+        return TaggedUnion(constructor, fields)
+
+    def method(self, op):
+        if op is op_pattern:
+            return w_constructor_pattern
+        return FunctionInterface.method(self, op)
+
 class Constructor(Object):
+    interface = None
     def __init__(self, datatype, cons_labels, fieldc):
         self.datatype = datatype
         self.cons_labels = cons_labels
+        self.cons_face = ConstructorInterface(fieldc, 0)
         self.fieldc = fieldc
         self.fields = []
 
-@method(Constructor.interface, op_call, vari=True)
-def Constructor_call(constructor, fields):
-    constructor = cast(constructor, Constructor)
-    constructor.datatype.must_close()
-    if constructor.fieldc != len(fields):
-        raise error(e_TypeError())
-    # TODO: Check the fields.
-    return TaggedUnion(constructor, fields)
+    def face(self):
+        return self.cons_face
 
-@method(Constructor.interface, op_pattern)
-def Constructor_pattern(constructor):
+@python_bridge
+def w_constructor_pattern(constructor):
+    constructor = cast(constructor, Constructor)
     check = prefill(w_tagu_check, [constructor])
     unpack = prefill(w_tagu_unpack, [constructor])
     return Tuple([check, unpack])
@@ -1053,7 +1091,6 @@ TypeParameterNameGroup = make_parameter_group()
 # All functions have same type parameters.
 cod = TypeParameter(fresh_integer(+1))
 dom = TypeParameterIndexGroup(fresh_integer(-1))
-dom_vari = TypeParameterIndexGroup(fresh_integer(-1))
 
 @attr_method(FunctionInterface.interface, u"format")
 def FunctionInterface_format(f, px, prefix=None):
@@ -1065,9 +1102,6 @@ def FunctionInterface_format(f, px, prefix=None):
     for i in range(f.argc-f.opt, f.argc):
         text = call(op_getitem, [px, dom.get(i)])
         out.append(cast(text, String).string_val + u"?")
-    if f.vari:
-        text = call(op_getitem, [px, dom_vari.get(f.argc)])
-        out.append(cast(text, String).string_val + u"...")
     text = call(op_getitem, [px, cod])
     signature = u"(" + u", ".join(out) + u") -> " + cast(text, String).string_val
     if prefix is not None:
@@ -1079,15 +1113,18 @@ def FunctionInterface_format(f, px, prefix=None):
 def BuiltinInterface_format(f, px):
     return FunctionInterface_format(f, px, String(u"builtin"))
 
+@attr_method(OperatorInterface.interface, u"format")
+def OperatorInterface_format(f, px):
+    return FunctionInterface_format(f, px, String(u"operator"))
+
 @attr_method(FunctionInterface.interface, u"params")
 @attr_method(BuiltinInterface.interface, u"params")
+@attr_method(OperatorInterface.interface, u"params")
 def FunctionInterface_params(f):
     f = cast(f, FunctionInterface)
     out = []
     for i in range(f.argc):
         out.append(dom.get(i))
-    if f.vari:
-        out.append(dom_vari.get(f.argc))
     out.append(cod)
     return List(out)
 
@@ -1107,17 +1144,17 @@ def FunctionInterface_hash(a):
 def FunctionInterface_eq(a, b):
     return true if a is b else false
 
-@attr_method(InterfaceParametric.interface, u"params")
-def InterfaceParametric_params(a):
-    return List(cast(a, InterfaceParametric).interface_params)
-
 @attr_method(OperatorInterface.interface, u"format")
 def OperatorInterface_format(f, px):
     # TODO: Module names should be implemented next.
     prefix = cast(call(op_stringify, [f]), String).string_val
     return String(prefix)
 
-@attr_method(InterfaceParametric.interface, u"format")
+@python_bridge
+def InterfaceParametric_params(a):
+    return List(cast(a, InterfaceParametric).interface_params)
+
+@python_bridge
 def InterfaceParametric_format(f, px):
     f = cast(f, InterfaceParametric)
     if len(f.variances) == 0:
@@ -1148,11 +1185,11 @@ def InterfaceParametric_format(f, px):
     prefix = cast(call(op_stringify, [f]), String).string_val
     return String(prefix + u"(" + u", ".join(out) + u")")
 
-@method(InterfaceParametric.interface, op_eq)
+@python_bridge
 def InterfaceParametric_eq(a, b):
     return true if a is b else false
 
-@method(InterfaceParametric.interface, op_hash)
+@python_bridge
 def InterfaceParametric_hash(a):
     return fresh_integer(compute_hash(a))
 

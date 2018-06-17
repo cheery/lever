@@ -38,7 +38,6 @@ from common import (
     Operator,
     op_eq,
     op_hash,
-    op_call,
     op_in,
     op_getitem,
     op_setitem,

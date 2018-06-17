@@ -53,7 +53,8 @@ def new_entry_point(config, interpret=False):
         init_executioncontext({
             BasicIO: construct_record([
                 (u"input", False, w_input),
-                (u"print", False, w_print) ])
+                (u"print", False, w_print),
+                (u"print_many", False, w_print) ])
         })
         mspace = ModuleSpace(
             local = String(u'prelude'),
@@ -120,15 +121,24 @@ def w_input(prompt):
     line = os.read(0, 1024)
     return String(line.decode('utf-8'))
 
-@builtin(vari=True)
-def w_print(args):
+@builtin()
+def w_print_many(args):
     sp = ""
-    for arg in args:
+    it = call(op_iter, [args])
+    while True:
+        try:
+            arg, it = it.next()
+        except StopIteration:
+            break
         s = cast(call(op_stringify, [arg]), String).string_val
         b = s.encode('utf-8')
         os.write(1, sp + b)
         sp = " "
     os.write(1, "\n")
+
+@builtin()
+def w_print(arg):
+    call(w_print_many, [List([arg])])
 
 # The stem for the base module is defined outside the entry
 # point generator. It has nearly every utility and handle that has
@@ -195,11 +205,10 @@ def w_slot(value):
     return Slot(value)
 
 @builtin()
-def w_get_function_header(argc, vari, opt):
+def w_get_function_header(argc, opt):
     argc = cast(argc, Integer).toint()
-    vari = convert(vari, Bool) is true
     opt = cast(opt, Integer).toint()
-    return func_interfaces.get(argc, vari, opt)
+    return func_interfaces.get(argc, opt)
 
 @python_bridge
 def w_construct_set(items=None):
@@ -257,11 +266,21 @@ def w_is_closure(item):
     else:
         return false
 
+@python_bridge
+def w_is_subtype(a, b):
+    if a is b:
+        return true
+    elif isinstance(a, FunctionInterface) and isinstance(b, FunctionInterface):
+        if a.argc - a.opt <= b.argc <= a.argc:
+            return true
+        return false
+    else:
+        return false
+
 base_stem = {
     u"==": op_eq,
     u"!=": w_ne,
     u"hash": op_hash,
-    u"call": op_call,
     u"in": op_in,
     u"getitem": op_getitem,
     u"setitem": op_setitem,
@@ -315,4 +334,5 @@ base_stem = {
     u"is_closure": w_is_closure,
     u"get_dom": builtin()(lambda i: common.dom.get(cast(i, Integer).toint())),
     u"cod": common.cod,
+    u"is_subtype": w_is_subtype,
 }

@@ -155,12 +155,10 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- THE NEXT TASK: Drop varargs, remove overloadable call
+ THE NEXT TASK: ??
 
 Consider what the behavior should be for 'binary_operator'
 and 'get_coercion_function_type'...
-
-See whether the call site handling can be simplified.
 
 Add immutable constructs, but provide them such that they don't cause
 much ado. (operation for setattr as key, for example.)

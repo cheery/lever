@@ -53,9 +53,11 @@ def w_inspect(closure):
 # have.
 class ClosureInterface(FunctionInterface):
     def method(self, op):
-        if op is op_call:
-            return w_call_closure
         return FunctionInterface.method(self, op)
+
+    def call(self, callee, args):
+        callee = cast(callee, Closure)
+        return call_closure(callee, args)
 
 attr_method(ClosureInterface.interface,
     u"params")(common.FunctionInterface_params)
@@ -95,8 +97,7 @@ class Closure(Object):
         else:
             raise error(e_EvalError())
 
-        self.closure_face = closure_interfaces.get(
-            len(self.args), False, 0)
+        self.closure_face = closure_interfaces.get(len(self.args), 0)
         assert isinstance(self.closure_face, ClosureInterface)
 
     def face(self):
@@ -134,8 +135,6 @@ def call_closure(closure, args):
         while len(stack) > 0:
             stack.pop()
     return null
-
-w_call_closure = python_bridge(call_closure, vari=True)
 
 # Generators are incredibly much more simpler than Closures
 # because we do not give them an argument list.
@@ -319,13 +318,16 @@ def eval_block(ctx, body, start, mod, stack):
             selector = eval_expr(ctx, as_dict(attr(stmt, u"selector")))
             it = cast(call(op_iter, [selector]), Iterator)
             selectors = []
+            argc = 0 # TODO: Introduce to the syntax.
             while True:
                 try:
                     x, it = it.next()
-                    selectors.append(cast(x, Integer).toint())
+                    ix = cast(x, Integer).toint()
+                    selectors.append(ix)
+                    argc = max(argc, ix+1)
                 except StopIteration:
                     break
-            op = Operator(selectors)
+            op = Operator(selectors, argc)
             for decl in as_list(attr(stmt, u"decls")):
                 decl = as_dict(decl)
                 dtp = as_string(attr(decl, u"type"))
