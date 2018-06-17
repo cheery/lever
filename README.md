@@ -155,17 +155,15 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- THE NEXT TASK: Implement documentation names. 
-  
+ THE NEXT TASK: Drop varargs, remove overloadable call
 
-Consider what the format should be for 'binary_operator'
+Consider what the behavior should be for 'binary_operator'
 and 'get_coercion_function_type'...
 
+See whether the call site handling can be simplified.
 
 Add immutable constructs, but provide them such that they don't cause
-much ado.
-
-Consider dropping varargs.
+much ado. (operation for setattr as key, for example.)
 
 Tune pattern matchers usable without case construct.
 
@@ -280,10 +278,6 @@ Tune pattern matchers usable without case construct.
  TODO: adjust the grammar to handle `f((x): x*2)`
        the last expression in a call can be a
        closure or a generator.
-
- TODO: Object system needs to be populated.
-
- TODO: Type inference/interpretation required.
 
  TODO: Reconsider how condition block should work if the
  variable does not appear in all evaluation paths and we

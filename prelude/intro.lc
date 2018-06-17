@@ -34,7 +34,7 @@ attribute method add_transition = (self, parameter, other):
 datatype Site(op, a) = site(
     op: op,
     coerces: Set((a, Integer, a)),
-    param: Parameter,
+    state: State(op, a),
     expect: a,
     operators: Dict(a, {input: State(op, a), output: State(op, a)}),
     slots: Dict(Integer, Set(a)))
@@ -42,12 +42,12 @@ method hash, (==): by_reference
 attribute method transfer = (self, fn):
     coerces = set(self.coerces)
     expect = self.expect
-    param = parameter(+1)
+    state = fn(self.state)
     operators = dict([])
     slots = copy(self.slots)
     for index, slot in self.operators repeat
         operators[index] = {input:fn(slot.input), output:fn(slot.output)}
-    return site(self.op, coerces, param, expect, operators, slots)
+    return site(self.op, coerces, state, expect, operators, slots)
 
 datatype Sink(op, a) =
     sink(index: Integer, site: Site(op, a)) | faucet(a)
@@ -61,15 +61,15 @@ unwrap = (item):
 fresh_state = (pol):
     return state(pol, set([]), set([]), dict([]))
 
-fresh_operator = (op, indices, argc):
+fresh_operator = (state, op, indices, argc):
     coerces = set()
     expect = get_function_header(argc, false, 0)
-    param = parameter(+1)
     operators = dict()
     slots = dict()
     for index in indices repeat
         slots[index] = set()
-    return site(op, coerces, param, expect, operators, slots)
+    state.heads.add(faucet(expect))
+    return site(op, coerces, state, expect, operators, slots)
 
 fresh_port = ():
     input = fresh_state(-1)
@@ -180,8 +180,7 @@ inference_coerce = (head, q, slot_idx, site, visited):
                     ports[e] = {input:rr, output:yy}
                 else
                     out.transitions[e] = ws
-            for w in q.transitions[site.param] repeat
-                biunify((out, w), visited)
+            biunify((out, site.state), visited)
 
         for h,i in coercions if (h,i,c) not in site.coerces repeat
             site.coerces.add((h,i,c))
@@ -213,7 +212,8 @@ binary_operator = (op, head, expect):
         z.heads.add(faucet(head))
         f.add_transition(get_dom(0), z)
 
-        op_site = fresh_operator((+), [0,1], 2)
+        calltype = fresh_state(-1)
+        op_site = fresh_operator(calltype, (+), [0,1], 2)
 
         sink0 = fresh_port()
         sink0.input.heads.add(sink(0, op_site))
@@ -225,18 +225,25 @@ binary_operator = (op, head, expect):
 
         result = fresh_port()
 
-        calltype = fresh_state(-1)
-        calltype.heads.add(faucet(op_site.expect))
         calltype.add_transition(get_dom(0), sink0.output)
         calltype.add_transition(get_dom(1), sink1.output)
         calltype.add_transition(cod, result.input)
         f.add_transition(cod, result.output)
  
-        sink0.input.add_transition(op_site.param, calltype)
-        sink1.input.add_transition(op_site.param, calltype)
- 
         return f
-
+    if op == (+) and head == Integer then
+        f = fresh_state(+1)
+        f.heads.add(faucet(get_function_header(2, false, 0)))
+        z1 = fresh_state(-1)
+        z1.heads.add(faucet(Integer))
+        z2 = fresh_state(-1)
+        z2.heads.add(faucet(Integer))
+        r = fresh_state(+1)
+        r.heads.add(faucet(Integer))
+        f.add_transition(get_dom(0), z1)
+        f.add_transition(get_dom(1), z2)
+        f.add_transition(cod, r)
+        return f
     assert false as "not implemented"
 
 # binary_operator = (op, head, expect):
@@ -314,64 +321,8 @@ binary_operator = (op, head, expect):
 #         sink1.input.add_transition(op_site.edge, calltype)
 # 
 #         return f
-# 
-#     if op in [t_add,t_sub] and head == t_rational
-#         f = State(+1)
-#         f.heads.add(get_function_header(2))
-#         z1 = State(-1)
-#         z1.heads.add(t_rational)
-#         z2 = State(-1)
-#         z2.heads.add(t_rational)
-#         r = State(+1)
-#         r.heads.add(t_rational)
-#         f.add_transition(dom[0], z1)
-#         f.add_transition(dom[1], z2)
-#         f.add_transition(cod, r)
-#         return f
-# 
-#     if op in [t_add,t_sub] and head == t_int
-#         f = State(+1)
-#         f.heads.add(get_function_header(2))
-#         z1 = State(-1)
-#         z1.heads.add(t_int)
-#         z2 = State(-1)
-#         z2.heads.add(t_int)
-#         r = State(+1)
-#         r.heads.add(t_int)
-#         f.add_transition(dom[0], z1)
-#         f.add_transition(dom[1], z2)
-#         f.add_transition(cod, r)
-#         return f
-# 
-#     if op in [t_gt] and head == t_int
-#         f = State(+1)
-#         f.heads.add(get_function_header(2))
-#         z1 = State(-1)
-#         z1.heads.add(t_int)
-#         z2 = State(-1)
-#         z2.heads.add(t_int)
-#         r = State(+1)
-#         r.heads.add(t_bool)
-#         f.add_transition(dom[0], z1)
-#         f.add_transition(dom[1], z2)
-#         f.add_transition(cod, r)
-#         return f
-# 
-#     assert false, [op, head, expect]
-# 
-#     #f = State(+1)
-#     #f.heads.add(get_function_header(2))
-#     #z = State(-1)
-#     #z.heads.add(head)
-#     #r = State(+1)
-#     #r.heads.add(head)
-#     #f.add_transition(dom[0], z)
-#     #f.add_transition(dom[1], z)
-#     #f.add_transition(cod, r)
-#     #return f
 
 get_coercion_function_type = (a, b):
-    print(a, b)
     if a == b then
         f = fresh_state(+1)
         f.heads.add(faucet(get_function_header(1, false, 0)))
@@ -437,12 +388,9 @@ to_raw_type = (scheme):
             case head of
             sink(index, site) then
                 name = stringify(site.op)
-                w = k_visit(state, head.site.param)
-                if w not in visi then
-                    line = s_visit(w, true)
+                if site.state not in visi then
+                    line = s_visit(site.state, true)
                     trail[w] = "\n  " ++ name ++ " : " ++ line
-                if name not in typedecl then
-                    typedecl.append(name)
             faucet(x) then
                 typedecl.append(r_visit(x, state, in_trail))
         for v in flow_variables[state] repeat
@@ -465,10 +413,6 @@ to_raw_type = (scheme):
         if ws.length == 0 then
             return "()"
         return s_visit(single(ws), in_trail)
-
-    k_visit = (state, edge):
-        ws = state.transitions[edge]
-        return single(ws)
 
     return s_visit(scheme.root, false) ++ "".join(trail.values())
 
@@ -509,7 +453,6 @@ generalize = (root, env):
             return subsets[subset]
         s = fresh_state(pol)
         subsets[subset] = s
-        rw_edge = dict()
         transitions = dict()
         for n in subset repeat
             assert n not in free as "bug: subset must not contain free states"
@@ -517,7 +460,6 @@ generalize = (root, env):
                 case head of
                 sink(index, site) then
                     n_site = site.transfer(reduce_site_port)
-                    rw_edge[site.param] = n_site.param
                     s.heads.add(sink(index, n_site))
                 faucet(_) then
                     s.heads.add(head)
@@ -531,7 +473,6 @@ generalize = (root, env):
                     transitions[edge] = set([w])
 
         for edge, ws in transitions repeat
-            edge = rw_edge.get(edge, edge)
             extern = set()
             for w in ws if w in free repeat
                 extern.add(w)
@@ -559,19 +500,16 @@ instantiate_type = (scheme):
         except KeyError then
             m = fresh_state(n.pol)
             mapping[n] = m
-            rw_edge = dict()
             for head in n.heads repeat
                 case head of
                 sink(index, site) then
                     n_site = site.transfer(reduce_site_port)
-                    rw_edge[site.param] = n_site.edge
                     s.heads.add(sink(index, n_site))
                 faucet(_) then
                     s.heads.add(head)
             for w in n.flow repeat
                 m.flow.add(copy_state(w))
             for edge, ws in n.transitions repeat
-                edge = rw_edge.get(edge, edge)
                 for w in ws repeat
                     m.add_transition(edge, copy_state(w))
             return m
@@ -599,15 +537,15 @@ inference_function = (fn, env, visited):
     info = inspect(fn)
     out = fresh_state(+1)
     out.heads.add(faucet(head))
-    params = head.params()
+    i = 0
     for arg in info.args repeat
         port = fresh_port()
-        dom = params ==> params
-        out.add_transition(dom, port.input)
+        out.add_transition(get_dom(i), port.input)
         slot = inference_slot(arg['slot'], env, visited)
         slot.set(port.output)
+        i += 1
     retval = inference_program(info.body, env, visited)
-    out.add_transition(params ==> params, retval)
+    out.add_transition(cod, retval)
     return out
 
 inference_program = (body, env, visited):
@@ -618,9 +556,12 @@ inference_program = (body, env, visited):
             value = stmt['value']
             value = inference_expr(value, env, visited)
             biunify((value, result.input), visited)
+        "assign" then
+            slot = inference_slot(stmt['slot'], env, visited)
+            value = inference_expr(stmt['value'], env, visited)
+            slot.set(value)
         else
-            print(stmt['type'], "missing")
-            assert false as "missing inference for stmt"
+            inference_expr(stmt, env, visited)
     return result.output
 
 inference_expr = (a, env, visited):
@@ -639,21 +580,20 @@ inference_expr = (a, env, visited):
         return inference_slot(a, env, visited).get()
     "call" then
         callee = inference_expr(a['callee'], env, visited)
-        op_site = fresh_operator(call, [0], 1 + a['args'].length)
+        calltype = fresh_state(-1)
+        op_site = fresh_operator(calltype, call, [0], 1 + a['args'].length)
+
         sinky = fresh_port()
         sinky.input.heads.add(sink(0, op_site))
 
-        calltype = fresh_state(-1)
-        calltype.heads.add(faucet(op_site.expect))
-
-        dom_0 = op_site.expect.params() ==> params
-        calltype.add_transition(dom_0, sinky.output)
+        calltype.add_transition(get_dom(0), sinky.output)
+        i = 1
         for arg in a['args'] repeat
             arg = inference_expr(arg, env, visited)
-            calltype.add_transition(params ==> params, arg)
+            calltype.add_transition(get_dom(i), arg)
+            i += 1
         result = fresh_port()
-        calltype.add_transition(params ==> params, result.input)
-        sinky.input.add_transition(op_site.param, calltype)
+        calltype.add_transition(cod, result.input)
         biunify((callee, sinky.input), visited)
 
         return result.output
@@ -689,8 +629,8 @@ inference_slot = (a, env, visited):
 
 
 
-foo = (bar):
-    return bar + 5
+foo = ():
+    return 1 + 5
 
 env = environ(dict(), dict(), environ_end, set())
 visited = set()
@@ -729,9 +669,6 @@ print(to_raw_type(out_scheme))
 #f = inspect(greedy_biclique_decomposition)
 #for item in f.body repeat
 #    print(format(item, 1))
-
-
-#get_function_header(argc, vari, opt)
 
 test1 = fresh_state(+1)
 test1.heads.add(faucet(Integer))

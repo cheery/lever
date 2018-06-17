@@ -28,6 +28,9 @@ class Object:
     def face(self):
         return self.__class__.interface
 
+    def access_doc(self, doc):
+        return None
+
 # Resolving methods on interfaces help to ensure that
 # interface block corresponds with the type of an object.
 class Interface(Object):
@@ -66,6 +69,7 @@ class InterfaceParametric(Interface):
         self.methods = {}
         self.getters = {}
         self.setters = {}
+        self.doc = None
 
     def getattr(self, name):
         impl = self.getters.get(name, None)
@@ -84,6 +88,11 @@ class InterfaceParametric(Interface):
         if impl is None:
             return Interface.method(self, operator)
         return impl
+
+    def access_doc(self, doc):
+        if self.doc is None:
+            self.doc = doc
+        return self.doc
 
 # The object should never return itself as a face, but
 # we have to cut our type hierarchy to something. We do it
@@ -145,6 +154,21 @@ class FunctionInterface(Interface):
         self.vari = vari
         self.opt = opt
 
+# Documentation references provide naming information
+# and tells where to find the documentation on the element.
+class Doc(Object):
+    interface = InterfaceParametric()
+
+class DocModule(Doc):
+    interface = Doc.interface
+    def __init__(self, name=None):
+        self.name = name
+
+class DocRef(Doc):
+    def __init__(self, name, parent):
+        self.name = name
+        self.parent = parent
+
 # Instances of function interfaces have somewhat special
 # meaning and there will be finite amount of them, so
 # every produced instance will be memoized so that they
@@ -182,9 +206,15 @@ class Builtin(Object):
         self.builtin_func = builtin_func
         self.builtin_face = builtin_face
         self.prefill = prefill
+        self.doc = None
 
     def face(self):
         return self.builtin_face
+
+    def access_doc(self, doc):
+        if self.doc is None:
+            self.doc = doc
+        return self.doc
 
 # Every call made by the interpreter eventually must resolve
 # to a builtin command.
@@ -346,6 +376,7 @@ class Operator(Object):
         self.operator_face = OperatorInterface(self)
         self.selectors = selectors
         self.default = None
+        self.doc = None
         self.methods = {}
 
         self.min_arity = 0
@@ -354,6 +385,11 @@ class Operator(Object):
 
     def face(self):
         return self.operator_face
+
+    def access_doc(self, doc):
+        if self.doc is None:
+            self.doc = doc
+        return self.doc
 
     # When user defines new operators he may need to
     # provide methods for existing types. This is the last
@@ -608,6 +644,7 @@ class Module(Object):
     interface = None
     def __init__(self):
         self.module_face = ModuleInterface()
+        self.doc = DocModule()
 
     def face(self):
         return self.module_face
@@ -618,6 +655,7 @@ class Module(Object):
             cell = face.cells[name]
             cell.store(value)
         else:
+            value.access_doc( DocRef(String(name), self.doc) )
             self.assign_cell(name, ConstantModuleCell(value))
 
     def assign_cell(self, name, cell):
@@ -1124,6 +1162,11 @@ attr_n = TypeParameterNameGroup(fresh_integer(-1))
 
 # Temporary measure to see what is going on.
 def Any_stringify(a):
+    docref = a.access_doc(None)
+    if docref is not None:
+        name = docref.name
+        if docref.name is not None:
+            return docref.name
     return String(a.__class__.__name__.decode('utf-8'))
 op_stringify.default = builtin()(Any_stringify)
 
