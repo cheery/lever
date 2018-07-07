@@ -52,10 +52,10 @@ def w_call_with_coeffects(fn, coeffects):
     previous = ec.coeffects
     ec.coeffects = call_coeffects
     try:
-        result = call(fn, [])
+        result = callv(fn, [])
     finally:
         ec.coeffects = previous
-    return result
+    return Tuple(result)
 
 # You're suppposed to access the coeffects through
 # modules. Main advantage here is that you can
@@ -74,7 +74,7 @@ class CoeffectModuleCell(ModuleCell):
         if not self.mutable:
             raise error(e_TypeError())
         cf = get_coeffect(self.coeffect)
-        call(cf.face().setattr(self.name), [cf, value])
+        call(cf.face().setattr(self.name), [cf, value], 0)
 
 class Coeffect(Object):
     def __init__(self):

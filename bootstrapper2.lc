@@ -1,0 +1,2094 @@
+import fs, grammar, json
+
+language = grammar.read_file(dir ++ "lever-0.10.0.grammar")
+
+# The task of this software is to scan the prelude directory
+# and produce a .json dump for every file in there.
+main = ():
+    prelude = path(dir ++ "prelude2")
+    for entry in fs.scandir(prelude)
+        if entry.type == "file" and entry.path.endswith(".lc")
+            src = prelude ++ entry.path
+            dst = prelude ++ (entry.path ++ ".json")
+            compile_file(src, dst)
+
+# The frontend compiler compiles down into a logic-based IR.
+compile_file = (src, dst):
+    sources = [src.relpath(dst.dirname).to_string()]
+    parse = language.read_file(src)
+    # The first traverse of the parser produces objects
+    # with the table of actions that is described later here.
+    program = parse.traverse((name, args, loc):
+        ast = actions[name](args...)
+        if isinstance(ast, Node)
+            ast.loc = [
+                loc.start.col, loc.start.lno,
+                loc.stop.col,  loc.stop.lno, 0]
+        return ast)
+
+    # The second step decides the overall structure of the program.
+    builder = Builder()
+    for statement in program
+        builder.build(statement)
+    builder.toplevel = false
+    # Closures are built by scanning through the unbuilt_frames
+    for clos, arg_slots, arg_defaults, retvars, body, env in builder.unbuilt_frames
+        if env
+            builder.env = env
+        else
+            builder.env = {}
+        builder.retvars = []
+        for retvar in retvars
+            var = builder.get_variable(retvar, true)
+            builder.retvars.append(var)
+        k = 0
+        for proc in reversed(clos.entries)
+            builder.current = proc
+            i = clos.entries.length - k - 1
+            if i > 0
+                val = builder.build(arg_defaults[k], 1)
+                builder.emit_branch(clos.entries[i-1],
+                    list(proc.inputs) ++ [val], [])
+            k += 1
+        closure_entry = clos.entries[0]
+        builder.current_closure = clos
+        builder.current = closure_entry
+        k = closure_entry.inputs.length - arg_slots.length
+        for slot in arg_slots
+            slot = slot.build_slot(builder)
+            slot.write(builder, clos.entries[0].inputs[k])
+            k += 1
+        for statement in body
+            builder.build(statement)
+        for var in builder.retvars
+            assert var, "return variables must be available"
+            for proc in clos.entries
+                proc.outputs.append(var)
+
+    # The third step resolves variable flow and closure frames.
+    # (we could use strongly-connected-components here)
+    proc_defs = proc_defs_analysis(builder.program)
+
+    vartab = print_program(builder.program)
+    print()
+    print_proc_vars('DEFS', proc_defs, builder.program, vartab)
+
+    solve_flow_variables(builder.program, proc_defs)
+    if builder.entry.inputs.length > 0
+        print("ERROR: ", src.to_string(),
+            "contains variables that are used before they are set")
+        report = []
+        for v in builder.entry.inputs
+            if v.name
+                report.append(v.name)
+            else
+                print("There are implicitly defined variables that cause issues too")
+        print("Variables causing issues:", ", ".join(report))
+    else
+        rewrite_flow_variables(builder.program)
+        inline_functions(builder.program)
+        # Finally some further flow analysis and inlining could be done,
+        # for now we compile directly down to VM.
+        print()
+        vartab = print_program(builder.program)
+        # Conversion into json is a temporary measure.
+        out = to_json(sources, builder.program, builder.entry)
+        json.write_file(dst, out, {indent=2})
+
+filter_flow_vars = (values):
+    for item in values
+        if isinstance(item, FlowVariable)
+            yield item
+
+
+actions = {
+    # After this, the difficult stuff is and/or/not
+
+    # TODO: Add return values (through 'return')
+    # 'return' must be empty if the expression is generator or
+    #          there are explicit return values.
+
+    # TODO: Add encoding for lists. (let + prog)
+
+    # TODO: Implement record slot
+
+    # TODO: Implement additional slots
+    #       DereferenceSlot, TupleSlot, ItemSlot, AttrSlot
+    # 
+    # TODO: Implement matching
+
+    # TODO: *** Implement exceptions ***
+    # TODO: Implement loops/iteration
+
+    # TODO: Implement InplaceAssign
+
+    # Should also implement break and continue.
+    # "break": (depths):
+    #     depth = depths.length
+    # "continue": (depths):
+    #     depth = depths.length
+    # "return": (expr=null):
+    #     depth = depths.length
+
+
+    "raise": (expr):
+        return SimpleStatement(o_raise, expr)
+    "generator": (body):
+        return Generator(body)
+    "yield": (expr):
+        return SimpleStatement(o_yield, expr)
+    "yield_from": (expr):
+        return SimpleStatement(o_yield_from, expr)
+    "closure": (args, retvars, body):
+        slots = []
+        defaults = []
+
+        for arg, default in args
+            if defaults.length > 0
+                assert default # this would be a bug.
+            slots.append(arg)
+            if default
+                defaults.append(default)
+        return Function(slots, defaults, retvars, body)
+    "argument": (arg):
+        return [arg, null]
+    "assign": (slot, value):
+        return Assign(slot, value)
+    "cond": (cond, tb, fb=[]):
+        return Cond(cond, tb, fb)
+    "and": (lhs, rhs):
+        return And(lhs, rhs)
+    "or": (lhs, rhs):
+        return Or(lhs, rhs)
+    "not": (rhs):
+        return Not(rhs)
+    "binary": (lhs, op, rhs):
+        return Call(Symbol(op), [lhs, rhs])
+    "prefix": (op, rhs):
+        return Call(Symbol(op ++ "expr"), [rhs])
+    "call": (callee, args):
+        return Call(callee, args)
+    "relcall": (callee, args, slots):
+        return RelCall(callee, args, slots)
+    "symbol": (name):
+        return Symbol(name)
+    "integer": (repr):
+        return Constant(parse_int(repr))
+    "string": (repr):
+        return Constant(repr)
+
+    # Syntactic sugars.
+    "cmp": (chain, rhs):
+        lets = []
+        rv = FlowVariable()
+        lets.append([rv, rhs])
+        body = null
+        for lhs, op in reversed(chain)
+            o = FlowVariable()
+            lets.append([o, Symbol(op)])
+            lv = FlowVariable()
+            lets.append([lv, lhs])
+            if body
+                body = And(Call(o, [lv, rv]), body)
+            else
+                body = Call(o, [lv, rv])
+            rv = lv
+        lets.reverse()
+        assert body
+        return Let(lets, body)
+    "in": (lhs, rhs):
+        return Call(Symbol("in"), [lhs, rhs])
+    "not_in": (lhs, rhs):
+        return Not(Call(Symbol("in"), [lhs, rhs]))
+    "import": (name):
+        return Assign(Symbol(name),
+            Call(Symbol("import"), [Literal("string", name)]))
+}
+
+# an idea.. instead of having direct branch to break/return/continue..
+# add the terminating block into a builder, with the associated action.
+# then let the exception handler/loop/closure builder
+# handle the problem of what is being done for that structure.
+# also remember to handle normal paths.
+
+class Builder
+    +init = (self):
+        self.entry = Proc(0, [], [], [])
+        self.program = [ self.entry ]
+        self.current = self.entry
+        self.unbuilt_frames = [] 
+        self.current_closure = null
+        self.env = null
+        self.retvars = []
+
+    get_variable = (self, name, def):
+        if not self.env
+            return null
+        try
+            return self.env[name]
+        except KeyError as ke
+            if def
+                self.env[name] = var = FlowVariable(name)
+                return var
+            return null
+
+    new_proc = (self):
+        proc = Proc(self.program.length, [], [], [])
+        self.program.append(proc)
+        return proc
+
+    build = (self, ast, outc=0):
+        if isinstance(ast, Node)
+            return ast.build(self, outc)
+        elif isinstance(ast, Constant)
+            assert outc >= 1, "outc < 1 at constant"
+            return [ast]
+        elif isinstance(ast, FlowVariable)
+            assert outc >= 1, "outc < 1 at flow variable"
+            return [ast]
+        else
+            assert false, [ast]
+
+    build_cond = (self, ast):
+        if isinstance(ast, Constant)
+            fbranch = Guard([], [])
+            tbranch = self.current
+            self.emit_guard(o_is_true, [ast], [], fbranch)
+            return [tbranch, fbranch]
+        elif isinstance(ast, Node)
+            return ast.build_cond(self)
+        else
+            assert false, [ast]
+
+    emit = (self, opcode, inputs, outputs):
+        self.current.append(
+            Instruction(opcode, inputs, outputs))
+        return outputs
+
+    emit_guard = (self, opcode, inputs, outputs, guard):
+        self.current.append(
+            Instruction(opcode, inputs, outputs, null, guard))
+        return outputs
+
+    emit_branch = (self, target, inputs, outputs, guard=null):
+        if guard
+            opcode = o_branchx
+        else
+            opcode = o_branch
+        self.current.append(
+            Instruction(opcode, inputs, outputs, target, guard, null))
+        return outputs
+
+    frame = (self, closure_group, inputs, outputs):
+        assert false, "TODO"
+        self.current.append(
+            Instruction(o_branch, inputs, outputs, closure_group))
+        assert closure_group.length == outputs.length, "invalid frame"
+        return outputs
+
+class Node
+
+class Generator extends Node
+    +init = (self, body):
+        self.body = body
+
+    build = (self, builder, outc):
+        assert outc == 1, "exactly one value out of generator"
+        entries = [builder.new_proc()]
+        clos = Closure(entries, false, true)
+        builder.unbuilt_frames.append(
+            [clos, [], [], [], self.body, builder.env])
+        var = FlowVariable()
+        if has_frame_under(builder.current)
+            instruction = builder.current[builder.current.length-1]
+            instruction.add_closure(clos, var)
+        else
+            builder.current.append(Instruction(o_frame,
+                [], [var], null, null, [clos]))
+        return [var]
+
+class Function extends Node
+    +init = (self, slots, defaults, return_variables, body):
+        self.slots = slots
+        self.defaults = defaults
+        self.return_variables = return_variables
+        self.body = body
+
+    build = (self, builder, outc):
+        assert outc == 1, "exactly one value out of function"
+        entries = []
+        for i in range(self.defaults.length+1)
+            entry = builder.new_proc()
+            for k in range(self.slots.length - i)
+                entry.inputs.append(FlowVariable())
+            entries.append(entry)
+        clos = Closure(entries, false, false)
+        builder.unbuilt_frames.append(
+            [clos, self.slots, self.defaults, self.return_variables, self.body,
+                builder.env])
+        var = FlowVariable()
+        block = builder.current
+        if has_frame_under(builder.current)
+            instruction = block.clauses[block.clauses.length-1]
+            instruction.add_closure(clos, var)
+        else
+            builder.current.append(Instruction(o_frame,
+                [], [var], null, null, [clos]))
+        return [var]
+
+# We want to ensure that closures defined in same segment of a
+# clause are grouped together, but we have to be careful in order to
+# not break the flow in our program. The another part of the solution
+# is the adjusted 'Assign' that does a small shortcut in order to
+# not produce garbage that prevents this from working.
+
+# This will enable definition of mutually recursive closure while not breaking
+# the program, since we are not in danger of cutting variable flows.
+
+# Also note that this is not coming without downsides. The merged frame is
+# larger due to a design choice I did here. In practice a slightly larger
+# frame is very unlikely to cause any problems that wouldn't be better solved
+# by engaging an optimizing compiler to the output of this program.
+has_frame_under = (block):
+    if block.clauses.length == 0
+        return false
+    instruction = block.clauses[block.clauses.length-1]
+    if instruction.opcode == o_frame
+        return true
+    return false
+
+class Assign extends Node
+    +init = (self, slot, value):
+        self.slot = slot
+        self.value = value
+
+    build = (self, builder, outc):
+        assert outc == 0, "no output at assign"
+        val = builder.build(self.value, 1)[0]
+        block = builder.current
+        if builder.env and has_frame_under(block)
+            if isinstance(self.slot, Symbol)
+                var = builder.get_variable(self.slot.name, true)
+                if var
+                    instruction = block.clauses[block.clauses.length-1]
+                    ix = instruction.outputs.index(val)
+                    instruction.outputs[ix] = var
+                    return []
+        slot = self.slot.build_slot(builder)
+        slot.write(builder, val)
+        return []
+
+class Cond extends Node
+    +init = (self, cond, t_block, f_block):
+        self.cond = cond
+        self.t_block = t_block
+        self.f_block = f_block
+
+    build = (self, builder, outc):
+        assert outc == 0, "no output at cond"
+
+        succ, fail = builder.build_cond(self.cond)
+
+        exit = builder.new_proc()
+
+        builder.current = succ
+        for statement in self.t_block
+            builder.build(statement, 0)
+        builder.emit_branch(exit, [], [])
+
+        builder.current = fail
+        for statement in self.f_block
+            builder.build(statement, 0)
+        builder.emit_branch(exit, [], [])
+
+        builder.current = exit
+        return []
+
+# And has two failure outputs.
+# Or has two success outputs.
+class And extends Node
+    +init = (self, lhs, rhs):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    build = (self, builder, outc):
+        assert false, "TODO"
+
+    build_cond = (self, builder):
+        assert false, "TODO"
+
+class Or extends Node
+    +init = (self, lhs, rhs):
+        self.lhs = lhs
+        self.rhs = rhs
+
+    build = (self, builder, outc):
+        assert false, "TODO"
+
+    build_cond = (self, builder):
+        assert false, "TODO"
+
+class Not extends Node
+    +init = (self, rhs):
+        self.rhs = rhs
+
+    build = (self, builder, outc):
+        assert outc == 1, "TODO"
+        tbranch, fbranch = builder.build_cond(self.rhs)
+        exit = builder.new_proc()
+        v1 = Variable()
+        builder.current = tbranch
+        builder.emit(o_false, [], [v1])
+        builder.emit_branch(exit, [v1], [])
+        v2 = Variable()
+        builder.current = fbranch
+        builder.emit(o_true, [], [v2])
+        builder.emit_branch(exit, [v2], [])
+        v3 = FlowVariable()
+        exit.inputs.append(v3)
+        builder.current = exit
+        return [v3]
+
+    build_cond = (self, builder):
+        tbranch, fbranch = builder.build_cond(self.rhs)
+        return [fbranch, tbranch]
+
+class Let extends Node
+    +init = (self, bindings, body):
+        self.bindings = bindings
+        self.body = body
+    
+    build = (self, builder, outc):
+        for v, ast in self.bindings
+            builder.emit(o_move, builder.build(ast, 1), [v])
+        return builder.build(self.body, outc)
+
+    build_cond = (self, builder):
+        for v, ast in self.bindings
+            builder.emit(o_move, builder.build(ast, 1), [v])
+        return builder.build_cond(self.body)
+
+class RelCall extends Node
+    +init = (self, callee, args, slots):
+        self.callee = callee
+        self.args = args
+        self.slots = slots
+ 
+    build = (self, builder, outc):
+        assert outc == 0, "relcall is a statement"
+        inputs = [builder.build(self.callee, 1)[0]]
+        for arg in self.args
+            inputs.append( builder.build(arg, 1)[0] )
+        outputs = new_vars(self.slots.length)
+        builder.emit(o_call, inputs, outputs)
+        k = 0
+        for slot in self.slots
+            s = slot.build_slot(builder)
+            s.write(builder, outputs[k])
+            k += 1
+        return []
+
+class SimpleStatement extends Node
+    +init = (self, opcode, inputs):
+        self.opcode = opcode
+        self.inputs = inputs
+
+    build = (self, builder, outc):
+        assert outc == 0, "it is a statement"
+        inputs = []
+        for expr in self.inputs
+            inputs.append(builder.build(expr, 1)[0])
+        builder.emit_guard(self.opcode, inputs, [])   
+        return []
+
+class Call extends Node
+    +init = (self, callee, args):
+        self.callee = callee
+        self.args = args
+
+    build = (self, builder, outc):
+        inputs = [builder.build(self.callee, 1)[0]]
+        for arg in self.args
+            inputs.append( builder.build(arg, 1)[0] )
+        return builder.emit(o_call, inputs, new_vars(outc))
+
+    build_cond = (self, builder):
+        out     = self.build(builder, 1)
+        tbranch = builder.current
+        fbranch = Guard([], [])
+        builder.emit_guard(o_is_true, out, [], fbranch)
+        return [tbranch, fbranch]
+
+class Symbol extends Node
+    +init = (self, name, is_global=false):
+        self.name = name
+        self.is_global = is_global
+
+    build = (self, builder, outc):
+        assert outc >= 1, "outc < 1 at Symbol"
+        var = builder.get_variable(self.name, false)
+        if var
+            return [var]
+        else
+            return builder.emit(o_global,
+                [Constant(self.name)],
+                new_vars(outc))
+
+    build_cond = (self, builder):
+        out = self.build(builder, 1)
+        tbranch = builder.current
+        fbranch = Guard([], [])
+        builder.emit_guard(o_is_true, out, [], fbranch)
+        return [tbranch, fbranch]
+
+    build_slot = (self, builder):
+        return object({
+            "read": (builder):
+                return self.build(builder, 1)
+            "write": (builder, val):
+                var = builder.get_variable(self.name, true)
+                if var
+                    builder.emit(o_move, [val], [var])
+                else
+                    builder.emit(o_global, [Constant(self.name), val], [])
+        })
+
+new_vars = (count):
+    v = []
+    for i in range(count)
+        v.append(FlowVariable())
+    return v
+
+class FlowVariable
+    +init = (self, name=null):
+        self.name = name
+
+    +repr = (self):
+        if self.name
+            return "FlowVariable(" ++ repr(self.name) ++ ")"
+        return "FlowVariable()"
+
+# Next we are going to solve the variable flow in the program and
+# rewrite the flow variables into ordinary variables.
+proc_defs_analysis = (program):
+    proc_defs = {}
+    # First the defs tables are resolved.
+    keep_doing = true
+    while keep_doing
+        keep_doing = false
+        for proc in reversed(program)
+            try
+                defs = proc_defs[proc]
+            except KeyError as _
+                proc_defs[proc] = defs = set()
+            L = defs.length
+
+            for v in proc.inputs
+                if isinstance(v, FlowVariable)
+                    defs.add(v)
+            stack = [proc.clauses]
+            while stack.length > 0
+                clauses = stack.pop()
+                for instruction in clauses
+                    if instruction.branch in proc_defs
+                        defs.update(proc_defs[instruction.branch])
+                    if instruction.guard
+                        stack.append(instruction.guard.clauses)
+                        for v in instruction.guard.outputs
+                            defs.add(v)
+                    for v in instruction.outputs
+                        if isinstance(v, FlowVariable)
+                            defs.add(v)
+            if defs.length != L
+                keep_doing = true
+    return proc_defs
+
+solve_flow_variables = (program, proc_defs):
+    keep_doing = true
+    while keep_doing
+        keep_doing = false
+        # When def tables are resolved, we can flow use-dependencies towards
+        # the other direction.
+        for proc in program
+            stack = [[proc, proc.clauses.length, set()]]
+            current_live_set = set(filter_flow_vars(proc.outputs))
+            while stack.length > 0
+                block, i, live_set = stack.pop()
+                current_live_set.update(live_set)
+                for instruction in reversed(block.clauses[.:i])
+                    i -= 1
+                    current_live_set.difference_update(filter_flow_vars(instruction.outputs))
+                    if instruction.branch
+                        for x in current_live_set & proc_defs[instruction.branch]
+                            # We are inserting into output here, so inserting into
+                            # a closure would obviously not be a choice.
+                            if instruction.branch.closure
+                                continue # this could be lifted out from the loop though...
+                            keep_doing = true
+                            current_live_set.discard(x)
+                            instruction.branch.outputs.insert(0, x)
+                            # We also got to be considerate for other users of this branch.
+                            for prec in instruction.branch.predecessors
+                                instruction.outputs.insert(0, x)
+                    guard = instruction.guard
+                    if guard
+                        stack.append([block, i, current_live_set])
+                        stack.append([guard, guard.clauses.length,
+                            set(filter_flow_vars(proc.outputs))])
+                        break
+                    current_live_set.update(filter_flow_vars(instruction.inputs))
+                if i == 0 and isinstance(block, Guard)
+                    current_live_set.difference_update(filter_flow_vars(block.outputs))
+                else
+                    current_live_set.difference_update(filter_flow_vars(block.inputs))
+            # closure input frame consists of in_frame-flagged frames, and framed variables.
+            # This means that the insertion is considerably different for closures.
+            new_vars = list(current_live_set)
+            if new_vars.length > 0
+                keep_doing = true
+                if proc.closure
+                    instruction = proc.closure.instruction
+                    for v in new_vars
+                        if v in instruction.outputs
+                            i = instruction.outputs.index(v)
+                            k = 0
+                            for clos in instruction.frame[ .: i]
+                                k += int(clos.in_frame)
+                            instruction.frame[i].in_frame = true
+                        else
+                            instruction.inputs.insert(0, v)
+                            k = 0
+                            for clos in instruction.frame
+                                k += int(clos.in_frame)
+                        for clos in instruction.frame
+                            for entry in clos.entries
+                                entry.inputs.insert(k, v)
+                        # not sure if it's a good idea to call closure items
+                        # directly, but here we go.
+                        for prec in proc.predecessors
+                            prec.inputs.insert(k, v)
+                else
+                    for v in new_vars
+                        proc.inputs.insert(0, v)
+                    for prec in proc.predecessors
+                        for v in new_vars
+                            prec.inputs.insert(0, v)
+
+rewrite_flow_variables = (program):
+    for proc in program
+        bindings = {}
+        # Rewriting the outputs
+        proc.outputs = rewrite_flow_variable_reads(proc.outputs, bindings)
+        # Then running through the clauses
+        bindings = rewrite_flow_variables_in_clauses(proc, bindings, proc)
+        # Rewriting the inputs last, creating new variables if needed.
+        proc.inputs = rewrite_flow_variable_writes(proc.inputs, bindings)
+
+        drop_superfluous_moves(proc, {}, proc)
+
+rewrite_flow_variables_in_clauses = (block, end_bindings, proc):
+    bindings = dict(end_bindings)
+    for instruction in reversed(block.clauses)
+        instruction.outputs = rewrite_flow_variable_writes(instruction.outputs, bindings)
+        guard = instruction.guard
+        if guard
+            g_bindings = rewrite_flow_variables_in_clauses(guard, end_bindings, proc)
+            mov_inputs = []
+            mov_outputs = []
+            for flowvar, var in g_bindings.items()
+                if flowvar in bindings
+                    mov_inputs.append(bindings[flowvar])
+                    mov_outputs.append(var)
+                else
+                    bindings[flowvar] = var
+            if mov_inputs.length > 0
+                guard.insert(0, Instruction(o_move, mov_inputs, mov_outputs))
+        instruction.inputs = rewrite_flow_variable_reads(instruction.inputs, bindings)
+    return bindings
+
+rewrite_flow_variable_writes = (variables, bindings):
+    out = list()
+    for v in variables
+        if isinstance(v, FlowVariable)
+            try
+                v = bindings.pop(v)
+            except KeyError as e
+                v = Variable() # This means it was not used.
+        out.append(v)
+    return out
+
+rewrite_flow_variable_reads = (variables, bindings):
+    out = list()
+    for v in variables
+        if isinstance(v, FlowVariable)
+            try
+                v = bindings[v]
+            except KeyError as e
+                w = Variable()
+                bindings[v] = w
+                v = w
+        out.append(v)
+    return out
+
+drop_superfluous_moves = (block, bindings, proc):
+    reverse_bind = {}
+    for instruction in list(block.clauses)
+        instruction.inputs = plain_rewrite(instruction.inputs, bindings)
+        if instruction.guard
+            drop_superfluous_moves(instruction.guard, dict(bindings), proc)
+        if instruction.opcode != o_move
+            continue
+        if instruction.inputs.length != instruction.outputs.length
+            continue
+        old_inputs = list(instruction.inputs)
+        old_outputs = list(instruction.outputs)
+        instruction.inputs = []
+        instruction.outputs = []
+
+        for k in range(old_inputs.length)
+            v = old_inputs[k]
+            w = old_outputs[k]
+            if v in proc.inputs and w in proc.outputs
+                if block != proc
+                    instruction.inputs.append(v)
+                    instruction.outputs.append(w)
+                else
+                    bindings[w] = v
+                    proc.outputs = plain_rewrite(proc.outputs, bindings)
+            elif w in proc.outputs
+                if isinstance(v, Variable)
+                    reverse_bind[v] = w
+                    bindings[v] = w
+                else
+                    instruction.inputs.append(v)
+                    instruction.outputs.append(w)
+            else
+                bindings[w] = v
+        if instruction.inputs.length == 0
+            block.clauses.remove(instruction)
+
+    if reverse_bind.length > 0
+        for instruction in reversed(block.clauses)
+            for k in range(instruction.outputs.length)
+                v = instruction.outputs[k]
+                if v in reverse_bind
+                    instruction.outputs[k] = reverse_bind.pop(v)
+            if reverse_bind.length == 0
+                break
+
+plain_rewrite = (variables, bindings):
+    out = []
+    for var in variables
+        out.append(bindings.get(var, var))
+    return out
+
+# This does inlining that removes only trivial, empty functions.
+inline_functions = (program):
+    must_reindex = false
+    keep_going = true
+    while keep_going
+        keep_going = false
+        empty_procs = []
+        for proc in program
+            if proc.clauses.length == 0
+                empty_procs.append(proc)
+
+        if empty_procs.length > 0
+            keep_going = true
+            must_reindex = true
+
+        for proc in empty_procs
+            for instruction in proc.predecessors
+                if instruction.block and instruction.inputs.length == 0 and instruction.outputs.length == 0
+                    #ix = instruction.block.clauses.index(instruction)
+                    instruction.block.clauses.remove(instruction)
+                    instruction.block = null
+            program.remove(proc)
+    if must_reindex
+        # Got to reindex if elements were removed. 
+        i = 0
+        for proc in program
+            proc.index = i
+            i += 1
+
+# At this point we have something like this.
+# t1 = Variable()
+# t2 = Variable()
+# t3 = Variable()
+# t4 = Variable()
+# entry = Proc([], [], [
+#     Instruction(o_global, [Constant("print")], [t1]),
+#     Instruction(o_call,   [t1, Constant("Hello world")], []),
+#
+#     Instruction(o_false,   [], [t2]),
+#     i_guard(o_is_true, [t2], [], Guard([], [
+#         Instruction(o_global, [Constant("print")], [t3]),
+#         Instruction(o_call,   [t3, Constant("Branch [false]")], []),
+#     ])),
+#
+#     Instruction(o_global, [Constant("print")], [t4]),
+#     Instruction(o_call,   [t4, Constant("Branch [true]")], []),
+# ])
+# program = [entry]
+
+# The instruction format used by the VM works as an encoding for an IR that is
+# powerful enough to be used in compiling all way down to native machine code.
+class Proc
+    +init = (self, index, inputs, outputs, clauses):
+        self.index = index
+        self.inputs = inputs
+        self.outputs = outputs
+        self.clauses = clauses
+        self.closure = null
+        self.predecessors = set()
+        for instruction in clauses
+            assert not instruction.block, "cannot reuse instructions"
+            instruction.block = self
+
+    append = (self, instruction):
+        assert not instruction.block, "cannot reuse instructions"
+        self.clauses.append(instruction)
+        instruction.block = self
+
+    insert = (self, index, instruction):
+        assert not instruction.block, "cannot reuse instructions"
+        self.clauses.insert(index, instruction)
+        instruction.block = self
+        
+
+class Instruction
+    +init = (self, opcode, inputs, outputs, branch=null, guard=null, frame=null):
+        self.opcode  = opcode
+        self.inputs  = inputs
+        self.outputs = outputs
+        self.branch  = branch
+        self.guard   = guard
+        self.frame   = frame
+        assert not branch or isinstance(branch, Proc), [branch]
+        self.block = null
+        if guard
+            assert not guard.instruction, "cannot reuse guards"
+            guard.instruction = self
+        if frame
+            for closure in frame
+                assert not closure.instruction, "cannot reuse closures"
+                closure.instruction = self
+        if branch
+            branch.predecessors.add(self)
+
+    add_closure = (self, closure, var):
+        assert not closure.instruction, "cannot reuse closures"
+        closure.instruction = self
+        self.frame.append(closure)
+        self.outputs.append(var)
+
+class Guard
+    +init = (self, outputs, clauses):
+        self.outputs = outputs
+        self.clauses = clauses
+        for instruction in clauses
+            assert not clause.body, "cannot reuse instructions"
+            instruction.block = self
+        self.instruction = null
+
+    append = (self, instruction):
+        assert not instruction.block, "cannot reuse instructions"
+        self.clauses.append(instruction)
+        instruction.block = self
+
+    insert = (self, index, instruction):
+        assert not instruction.block, "cannot reuse instructions"
+        self.clauses.insert(index, instruction)
+        instruction.block = self
+
+# An ugly hack to number our variables for easy debug.
+class Variable
+    +repr = (self):
+        return "Variable()"
+
+class Constant
+    +init = (self, value):
+        self.value = value
+
+class Closure
+    +init = (self, entries, in_frame=false, is_generator=false):
+        self.entries = entries
+        self.in_frame = in_frame
+        self.is_generator = is_generator
+        self.instruction = null
+        for entry in self.entries
+            assert not entry.closure, "closure proc cannot be reused"
+            entry.closure = self
+
+to_json = (sources, program, entry):
+    constants = []
+    consttab = {}
+    get_constant = (c):
+        c = c.value
+        if c in consttab
+            return (consttab[c] << 2) + 3
+        consttab[c] = k = constants.length
+        constants.append(c)
+        return (k << 2) + 3
+
+    program_data = [] # Compiled procedure blocks.
+    for proc in program
+        proc_clauses = []
+
+        registers = RegisterAllocator(proc.inputs, proc.outputs, get_constant)
+        body = encode_clauses(proc.clauses, registers, [])
+        # This adds mov instructions for output variables that
+        # do not end up being used inside the procedure.
+        mov_inputs = []
+        mov_outputs = []
+        for v in proc.inputs
+            if v in proc.outputs
+                mov_inputs.append((proc.inputs.index(v) << 3) & 1)
+                mov_outputs.append((proc.outputs.index(v) << 3) & 2)
+        if mov_inputs.length > 0
+            for x in reversed(mov_outputs)
+                body.append(x)
+            body.append(mov_outputs.length)
+            for x in reversed(mov_inputs)
+                body.append(x)
+            body.append(mov_inputs.length)
+            body.append(o_move)
+
+        registers.live_ranges.difference_update(proc.inputs)
+        assert registers.live_ranges.length == 0,
+            ["error in encoding", list(registers.live_ranges)]
+
+        proc_data = {
+            "tmpc": registers.max_tmpc,
+            "inc": proc.inputs.length,
+            "outc": proc.outputs.length,
+            "body": list(reversed(body)),
+        }
+        program_data.append(proc_data)
+
+    return {
+        "sources": sources,
+        "constants": constants,
+        "program": program_data
+    }
+
+# The encoder generates the output in reverse.
+encode_clauses = (clauses, registers, code):
+    index = 0
+    for instruction in clauses
+        assert instruction.block, instruction.opcode
+        index += 1
+        guard = instruction.guard
+        if guard
+            assert guard.instruction == instruction
+            code = encode_clauses(guard.clauses, registers, code)
+            # The terminal is inserted into arrival location of guard.
+            code.extend(registers.output_flow(guard.outputs))
+            code.append(guard.outputs.length)
+            code.append(o_terminal)
+            guard.index = code.length
+            code = encode_clauses(clauses[index .:],
+                registers, code)
+            # Location of guard is encoded first.
+            clauses = clauses[.: index]
+            break
+    if code.length == 0
+        code.append(0)
+        code.append(o_terminal)
+    for instruction in reversed(clauses)
+        # location of guard (if any).
+        if instruction.guard
+            offset = code.length - instruction.guard.index
+            assert offset >= 0
+            code.append(offset)
+        # Frames (if any).
+        if instruction.frame
+            assert instruction.frame.length == instruction.outputs.length
+            for closure in reversed(instruction.frame)
+                for entry in reversed(closure.entries)
+                    code.append(entry.index)
+                count = closure.entries.length
+                info = (count << 2)
+                info |= int(closure.is_generator)*2
+                info |= int(closure.in_frame)*1
+                code.append(info)
+        # Inputs and outputs
+        if instruction.opcode & 7 != o_ionly
+            code.extend(registers.output_flow(instruction.outputs))
+            code.append(instruction.outputs.length)
+        if instruction.opcode & 7 != o_oonly
+            for v in reversed(instruction.inputs)
+                if v in registers.inputs
+                    continue
+                assert v not in registers.outputs, "output variables used as input"
+                if not isinstance(v, Variable)
+                    continue
+                reg = registers.get_free_register()
+                registers.live_ranges.add(v)
+                if v not in registers.bound
+                    registers.bound[v] = reg
+                    registers.mapping[v] = (reg << 2) + 0 # temporary variables.
+            for v in reversed(instruction.inputs)
+                if v in registers.mapping
+                    code.append(registers.mapping[v])
+                else
+                    assert not isinstance(v, FlowVariable),
+                        "flow variables should have been removed at this point"
+                    assert isinstance(v, Constant)
+                    code.append(registers.get_constant(v))
+            code.append(instruction.inputs.length)
+        # If there is opcode, it is encoded to the branch.
+        if instruction.branch
+            arg = instruction.branch.index
+            code.append(instruction.opcode | (arg << 3))
+        else
+            code.append(instruction.opcode)
+    return code
+
+class RegisterAllocator
+    +init = (self, inputs, outputs, get_constant):
+        self.inputs = inputs
+        self.outputs = outputs
+        self.bound_variables = set()
+        self.free_registers = set()
+        self.max_tmpc = 0
+        self.live_ranges = set()
+        self.bound = dict()
+        self.mapping = dict()
+        self.get_constant = get_constant
+        k = 0
+        for v in inputs
+            self.mapping[v] = (k << 2) + 1 # meaning this is input.
+            k += 1
+        k = 0
+        for v in outputs
+            if v in self.mapping # Skip, this has been defined by output.
+                self.bound[v] = k
+                continue
+            self.mapping[v] = (k << 2) + 2 # meaning this is output.
+            self.live_ranges.add(v)
+            k += 1
+
+    get_free_register = (self):
+        if self.free_registers.length == 0
+            reg = self.max_tmpc
+            self.max_tmpc += 1
+        else
+            reg = self.free_registers.pop()
+        return reg
+
+    output_flow = (self, outputs):
+        for v in reversed(outputs)
+            if v in self.outputs
+                null
+            elif v in self.live_ranges
+                self.free_registers.add(self.bound[v])
+            else
+                assert v not in self.bound, "variable assigned/defined twice"
+                reg = self.get_free_register()
+                self.bound[v] = reg
+                self.mapping[v] = (reg << 2) + 0 # temporary variables.
+                self.free_registers.add(reg)
+            yield self.mapping[v]
+        self.live_ranges.difference_update(outputs)
+
+# A sample of what this program writes out.
+# out = {
+#     "sources": sources,
+#     "constants": ["print", "Hello world"], # These are indexed 3+i*4, etc.
+#     "program": [
+#         { # index=0
+#             "tmpc": 1, # indexed 0+i*4
+#             "inc": 0,  # indexed 1+i*4
+#             "outc": 0, # indexed 2+i*4
+#             "clauses":
+#                 encode_op(o_global) ++
+#                 encode_list([const(0)]) ++
+#                 encode_list([reg(0)]) ++
+#                 encode_op(o_call) ++
+#                 encode_list([reg(0), const(1)]) ++
+#                 encode_list([]) ++
+#                 encode_op(o_terminal) ++
+#                 encode_list([])
+#             # Also needs source location. It's [bytek, col0, lno0, col1, lno1, src]
+#         }
+#     ]
+# }
+
+# Instruction table
+o_simple   = 0x0 # Simple instructions.
+o_branch   = 0x1 # With a procedure index to identify branch target.
+o_frame    = 0x2 # inputs*, outputs*, frames*
+o_branchx  = 0x3 # With procedure index, inputs*, outputs[T]* guard_offset
+o_guard    = 0x4 # Boolean guards. With a count telling where terminal is.
+                 # Terminal position counted forwards from next instruction.
+o_ionly    = 0x5 # Inputs-only instructions.
+o_oonly    = 0x6 # Outputs-only instructions.
+o_terminal = 0x7 # Terminal for guards.
+                 # outputs[F]*     
+
+# The guards
+o_is_true = (0x0 << 3) | 0x4 # inputs*, outputs[T]*, failure_path
+o_eq      = (0x1 << 3) | 0x4 
+o_match   = (0x2 << 3) | 0x4 
+o_next    = (0x3 << 3) | 0x4 
+
+# Basic abstract instructions
+o_move   = (0x0 << 3) # inputs*, outputs*
+o_global = (0x1 << 3)
+o_attr   = (0x2 << 3)
+o_item   = (0x3 << 3)
+
+o_true   = (0x4 << 3)
+o_false  = (0x5 << 3)
+o_call   = (0x6 << 3)
+
+# Inputs-only instructions.
+o_raise      = (0x7 << 3) | 0x5 # inputs*
+o_yield      = (0x8 << 3) | 0x5
+o_yield_from = (0x9 << 3) | 0x5
+
+opcode_names = {
+    o_move: "move",
+    o_global: "global",
+    o_attr: "attr",
+    o_item: "item",
+    o_true: "true",
+    o_false: "false",
+    o_call: "call",
+    o_raise: "raise",
+    o_yield: "yield",
+    o_yield_from: "yield_from",
+    o_is_true: "is_true",
+    o_eq: "eq",
+    o_match: "match",
+    o_next: "next",
+    o_frame: "frame",
+    o_branch: "branch",
+    o_branchx: "branchx",
+}
+
+
+# Optionals fill through 'intro' ladder in beginning
+# of the program. It is described by the multiple entries in closure frame.
+
+# Tail call across closure happens when both are in the same module or unit.
+
+# finalizer is a single block, but it is decorated into
+# an exception handler such that the exception calls it, then
+# raises again. It is not permitted for it to produce any results.
+
+# Build blocks and clauses. update continue/break stack.
+# collect local variables.
+
+# Variable is local if it has been set in any of the
+# statements preceding the current statement.
+# Otherwise it is found in upscope.
+
+# global settable variables are bit of a special case.
+# Produce 'var' or getglobal/setglobal
+
+# mark every upscoped variable.
+
+
+# Provide variable clobber (also extend into child closures
+# but consider whole scope as clobber mask)
+
+# Generators are restartable by design, but
+# they may contain mutable parts that clobber this up.
+
+# Closures may have mutable frame values as well, in that
+# case you should not bind them to modules.
+
+
+# During compiling. Decompose variable flow into LP.
+# Regalloc and recompose during analysis. Make
+# this bidirectional.
+
+# The instruction opcode is divided into 4 groups.
+
+#o_simple = 0x0 # Basic abstract instructions
+#o_branch = 0x1 # With a procedure index to identify branch target.
+#o_frame  = 0x2 # With a closure index to identify objects being framed.
+#               # Reserved slot for low-level instructions, if that is
+#               # ever being defined.
+#
+#o_move   = (0x0 << 2)
+#o_global = (0x1 << 2)
+#o_attr   = (0x2 << 2)
+#o_item   = (0x3 << 2)
+#
+#o_true   = (0x4 << 2)
+#o_false  = (0x5 << 2)
+#o_eq     = (0x6 << 2)
+#o_ne     = (0x7 << 2)
+#
+#o_call   = (0x8 << 2)
+#o_match  = (0x9 << 2)
+#o_next   = (0xA << 2)
+#o_raise  = (0xB << 2)
+#
+#o_yield      = (0xC << 2)
+#o_yield_from = (0xD << 2)
+
+#reg(i):   (i << 2) + 0
+#inp(i):   (i << 2) + 1
+#outp(i):  (i << 2) + 2
+#const(i): (i << 2) + 3
+
+#write_op = (opcode, inputs, outputs, arg=0):
+#    yield opcode + (arg << 2)
+#    yield inputs.length
+#    yield outputs.length
+#    for inp in inputs
+#        yield inp
+#    for out in outputs
+#        yield out
+
+#Prog:
+#    Proc*
+#Proc:
+#    Clause*
+#Clause:
+#    Head <- Goal*
+#Head:
+#    Name(Var*; Var*)
+#Goal: 
+#    op(Val*; Var*)
+#    guard(Val*;)
+#    Name(Val*; Var*)
+#Val: Var | Const
+
+# It would be very difficult to design and work with the IR if you can't quite
+# see what you're working on. So these routines print the IR.
+print_program = (program):
+    vartab = {}
+    for proc in program
+        print("proc" ++ proc.index.to_string() ++
+            format_in_out(proc, vartab), "<-")
+        print_clauses(2, proc.clauses, vartab)
+    return vartab
+
+print_clauses = (prefix, clauses, vartab):
+    stack = [[prefix, clauses]]
+    prefix = ""
+    while stack.length > 0
+        l, clauses = stack.pop()
+        sb = StringBuilder()
+        sb.append(" "*l)
+        sb.append(prefix)
+        sp = ""
+        for instruction in clauses
+            sb.append(sp)
+            sp = ", "
+            if instruction.opcode == o_branch or instruction.opcode == o_branchx
+                index = instruction.branch.index
+                s = "proc" ++ index.to_string()
+            elif instruction.opcode in opcode_names
+                s = opcode_names[instruction.opcode]
+            else
+                s = "%" ++ instruction.opcode.to_string()
+            s ++= format_in_out(instruction, vartab)
+            if instruction.frame
+                cls = []
+                for clos in instruction.frame
+                    cl = ""
+                    if clos.is_generator
+                        cl ++= "gen "
+                    if clos.in_frame
+                        cl ++= "rec "
+                    es = []
+                    for entry in clos.entries
+                        es.append("proc" ++ entry.index.to_string())
+                    cl ++= ", ".join(es)
+                    cls.append(cl)
+                s ++= "{" ++ ", ".join(cls) ++ "}"
+            if instruction.guard
+                sp = "? "
+                l = sb.build().length + s.length
+                stack.append([l, instruction.guard.clauses])
+            sb.append(s)
+        sb.append(".")
+        print(sb.build())
+        prefix = "| "
+
+format_in_out = (instruction, vartab):
+    inputs = []
+    outputs = []
+    for v in instruction.inputs
+        if isinstance(v, Constant)
+            inputs.append(repr(v.value))
+        elif v in vartab
+            inputs.append(vartab[v])
+        else
+            if isinstance(v, FlowVariable)
+                p = "a"
+            else
+                p = "v"
+            key = vartab[v] = p ++ vartab.length.to_string()
+            inputs.append(key)
+    for v in instruction.outputs
+        if isinstance(v, Constant)
+            outputs.append(repr(v.value))
+        elif v in vartab
+            outputs.append(vartab[v])
+        else
+            if isinstance(v, FlowVariable)
+                p = "a"
+            else
+                p = "v"
+            key = vartab[v] = p ++ vartab.length.to_string()
+            outputs.append(key)
+    if inputs.length == 0
+        return "(;" ++ ", ".join(outputs) ++ ")"
+    elif outputs.length == 0
+        return "(" ++ ", ".join(inputs) ++ ";)"
+    else
+        return "(" ++ ", ".join(inputs) ++ "; " ++ ", ".join(outputs) ++ ")"
+
+# When we extract the vartab, we can print up
+# other information about variable flow by using it.
+print_proc_vars = (label, proc_defs, program, vartab):
+    for proc in program
+        print(label ++ ": proc" ++ proc.index.to_string())
+        out = []
+        for var in proc_defs[proc]
+            out.append(vartab[var])
+        out.sort((a, b):            # Sort variable names by length, then by
+            if a.length < b.length  # the letters.
+                return true
+            if a.length > b.length
+                return false
+            return a < b)
+        print(" ", ", ".join(out))
+
+
+
+
+# Array of VLQ values.
+# [tag, inputc, outputc, inputs*, outputs*]
+# constant table
+# function letrec groups
+
+# # The bootstrapping process will ensure that the runtime is
+# # able to load and evaluate the scripts, but it will do
+# # nothing else.
+# 
+# # There is a second stage that does the proper job at
+# # bootstrapping. The second stage obtains the modules, type
+# # inferences them and then stores it all into an image.
+# 
+# actions = {
+#     "repeat": (heads, body):
+#         return Repeat(heads, body)
+#     "for_loop": (slot, expr):
+#         return ForLoop(slot, expr, if)
+#     "while_loop": (cond):
+#         return WhileLoop(cond)
+#     "import_bind": (name, bindings):
+#         return Bind(
+#             Call(Symbol(u"import"), [Literal("string", name)]),
+#             bindings)
+#     "bind_coeffect": (fields, slot):
+#         return BindCoeffect(fields, slot)
+#     "datatype": (head, rows, decls):
+#         return Datatype(head, rows, decls)
+#     "operator": (slot, selector, decls):
+#         return OperatorDecl(slot, selector, decls)
+#     "no_label": (value):
+#         return Label(null, value)
+#     "with_label": (label, value):
+#         return Label(label, value)
+#     "method_declaration": (op, value):
+#         return MethodDecl(op, value)
+#     "default_method_declaration": (value):
+#         return DefaultMethodDecl(value)
+#     "derived_declaration": (ops, value):
+#         return DerivedDecl(ops, value)
+#     "attribute_declaration": (name, value):
+#         return AttrDecl(name, value, "attr")
+#     "attribute_set_declaration": (name, value):
+#         return AttrDecl(name, value, "attr_set")
+#     "attribute_method_declaration": (name, value):
+#         return AttrDecl(name, value, "attr_method")
+#     "case": (value, cases, default=[]):
+#         return Case(value, cases, default)
+#     "inline_except": (statement, excepts):
+#         return Except([statement], excepts)
+#     "assert": (cond, value):
+#         return Assert(cond, value)
+#     "raise": (value):
+#         return Raise(value)
+#     "constant_case": (value, body):
+#         return ConstantCase(value, body)
+#     "pattern_case": (pattern, slots, body):
+#         if slots.length == 1
+#             return PatternCase(pattern, slots[0], body)
+#         else
+#             return PatternCase(pattern, Tuple(slots), body)
+#     "return": (expr=Symbol("null")):
+#         return Return(expr)
+#     "inplace_assign": (slot, op, value):
+#         return InplaceAssign(slot, op, value)
+#     "item": (base, index):
+#         return Item(base, index)
+#     "attr": (base, name):
+#         return Attr(base, name)
+#     "prefix_symbol": (a):
+#         return Symbol(a ++ "expr")
+#     "tuple": (slots):
+#         return Tuple(slots)
+#     "iter_once": (value, slot):
+#         return IterOnce(value, slot)
+# 
+# 
+#     "make_tuple": (items):
+#         return MakeTuple(items)
+#     "list": (values):
+#         return List(values)
+#     "deref": (value):
+#         return Deref(value)
+#     "record": (fields):
+#         return Record(fields)
+#     "record_shorthand": (label):
+#         return Field(name, false, Symbol(name))
+#     "mutable_record_shorthand": (label):
+#         return Field(name, true, Symbol(name))
+#     "field": (name, value=null):
+#         return Field(name, false, value)
+#     "mutable_field": (name, value=null):
+#         return Field(name, true, value)
+
+
+# class Bind
+#     +init = (self, module, bindings):
+#         self.module = module
+#         self.loc = null
+#         self.bindings = dict(bindings)
+# 
+#     traverse = (self, f):
+#         f(self.module)
+# 
+#     to_json = (self):
+#         return {
+#             type = "bind",
+#             module = js(self.module),
+#             bindings = self.bindings,
+#             loc = js_loc(self.loc) }
+# 
+# class BindCoeffect
+#     +init = (self, fields, slot):
+#         self.fields = fields
+#         self.slot = slot
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         for field in self.fields
+#             f(field)
+#         f(self.slot)
+# 
+#     to_json = (self):
+#         return {
+#             type = "bind_coeffect",
+#             fields = js(self.fields),
+#             slot = js(self.slot) }
+# 
+# class InplaceAssign
+#     +init = (self, slot, op, value):
+#         slot.slotconfig(true, false)
+#         self.slot = slot
+#         self.op = op
+#         self.value = value
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.slot)
+#         f(self.op)
+#         f(self.value)
+# 
+#     to_json = (self):
+#         return {
+#             type = "inplace_assign",
+#             slot = js(self.slot),
+#             op = js(self.op),
+#             value = js(self.value) }
+# 
+# class Item extends Expr
+#     +init = (self, base, index):
+#         self.base = base
+#         self.index = index
+#         self.loc = null
+# 
+#     slotconfig = (self, deep, wronly):
+#         null
+# 
+#     traverse = (self, f):
+#         f(self.base)
+#         f(self.index)
+# 
+#     to_json = (self):
+#         return {
+#             type = "slot",
+#             kind = "item",
+#             base = js(self.base),
+#             index = js(self.index),
+#             loc = js_loc(self.loc) }
+# 
+# class Deref extends Expr
+#     +init = (self, value):
+#         self.value = value
+#         self.loc = null
+# 
+#     slotconfig = (self, deep, wronly):
+#         null
+# 
+#     traverse = (self, f):
+#         f(self.value)
+# 
+#     to_json = (self):
+#         return {
+#             type = "slot",
+#             kind = "deref",
+#             value = js(self.value),
+#             loc = js_loc(self.loc) }
+# 
+# class Record extends Expr
+#     +init = (self, fields):
+#         self.fields = fields
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         for field in self.fields
+#             f(field)
+# 
+#     to_json = (self):
+#         return {
+#             type = "record"
+#             fields = js(self.fields)
+#         }
+# 
+# class Field
+#     +init = (self, name, mutable, value=null):
+#         self.name = name
+#         self.mutable = mutable
+#         self.value = value
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         if self.value
+#             f(self.value)
+# 
+#     to_json = (self):
+#         if self.value
+#             return {name=self.name, mutable=self.mutable, value=js(self.value)}
+#         else
+#             return {name=self.name, mutable=self.mutable}
+# 
+# class Attr extends Expr
+#     +init = (self, base, name):
+#         self.base = base
+#         self.name = name
+#         self.loc = null
+# 
+#     slotconfig = (self, deep, wronly):
+#         null
+# 
+#     traverse = (self, f):
+#         f(self.base)
+# 
+#     to_json = (self):
+#         return {
+#             type = "slot",
+#             kind = "attr",
+#             base = js(self.base),
+#             name = self.name,
+#             loc = js_loc(self.loc) }
+# 
+# class Tuple extends Expr
+#     +init = (self, slots):
+#         self.slots = slots
+#         self.loc = null
+# 
+#     slotconfig = (self, deep, wronly):
+#         for slot in self.slots
+#             slot.slotconfig(deep, wronly)
+# 
+#     traverse = (self, f):
+#         for slot in self.slots
+#             f(slot)
+# 
+#     to_json = (self):
+#         return {
+#             type = "slot",
+#             kind = "tuple",
+#             slots = js(self.slots),
+#             loc = js_loc(self.loc) }
+# 
+# class MakeTuple extends Expr
+#     +init = (self, items):
+#         self.items = items
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         for item in self.items
+#             f(item)
+# 
+#     to_json = (self):
+#         return { type = "make_tuple", items = js(self.items) }
+# 
+# #TODO: Continue from here.
+# 
+# # How closures should work: frames and subframes
+# #   shadowing transparency:
+# #     if the variable is defined in the subframe, it should
+# #     be shadowed from that point on.
+# #
+# #   Assign to variables above the defpoint.
+# #   But fetch from the whole scope.
+# #
+# #   Variable slot appears on the frame where the variable
+# #   is defined on.
+# #
+# #   repeat -subframe
+# #     expect that the subframe might not be run.
+# #
+# #   conditional -subframes
+# #     allow the variable pass into parent frame only
+# #     if it appears on all of the flowpaths.
+# #
+# #   closure always fetches from the whole scope above it.
+# #
+# #   The separate 'assignment' is removed. Not longer needed
+# #   because the topmost scope is immutable.
+# 
+# # We are not checking .sh on write.
+# # This is a fringe case arising from the need
+# # to do shadowing for the variables.
+# #
+# # I am certain that somebody, possibly a highly paid
+# # consultant, will argue for checking a shadow on write
+# # when inside a closure.
+# #
+# # The shadowing mechanism in itself is used to ensure that
+# # the user is not harmed by the unusual scoping rules that
+# # allow consistent and useful behavior for nested functions
+# # inside repetition clauses.
+# #
+# # When we get outside of certain precaution, the usefulness of
+# # the measures decrease while the inconvenience increases.
+# #
+# # If there was a check in here then we would get
+# # consultants argue that it should not be there.
+# 
+# # TODO: On toplevel, we got to "pierce" holes for the
+# #       global scope, so that assignments hit mutable
+# #       elements.
+# 
+# # Every value imported using "from" will be retrieved through
+# # "bind", and set writable. This allows the doctools to
+# # identify imported variables and define their origins,
+# # while they stay out of the scope.
+# 
+# # Must note that it won't work with "from" * -syntax.
+# 
+# class Repeat
+#     +init = (self, heads, body):
+#         self.heads = heads
+#         self.body = body
+#         self.sublocals = {}
+#         self.scope = null
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         for head in self.heads
+#             f(head)
+#         for stmt in self.body
+#             f(stmt)
+#         
+#     to_json = (self):
+#         fresh = []
+#         # TODO: associate to the repeater and add 'fresh' -field.
+#         for var, cell in self.sublocals.items()
+#             if cell.deref
+#                 fresh.append(self.scope.cellvars.index(cell))
+#         return {
+#             type = "repeat",
+#             fresh = fresh,
+#             heads = js(self.heads),
+#             body = js(self.body) }
+# 
+# class ForLoop
+#     +init = (self, slot, value):
+#         self.slot = slot
+#         self.value = value
+#         self.loc = null
+#         slot.slotconfig(false, true)
+# 
+#     traverse = (self, f):
+#         f(self.slot)
+#         f(self.value)
+# 
+#     to_json = (self):
+#         return {
+#             type = "for",
+#             slot = js(self.slot),
+#             value = js(self.value) }
+# 
+# class WhileLoop
+#     +init = (self, cond):
+#         self.cond = cond
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.cond)
+# 
+#     to_json = (self):
+#         return {
+#             type = "while",
+#             cond = js(self.cond) }
+# 
+# class IfLoop
+#     +init = (self, cond):
+#         self.cond = cond
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.cond)
+# 
+#     to_json = (self):
+#         return {
+#             type = "if",
+#             cond = js(self.cond) }
+# 
+# class Datatype
+#     +init = (self, head, rows, decls):
+#         self.slot = head[0]
+#         self.varc = head[1].length
+#         self.decls = decls
+#         self.loc = null
+#         self.slot.slotconfig(true, true)
+#         args = []
+#         for var in head[1]
+#             args.append(Argument(Symbol(var)))
+#         self.rows = []
+#         for constructor, fields in rows
+#             constructor.slotconfig(true, true)
+#             labels = {}
+#             body = []
+#             i = 0
+#             for field in fields
+#                 if field.label
+#                     labels[field.label] = i
+#                 body.append( field.value )
+#                 i += 1
+#             builder = Closure(args, [Return(MakeTuple(body))])
+#             self.rows.append([
+#                 constructor,
+#                 fields.length
+#                 labels,
+#                 builder ])
+# 
+#     traverse = (self, f):
+#         f(self.slot)
+#         for constructor, fieldc, labels, builder in self.rows
+#             f(constructor)
+#             f(builder)
+#         for decl in self.decls
+#             f(decl)
+# 
+#     to_json = (self):
+#         return {
+#             type = "datatype",
+#             slot = js(self.slot),
+#             varc = js(self.varc),
+#             rows = js(self.rows),
+#             decls = js(self.decls),
+#             loc = js_loc(self.loc) }
+# 
+# class OperatorDecl
+#     +init = (self, slot, selector, decls):
+#         self.slot = slot
+#         self.selector = selector
+#         self.decls = decls
+#         self.loc = null
+#         self.slot.slotconfig(true, true)
+# 
+#     traverse = (self, f):
+#         f(self.slot)
+#         f(self.selector)
+#         for decl in self.decls
+#             f(decl)
+# 
+#     to_json = (self):
+#         return {
+#             type = "operator",
+#             slot = js(self.slot),
+#             selector = js(self.selector),
+#             decls = js(self.decls),
+#             loc = js_loc(self.loc) }
+# 
+# class Label
+#     +init = (self, label, value):
+#         self.label = label
+#         self.value = value
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.value)
+# 
+#     to_json = (self):
+#         if self.label
+#             return {
+#                 type = "label",
+#                 name = self.label,
+#                 value = js(self.value) }
+#         else
+#             return {
+#                 type = "no_label",
+#                 value = js(self.value) }
+# 
+# class MethodDecl
+#     +init = (self, op, value):
+#         self.op = op
+#         self.value = value
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.op)
+#         f(self.value)
+# 
+#     to_json = (self):
+#         return {
+#             type = "method",
+#             op = js(self.op),
+#             value = js(self.value) }
+# 
+# class DefaultMethodDecl
+#     +init = (self, value):
+#         self.value = value
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.value)
+# 
+#     to_json = (self):
+#         return {
+#             type = "default_method",
+#             value = js(self.value) }
+# 
+# class DerivedDecl
+#     +init = (self, ops, value):
+#         self.ops = ops
+#         self.value = value
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         for op in self.ops
+#             f(op)
+#         f(self.value)
+# 
+#     to_json = (self):
+#         return {
+#             type = "derived",
+#             ops = js(self.ops),
+#             value = js(self.value) }
+# 
+# class AttrDecl
+#     +init = (self, name, value, which):
+#         self.name = name
+#         self.value = value
+#         self.which = which
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.value)
+# 
+#     to_json = (self):
+#         return {
+#             type = self.which,
+#             name = self.name,
+#             value = js(self.value) }
+# 
+# class Case
+#     +init = (self, value, cases, default):
+#         self.value = value
+#         self.cases = cases
+#         self.default = default
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.value)
+#         for case in self.cases
+#             f(case)
+#         for stmt in self.default
+#             f(stmt)
+# 
+#     to_json = (self):
+#         return {
+#             type = "case",
+#             value = js(self.value),
+#             cases = js(self.cases),
+#             default = js(self.default),
+#             loc = js_loc(self.loc) }
+# 
+# class Except
+#     +init = (self, body, excepts):
+#         self.body = body
+#         self.excepts = excepts
+#         for exc, slot, exc_body in self.excepts
+#             if slot
+#                 slot.slotconfig(false, true)
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         for stmt in self.body
+#             f(stmt)
+#         for exc, slot, exc_body in self.excepts
+#             f(exc)
+#             if slot
+#                 f(exc)
+#             for stmt in exc_body
+#                 f(stmt)
+# 
+#     to_json = (self):
+#         excepts = []
+#         for exc, slot, exc_body in self.excepts
+#             if slot
+#                 excepts.append({exc = exc, slot = slot, body=exc_body})
+#             else
+#                 excepts.append({exc = exc, body=exc_body})
+#         return {
+#             type = "except",
+#             body = js(self.body),
+#             excepts = js(excepts),
+#             loc = js_loc(self.loc) }
+# 
+# class Assert
+#     +init = (self, cond, value):
+#         self.cond = cond
+#         self.value = value
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.cond)
+#         f(self.value)
+# 
+#     to_json = (self):
+#         return {
+#             type = "assert",
+#             cond = js(self.cond),
+#             value = js(self.value),
+#             loc = js_loc(self.loc) }
+# 
+# class Raise
+#     +init = (self, value):
+#         self.value = value
+# 
+#     traverse = (self, f):
+#         f(self.value)
+# 
+#     to_json = (self):
+#         return {
+#             type = "raise",
+#             value = js(self.value),
+#             loc = js_loc(self.loc) }
+# 
+# class ConstantCase
+#     +init = (self, value, body):
+#         self.value = value
+#         self.body = body
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.value)
+#         for stmt in self.body
+#             f(stmt)
+# 
+#     to_json = (self):
+#         return {
+#             type = "constant",
+#             value = js(self.value),
+#             body = js(self.body),
+#             loc = js_loc(self.loc) }
+# 
+# class PatternCase
+#     +init = (self, pattern, slot, body):
+#         self.pattern = pattern
+#         self.slot = slot
+#         self.body = body
+#         slot.slotconfig(false, true)
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.pattern)
+#         f(self.slot)
+#         for stmt in self.body
+#             f(stmt)
+# 
+#     to_json = (self):
+#         return {
+#             type = "pattern",
+#             pattern = js(self.pattern),
+#             slot = js(self.slot),
+#             body = js(self.body),
+#             loc = js_loc(self.loc) }
+# 
+# class Return
+#     +init = (self, value):
+#         self.value = value
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.value)
+# 
+#     to_json = (self):
+#         return { type = "return", value = js(self.value) }
+# 
+# class Yield
+#     +init = (self, value):
+#         self.value = value
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         f(self.value)
+# 
+#     to_json = (self):
+#         return { type = "yield", value = js(self.value) }
+# 
+# class Break
+#     +init = (self):
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         null
+# 
+#     to_json = (self):
+#         return { type = "break" }
+# 
+# class Continue
+#     +init = (self):
+#         self.loc = null
+# 
+#     traverse = (self, f):
+#         null
+# 
+#     to_json = (self):
+#         return { type = "continue" }
+# 
+# class IterOnce extends Expr
+#     +init = (self, value, slot):
+#         self.value = value
+#         self.slot = slot
+#         self.loc = null
+#         slot.slotconfig(false, true)
+# 
+#     traverse = (self, f):
+#         f(self.value)
+#         f(self.slot)
+# 
+#     to_json = (self):
+#         return {
+#             type = "iter_once",
+#             value = js(self.value),
+#             slot = js(self.slot),
+#             loc = js_loc(self.loc) }

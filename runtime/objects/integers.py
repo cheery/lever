@@ -52,6 +52,12 @@ def Integer_mul(a, b):
     b = cast(b, Integer)
     return Integer(a.integer_val.mul(b.integer_val))
 
+@method(Integer.interface, op_mod)
+def Integer_mod(a, b):
+    a = cast(a, Integer)
+    b = cast(b, Integer)
+    return Integer(a.integer_val.mod(b.integer_val))
+
 @method(Integer.interface, op_and)
 def Integer_and(a, b):
     a = cast(a, Integer)

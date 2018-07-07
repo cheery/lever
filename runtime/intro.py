@@ -27,7 +27,7 @@ def new_entry_point(config, interpret=False):
         })
         try:
             mspace = ModuleSpace(
-                local = String(u'prelude'),
+                local = String(u'prelude2'),
                 env = [base_module],
                 loader = w_json_loader)
             call(w_import, [mspace, String(u"intro")])
@@ -57,7 +57,7 @@ def new_entry_point(config, interpret=False):
                 (u"print_many", False, w_print) ])
         })
         mspace = ModuleSpace(
-            local = String(u'prelude'),
+            local = String(u'prelude2'),
             env = [base_module],
             loader = w_json_loader)
         call(w_import, [mspace, String(u"intro")])
@@ -110,7 +110,7 @@ def w_json_loader(mspace, name):
     env = mspace.env
     script, module = interpreter.read_script(obj,
         {u'import': prefill(w_import, [mspace])}, env, src)
-    call(script, [])
+    call(script, [], 0)
     return module
 
 # The BasicIO is our first coeffect. It provides some basic
@@ -138,7 +138,7 @@ def w_print_many(args):
 
 @builtin()
 def w_print(arg):
-    call(w_print_many, [List([arg])])
+    call(w_print_many, [List([arg])], 0)
 
 # The stem for the base module is defined outside the entry
 # point generator. It has nearly every utility and handle that has
@@ -297,13 +297,13 @@ base_stem = {
     u"+": op_add,
     u"-": op_sub,
     u"*": op_mul,
+    u"%": op_mod,
     u"~expr": op_not,
     u"&": op_and,
     u"|": op_or,
     u"xor": op_xor,
     u"stringify": op_stringify,
     u"parse_integer": builtin()(parse_integer),
-    u"null": null,
     u"true" : true,
     u"false": false,
     u"range": w_range,
@@ -324,15 +324,15 @@ base_stem = {
     u"Dict": Dict.interface,
     u"String": String.interface,
     u"Parameter": TypeParameter.interface,
-    u"by_reference": w_by_reference,
-    u"by_value": w_by_value,
-    u"parameter": builtin()(lambda x: TypeParameter(cast(x, Integer))),
-    u"get_function_header": w_get_function_header,
-    u"single": w_single,
+#    u"by_reference": w_by_reference,
+#    u"by_value": w_by_value,
+#    u"parameter": builtin()(lambda x: TypeParameter(cast(x, Integer))),
+#    u"get_function_header": w_get_function_header,
+#    u"single": w_single,
     u"inspect": interpreter.w_inspect,
-    u"unique_coercion": w_unique_coercion,
-    u"is_closure": w_is_closure,
-    u"get_dom": builtin()(lambda i: common.dom.get(cast(i, Integer).toint())),
-    u"cod": common.cod,
-    u"is_subtype": w_is_subtype,
+#    u"unique_coercion": w_unique_coercion,
+#    u"is_closure": w_is_closure,
+#    u"get_dom": builtin()(lambda i: common.dom.get(cast(i, Integer).toint())),
+#    u"cod": common.cod,
+#    u"is_subtype": w_is_subtype,
 }

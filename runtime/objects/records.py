@@ -17,9 +17,10 @@ def construct_record(fields):
     for name, mutable, value in fields:
         t_fields.append((name, mutable))
     face = construct_record_type(t_fields)
-    record_val = [null for i in range(len(fields))]
+    record_val = [None for i in range(len(fields))]
     for name, mutable, value in fields:
         record_val[face.map.getindex(name)] = value
+    assert None not in record_val
     return Record(face, record_val)
 
 class RecordInterface(Interface):

@@ -10,18 +10,23 @@ statement:
     "if" expr "then" >(=statement)+
              ["else" >(=statement)+]? / cond
     "return" >expr? / return
-    "yield" expr   / yield
-    "break"        / break
-    "continue"     / continue
+    "yield" expr        / yield
+    "yield" "from" expr / yield_from
+    ["break"]* "break"    / break
+    ["break"]* "continue" / continue
     "datatype" datatype_head >"=" >join(datatype_row, "|")
         =(=datatype_declaration)* / datatype
     "case" expr "of" =(=case)+
         =("else" >(=statement)+)? / case
+    "try" >(=statement)+ =(^="except" expr ("as" slot)? "then"
+        >(=statement)+)+ / except
     statement =(^="except" expr ("as" slot)? "then"
         >(=statement)+)+ / inline_except
     "assert" expr "as" expr / assert
     "raise" expr / raise
     "operator" slot_item expr =(operator_row)* / operator
+    postfix "(" sep(expr_or, ',') ";" join(slot, ',') ")" / relcall
+
     expr
 
 coeffect_field:
@@ -66,14 +71,13 @@ slot_item:
 expr:
     [loop_head]* "repeat" >(=statement)+  / repeat
     "generator" >(=statement)+         / generator
-    "(" arglist ")" ":" >(=statement)+ / closure
+    "(" arglist (";" join(symbol, ","))? ")" ":" >(=statement)+ / closure
     expr_or ["," expr_or]+ / make_tuple([.] concat .)
     expr_or
 
 loop_head:
-    "while" expr         / while_loop
-    "for" slot "in" expr / for_loop
-    "if" expr            / if_loop
+    "while" expr                      / while_loop
+    "for" slot "in" expr ("if" expr)? / for_loop
 
 arglist: sep([slot_item, "(" slot ")"] / argument, ",")
 
@@ -131,7 +135,8 @@ exponent_postfix:
     postfix ["^"] exponent_postfix / binary
 
 postfix:
-    postfix "==>" slot_item           / iter_once
+    # Replacing this with a function 'once'
+    #postfix "==>" slot_item           / iter_once
     postfix "(" sep(expr_or, ',') ")" / call
     postfix "[" form "]"              / item
     postfix "." symbol                / attr

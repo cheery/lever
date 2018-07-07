@@ -17,7 +17,49 @@ def read_script(code, preset, env, src):
         abs_src = os.path.join(src_dir, 
             cast(w_src, String).string_val.encode('utf-8'))
         sources.append(String(abs_src.decode('utf-8')))
-    return Closure(code, module, env, [], sources), module
+
+    unit = Unit(
+        constants = as_list(attr(code, u"constants")),
+        env = env,
+        module = module,
+        program = as_list(attr(code, u"program")),
+        sources = sources)
+    return Closure(0, 0, unit, [0], []), module
+
+# The instruction set for clauses.
+o_simple   = 0x0 # Group of simple instructions.
+o_branch   = 0x1 # With a procedure index to identify branch target.
+o_frame    = 0x2 # With a bitmask telling which closures are not inserted into frame.
+                 # closures*, inputs*, outputs*
+o_branchx  = 0x3 # With procedure index, failure_path, inputs*, outputs[T]*
+o_guard    = 0x4 # Boolean guards. With a count telling where terminal is.
+                 # Terminal position counted forwards from next instruction.
+
+o_ionly    = 0x5 # Inputs-only instructions.
+o_oonly    = 0x6 # Outputs-only instructions.
+o_terminal = 0x7 # Terminal for guards.
+                 # outputs[F]*     
+
+# The guards
+o_is_true = (0x0 << 3) | 0x4 # failure_path, inputs*, outputs[T]*
+o_eq      = (0x1 << 3) | 0x4 
+o_match   = (0x2 << 3) | 0x4 
+o_next    = (0x3 << 3) | 0x4 
+
+# Basic abstract instructions
+o_move   = (0x0 << 3) # inputs*, outputs*
+o_global = (0x1 << 3)
+o_attr   = (0x2 << 3)
+o_item   = (0x3 << 3)
+
+o_true   = (0x4 << 3)
+o_false  = (0x5 << 3)
+o_call   = (0x6 << 3)
+
+# Inputs-only instructions.
+o_raise      = (0x7 << 3) | 0x5 # inputs*
+o_yield      = (0x8 << 3) | 0x5
+o_yield_from = (0x9 << 3) | 0x5
 
 # RPython cannot ensure that the 'i' is nonzero, so it refuses to compile this
 # without modifications.
@@ -35,19 +77,19 @@ def rpython_dirname(p):
 @builtin()
 def w_inspect(closure):
     closure = cast(closure, Closure)
-    frame = []
-    for cell in closure.frame:
-        frame.append(cell.val)
+    unit = construct_record([
+        (u"constants", False, List(list(closure.unit.constants))),
+        (u"env", False, List(list(closure.unit.env))),
+        (u"module", False, closure.unit.module),
+        (u"sources", False, List(list(closure.unit.sources))),
+    ])
     return construct_record([
-        (u"module", False, closure.module),
-        (u"env", False, List(list(closure.env))),
-        (u"frame", False, List(frame)),
-        (u"sources", False, List(list(closure.sources))),
-        (u"cellvars", False, List(closure.cellvars)),
-        (u"localvars", False, List(closure.localvars)),
-        (u"args", False, List(closure.args)),
-        (u"body", False, List(closure.body)),
-        (u"loc", False, List(closure.loc)) ])
+        (u"inc", False, fresh_integer(closure.inc)),
+        (u"outc", False, fresh_integer(closure.outc)),
+        (u"unit", False, unit),
+        (u"entries", False, List([fresh_integer(i) for i in closure.entries])),
+        (u"frame", False, List(list(closure.frame))),
+    ])
 
 # Closures have similar challenges as what builtin functions
 # have.
@@ -58,758 +100,511 @@ class ClosureInterface(FunctionInterface):
     def call(self, callee, args):
         callee = cast(callee, Closure)
         return call_closure(callee, args)
-
+ 
 attr_method(ClosureInterface.interface,
     u"params")(common.FunctionInterface_params)
 method(ClosureInterface.interface,
     op_eq)(common.FunctionInterface_eq)
 method(ClosureInterface.interface,
     op_hash)(common.FunctionInterface_hash)
-
+ 
 @attr_method(ClosureInterface.interface, u"format")
 def ClosureInterface_format(f, px):
     return common.FunctionInterface_format(f, px, String(u"closure"))
 
 closure_interfaces = FunctionMemo(ClosureInterface)
 
-class Closure(Object):
-    interface = None
-    def __init__(self, code, module, env, frame, sources):
-        self.module = module
+class Unit:
+    def __init__(self, constants, env, module, program, sources):
+        self.constants = constants
         self.env = env
-        self.frame = frame
+        self.module = module
+        self.program = program
         self.sources = sources
 
-        # cell and local variables have 'defs' -field that
-        # has count of how many assignments there are in the
-        # program for that variable.
-        self.cellvars = as_list(attr(code, u"cellvars"))
-        self.localvars = as_list(attr(code, u"localvars"))
-
-        if as_string(attr(code, u"type")) == u"script":
-            self.args = []
-            self.body = as_list(attr(code, u"body"))
-            self.loc  = [fresh_integer(0)] * 5
-        elif as_string(attr(code, u"type")) == u"closure":
-            self.args = as_list(attr(code, u"args"))
-            self.body = as_list(attr(code, u"body"))
-            self.loc  = as_list(attr(code, u"loc"))
-        else:
-            raise error(e_EvalError())
-
-        self.closure_face = closure_interfaces.get(len(self.args), 0)
-        assert isinstance(self.closure_face, ClosureInterface)
+class Closure(Object):
+    interface = None
+    def __init__(self, inc, outc, unit, entries, frame):
+        self.inc = inc
+        self.outc = outc
+        self.unit = unit
+        self.entries = entries
+        self.loc = [fresh_integer(0)] * 5
+        self.frame = frame
+        self.closure_face = closure_interfaces.get(
+            self.inc - len(frame), len(self.entries)-1)
 
     def face(self):
         return self.closure_face
 
-# json-as-bytecode is supposed to be a temporary measure,
-# but who knows how long we will have it. It already shows
-# that it was the right choice at the beginning.
-def call_closure(closure, args):
-    closure = cast(closure, Closure)
-    if len(closure.args) != len(args):
-        tb = error(e_TypeError())
-        tb.trace.append((closure.loc, closure.sources))
-        raise tb
-    cellvars = closure.frame + [
-        Cell()
-        for _ in range(len(closure.frame), len(closure.cellvars))]
-    localvars = [null
-        for _ in range(len(closure.localvars))]
-    ctx = EvaluationContext(
-        localvars, cellvars,
-        closure.module, closure.env, closure.sources)
-    for i in range(len(args)):
-        arg = as_dict(closure.args[i])
-        slot  = as_dict(attr(arg, u"slot"))
-        eval_slot(ctx, slot).store(ctx, args[i])
-    stack = [(closure.body, 0, None)]
-    try:
-        eval_program(ctx, stack)
-    except Return as r:
-        return r.value
-    except Yield:
-        raise error(e_TypeError())
-    finally:
-        while len(stack) > 0:
-            stack.pop()
-    return null
-
-# Generators are incredibly much more simpler than Closures
-# because we do not give them an argument list.
-def fresh_generator(code, module, env, frame, sources):
-    cellvars = as_list(attr(code, u"cellvars"))
-    localvars = as_list(attr(code, u"localvars"))
-    body = as_list(attr(code, u"body"))
-    cellvars = frame + [Cell()
-        for _ in range(len(frame), len(cellvars))]
-    localvars = [null for _ in range(len(localvars))]
-    stack = [(body, 0, None)]
-    return Generator(GeneratorTip(module, env, sources,
-        cellvars, localvars, stack))
-
-class GeneratorTip:
-    def __init__(self, module, env, sources, cellvars, localvars, stack):
-        self.module = module
-        self.env = env
-        self.sources = sources
-        self.cellvars = cellvars
-        self.localvars = localvars
-        self.stack = stack
-
-    def step(self):
-        if len(self.stack) == 0:
-            raise StopIteration()
-        ctx = EvaluationContext(
-            self.localvars, self.cellvars,
-            self.module, self.env, self.sources,
-            is_generator=True)
-        try:
-            eval_program(ctx, self.stack)
-        except Yield as y:
-            return y.value
-        except Return:
-            raise error(e_TypeError())
-        raise StopIteration()
-
-class Generator(Iterator):
+class FreshGenerator(Iterator):
     interface = Iterator.interface
-    def __init__(self, tip):
-        self.tip = tip
-        self.current = None
-        self.tail = None
+    def __init__(self, unit, proc, frame):
+        self.unit = unit
+        self.proc = proc
+        self.frame = frame
+ 
+    def next(self):
+        stack = [enter_proc(self.unit, self.proc, self.frame, [])]
+        return step_generator(self.unit, stack)
+
+class LiveGenerator(Iterator):
+    interface = Iterator.interface
+    def __init__(self, unit, stack, front):
+        self.unit = unit
+        self.stack = stack
+        self.front = front
 
     def next(self):
-        if self.current is None:
-            self.current = self.tip.step()
-            self.tail = Generator(self.tip)
-        return self.current, self.tail
-
-# TODO: add a flag telling whether it's function or
-# generator we are running. allow/disallow return/yield.
-class EvaluationContext:
-    def __init__(self, localvars, cellvars, module, env, sources,
-                 is_generator=False):
-        self.localvars = localvars
-        self.cellvars = cellvars
-        self.module = module
-        self.env = env
-        self.sources = sources
-        self.is_generator = is_generator
-
-
-# The evaluator is layered and now really distinguishes
-# between statements and functions. That makes it easier to
-# implement but also, I never really used the 'if' as
-# an expression in the previous interpreters for
-# readability reasons.
-
-def eval_program(ctx, stack):
-    while len(stack) > 0:
-        body, start, mod = stack.pop()
-        try:
-            eval_block(ctx, body, start, mod, stack)
-        except Traceback as tb:
-            while not isinstance(mod, Except):
-                if len(stack) == 0:
-                    raise
-                body, start, mod = stack.pop()
-            for row in mod.excepts:
-                row = as_dict(row)
-                exc = eval_expr(ctx, as_dict(attr(row, u"exc")))
-                if tb.error.face() is exc:
-                    slot = row.get(String(u"slot"), None)
-                    if slot is not None:
-                        eval_slot(ctx, as_dict(slot)).store(ctx, tb.error)
-                    body = as_list(attr(row, u"body"))
-                    stack.append((body, 0, None))
-                    break
-            else:
-                raise
-
-class Return(Exception):
-    def __init__(self, value):
-        self.value = value
-
-class Yield(Exception):
-    def __init__(self, value):
-        self.value = value
-
-def eval_block(ctx, body, start, mod, stack):
-    for i in range(start, len(body)):
-        stmt = as_dict(body[i])
-        tp = as_string(attr(stmt, u"type"))
-        if tp == u"return" and not ctx.is_generator:
-            expr = as_dict(attr(stmt, u"value"))
-            raise Return(eval_expr(ctx, expr))
-        elif tp == u"yield" and ctx.is_generator:
-            expr = as_dict(attr(stmt, u"value"))
-            stack.append((body, i+1, mod))
-            raise Yield(eval_expr(ctx, expr))
-        elif tp == u"break":
-            while not isinstance(mod, Loop):
-                if len(stack) == 0:
-                    raise error(e_EvalError())
-                body, start, mod = stack.pop()
-            mod = None
-            break
-        elif tp == u"continue":
-            while not isinstance(mod, Loop):
-                if len(stack) == 0:
-                    raise error(e_EvalError())
-                body, start, mod = stack.pop()
-            break
-        elif tp == u"repeat":
-            fresh = as_list(attr(stmt, u"fresh"))
-            heads = as_list(attr(stmt, u"heads"))
-            stack.append((body, i+1, mod))
-            body = as_list(attr(stmt, u"body"))
-            mod  = eval_loop_header(ctx, heads, fresh)
-            break
-        elif tp == u"cond":
-            cond = as_dict(attr(stmt, u"cond"))
-            cond = eval_expr(ctx, cond)
-            if convert(cond, Bool) is true:
-                stack.append((body, i+1, mod))
-                body = as_list(attr(stmt, u"tbody"))
-                stack.append((body, 0, None))
-            else:
-                stack.append((body, i+1, mod))
-                body = as_list(attr(stmt, u"fbody"))
-                stack.append((body, 0, None))
-            mod  = None
-            break
-        elif tp == u"case":
-            value = eval_expr(ctx, as_dict(attr(stmt, u"value")))
-            cases = as_list(attr(stmt, u"cases"))
-            default = as_list(attr(stmt, u"default"))
-            stack.append((body, i+1, mod))
-            body = eval_case(ctx, value, cases, default)
-            stack.append((body, 0, None))
-            mod = None
-            break
-        elif tp == u"datatype":
-            varc = as_integer(attr(stmt, u"varc"))
-            dt = new_datatype(varc)
-            eval_slot(ctx, as_dict(attr(stmt, u"slot"))).store(ctx, dt)
-            for row in as_list(attr(stmt, u"rows")):
-                row = as_list(row)
-                if len(row) != 4:
-                    raise error(e_EvalError())
-                row_slot = as_dict(row[0])
-                row_fieldc = as_integer(row[1])
-                row_labels = as_dict(row[2])
-                row_builder = as_dict(row[3])
-                labels = {}
-                for key, value in row_labels.items():
-                    labels[as_string(key)] = as_integer(value)
-                if row_fieldc == 0:
-                    row = new_constant(dt)
-                else:
-                    builder = eval_expr(ctx, row_builder)
-                    row = new_constructor(dt, labels, row_fieldc, builder)
-                eval_slot(ctx, row_slot).store(ctx, row)
-            for decl in as_list(attr(stmt, u"decls")):
-                decl = as_dict(decl)
-                eval_decl(ctx, dt, decl)
-        elif tp == u"operator":
-            slot = eval_slot(ctx, as_dict(attr(stmt, u"slot")))
-            selector = eval_expr(ctx, as_dict(attr(stmt, u"selector")))
-            it = cast(call(op_iter, [selector]), Iterator)
-            selectors = []
-            argc = 0 # TODO: Introduce to the syntax.
-            while True:
-                try:
-                    x, it = it.next()
-                    ix = cast(x, Integer).toint()
-                    selectors.append(ix)
-                    argc = max(argc, ix+1)
-                except StopIteration:
-                    break
-            op = Operator(selectors, argc)
-            for decl in as_list(attr(stmt, u"decls")):
-                decl = as_dict(decl)
-                dtp = as_string(attr(decl, u"type"))
-                if dtp == u"method":
-                    face = eval_expr(ctx, as_dict(attr(decl, u"op")))
-                    value = eval_expr(ctx, as_dict(attr(decl, u"value")))
-                    op.methods[cast(face, Interface)] = value
-                elif dtp == u"default_method":
-                    op.default = eval_expr(ctx, as_dict(attr(decl, u"value")))
-                else:
-                    raise error(e_EvalError())
-            slot.store(ctx, op)
-        elif tp == u"except":
-            stack.append((body, i+1, mod))
-            body = as_list(attr(stmt, u"body"))
-            excepts = as_list(attr(stmt, u"excepts"))
-            # exc, slot, body
-            stack.append((body, 0, Except(excepts)))
-            mod = None
-            break
-        else:
-            eval_expr(ctx, stmt)
-    if isinstance(mod, Loop):
-        count = len(mod.heads)
-        k, restart = mod.index, (mod.index == 0)
-        k -= int(not restart)
-        while 0 <= k < count:
-            if restart:
-                restart = mod.heads[k].restart(ctx)
-            else:
-                restart = mod.heads[k].step(ctx)
-            if restart:
-                k += 1
-            else:
-                k -= 1
-        if restart:
-            mod.index = k
-            for index in mod.fresh:
-                index = as_integer(index)
-                ctx.cellvars[index] = Cell()
-            stack.append((body, 0, mod))
-
-# Loops were finicky to implement due to the multiple heads
-# that I allow. Each loop may have multiple heads that have
-# to start and stop in correct order.
-def eval_loop_header(ctx, input_heads, fresh):
-    heads = []
-    for head in input_heads:
-        head = as_dict(head)
-        tp = as_string(attr(head, u"type"))
-        if tp == u"for":
-            slot = as_dict(attr(head, u"slot"))
-            value = as_dict(attr(head, u"value"))
-            heads.append(ForLoop(slot, value))
-        if tp == u"while":
-            cond = as_dict(attr(head, u"cond"))
-            heads.append(WhileLoop(cond))
-        if tp == u"if":
-            cond = as_dict(attr(head, u"cond"))
-            heads.append(IfLoop(cond))
-    return Loop(fresh, heads)
-
-class StatementMod:
-    pass
-
-class Except(StatementMod):
-    def __init__(self, excepts):
-        self.excepts = excepts
-
-class Loop(StatementMod):
-    def __init__(self, fresh, heads):
-        self.fresh = fresh
-        self.heads = heads
-        self.index = 0
-
-class LoopHead:
-    def restart(self, ctx):
-        return self.step(ctx)
-
-    def step(self, ctx):
-        return False
-
-class ForLoop(LoopHead):
-    def __init__(self, slot, value):
-        self.slot = slot
-        self.iterator = None
-        self.value = value
-
-    def restart(self, ctx):
-        it = call(op_iter, [eval_expr(ctx, self.value)])
-        self.iterator = cast(it, Iterator)
-        return self.step(ctx)
-
-    def step(self, ctx):
-        try:
-            value, self.iterator = self.iterator.next()
-        except StopIteration:
-            return False
-        else:
-            eval_slot(ctx, self.slot).store(ctx, value)
-            return True
-
-class WhileLoop(LoopHead):
-    def __init__(self, cond):
-        self.cond = cond
-
-    def step(self, ctx):
-        if convert(eval_expr(ctx, self.cond), Bool) is true:
-            return True
-        else:
-            return False
-
-class IfLoop(LoopHead):
-    def __init__(self, cond):
-        self.cond = cond
-
-    def restart(self, ctx):
-        if convert(eval_expr(ctx, self.cond), Bool) is true:
-            return True
-        else:
-            return False
-
-    def step(self, ctx):
-        return False
-
-def eval_case(ctx, value, cases, default):
-    for case in cases:
-        case = as_dict(case)
-        tp = as_string(attr(case, u"type"))
-        if tp == u"constant":
-            constant = eval_expr(ctx, as_dict(attr(case, u"value")))
-            if convert(call(op_eq, [value, constant]), Bool) is true:
-                return as_list(attr(case, u"body"))
-        elif tp == u"pattern":
-            pattern = eval_expr(ctx, as_dict(attr(case, u"pattern")))
-            tup = cast(call(op_pattern, [pattern]), Tuple).tuple_val
-            if len(tup) != 2:
-                raise error(e_EvalError())
-            if call(tup[0], [value]) is true:
-                slot = as_dict(attr(case, u"slot"))
-                eval_slot(ctx, slot).store(ctx, call(tup[1], [value]))
-                return as_list(attr(case, u"body"))
-        else:
-            raise error(e_EvalError())
-    if len(default) == 0:
-        raise error(e_EvalError())
-    return default
-
-def eval_decl(ctx, dt, decl):
-    tp = as_string(attr(decl, u"type"))
-    if tp == u"method":
-        op = eval_expr(ctx, as_dict(attr(decl, u"op")))
-        value = eval_expr(ctx, as_dict(attr(decl, u"value")))
-        op = cast(op, Operator)
-        add_method(dt, op, value)
-    elif tp == u"derived":
-        value = eval_expr(ctx, as_dict(attr(decl, u"value")))
-        for op in as_list(attr(decl, u"ops")):
-            op = eval_expr(ctx, as_dict(op))
-            add_method(dt, op, call(value, [dt, op]))
-    elif tp == u"attr":
-        name = as_string(attr(decl, u"op"))
-        value = eval_expr(ctx, as_dict(attr(decl, u"value")))
-        add_attr(dt, name, value, is_setter=False)
-    elif tp == u"attr_set":
-        name = as_string(attr(decl, u"name"))
-        value = eval_expr(ctx, as_dict(attr(decl, u"value")))
-        add_attr(dt, name, value, is_setter=True)
-    elif tp == u"attr_method":
-        name = as_string(attr(decl, u"name"))
-        value = eval_expr(ctx, as_dict(attr(decl, u"value")))
-        add_attr_method(dt, name, value)
-    else:
-        raise error(e_EvalError())
-
-def eval_expr(ctx, val):
-    tp = as_string(attr(val, u"type"))
-    if tp == u"literal":
-        return eval_literal(val)
-    if tp == u"slot":
-        return eval_slot(ctx, val).load(ctx)
-    elif tp == u"assign":
-        expr = eval_expr(ctx, as_dict(attr(val, u"value")))
-        slot = as_dict(attr(val, u"slot"))
-        eval_slot(ctx, slot).store(ctx, expr)
-        return null
-    elif tp == u"bind":
-        module = cast(eval_expr(ctx, as_dict(attr(val, u"module"))), Module)
-        for dst, src in as_dict(attr(val, u"bindings")).iteritems():
-            ctx.module.bind(as_string(dst), module, as_string(src))
-        return null
-    elif tp == u"bind_coeffect":
-        slot = eval_slot(ctx, as_dict(attr(val, u"slot")))
-        fields = []
-        for prop in as_list(attr(val, u"fields")):
-            prop = as_dict(prop)
-            name = as_string(attr(prop, u"name"))
-            mutable = convert(attr(prop, u"mutable"), Bool) is true
-            fields.append((name, mutable))
-        coeffect = construct_coeffect(fields, ctx.module)
-        slot.store(ctx, coeffect)
-        return null
-    elif tp == u"inplace_assign":
-        op = eval_expr(ctx, as_dict(attr(val, u"op")))
-        expr = eval_expr(ctx, as_dict(attr(val, u"value")))
-        slot = as_dict(attr(val, u"slot"))
-        slot = eval_slot(ctx, slot)
-        slot.store(ctx, call(op, [slot.load(ctx), expr]))
-        return null
-    elif tp == u"assert":
-        cond = convert(eval_expr(ctx, as_dict(attr(val, u"cond"))), Bool)
-        if cond is false:
-            expr = eval_expr(ctx, as_dict(attr(val, u"value")))
-            loc = as_list(attr(val, u"loc"))
-            tb = Traceback(e_AssertTriggered(expr))
-            tb.trace.append((loc, ctx.sources))
-            raise tb
-        return null
-    elif tp == u"raise":
-        expr = eval_expr(ctx, as_dict(attr(val, u"value")))
-        loc = as_list(attr(val, u"loc"))
-        tb = Traceback(expr)
-        tb.trace.append((loc, ctx.sources))
-        raise tb
-    elif tp == u"call":
-        callee = as_dict(attr(val, u"callee"))
-        args = as_list(attr(val, u"args"))
-        v_callee = eval_expr(ctx, callee)
-        v_args = []
-        for arg in args:
-            v_args.append(eval_expr(ctx, as_dict(arg)))
-        try:
-            return call(v_callee, v_args)
-        except Traceback as tb:
-            loc = as_list(attr(val, u"loc"))
-            tb.trace.append((loc, ctx.sources))
-            raise
-    elif tp == u"closure":
-        frame = []
-        for index in as_list(attr(val, u"frame")):
-            index = as_integer(index)
-            frame.append(ctx.cellvars[index])
-        return Closure(val, ctx.module, ctx.env, frame, ctx.sources)
-    elif tp == u"cmp":
-        i_exprs = as_list(attr(val, u"exprs"))
-        i_ops = as_list(attr(val, u"ops"))
-        if len(i_exprs) != len(i_ops) + 1:
-            raise error(e_EvalError())
-        l_expr = eval_expr(ctx, as_dict(i_exprs[0]))
-        for i in range(0, len(i_ops)):
-            op = eval_expr(ctx, as_dict(i_ops[i]))
-            r_expr = eval_expr(ctx, as_dict(i_exprs[i+1]))
+        if self.front is not None:
             try:
-                if convert(call(op, [l_expr, r_expr]), Bool) is false:
-                    return false
-            except Traceback as tb:
-                loc = as_list(attr(val, u"loc"))
-                tb.trace.append((loc, ctx.sources))
-                raise tb
-            l_expr = r_expr
-        return true
-    elif tp == u"and":
-        lhs = as_dict(attr(val, u"lhs"))
-        rhs = as_dict(attr(val, u"rhs"))
-        if convert(eval_expr(ctx, lhs), Bool) is true:
-            return convert(eval_expr(ctx, rhs), Bool)
-        else:
-            return false
-    elif tp == u"or":
-        lhs = as_dict(attr(val, u"lhs"))
-        rhs = as_dict(attr(val, u"rhs"))
-        if convert(eval_expr(ctx, lhs), Bool) is true:
-            return true
-        else:
-            return convert(eval_expr(ctx, rhs), Bool)
-    elif tp == u"not":
-        value = as_dict(attr(val, u"value"))
-        if convert(eval_expr(ctx, value), Bool) is true:
-            return false
-        else:
-            return true
-    elif tp == u"generator":
-        frame = []
-        for index in as_list(attr(val, u"frame")):
-            index = as_integer(index)
-            frame.append(ctx.cellvars[index])
-        return fresh_generator(val, ctx.module, ctx.env, frame, ctx.sources)
-    elif tp == u"make_tuple":
-        return Tuple([
-            eval_expr(ctx, as_dict(item))
-            for item in as_list(attr(val, u"items"))])
-    elif tp == u"list":
-        l = fresh_list()
-        for value in as_list(attr(val, u"values")):
-            l.list_val.append(eval_expr(ctx, as_dict(value)))
-        return l
-    #elif tp == u"var":
-    #    var_index = as_integer(attr(val, u"index"))
-    #    return Freevar(var_index)
-    elif tp == u"iter_once":
-        value = eval_expr(ctx, as_dict(attr(val, u"value")))
-        it = cast(call(op_iter, [value]), Iterator)
-        slot = eval_slot(ctx, as_dict(attr(val, u"slot")))
+                value, front = self.front.next()
+                return value, LiveGenerator(self.unit, self.stack, front)
+            except StopIteration:
+                pass
+        stack = snapshot_stack(self.stack)
+        return step_generator(self.unit, stack)
+
+def step_generator(unit, stack):
+    stack, value, stack_generators = interpreter_loop(unit, stack, True)
+    if stack_generators:
+        front = cast(call(op_iter, [value]), Iterator)
+        return LiveGenerator(unit, stack, front).next()
+    elif value is None:
+        raise StopIteration()
+    else:
+        return value, LiveGenerator(unit, stack, None)
+
+# json-as-bytecode is supposed to be a temporary measure,
+# but who knows how long we will have it. It already shows
+# that it was the right choice at the beginning,
+# may not be that great later. Well it's easy to replace fortunately.
+def call_closure(closure, args):
+    closure = cast(closure, Closure)
+    result = [None for k in range(closure.outc)]
+    inputs = closure.frame + args
+    outputs = [(result, k) for k in range(closure.outc)]
+    proc = enter_closure(closure.unit, closure, len(inputs), len(outputs))
+    stack = [enter_proc(closure.unit, proc, inputs, outputs)]
+    interpreter_loop(closure.unit, stack)
+    assert None not in result
+    return result
+
+def enter_closure(unit, closure, inc, outc):
+    i = closure.inc
+    opt  = len(closure.entries) - 1
+    if (not (i-opt <= inc <= i)) or outc != closure.outc:
+        tb = error(e_TypeError())
+        tb.trace.append((closure.loc, closure.unit.sources))
+        raise tb
+    entry = closure.entries[i - inc]
+    return as_dict(unit.program[entry])
+
+def enter_proc(unit, proc, inputs, outputs, xc=None):
+    tmp = [None] * as_integer(attr(proc, u"tmpc"))
+    body = as_list(attr(proc, u"body"))
+    ctx = Context(tmp, inputs, outputs, unit.constants)
+    return (ctx, body, 0, xc)
+
+@specialize.arg(2)
+def interpreter_loop(unit, stack, is_generator=False):
+    while len(stack) > 0:
+        ctx, body, index, xc = stack.pop(-1)
         try:
-            result, it = it.next()
-        except StopIteration:
-            raise error(e_NoItems())
+            result = eval_body(unit, ctx, body, index)
+            if isinstance(result, Done):
+                pass
+            elif isinstance(result, Branch):
+                if result.exc >= 0:
+                    stxc = ExceptionCatch(len(stack), result.exc)
+                else:
+                    stxc = None
+                if at_nonterminal(body, result.index) or stxc is not None:
+                    stack.append((ctx, body, result.index, xc))
+                stack.append(enter_proc(unit,
+                    result.proc, result.inputs, result.outputs, stxc))
+            elif isinstance(result, Yield) and is_generator:
+                if at_nonterminal(body, result.index):
+                    stack.append((ctx, body, result.index, xc))
+                value = result.value
+                if (result.stack_generators
+                    and isinstance(value, FreshGenerator)
+                    and value.unit is unit):
+                    stack.append(enter_proc(unit,
+                        value.proc, value.frame, []))
+                else:
+                    return stack, result.value, result.stack_generators
+            else:
+                raise error(e_EvalError())
+        except Traceback as tb:
+            if xc is None:
+                raise
+            stack[xc.k:len(stack)] = []
+            ctx, body, _, xc = stack.pop(-1)
+            index, opcode = decode_opcode(body, xc.index)
+            if opcode != o_terminal:
+                raise error(e_EvalError())
+            index, outputs = decode_list(body, index)
+            if len(outputs) != 1:
+                raise error(e_EvalError())
+            ctx.write(outputs[0], tb.error)
+            stack.append((ctx, body, index, xc))
+    if is_generator:
+        return stack, None, False
+
+def eval_body(unit, ctx, body, index):
+    while True:
+        pc = index
+        index, opcode = decode_opcode(body, index)
+        flag = opcode & 7
+        if flag == o_simple:
+            index, iv = decode_list(body, index)
+            index, ov = decode_list(body, index)
+            if opcode == o_move:
+                seq = [ctx.read(i) for i in iv]
+                motion(ctx, seq, ov)
+            elif opcode == o_global and len(iv) == 1 and len(ov) > 0:
+                seq = [load_global(unit, ctx.read(iv[0]))]
+                motion(ctx, seq, ov)
+            elif opcode == o_global and len(iv) > 1 and len(ov) == 0:
+                name = as_string(ctx.read(iv[0]))
+                seq = [ctx.read(i) for i in iv[1:]]
+                unit.module.assign(name, pack(seq))
+            elif opcode == o_attr and len(iv) == 2 and len(ov) > 0:
+                base = ctx.read(iv[0])
+                name = as_string(ctx.read(iv[1]))
+                accessor = base.face().getattr(name)
+                seq = [call(accessor, [base])]
+                motion(ctx, seq, ov)
+            elif opcode == o_attr and len(iv) > 2 and len(ov) == 0:
+                base = ctx.read(iv[0])
+                name = as_string(ctx.read(iv[1]))
+                value = pack([ctx.read(i) for i in iv[2:]])
+                accessor = base.face().setattr(name)
+                call(accessor, [base, value], 0)
+            elif opcode == o_item and len(iv) == 2 and len(ov) > 0:
+                base = ctx.read(iv[0])
+                indexer = ctx.read(iv[1])
+                seq = [call(op_getitem, [base, indexer])]
+                motion(ctx, seq, ov)
+            elif opcode == o_item and len(iv) > 2 and len(ov) == 0:
+                base = ctx.read(iv[0])
+                indexer = ctx.read(iv[1])
+                value = pack([ctx.read(i) for i in iv[2:]])
+                call(op_setitem, [base, indexer, value], 0)
+            elif opcode == o_true and len(iv) == 0 and len(ov) == 1:
+                ctx.write(ov[0], true)
+            elif opcode == o_false and len(iv) == 0 and len(ov) == 1:
+                ctx.write(ov[0], false)
+            elif opcode == o_call and len(iv) >= 1:
+                callee = ctx.read(iv[0])
+                args = [ctx.read(i) for i in iv[1:]]
+                if isinstance(callee, Closure) and callee.unit is unit:
+                    inputs = callee.frame + args
+                    outputs = [ctx.addr(o) for o in ov]
+                    proc = enter_closure(unit, callee,
+                        len(inputs), len(outputs))
+                    return Branch(index, proc, inputs, outputs)
+                out = callv(callee, args)
+                motion(ctx, out, ov)
+            else:
+                raise error(e_EvalError())
+        elif flag == o_branch:
+            index, iv = decode_list(body, index)
+            index, ov = decode_list(body, index)
+            return Branch(index, as_dict(unit.program[opcode >> 3]),
+                [ctx.read(i) for i in iv],
+                [ctx.addr(o) for o in ov])
+        elif flag == o_frame:
+            index, iv = decode_list(body, index)
+            index, ov = decode_list(body, index)
+            frame = []
+            closures = []
+            for o in ov:
+                index, in_frame, is_generator, entries = decode_frame(body, index)
+                if is_generator:
+                    proc = as_dict(unit.program[entries[0]])
+                    obj = FreshGenerator(unit, proc, frame)
+                else:
+                    proc = as_dict(unit.program[entries[0]])
+                    inc  = as_integer(attr(proc, u"inc"))
+                    outc = as_integer(attr(proc, u"outc"))
+                    obj = Closure(inc, outc, unit, entries, frame)
+                if in_frame:
+                    frame.append(obj)
+                closures.append((o, obj))
+            frame.extend([ctx.read(i) for i in iv])
+            for o, cl in closures:
+                ctx.write(o, cl)
+        elif flag == o_branchx:
+            index, iv = decode_list(body, index)
+            index, ov = decode_list(body, index)
+            index, x  = decode_jump(body, index)
+            return Branch(index, as_dict(unit.program[opcode >> 3]),
+                [ctx.read(i) for i in iv],
+                [ctx.addr(o) for o in ov], x)
+        elif flag == o_ionly:
+            index, iv = decode_list(body, index)
+            if opcode == o_raise and len(iv) == 1:
+                raise error(ctx.read(iv[0]))
+            elif opcode == o_yield and len(iv) == 1:
+                return Yield(index, ctx.read(iv[0]))
+            elif opcode == o_yield_from and len(iv) == 1:
+                return Yield(index, ctx.read(iv[0]), True)
+            else:
+                raise error(e_EvalError())
+        elif flag == o_guard:
+            index, iv = decode_list(body, index)
+            index, ov = decode_list(body, index)
+            index, x  = decode_jump(body, index)
+            if opcode == o_is_true and len(iv) == 1:
+                if ctx.read(iv[0]) is false:
+                    index, opcode = decode_opcode(body, x)
+                    index, outputs = decode_list(body, index)
+                    if opcode != o_terminal:
+                        raise error(e_EvalError())
+            elif opcode == o_eq and len(iv) == 2:
+                val = call(op_eq, [ctx.read(iv[0]), ctx.read(iv[1])])
+                if convert(val, Bool) is false:
+                    index, opcode = decode_opcode(body, x)
+                    index, outputs = decode_list(body, index)
+                    if opcode != o_terminal:
+                        raise error(e_EvalError())
+            elif opcode == o_match and len(iv) == 2:
+                pattern = ctx.read(iv[0])
+                val = ctx.read(iv[1])
+                tup = cast(call(op_pattern, [pattern]), Tuple).tuple_val
+                if len(tup) != 2:
+                    raise error(e_EvalError())
+                if call(tup[0], [val]) is false:
+                    index, opcode = decode_opcode(body, x)
+                    index, outputs = decode_list(body, index)
+                    if opcode != o_terminal:
+                        raise error(e_EvalError())
+                elif len(ov) > 0:              # The matcher does not always
+                    out = callv(tup[1], [val]) # need to extract anything.
+                    motion(ctx, out, ov)
+            elif opcode == o_next and len(iv) > 0:
+                it = ctx.read(iv[0])
+                if not isinstance(it, Iterator):
+                    it = cast(call(op_iter, [it]), Iterator)
+                try:
+                    value, it = it.next()
+                    motion(ctx, [value], ov)
+                except StopIteration:
+                    index, opcode = decode_opcode(body, x)
+                    index, outputs = decode_list(body, index)
+                    if opcode != o_terminal:
+                        raise error(e_EvalError())
+        elif flag == o_terminal:
+            return Done()
         else:
-            slot.store(ctx, it)
-            return result
-    elif tp == u"record":
-        fields = []
-        for prop in as_list(attr(val, u"fields")):
-            prop = as_dict(prop)
-            name = as_string(attr(prop, u"name"))
-            mutable = convert(attr(prop, u"mutable"), Bool) is true
-            value = eval_expr(ctx, as_dict(attr(prop, u"value")))
-            fields.append((name, mutable, value))
-        return construct_record(fields)
-    else:
-        raise error(e_EvalError())
+            raise error(e_EvalError())
+    return Done()
 
-# The slot design incorporates attributes and indices as well.
-# Recognizing this duality in some expressions really
-# simplified many of the utilities.
-def eval_slot(ctx, slot):
-    kind = as_string(attr(slot, u"kind"))
-    if kind == u"local":
-        index = as_integer(attr(slot, u"index"))
-        return LocalSlot(index)
-    elif kind == u"cell":
-        index = as_integer(attr(slot, u"index"))
-        return CellSlot(index)
-    elif kind == u"global":
-        name = as_string(attr(slot, u"name"))
-        loc = as_list(attr(slot, u"loc"))
-        return GlobalSlot(name, loc)
-    elif kind == u"tuple":
-        return TupleSlot(
-            [eval_slot(ctx, as_dict(s))
-                for s in as_list(attr(slot, u"slots"))],
-            loc = as_list(attr(slot, u"loc")))
-    elif kind == u"attr":
-        base = eval_expr(ctx, as_dict(attr(slot, u"base")))
-        name = as_string(attr(slot, u"name"))
-        loc = as_list(attr(slot, u"loc"))
-        return AttrSlot(base, name, loc)
-    elif kind == u"item":
-        base = eval_expr(ctx, as_dict(attr(slot, u"base")))
-        index = eval_expr(ctx, as_dict(attr(slot, u"index")))
-        return ItemSlot(base, index)
-    elif kind == u"deref":
-        value = eval_expr(ctx, as_dict(attr(slot, u"value")))
-        return DerefSlot(value)
-    else:
-        raise error(e_EvalError())
+def decode_opcode(body, index):
+    opcode = as_integer(body[index])
+    return index+1, opcode
 
-class Slot:
-    def load(self, ctx):
-        raise error(e_EvalError())
+def at_nonterminal(body, index):
+    opcode = as_integer(body[index])
+    return opcode != o_terminal
 
-    def store(self, ctx, value):
-        raise error(e_EvalError())
+def decode_list(body, index):
+    count = as_integer(body[index])
+    k0 = index+1
+    k1 = index+count+1
+    result = [as_integer(body[k]) for k in range(k0, k1)]
+    return k1, result
 
-class LocalSlot(Slot):
-    def __init__(self, index):
+def decode_frame(body, index):
+    info = as_integer(body[index])
+    in_frame = (info & 1 == 1)
+    is_generator = (info & 2 == 2)
+    count = info >> 2
+    k0 = index+1
+    k1 = index+count+1
+    entries = [as_integer(body[k]) for k in range(k0, k1)]
+    return k1, in_frame, is_generator, entries
+
+def decode_jump(body, index):
+    offset = as_integer(body[index])
+    return index+1, index+1+offset
+
+# This operation only works on generators, because they have no
+# external outputs.
+def snapshot_stack(stack):
+    n_tmp_v = []
+    n_outputs_v = []
+    n_stack = []
+    # Copying the tmp and redirecting output references is sufficient
+    # for producing a copy. 
+    for i, (ctx, body, index, xc) in enumerate(stack):
+        n_tmp_v.append(list(ctx.tmp))
+        if len(ctx.tmp) > 0:
+            ctx.tmp[0] = fresh_integer(i)
+    for i, (ctx, body, index, xc) in enumerate(stack):
+        n_outputs = []
+        for tmp, n in ctx.outputs:
+            n_tmp = n_tmp_v[as_integer(tmp[0])]
+            n_outputs.append((n_tmp, n))
+        n_outputs_v.append(n_outputs)
+    for i, (ctx, body, index, xc) in enumerate(stack):
+        ctx.tmp[0] = n_tmp_v[as_integer(ctx.tmp[0])][0]
+        n_ctx = Context(n_tmp_v[i],
+            ctx.inputs, n_outputs_v[i], ctx.constants)
+        n_stack.append((n_ctx, body, index, xc))
+    return n_stack
+
+class ExceptionCatch:
+    def __init__(self, k, index):
+        self.k = k
         self.index = index
 
-    def load(self, ctx):
-        return ctx.localvars[self.index]
+class Context:
+    def __init__(self, tmp, inputs, outputs, constants):
+        self.tmp = tmp
+        self.inputs = inputs
+        self.outputs = outputs
+        self.constants = constants
 
-    def store(self, ctx, value):
-        ctx.localvars[self.index] = value
+    def read(self, ix):
+        flag = ix&3
+        if flag == 0:
+            value = self.tmp[ix >> 2]
+            assert value is not None
+            return value
+        elif flag == 1:
+            return self.inputs[ix >> 2]
+        elif flag == 2:
+            slots, n = self.outputs[ix >> 2]
+            value = slots[n]
+            assert value is not None
+            return value
+        else:
+            return self.constants[ix >> 2]
 
-class CellSlot(Slot):
-    def __init__(self, index):
-        self.index = index
+    def write(self, ix, value):
+        flag = ix&3
+        if flag == 0:
+            self.tmp[ix >> 2] = value
+        elif flag == 2:
+            slots, n = self.outputs[ix >> 2]
+            slots[n] = value
+        else:
+            assert False, "this ought not happen"
 
-    def load(self, ctx):
-        return ctx.cellvars[self.index].val
+    def addr(self, ix):
+        flag = ix&3
+        if flag == 0:
+            return self.tmp, ix >> 2
+        elif flag == 2:
+            return self.outputs[ix >> 2]
+        else:
+            assert False, "this ought not happen"
 
-    def store(self, ctx, value):
-        ctx.cellvars[self.index].val = value
-
-class GlobalSlot(Slot):
-    def __init__(self, name, loc):
-        self.name = name
-        self.loc = loc
-    
-    def load(self, ctx):
-        cell = ctx.module.face().cells.get(self.name, None)
+def load_global(unit, name):
+    name = as_string(name)
+    cell = unit.module.face().cells.get(name, None)
+    if cell is not None:
+        return cell.load()
+    for module in unit.env:
+        cell = module.face().cells.get(name, None)
         if cell is not None:
             return cell.load()
-        for module in ctx.env:
-            cell = module.face().cells.get(self.name, None)
-            if cell is not None:
-                return cell.load()
-        else:
-            tb = error(e_TypeError())
-            tb.trace.append((self.loc, ctx.sources))
-            raise tb
+    else:
+        tb = error(e_TypeError())
+        # TODO: Add loc back to here.
+        #tb.trace.append((self.loc, ctx.sources))
+        raise tb
 
-    def store(self, ctx, value):
-        ctx.module.assign(self.name, value)
-        # TODO: Add trace here as well.
-
-class TupleSlot(Slot):
-    def __init__(self, slots, loc):
-        self.slots = slots
-        self.loc = loc
-
-    def load(self, ctx):
-        return Tuple([slot.load(ctx) for slot in self.slots])
-
-    def store(self, ctx, value):
-        try:
-            tup = cast(call(op_product, [value]), Tuple).tuple_val
-        except Traceback as tb:
-            tb.trace.append((self.loc, ctx.sources))
-            raise tb
-        if len(tup) != len(self.slots):
-            tb = error(e_TypeError())
-            tb.trace.append((self.loc, ctx.sources))
-            raise tb
-        for i in range(len(tup)):
-            self.slots[i].store(ctx, tup[i])
-
-class AttrSlot(Slot):
-    def __init__(self, base, name, loc):
-        self.base = base
-        self.name = name
-        self.loc = loc
-
-    def load(self, ctx):
-        try:
-            accessor = self.base.face().getattr(self.name)
-            return call(accessor, [self.base])
-        except Traceback as tb:
-            tb.trace.append((self.loc, ctx.sources))
-            raise
-
-    def store(self, ctx, value):
-        try:
-            accessor = self.base.face().getattr(self.name)
-            return call(accessor, [self.base, value])
-        except Traceback as tb:
-            tb.trace.append((self.loc, ctx.sources))
-            raise
-
-class ItemSlot(Slot):
-    def __init__(self, base, index):
-        self.base = base
-        self.index = index
-
-    def load(self, ctx):
-        return call(op_getitem, [self.base, self.index])
-
-    def store(self, ctx, value):
-        call(op_setitem, [self.base, self.index, value])
-
-class DerefSlot(Slot):
-    def __init__(self, value):
-        self.value = value
-
-    def load(self, ctx):
-        return call(op_getslot, [self.value])
-
-    def store(self, ctx, value):
-        call(op_setslot, [self.value, value])
-
-def eval_literal(obj):
-    kind = as_string(attr(obj, u"kind"))
-    if kind == u"integer":
-        return parse_integer(attr(obj, u"value"))
-    elif kind == u"string":
-        return attr(obj, u"value")
+def motion(ctx, seq, ov):
+    ic = len(seq)
+    oc = len(ov)
+    if ic == oc:
+        for i, val in enumerate(seq):
+            ctx.write(ov[i], val)
+    elif ic == 1:
+        seq = cast(call(op_product, seq), Tuple).tuple_val
+        if len(seq) != oc:
+            raise error(e_TypeError())
+        for i, val in enumerate(seq):
+            ctx.write(ov[i], val)
+    elif oc == 1 and ic != 0:
+        ctx.write(ov[0], Tuple(seq))
     else:
         raise error(e_EvalError())
 
-class Cell:
+def pack(seq):
+    if len(seq) == 1:
+        return seq[0]
+    elif len(seq) == 0:
+        raise error(e_EvalError())
+    else:
+        return Tuple(seq)
+
+class Result:
+    pass
+
+class Done(Result):
     def __init__(self):
-        self.val = null
+        pass
+
+class Yield(Result):
+    def __init__(self, index, value, stack_generators=False):
+        self.index = index
+        self.value = value
+        self.stack_generators = stack_generators
+
+class Branch(Result):
+    def __init__(self, index, proc, inputs, outputs, exc=-1):
+        self.index = index
+        self.proc = proc
+        self.inputs = inputs
+        self.outputs = outputs
+        self.exc = exc
+
+# Still missing:
+#   deref
+#   source locations
+
+# 'bind' instruction may be necessary for importing stuff from
+# other modules. And should use ! -syntax for describing mutables.
+
+# module = cast(eval_expr(ctx, as_dict(attr(val, u"module"))), Module)
+# for dst, src in as_dict(attr(val, u"bindings")).iteritems():
+#     ctx.module.bind(as_string(dst), module, as_string(src))
+#
+# Coeffects will inevitably need some special support from the vm.
+#
+# slot = eval_slot(ctx, as_dict(attr(val, u"slot")))
+# fields = []
+# for prop in as_list(attr(val, u"fields")):
+#     prop = as_dict(prop)
+#     name = as_string(attr(prop, u"name"))
+#     mutable = convert(attr(prop, u"mutable"), Bool) is true
+#     fields.append((name, mutable))
+# coeffect = construct_coeffect(fields, ctx.module)
+# slot.store(ctx, coeffect)
+
+# Just to help with the sourceloc format:
+# loc = as_list(attr(val, u"loc"))
+# tb.trace.append((loc, ctx.sources))
+#             raise
+
+# Here's how record construction works.
+#    fields = []
+#    for prop in as_list(attr(val, u"fields")):
+#        prop = as_dict(prop)
+#        name = as_string(attr(prop, u"name"))
+#        mutable = convert(attr(prop, u"mutable"), Bool) is true
+#        value = eval_expr(ctx, as_dict(attr(prop, u"value")))
+#        fields.append((name, mutable, value))
+#    return construct_record(fields)
+# 
+# Deref -slots may be useful.
+#         return call(op_getslot, [self.value])
+#         call(op_setslot, [self.value, value])
 
 def attr(val, name):
     return val[String(name)]

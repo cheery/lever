@@ -118,12 +118,6 @@ class Constant(Object):
     def face(self):
         return self.constant_face
 
-# A function may return 'null'. Like saying 'never', it
-# implies that there is no information transmitted in the
-# value that is passed around.
-Unit = InterfaceParametric()
-null = Constant(Unit)
-
 Bool = InterfaceParametric()
 true  = Constant(Bool)
 false = Constant(Bool)
@@ -166,7 +160,7 @@ class InterfaceParametricInterface(FunctionInterface):
         datatype = cast(callee, InterfaceParametric)
         if self.argc != len(args):
             raise error(e_TypeError())
-        return TypeInstance(datatype, args)
+        return [TypeInstance(datatype, args)]
 
     def getattr(self, name):
         if name == u"params":
@@ -248,7 +242,20 @@ class Builtin(Object):
         return self.doc
 
 # Every call made by the interpreter must resolve to a builtin command.
-def call(callee, args):
+@specialize.arg(2)
+def call(callee, args, outc=1):
+    result = callv(callee, args)
+    if len(result) != outc:
+        raise error(e_TypeError())
+    if outc == 1:
+        return result[0]
+    else:
+        res = ()
+        for i in range(outc):
+            res += (result[i],)
+        return res
+
+def callv(callee, args):
     face = callee.face()
     if not isinstance(face, FunctionInterface):
         raise error(e_TypeError())
@@ -302,8 +309,11 @@ def python_bridge(function):
                 args += (defaults[i+opt-argc],)
         result = function(*args)
         if result is None:
-            return null
-        return result
+            return []
+        elif isinstance(result, Tuple):
+            return result.tuple_val
+        else:
+            return [result]
     face = builtin_interfaces.get(argc, opt)
     py_bridge.__name__ = function.__name__
     return Builtin(py_bridge, face)
@@ -474,7 +484,7 @@ op_sub = Operator([0,1], 2)
 op_mul = Operator([0,1], 2)
 
 #op_div = Operator([0,1], 2)
-#op_mod = Operator([0,1], 2)
+op_mod = Operator([0,1], 2)
 #op_floordiv = Operator([0,1], 2) # floordiv(a, b)
 
 #op_divrem = Operator([0,1], 2)
@@ -518,13 +528,13 @@ def operator_call(op, args):
         face = unique_coercion(faces)
         if face is None:
             if op.default is not None:
-                return call(op.default, args)
+                return callv(op.default, args)
             raise error(e_TypeError())
         impl = face.method(op)
         args = list(args)
         for index in op.selectors:
             args[index] = convert(args[index], face)
-    return call(impl, args)
+    return callv(impl, args)
 
 # Helper decorator for describing new operators
 def method(face, operator):
@@ -747,21 +757,6 @@ def w_import(mspace, w_name):
     mspace.loaded[name] = module
     return module
 
-# Ending the common -module by defining equality and hash
-# methods for Unit. These are defined in case there are
-# datasets or structures that use null.
-@method(Unit, op_eq)
-def Unit_eq(a, b):
-    return true
-
-@method(Unit, op_hash)
-def Unit_hash(a):
-    return fresh_integer(0)
-
-@method(Unit, op_stringify)
-def Unit_stringify(a):
-    return String(u"null")
-
 # The Iterator doesn't return StopIteration() for any
 # particular reason. If you use this as an empty iterator,
 # make sure you rename it.
@@ -862,7 +857,7 @@ class DatatypeInterface(FunctionInterface):
         datatype.must_close()
         if self.argc != len(args):
             raise error(e_TypeError())
-        return TypeInstance(datatype, args)
+        return [TypeInstance(datatype, args)]
 
 # This is probably going to need a datatype that has
 # parameters and one that does not have them.
@@ -934,10 +929,10 @@ class CurryInterface(FunctionInterface):
     def call(self, callee, args):
         a = cast(callee, Curry)
         if a.curry_count < 0:
-            return call(a.curry_function, a.curry_args + args)
+            return callv(a.curry_function, a.curry_args + args)
         if a.curry_count != len(args):
             raise error(e_TypeError())
-        return Curry(a.curry_function, args, -1)
+        return [Curry(a.curry_function, args, -1)]
 
 class Curry(Object):
     def __init__(self, function, args, count):
@@ -995,7 +990,7 @@ class ConstructorInterface(FunctionInterface):
         if constructor.fieldc != len(fields):
             raise error(e_TypeError())
         # TODO: Check the fields.
-        return TaggedUnion(constructor, fields)
+        return [TaggedUnion(constructor, fields)]
 
     def method(self, op):
         if op is op_pattern:

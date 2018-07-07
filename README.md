@@ -1,5 +1,8 @@
 # Next-generation Lever
 
+Note: At the moment this project does not run properly. I uploaded
+intermediary results of the new VM.
+
 The rewrite improves on...
 
  * type inferencing
@@ -155,10 +158,25 @@ of fibonacci and factorial.
 
 ## Unfinished tasks
 
- THE NEXT TASK: ??
+ THE NEXT TASK: Broad stage of type inference.
+
+ Remove the 'Note' when things are working ok.
+
+ It's a depth first search, with markers to close cyclic
+ clauses.
+
+ It can be done in single flush if the designer is careful.
+
+
+Think about the variance model that appears in functions/records
+and 'extends upwards', such that we have different types that
+only vary by a parameter.
+
 
 Consider what the behavior should be for 'binary_operator'
 and 'get_coercion_function_type'...
+
+'immutalize' -function
 
 Add immutable constructs, but provide them such that they don't cause
 much ado. (operation for setattr as key, for example.)
@@ -309,8 +327,7 @@ Tune pattern matchers usable without case construct.
  
  TODO: Lifting between base types and some parametric structures.
 
- TODO: Implement optionals and variadics to interpreter and
- compiler.
+ TODO: Implement optionals to interpreter and compiler.
 
  TODO: read_script should resolve the relative source paths.
 

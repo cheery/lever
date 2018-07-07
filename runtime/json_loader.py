@@ -35,6 +35,24 @@ def read_json_fd(fd):
         raise error(e_JSONDecodeError(u"too many objects"))
     return ctx.ds.pop()
 
+# We got json library returning null, lets leave them into json library.
+Unit = InterfaceParametric()
+null = Constant(Unit)
+
+# These are defined in case there are datasets or structures that use null.
+@method(Unit, op_eq)
+def Unit_eq(a, b):
+    return true
+
+@method(Unit, op_hash)
+def Unit_hash(a):
+    return fresh_integer(0)
+
+@method(Unit, op_stringify)
+def Unit_stringify(a):
+    return String(u"null")
+# Other than this, we really don't need null anymore.
+
 class ParserContext:
     def __init__(self):
         self.ds = [] # data stack

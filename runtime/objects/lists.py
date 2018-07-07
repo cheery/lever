@@ -70,8 +70,8 @@ def List_setitem(a, index, value):
     index = cast(index, Integer).toint()
     if index < len(a.list_val):
         a.list_val[index] = value
-        return null
-    raise error(e_NoIndex())
+    else:
+        raise error(e_NoIndex())
 
 @method(List.interface, op_iter)
 def List_iter(a):
