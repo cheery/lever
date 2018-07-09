@@ -76,8 +76,8 @@ expr:
     expr_or
 
 loop_head:
-    "while" expr                      / while_loop
-    "for" slot "in" expr ("if" expr)? / for_loop
+    "while" expr                                  / while_loop
+    "for" slot ("&" slot)? "in" expr ("if" expr)? / for_loop
 
 arglist: sep([slot_item, "(" slot ")"] / argument, ",")
 

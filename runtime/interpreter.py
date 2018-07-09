@@ -24,7 +24,9 @@ def read_script(code, preset, env, src):
         module = module,
         program = as_list(attr(code, u"program")),
         sources = sources)
-    return Closure(0, 0, unit, [0], []), module
+    loc = SourceLocBuilder(-1,
+        as_list(attr(as_dict(unit.program[0]), u"sourcemap")), sources)
+    return Closure(0, 0, unit, [0], [], loc), module
 
 # The instruction set for clauses.
 o_simple   = 0x0 # Group of simple instructions.
@@ -57,9 +59,12 @@ o_false  = (0x5 << 3)
 o_call   = (0x6 << 3)
 
 # Inputs-only instructions.
-o_raise      = (0x7 << 3) | 0x5 # inputs*
-o_yield      = (0x8 << 3) | 0x5
-o_yield_from = (0x9 << 3) | 0x5
+o_raise      = (0x8 << 3) | 0x5 # inputs*
+o_yield      = (0x9 << 3) | 0x5
+o_yield_from = (0xA << 3) | 0x5
+
+# Basic abstract instructions (extended)
+o_deref   = (0xC << 3)
 
 # RPython cannot ensure that the 'i' is nonzero, so it refuses to compile this
 # without modifications.
@@ -124,15 +129,16 @@ class Unit:
 
 class Closure(Object):
     interface = None
-    def __init__(self, inc, outc, unit, entries, frame):
+    def __init__(self, inc, outc, unit, entries, frame, loc):
         self.inc = inc
         self.outc = outc
         self.unit = unit
         self.entries = entries
-        self.loc = [fresh_integer(0)] * 5
+        self.loc = loc
         self.frame = frame
         self.closure_face = closure_interfaces.get(
             self.inc - len(frame), len(self.entries)-1)
+
 
     def face(self):
         return self.closure_face
@@ -195,7 +201,7 @@ def enter_closure(unit, closure, inc, outc):
     opt  = len(closure.entries) - 1
     if (not (i-opt <= inc <= i)) or outc != closure.outc:
         tb = error(e_TypeError())
-        tb.trace.append((closure.loc, closure.unit.sources))
+        tb.trace.append(closure.loc)
         raise tb
     entry = closure.entries[i - inc]
     return as_dict(unit.program[entry])
@@ -203,15 +209,16 @@ def enter_closure(unit, closure, inc, outc):
 def enter_proc(unit, proc, inputs, outputs, xc=None):
     tmp = [None] * as_integer(attr(proc, u"tmpc"))
     body = as_list(attr(proc, u"body"))
+    smap = as_list(attr(proc, u"sourcemap"))
     ctx = Context(tmp, inputs, outputs, unit.constants)
-    return (ctx, body, 0, xc)
+    return (ctx, (body, smap), 0, xc)
 
 @specialize.arg(2)
 def interpreter_loop(unit, stack, is_generator=False):
     while len(stack) > 0:
-        ctx, body, index, xc = stack.pop(-1)
+        ctx, (body, smap), index, xc = stack.pop(-1)
         try:
-            result = eval_body(unit, ctx, body, index)
+            result = eval_body(unit, ctx, body, smap, index)
             if isinstance(result, Done):
                 pass
             elif isinstance(result, Branch):
@@ -220,12 +227,12 @@ def interpreter_loop(unit, stack, is_generator=False):
                 else:
                     stxc = None
                 if at_nonterminal(body, result.index) or stxc is not None:
-                    stack.append((ctx, body, result.index, xc))
+                    stack.append((ctx, (body, smap), result.index, xc))
                 stack.append(enter_proc(unit,
                     result.proc, result.inputs, result.outputs, stxc))
             elif isinstance(result, Yield) and is_generator:
                 if at_nonterminal(body, result.index):
-                    stack.append((ctx, body, result.index, xc))
+                    stack.append((ctx, (body, smap), result.index, xc))
                 value = result.value
                 if (result.stack_generators
                     and isinstance(value, FreshGenerator)
@@ -238,21 +245,30 @@ def interpreter_loop(unit, stack, is_generator=False):
                 raise error(e_EvalError())
         except Traceback as tb:
             if xc is None:
+                for _, (_, smap), pc, _ in reversed(stack):
+                    tb.trace.append(SourceLocBuilder(pc, smap, unit.sources))
                 raise
+            for _, (_, smap), pc, _ in reversed(stack[xc.k:len(stack)]):
+                tb.trace.append(SourceLocBuilder(pc, smap, unit.sources))
             stack[xc.k:len(stack)] = []
-            ctx, body, _, xc = stack.pop(-1)
+            ctx, (body, smap), pc, xc = stack.pop(-1)
             index, opcode = decode_opcode(body, xc.index)
             if opcode != o_terminal:
-                raise error(e_EvalError())
+                tb = error(e_EvalError())
+                tb.trace.append(SourceLocBuilder(pc, smap, unit.sources))
+                raise tb
             index, outputs = decode_list(body, index)
             if len(outputs) != 1:
-                raise error(e_EvalError())
+                tb = error(e_EvalError())
+                tb.trace.append(SourceLocBuilder(pc, smap, unit.sources))
+                raise tb
+            tb.trace.append(SourceLocBuilder(pc, smap, unit.sources))
             ctx.write(outputs[0], tb.error)
-            stack.append((ctx, body, index, xc))
+            stack.append((ctx, (body, smap), index, xc))
     if is_generator:
         return stack, None, False
 
-def eval_body(unit, ctx, body, index):
+def eval_body(unit, ctx, body, smap, index):
     while True:
         pc = index
         index, opcode = decode_opcode(body, index)
@@ -297,16 +313,29 @@ def eval_body(unit, ctx, body, index):
             elif opcode == o_false and len(iv) == 0 and len(ov) == 1:
                 ctx.write(ov[0], false)
             elif opcode == o_call and len(iv) >= 1:
-                callee = ctx.read(iv[0])
-                args = [ctx.read(i) for i in iv[1:]]
-                if isinstance(callee, Closure) and callee.unit is unit:
-                    inputs = callee.frame + args
-                    outputs = [ctx.addr(o) for o in ov]
-                    proc = enter_closure(unit, callee,
-                        len(inputs), len(outputs))
-                    return Branch(index, proc, inputs, outputs)
-                out = callv(callee, args)
-                motion(ctx, out, ov)
+                try:
+                    callee = ctx.read(iv[0])
+                    args = [ctx.read(i) for i in iv[1:]]
+                    if isinstance(callee, Closure) and callee.unit is unit:
+                        inputs = callee.frame + args
+                        outputs = [ctx.addr(o) for o in ov]
+                        proc = enter_closure(unit, callee,
+                            len(inputs), len(outputs))
+                        return Branch(index, proc, inputs, outputs)
+                    out = callv(callee, args)
+                    motion(ctx, out, ov)
+                except Traceback as tb:
+                    loc = SourceLocBuilder(index, smap, unit.sources)
+                    tb.trace.append(loc)
+                    raise
+            elif opcode == o_deref and len(iv) == 1 and len(ov) > 0:
+                base = ctx.read(iv[0])
+                seq = [call(op_getslot, [base])]
+                motion(ctx, seq, ov)
+            elif opcode == o_deref and len(iv) > 1 and len(ov) == 0:
+                base = ctx.read(iv[0])
+                value = pack([ctx.read(i) for i in iv[1:]])
+                call(op_setslot, [base, value], 0)
             else:
                 raise error(e_EvalError())
         elif flag == o_branch:
@@ -329,7 +358,8 @@ def eval_body(unit, ctx, body, index):
                     proc = as_dict(unit.program[entries[0]])
                     inc  = as_integer(attr(proc, u"inc"))
                     outc = as_integer(attr(proc, u"outc"))
-                    obj = Closure(inc, outc, unit, entries, frame)
+                    loc = SourceLocBuilder(index, smap, unit.sources)
+                    obj = Closure(inc, outc, unit, entries, frame, loc)
                 if in_frame:
                     frame.append(obj)
                 closures.append((o, obj))
@@ -513,10 +543,7 @@ def load_global(unit, name):
         if cell is not None:
             return cell.load()
     else:
-        tb = error(e_TypeError())
-        # TODO: Add loc back to here.
-        #tb.trace.append((self.loc, ctx.sources))
-        raise tb
+        raise error(e_TypeError())
 
 def motion(ctx, seq, ov):
     ic = len(seq)
@@ -564,6 +591,33 @@ class Branch(Result):
         self.outputs = outputs
         self.exc = exc
 
+class SourceLocBuilder:
+    def __init__(self, pc, smap, sources):
+        assert isinstance(pc, int)
+        assert isinstance(smap, list)
+        assert isinstance(sources, list)
+        self.pc      = pc
+        self.smap    = smap
+        self.sources = sources
+
+    def build_loc(self):
+        pc = self.pc
+        if pc == -1:
+            return [fresh_integer(0)] * 5, self.sources
+        i = 0
+        while i+6 <= len(self.smap):
+            bytek = as_integer(self.smap[i])
+            if pc <= bytek:
+                col0 = self.smap[i+1]
+                lno0 = self.smap[i+2]
+                col1 = self.smap[i+3]
+                lno1 = self.smap[i+4]
+                srci = self.smap[i+5]
+                return [col0, lno0, col1, lno1, srci], self.sources
+            pc -= bytek
+            i += 6
+        return [fresh_integer(0)] * 5, self.sources
+
 # Still missing:
 #   deref
 #   source locations
@@ -587,11 +641,6 @@ class Branch(Result):
 # coeffect = construct_coeffect(fields, ctx.module)
 # slot.store(ctx, coeffect)
 
-# Just to help with the sourceloc format:
-# loc = as_list(attr(val, u"loc"))
-# tb.trace.append((loc, ctx.sources))
-#             raise
-
 # Here's how record construction works.
 #    fields = []
 #    for prop in as_list(attr(val, u"fields")):
@@ -601,10 +650,6 @@ class Branch(Result):
 #        value = eval_expr(ctx, as_dict(attr(prop, u"value")))
 #        fields.append((name, mutable, value))
 #    return construct_record(fields)
-# 
-# Deref -slots may be useful.
-#         return call(op_getslot, [self.value])
-#         call(op_setslot, [self.value, value])
 
 def attr(val, name):
     return val[String(name)]

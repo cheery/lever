@@ -37,10 +37,12 @@ compile_file = (src, dst):
             builder.env = env
         else
             builder.env = {}
+        builder.retvars_given = retvars != null
         builder.retvars = []
-        for retvar in retvars
-            var = builder.get_variable(retvar, true)
-            builder.retvars.append(var)
+        if retvars
+            for retvar in retvars
+                var = builder.get_variable(retvar, true)
+                builder.retvars.append(var)
         k = 0
         for proc in reversed(clos.entries)
             builder.current = proc
@@ -74,6 +76,7 @@ compile_file = (src, dst):
     print_proc_vars('DEFS', proc_defs, builder.program, vartab)
 
     solve_flow_variables(builder.program, proc_defs)
+
     if builder.entry.inputs.length > 0
         print("ERROR: ", src.to_string(),
             "contains variables that are used before they are set")
@@ -100,28 +103,15 @@ filter_flow_vars = (values):
         if isinstance(item, FlowVariable)
             yield item
 
-
 actions = {
-    # After this, the difficult stuff is and/or/not
+    "repeat": (heads, body):
+        return Repeat(heads, body)
+    "for_loop": (slot, rest, expr, cond=null):
+        return ForLoop(slot, rest, expr, cond)
+    "while_loop": (cond):
+        return WhileLoop(cond)
 
-    # TODO: Add return values (through 'return')
-    # 'return' must be empty if the expression is generator or
-    #          there are explicit return values.
-
-    # TODO: Add encoding for lists. (let + prog)
-
-    # TODO: Implement record slot
-
-    # TODO: Implement additional slots
-    #       DereferenceSlot, TupleSlot, ItemSlot, AttrSlot
-    # 
-    # TODO: Implement matching
-
-    # TODO: *** Implement exceptions ***
-    # TODO: Implement loops/iteration
-
-    # TODO: Implement InplaceAssign
-
+    # TODO: Implement the exception pass-through for these.
     # Should also implement break and continue.
     # "break": (depths):
     #     depth = depths.length
@@ -129,16 +119,27 @@ actions = {
     #     depth = depths.length
     # "return": (expr=null):
     #     depth = depths.length
+    # 'return' must be empty if the expression is generator or
+    #          there are explicit return values.
 
+    # Record({labels: values})
+    # TODO: Implement record slot syntax.
+
+    # Tuple(slots)
+    # TODO: Implement tuple slot syntax.
+
+    # Match(val, pattern, slots)
+    # Pattern(pattern, slots)
+    # TODO: Implement matching syntax.
 
     "raise": (expr):
-        return SimpleStatement(o_raise, expr)
+        return SimpleStatement(o_raise, [expr])
     "generator": (body):
         return Generator(body)
     "yield": (expr):
-        return SimpleStatement(o_yield, expr)
+        return SimpleStatement(o_yield, [expr])
     "yield_from": (expr):
-        return SimpleStatement(o_yield_from, expr)
+        return SimpleStatement(o_yield_from, [expr])
     "closure": (args, retvars, body):
         slots = []
         defaults = []
@@ -154,6 +155,8 @@ actions = {
         return [arg, null]
     "assign": (slot, value):
         return Assign(slot, value)
+    "inplace_assign": (slot, op, value):
+        return InplaceAssign(slot, Symbol(op), value)
     "cond": (cond, tb, fb=[]):
         return Cond(cond, tb, fb)
     "and": (lhs, rhs):
@@ -172,6 +175,8 @@ actions = {
         return RelCall(callee, args, slots)
     "symbol": (name):
         return Symbol(name)
+    "prefix_symbol": (a):
+        return Symbol(a ++ "expr")
     "integer": (repr):
         return Constant(parse_int(repr))
     "string": (repr):
@@ -203,6 +208,22 @@ actions = {
     "import": (name):
         return Assign(Symbol(name),
             Call(Symbol("import"), [Literal("string", name)]))
+    "attr": (base, name):
+        return Attr(base, Constant(name))
+    "deref": (value):
+        return Deref(value)
+    "item": (base, index):
+        return Item(base, index)
+    "list": (values):
+        lst = FlowVariable()
+        append = FlowVariable()
+        prog = []
+        for value in values
+            prog.append(Call(append, [value]))
+        return Let([
+            [lst,    Call(Symbol("list"), [])],
+            [append, Attr(lst, Constant("append"))] ],
+            Prog(prog, lst))
 }
 
 # an idea.. instead of having direct branch to break/return/continue..
@@ -220,6 +241,10 @@ class Builder
         self.current_closure = null
         self.env = null
         self.retvars = []
+        self.retvars_given = false
+        self.record_kinds = {}
+        self.record_maker = null
+        self.loc = [0,0,0,0,0]
 
     get_variable = (self, name, def):
         if not self.env
@@ -239,7 +264,12 @@ class Builder
 
     build = (self, ast, outc=0):
         if isinstance(ast, Node)
-            return ast.build(self, outc)
+            loc = self.loc
+            if ast.loc
+                self.loc = ast.loc
+            result = ast.build(self, outc)
+            self.loc = loc
+            return result
         elif isinstance(ast, Constant)
             assert outc >= 1, "outc < 1 at constant"
             return [ast]
@@ -256,18 +286,45 @@ class Builder
             self.emit_guard(o_is_true, [ast], [], fbranch)
             return [tbranch, fbranch]
         elif isinstance(ast, Node)
-            return ast.build_cond(self)
+            loc = self.loc
+            if ast.loc
+                self.loc = ast.loc
+            result = ast.build_cond(self)
+            self.loc = loc
+            return result
         else
             assert false, [ast]
 
+    append = (self, instruction):
+        current = self.merge()
+        if not current.is_terminating()
+            instruction.loc = self.loc
+            current.append(instruction)
+        else
+            instruction.drop() # The instruction creates records as soon as
+                               # it is created, so if we won't append it,
+                               # it's best to signal instruction that it
+                               # won't be used.
+
+    merge = (self):
+        if isinstance(self.current, set)
+            if self.current.length == 1
+                self.current = self.current.pop()
+            else
+                proc = self.new_proc()
+                for current in self.current
+                    if current.is_terminating()
+                        continue
+                    current.append(Instruction(o_branch, [], [], proc))
+                self.current = proc
+        return self.current
+
     emit = (self, opcode, inputs, outputs):
-        self.current.append(
-            Instruction(opcode, inputs, outputs))
+        self.append(Instruction(opcode, inputs, outputs))
         return outputs
 
     emit_guard = (self, opcode, inputs, outputs, guard):
-        self.current.append(
-            Instruction(opcode, inputs, outputs, null, guard))
+        self.append(Instruction(opcode, inputs, outputs, null, guard))
         return outputs
 
     emit_branch = (self, target, inputs, outputs, guard=null):
@@ -275,22 +332,113 @@ class Builder
             opcode = o_branchx
         else
             opcode = o_branch
-        self.current.append(
-            Instruction(opcode, inputs, outputs, target, guard, null))
+        self.append(Instruction(opcode, inputs, outputs, target, guard, null))
         return outputs
 
-    frame = (self, closure_group, inputs, outputs):
-        assert false, "TODO"
-        self.current.append(
-            Instruction(o_branch, inputs, outputs, closure_group))
-        assert closure_group.length == outputs.length, "invalid frame"
-        return outputs
+    kind_record = (self, labels):
+        key = set(labels)
+        if key in self.record_kinds
+            return self.record_kinds[key]
+        # The record maker is a procedure block that gets created if labels
+        # are used in the program.
+        if self.record_maker
+            mk = self.record_maker
+        else
+            proc = self.new_proc()
+            KindRecordFunc = FlowVariable()
+            SetFunc = FlowVariable()
+            proc.append(Instruction(o_global, [Constant("KindRecord")], [KindRecordFunc]))
+            proc.append(Instruction(o_global, [Constant("set")], [SetFunc]))
+            self.entry.insert(0, Instruction(o_branch, [], [], proc))
+            self.record_maker = mk = (proc=proc,
+                KindRecordFunc=KindRecordFunc,
+                SetFunc=SetFunc)
+        # This thing creates the type for record.
+        recond_kind = FlowVariable()
+        self.record_kinds[key] = record_kind
+        labelset = FlowVariable()
+        add_func = FlowVariable()
+        mk.proc.append(Instruction(o_call, [mk.SetFunc], [labelset]))
+        mk.proc.append(Instruction(o_attr, [labelset, Constant("add")], [add_func]))
+        for label in labels
+            mk.proc.append(Instruction(o_call, [add_func, Constant(label)], []))
+        mk.proc.append(Instruction(o_call, [mk.KindRecordFunc, labelset], [record_kind]))
+        return record_kind
 
 class Node
+
+class Repeat extends Node
+    +init = (self, heads, body):
+        self.heads = heads
+        self.body = body
+        self.loc = null
+
+    build = (self, builder, outc):
+        assert outc == 0, "repeators are statements"
+        # This thing builds an infinite loop if there are no heads.
+        exit = builder.new_proc()
+        entry = builder.new_proc()
+        repeat = entry
+        leave = exit
+        builder.emit_branch(entry, [], [])
+        builder.current = entry
+        for head in self.heads
+            repeat = builder.merge()
+            head.build_loophead(leave)
+            leave = repeat
+        for statement in self.body
+            builder.build(statement, 0)
+        builder.emit_branch(repeat, [], [])
+        builder.current = exit
+        return []
+
+class ForLoop extends Node
+    +init = (self, slot, rest, value, cond):
+        self.slot = slot
+        self.rest = rest
+        self.value = value
+        self.cond = cond
+        self.loc = null
+
+    build_loophead = (self, builder, leave):
+        val = builder.build(self.value, 1)[0]
+        x  = FlowVariable()
+        it = FlowVariable()
+        slot = self.slot.build_slot(builder)
+        if self.rest
+            rest = self.rest.build_slot(builder)
+        else
+            rest = null
+        fbranch = Guard([], [])
+        builder.emit_guard(o_next, [val], [x, it], fbranch)
+        slot.write(builder, x)
+        if rest
+            rest.write(builder, it)
+        tbranch = builder.current
+        builder.current = fbranch
+        builder.emit_branch(leave, [], [])
+        builder.current = tbranch
+        if self.cond
+            tbranch, fbranch = builder.build_cond(self.cond)
+            builder.current = fbranch
+            builder.emit_branch(leave, [], [])
+            builder.current = tbranch
+
+class WhileLoop extends Node
+    +init = (self, cond):
+        self.cond = cond
+        self.loc = null
+
+    build_loophead = (self, builder, leave):
+        tbranch, fbranch = builder.build_cond(self.cond)
+        builder.current = fbranch
+        builder.emit_branch(leave, [], [])
+        builder.current = tbranch
 
 class Generator extends Node
     +init = (self, body):
         self.body = body
+        self.loc = null
 
     build = (self, builder, outc):
         assert outc == 1, "exactly one value out of generator"
@@ -303,7 +451,7 @@ class Generator extends Node
             instruction = builder.current[builder.current.length-1]
             instruction.add_closure(clos, var)
         else
-            builder.current.append(Instruction(o_frame,
+            builder.append(Instruction(o_frame,
                 [], [var], null, null, [clos]))
         return [var]
 
@@ -313,6 +461,7 @@ class Function extends Node
         self.defaults = defaults
         self.return_variables = return_variables
         self.body = body
+        self.loc = null
 
     build = (self, builder, outc):
         assert outc == 1, "exactly one value out of function"
@@ -332,7 +481,7 @@ class Function extends Node
             instruction = block.clauses[block.clauses.length-1]
             instruction.add_closure(clos, var)
         else
-            builder.current.append(Instruction(o_frame,
+            builder.append(Instruction(o_frame,
                 [], [var], null, null, [clos]))
         return [var]
 
@@ -357,15 +506,38 @@ has_frame_under = (block):
         return true
     return false
 
+class Except extends Node
+    +init = (self, body, handler, xvar):
+        self.body = body
+        self.handler = handler
+        self.xvar = xvar        # This variable gets the exception.
+        self.loc = null
+
+    build = (self, builder, outc):
+        assert outc == 0, "no output at exception handler"
+        exit = builder.current
+        try_block = builder.new_proc()
+        builder.current = try_block
+        for statement in self.body
+            builder.build(statement, 0)
+        guard = Guard([self.xvar], [])
+        builder.current = guard
+        for statement in self.handler
+            builder.build(statement, 0)
+        builder.current = exit
+        builder.emit_branch(try_block, [], [], guard)
+        return []
+
 class Assign extends Node
     +init = (self, slot, value):
         self.slot = slot
         self.value = value
+        self.loc = null
 
     build = (self, builder, outc):
         assert outc == 0, "no output at assign"
         val = builder.build(self.value, 1)[0]
-        block = builder.current
+        block = builder.merge()
         if builder.env and has_frame_under(block)
             if isinstance(self.slot, Symbol)
                 var = builder.get_variable(self.slot.name, true)
@@ -378,11 +550,31 @@ class Assign extends Node
         slot.write(builder, val)
         return []
 
+class InplaceAssign extends Node
+    +init = (self, slot, op, value):
+        self.slot = slot
+        self.op = op
+        self.value = value
+        self.loc = null
+
+    build = (self, builder, outc):
+        assert outc == 0, "no output at assign"
+        val = builder.build(self.value, 1)[0]
+        op = builder.build(self.op, 1)[0]
+        block = builder.current
+        slot = self.slot.build_slot(builder)
+        inputs = [op] ++ slot.read(builder, 1)
+        outputs = new_vars(1)
+        builder.emit(o_call, inputs, outputs)
+        slot.write(builder, outputs[0])
+        return []
+
 class Cond extends Node
     +init = (self, cond, t_block, f_block):
         self.cond = cond
         self.t_block = t_block
         self.f_block = f_block
+        self.loc = null
 
     build = (self, builder, outc):
         assert outc == 0, "no output at cond"
@@ -396,41 +588,128 @@ class Cond extends Node
             builder.build(statement, 0)
         builder.emit_branch(exit, [], [])
 
-        builder.current = fail
-        for statement in self.f_block
-            builder.build(statement, 0)
-        builder.emit_branch(exit, [], [])
+        if self.f_block
+            builder.current = fail
+            for statement in self.f_block
+                builder.build(statement, 0)
+            builder.emit_branch(exit, [], [])
+        else
+            # This is used with case clauses.
+            builder.emit_branch(builder.type_error_raiser(), [], [])
 
         builder.current = exit
         return []
 
-# And has two failure outputs.
-# Or has two success outputs.
+class Match extends Node
+    +init = (self, value, pattern, slots):
+        self.value = value
+        self.pattern = pattern
+        self.slots = slots
+        self.loc = null
+
+    build = (self, builder, outc):
+        assert outc == 1, "TODO"
+        assert self.slots.length == 0, "cannot verify assignment in expr"
+        tbranch, fbranch = builder.build_cond(self)
+        exit = builder.new_proc()
+        v1 = Variable()
+        builder.current = tbranch
+        builder.emit(o_true, [], [v1])
+        builder.emit_branch(exit, [v1], [])
+        v2 = Variable()
+        builder.current = fbranch
+        builder.emit(o_false, [], [v2])
+        builder.emit_branch(exit, [v2], [])
+        v3 = FlowVariable()
+        exit.inputs.append(v3)
+        builder.current = exit
+        return [v3]
+
+    build_cond = (self, builder):
+        val = builder.build(self.value, 1)
+        pat = builder.build(self.pattern, 1)
+        tbranch = builder.current
+        fbranch = set([Guard([], [])])
+        outputs = new_vars(self.slots.length)
+        builder.emit_guard(o_match, [pat, val], outputs, fbranch)
+        k = 0
+        for slot in self.slots
+            fbranch.update(slot.build_slot(builder).match(builder, outputs[k]))
+            k += 1
+        return [tbranch, fbranch]
+
 class And extends Node
     +init = (self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
+        self.loc = null
 
     build = (self, builder, outc):
-        assert false, "TODO"
+        assert outc == 1, "TODO"
+        tbranch, fbranch = builder.build_cond(self)
+        exit = builder.new_proc()
+        v1 = Variable()
+        builder.current = tbranch
+        builder.emit(o_true, [], [v1])
+        builder.emit_branch(exit, [v1], [])
+        v2 = Variable()
+        builder.current = fbranch
+        builder.emit(o_false, [], [v2])
+        builder.emit_branch(exit, [v2], [])
+        v3 = FlowVariable()
+        exit.inputs.append(v3)
+        builder.current = exit
+        return [v3]
 
     build_cond = (self, builder):
-        assert false, "TODO"
+        tbranch, fbranch1 = builder.build_cond(self.lhs)
+        builder.current = tbranch
+        tbranch, fbranch2 = builder.build_cond(self.rhs)
+        if not isinstance(fbranch1, set)
+            fbranch1 = set([fbranch1])
+        if not isinstance(fbranch2, set)
+            fbranch2 = set([fbranch2])
+        fbranch = fbranch1 | fbranch2
+        return [tbranch, fbranch]
 
 class Or extends Node
     +init = (self, lhs, rhs):
         self.lhs = lhs
         self.rhs = rhs
+        self.loc = null
 
     build = (self, builder, outc):
-        assert false, "TODO"
+        assert outc == 1, "TODO"
+        tbranch, fbranch = builder.build_cond(self)
+        exit = builder.new_proc()
+        v1 = Variable()
+        builder.current = tbranch
+        builder.emit(o_true, [], [v1])
+        builder.emit_branch(exit, [v1], [])
+        v2 = Variable()
+        builder.current = fbranch
+        builder.emit(o_false, [], [v2])
+        builder.emit_branch(exit, [v2], [])
+        v3 = FlowVariable()
+        exit.inputs.append(v3)
+        builder.current = exit
+        return [v3]
 
     build_cond = (self, builder):
-        assert false, "TODO"
+        tbranch1, fbranch = builder.build_cond(self.lhs)
+        builder.current = fbranch
+        tbranch2, fbranch = builder.build_cond(self.rhs)
+        if not isinstance(tbranch1, set)
+            tbranch1 = set([tbranch1])
+        if not isinstance(tbranch2, set)
+            tbranch2 = set([tbranch2])
+        tbranch = tbranch1 | tbranch2
+        return [tbranch, fbranch]
 
 class Not extends Node
     +init = (self, rhs):
         self.rhs = rhs
+        self.loc = null
 
     build = (self, builder, outc):
         assert outc == 1, "TODO"
@@ -457,6 +736,7 @@ class Let extends Node
     +init = (self, bindings, body):
         self.bindings = bindings
         self.body = body
+        self.loc = null
     
     build = (self, builder, outc):
         for v, ast in self.bindings
@@ -473,6 +753,7 @@ class RelCall extends Node
         self.callee = callee
         self.args = args
         self.slots = slots
+        self.loc = null
  
     build = (self, builder, outc):
         assert outc == 0, "relcall is a statement"
@@ -492,19 +773,21 @@ class SimpleStatement extends Node
     +init = (self, opcode, inputs):
         self.opcode = opcode
         self.inputs = inputs
+        self.loc = null
 
     build = (self, builder, outc):
         assert outc == 0, "it is a statement"
         inputs = []
         for expr in self.inputs
             inputs.append(builder.build(expr, 1)[0])
-        builder.emit_guard(self.opcode, inputs, [])   
+        builder.emit(self.opcode, inputs, [])   
         return []
 
 class Call extends Node
     +init = (self, callee, args):
         self.callee = callee
         self.args = args
+        self.loc = null
 
     build = (self, builder, outc):
         inputs = [builder.build(self.callee, 1)[0]]
@@ -519,10 +802,220 @@ class Call extends Node
         builder.emit_guard(o_is_true, out, [], fbranch)
         return [tbranch, fbranch]
 
+class Attr extends Node
+    +init = (self, base, attr):
+        self.base = base
+        self.attr = attr
+        self.loc = null
+
+    build = (self, builder, outc):
+        return self.build_slot(builder).read(builder, outc)
+
+    build_cond = (self, builder):
+        out = self.build(builder, 1)
+        tbranch = builder.current
+        fbranch = Guard([], [])
+        builder.emit_guard(o_is_true, out, [], fbranch)
+        return [tbranch, fbranch]
+
+    build_slot = (self, builder):
+        basevar = builder.build(self.base, 1)[0]
+        attrvar = builder.build(self.attr, 1)[0]
+        return object({
+            "read": (builder, outc):
+                return builder.emit(o_attr, [basevar, attrvar], [new_vars(outc)])
+            "write": (builder, val):
+                builder.emit(o_attr, [basevar, attrvar, val], [])
+            "match": (builder, val):
+                builder.emit(o_attr, [basevar, attrvar, val], [])
+                return []
+        })
+
+class Deref extends Node
+    +init = (self, base):
+        self.base = base
+        self.loc = null
+
+    build = (self, builder, outc):
+        return self.build_slot(builder).read(builder, outc)
+
+    build_cond = (self, builder):
+        out = self.build(builder, 1)
+        tbranch = builder.current
+        fbranch = Guard([], [])
+        builder.emit_guard(o_is_true, out, [], fbranch)
+        return [tbranch, fbranch]
+
+    build_slot = (self, builder):
+        basevar = builder.build(self.base, 1)[0]
+        return object({
+            "read": (builder, outc):
+                return builder.emit(o_deref, [basevar], [new_vars(outc)])
+            "write": (builder, val):
+                builder.emit(o_deref, [basevar, val], [])
+            "match": (builder, val):
+                builder.emit(o_deref, [basevar, val], [])
+                return []
+        })
+
+class Item extends Node
+    +init = (self, base, indexer):
+        self.base = base
+        self.indexer = indexer
+        self.loc = null
+
+    build = (self, builder, outc):
+        return self.build_slot(builder).read(builder, outc)
+
+    build_cond = (self, builder):
+        out = self.build(builder, 1)
+        tbranch = builder.current
+        fbranch = Guard([], [])
+        builder.emit_guard(o_is_true, out, [], fbranch)
+        return [tbranch, fbranch]
+
+    build_slot = (self, builder):
+        basevar = builder.build(self.base, 1)[0]
+        indexervar = builder.build(self.indexer, 1)[0]
+        return object({
+            "read": (builder, outc):
+                return builder.emit(o_attr, [basevar, indexervar], [new_vars(outc)])
+            "write": (builder, val):
+                builder.emit(o_attr, [basevar, indexervar, val], [])
+            "match": (builder, val):
+                builder.emit(o_attr, [basevar, indexervar, val], [])
+                return []
+        })
+
+class Record extends Node
+    +init = (self, table):
+        self.table = table # {labels: slots}
+        self.loc = null
+
+    build = (self, builder, outc):
+        return self.build_slot(builder).read(builder, outc)
+
+    # This probably always means that the program is broken...
+    build_cond = (self, builder):
+        out = self.build(builder, 1)
+        tbranch = builder.current
+        fbranch = Guard([], [])
+        builder.emit_guard(o_is_true, out, [], fbranch)
+        return [tbranch, fbranch]
+
+    build_slot = (self, builder):
+        labels = []
+        for label, slot in self.table
+            labels.append(label)
+        labels.sort()
+        pat = builder.kind_record(labels)
+        slots = []
+        for label in labels
+            slots.append(self.table[label])
+        return PatternSlot(pat, slots).build_slot(builder)
+
+class Pattern
+    +init = (self, pat, slots):
+        self.pat = pat
+        self.slots = slots
+        self.loc = null
+
+    build = (self, builder, outc):
+        return self.build_slot(builder).read(builder, outc)
+
+    # This probably always means that the program is broken...
+    build_cond = (self, builder):
+        out = self.build(builder, 1)
+        tbranch = builder.current
+        fbranch = Guard([], [])
+        builder.emit_guard(o_is_true, out, [], fbranch)
+        return [tbranch, fbranch]
+
+    build_slot = (self, builder):
+        slots = []
+        for slot in self.slots
+            slots.append(slot.build_slot(builder))
+        return object({
+            "read": (builder, outc):
+                inputs = [pat]
+                for slot in slots
+                    inputs.append(slot.read(builder)[0])
+                return builder.emit(o_call, inputs, new_vars(1))
+            "write": (builder, val):
+                guard = builder.type_error_raiser()
+                outputs = new_vars(self.slots.length)
+                builder.emit_guard(o_match, [pat, val], outputs, guard)
+                k = 0
+                for slot in self.slots
+                    slot.build_slot(builder).write(builder, outputs[k])
+                    k += 1
+            "match": (builder, val):
+                guard = Guard([], [])
+                fbranch = set([guard])
+                outputs = new_vars(self.slots.length)
+                builder.emit_guard(o_match, [pat, val], outputs, guard)
+                k = 0
+                for slot in self.slots
+                    fbranch.update(slot.build_slot(builder).match(builder, outputs[k]))
+                    k += 1
+                return fbranch
+        })
+
+    build_cond = (self, builder):
+        val = builder.build(self.value, 1)
+        pat = builder.build(self.pattern, 1)
+        tbranch = builder.current
+        fbranch = Guard([], [])
+        return [tbranch, fbranch]
+
+class Tuple extends Node
+    +init = (self, slots):
+        self.slots = slots
+        self.loc = null
+
+    build = (self, builder, outc):
+        return self.build_slot(builder).read(builder, outc)
+
+    # This probably always means that the program is broken...
+    build_cond = (self, builder):
+        out = self.build(builder, 1)
+        tbranch = builder.current
+        fbranch = Guard([], [])
+        builder.emit_guard(o_is_true, out, [], fbranch)
+        return [tbranch, fbranch]
+
+    build_slot = (self, builder):
+        slots = []
+        for slot in self.slots
+            slots.append(slot.build_slot(builder))
+        return object({
+            "read": (builder, outc):
+                inputs = []
+                for slot in slots
+                    inputs.append(slot.read(builder)[0])
+                return builder.emit(o_move, inputs, new_vars(1))
+            "write": (builder, val):
+                outputs = []
+                for slot in slots
+                    v = FlowVariable()
+                    slot.write(builder, v)
+                    outputs.append(v)
+                builder.emit(o_move, [val], outputs)
+            "match": (builder, val):
+                outputs = []
+                for slot in slots
+                    v = FlowVariable()
+                    slot.write(builder, v)
+                    outputs.append(v)
+                builder.emit(o_move, [val], outputs)
+                return []
+        })
+
 class Symbol extends Node
     +init = (self, name, is_global=false):
         self.name = name
         self.is_global = is_global
+        self.loc = null
 
     build = (self, builder, outc):
         assert outc >= 1, "outc < 1 at Symbol"
@@ -551,7 +1044,24 @@ class Symbol extends Node
                     builder.emit(o_move, [val], [var])
                 else
                     builder.emit(o_global, [Constant(self.name), val], [])
+            "match": (builder, val):
+                var = builder.get_variable(self.name, true)
+                if var
+                    builder.emit(o_move, [val], [var])
+                else
+                    builder.emit(o_global, [Constant(self.name), val], [])
+                return []
         })
+
+class ProgExpr extends Node
+    +init = (self, statements, expr):
+        self.statements = statements
+        self.expr = expr
+
+    build = (self, builder, outc):
+        for stmt in self.statements
+            builder.build(stmt, 0)
+        return builder.build(self.expr, outc)
 
 new_vars = (count):
     v = []
@@ -599,6 +1109,11 @@ proc_defs_analysis = (program):
                     for v in instruction.outputs
                         if isinstance(v, FlowVariable)
                             defs.add(v)
+                    # If the clause raises, then it never returns and
+                    # it would be incorrect to pass definitions around
+                    # it.
+                    if instruction.opcode == o_raise
+                        defs.clear()
             if defs.length != L
                 keep_doing = true
     return proc_defs
@@ -619,6 +1134,7 @@ solve_flow_variables = (program, proc_defs):
                     i -= 1
                     current_live_set.difference_update(filter_flow_vars(instruction.outputs))
                     if instruction.branch
+                        assert instruction.outputs.length == instruction.branch.outputs.length
                         for x in current_live_set & proc_defs[instruction.branch]
                             # We are inserting into output here, so inserting into
                             # a closure would obviously not be a choice.
@@ -629,7 +1145,7 @@ solve_flow_variables = (program, proc_defs):
                             instruction.branch.outputs.insert(0, x)
                             # We also got to be considerate for other users of this branch.
                             for prec in instruction.branch.predecessors
-                                instruction.outputs.insert(0, x)
+                                prec.outputs.insert(0, x)
                     guard = instruction.guard
                     if guard
                         stack.append([block, i, current_live_set])
@@ -637,10 +1153,11 @@ solve_flow_variables = (program, proc_defs):
                             set(filter_flow_vars(proc.outputs))])
                         break
                     current_live_set.update(filter_flow_vars(instruction.inputs))
-                if i == 0 and isinstance(block, Guard)
-                    current_live_set.difference_update(filter_flow_vars(block.outputs))
-                else
-                    current_live_set.difference_update(filter_flow_vars(block.inputs))
+                if i == 0
+                    if isinstance(block, Guard)
+                        current_live_set.difference_update(filter_flow_vars(block.outputs))
+                    else
+                        current_live_set.difference_update(filter_flow_vars(block.inputs))
             # closure input frame consists of in_frame-flagged frames, and framed variables.
             # This means that the insertion is considerably different for closures.
             new_vars = list(current_live_set)
@@ -846,6 +1363,7 @@ class Proc
             instruction.block = self
 
     append = (self, instruction):
+        assert not self.is_terminating()
         assert not instruction.block, "cannot reuse instructions"
         self.clauses.append(instruction)
         instruction.block = self
@@ -854,7 +1372,11 @@ class Proc
         assert not instruction.block, "cannot reuse instructions"
         self.clauses.insert(index, instruction)
         instruction.block = self
-        
+
+    is_terminating = (self):
+        if self.clauses.length > 0
+            return self.clauses[self.clauses.length-1].opcode == o_raise
+        return false
 
 class Instruction
     +init = (self, opcode, inputs, outputs, branch=null, guard=null, frame=null):
@@ -864,6 +1386,7 @@ class Instruction
         self.branch  = branch
         self.guard   = guard
         self.frame   = frame
+        self.loc     = null
         assert not branch or isinstance(branch, Proc), [branch]
         self.block = null
         if guard
@@ -882,6 +1405,17 @@ class Instruction
         self.frame.append(closure)
         self.outputs.append(var)
 
+    # This is probably not the best way to do this.
+    drop = (self):
+        assert not self.block, "cannot drop attached instruction"
+        if self.branch
+            self.branch.predecessors.discard(self)
+        if self.frame
+            for closure in self.frame
+                closure.instruction = null
+                for entry in closure.entries
+                    entry.closure = null
+
 class Guard
     +init = (self, outputs, clauses):
         self.outputs = outputs
@@ -892,6 +1426,7 @@ class Guard
         self.instruction = null
 
     append = (self, instruction):
+        assert not self.is_terminating()
         assert not instruction.block, "cannot reuse instructions"
         self.clauses.append(instruction)
         instruction.block = self
@@ -900,6 +1435,11 @@ class Guard
         assert not instruction.block, "cannot reuse instructions"
         self.clauses.insert(index, instruction)
         instruction.block = self
+
+    is_terminating = (self):
+        if self.clauses.length > 0
+            return self.clauses[self.clauses.length-1].opcode == o_raise
+        return false
 
 # An ugly hack to number our variables for easy debug.
 class Variable
@@ -936,7 +1476,9 @@ to_json = (sources, program, entry):
         proc_clauses = []
 
         registers = RegisterAllocator(proc.inputs, proc.outputs, get_constant)
-        body = encode_clauses(proc.clauses, registers, [])
+        body = []
+        smap = SourceMap(body)
+        encode_clauses(proc.clauses, registers, body, smap)
         # This adds mov instructions for output variables that
         # do not end up being used inside the procedure.
         mov_inputs = []
@@ -963,6 +1505,7 @@ to_json = (sources, program, entry):
             "inc": proc.inputs.length,
             "outc": proc.outputs.length,
             "body": list(reversed(body)),
+            "sourcemap": smap.build(),
         }
         program_data.append(proc_data)
 
@@ -973,7 +1516,7 @@ to_json = (sources, program, entry):
     }
 
 # The encoder generates the output in reverse.
-encode_clauses = (clauses, registers, code):
+encode_clauses = (clauses, registers, code, sourcemap):
     index = 0
     for instruction in clauses
         assert instruction.block, instruction.opcode
@@ -981,14 +1524,13 @@ encode_clauses = (clauses, registers, code):
         guard = instruction.guard
         if guard
             assert guard.instruction == instruction
-            code = encode_clauses(guard.clauses, registers, code)
+            encode_clauses(guard.clauses, registers, code, sourcemap)
             # The terminal is inserted into arrival location of guard.
             code.extend(registers.output_flow(guard.outputs))
             code.append(guard.outputs.length)
             code.append(o_terminal)
             guard.index = code.length
-            code = encode_clauses(clauses[index .:],
-                registers, code)
+            encode_clauses(clauses[index .:], registers, code, sourcemap)
             # Location of guard is encoded first.
             clauses = clauses[.: index]
             break
@@ -1043,7 +1585,7 @@ encode_clauses = (clauses, registers, code):
             code.append(instruction.opcode | (arg << 3))
         else
             code.append(instruction.opcode)
-    return code
+        sourcemap.mark(instruction.loc)
 
 class RegisterAllocator
     +init = (self, inputs, outputs, get_constant):
@@ -1091,6 +1633,33 @@ class RegisterAllocator
                 self.free_registers.add(reg)
             yield self.mapping[v]
         self.live_ranges.difference_update(outputs)
+
+class SourceMap
+    +init = (self, code):
+        self.code = code
+        self.mapping = []
+        self.top_loc = [0, 0, 0, 0, 0]
+        self.top_bytes = 0
+        self.base = code.length
+
+    mark = (self, loc):
+        if loc == null
+            loc = self.top_loc
+        if loc == self.top_loc
+            self.top_bytes += self.code.length - self.base
+        else
+            if self.top_bytes > 0
+                self.mapping.extend(reversed([self.top_bytes] ++ self.top_loc))
+            self.top_loc   = loc
+            self.top_bytes = self.code.length - self.base
+        self.base = self.code.length
+
+    build = (self):
+        if self.top_bytes > 0
+            self.mapping.extend(reversed([self.top_bytes] ++ self.top_loc))
+            self.top_bytes = 0
+        assert self.base == self.code.length, "source map is lagging behind"
+        return list(reversed(self.mapping))
 
 # A sample of what this program writes out.
 # out = {
@@ -1144,9 +1713,12 @@ o_false  = (0x5 << 3)
 o_call   = (0x6 << 3)
 
 # Inputs-only instructions.
-o_raise      = (0x7 << 3) | 0x5 # inputs*
-o_yield      = (0x8 << 3) | 0x5
-o_yield_from = (0x9 << 3) | 0x5
+o_raise      = (0x8 << 3) | 0x5 # inputs*
+o_yield      = (0x9 << 3) | 0x5
+o_yield_from = (0xA << 3) | 0x5
+
+# Basic abstract instructions (extended)
+o_deref  = (0xC << 3)
 
 opcode_names = {
     o_move: "move",
@@ -1166,6 +1738,7 @@ opcode_names = {
     o_frame: "frame",
     o_branch: "branch",
     o_branchx: "branchx",
+    o_deref: "deref",
 }
 
 
@@ -1200,50 +1773,9 @@ opcode_names = {
 # Closures may have mutable frame values as well, in that
 # case you should not bind them to modules.
 
-
 # During compiling. Decompose variable flow into LP.
 # Regalloc and recompose during analysis. Make
 # this bidirectional.
-
-# The instruction opcode is divided into 4 groups.
-
-#o_simple = 0x0 # Basic abstract instructions
-#o_branch = 0x1 # With a procedure index to identify branch target.
-#o_frame  = 0x2 # With a closure index to identify objects being framed.
-#               # Reserved slot for low-level instructions, if that is
-#               # ever being defined.
-#
-#o_move   = (0x0 << 2)
-#o_global = (0x1 << 2)
-#o_attr   = (0x2 << 2)
-#o_item   = (0x3 << 2)
-#
-#o_true   = (0x4 << 2)
-#o_false  = (0x5 << 2)
-#o_eq     = (0x6 << 2)
-#o_ne     = (0x7 << 2)
-#
-#o_call   = (0x8 << 2)
-#o_match  = (0x9 << 2)
-#o_next   = (0xA << 2)
-#o_raise  = (0xB << 2)
-#
-#o_yield      = (0xC << 2)
-#o_yield_from = (0xD << 2)
-
-#reg(i):   (i << 2) + 0
-#inp(i):   (i << 2) + 1
-#outp(i):  (i << 2) + 2
-#const(i): (i << 2) + 3
-
-#write_op = (opcode, inputs, outputs, arg=0):
-#    yield opcode + (arg << 2)
-#    yield inputs.length
-#    yield outputs.length
-#    for inp in inputs
-#        yield inp
-#    for out in outputs
-#        yield out
 
 #Prog:
 #    Proc*
@@ -1266,16 +1798,16 @@ print_program = (program):
     for proc in program
         print("proc" ++ proc.index.to_string() ++
             format_in_out(proc, vartab), "<-")
-        print_clauses(2, proc.clauses, vartab)
+        print_clauses("  ", proc.clauses, vartab)
     return vartab
 
 print_clauses = (prefix, clauses, vartab):
     stack = [[prefix, clauses]]
     prefix = ""
     while stack.length > 0
-        l, clauses = stack.pop()
+        line, clauses = stack.pop()
         sb = StringBuilder()
-        sb.append(" "*l)
+        sb.append(line)
         sb.append(prefix)
         sp = ""
         for instruction in clauses
@@ -1304,13 +1836,14 @@ print_clauses = (prefix, clauses, vartab):
                     cls.append(cl)
                 s ++= "{" ++ ", ".join(cls) ++ "}"
             if instruction.guard
-                sp = "? "
-                l = sb.build().length + s.length
+                sp = ", "
+                l = sb.build() ++ "¬" ++ s
+                s = " " ++ s
                 stack.append([l, instruction.guard.clauses])
             sb.append(s)
         sb.append(".")
         print(sb.build())
-        prefix = "| "
+        prefix = ", "
 
 format_in_out = (instruction, vartab):
     inputs = []
@@ -1379,12 +1912,7 @@ print_proc_vars = (label, proc_defs, program, vartab):
 # # inferences them and then stores it all into an image.
 # 
 # actions = {
-#     "repeat": (heads, body):
-#         return Repeat(heads, body)
-#     "for_loop": (slot, expr):
-#         return ForLoop(slot, expr, if)
-#     "while_loop": (cond):
-#         return WhileLoop(cond)
+
 #     "import_bind": (name, bindings):
 #         return Bind(
 #             Call(Symbol(u"import"), [Literal("string", name)]),
@@ -1417,8 +1945,6 @@ print_proc_vars = (label, proc_defs, program, vartab):
 #         return Except([statement], excepts)
 #     "assert": (cond, value):
 #         return Assert(cond, value)
-#     "raise": (value):
-#         return Raise(value)
 #     "constant_case": (value, body):
 #         return ConstantCase(value, body)
 #     "pattern_case": (pattern, slots, body):
@@ -1428,26 +1954,13 @@ print_proc_vars = (label, proc_defs, program, vartab):
 #             return PatternCase(pattern, Tuple(slots), body)
 #     "return": (expr=Symbol("null")):
 #         return Return(expr)
-#     "inplace_assign": (slot, op, value):
-#         return InplaceAssign(slot, op, value)
-#     "item": (base, index):
-#         return Item(base, index)
-#     "attr": (base, name):
-#         return Attr(base, name)
-#     "prefix_symbol": (a):
-#         return Symbol(a ++ "expr")
 #     "tuple": (slots):
 #         return Tuple(slots)
 #     "iter_once": (value, slot):
 #         return IterOnce(value, slot)
 # 
-# 
 #     "make_tuple": (items):
 #         return MakeTuple(items)
-#     "list": (values):
-#         return List(values)
-#     "deref": (value):
-#         return Deref(value)
 #     "record": (fields):
 #         return Record(fields)
 #     "record_shorthand": (label):
@@ -1458,7 +1971,6 @@ print_proc_vars = (label, proc_defs, program, vartab):
 #         return Field(name, false, value)
 #     "mutable_field": (name, value=null):
 #         return Field(name, true, value)
-
 
 # class Bind
 #     +init = (self, module, bindings):
@@ -1492,477 +2004,7 @@ print_proc_vars = (label, proc_defs, program, vartab):
 #             type = "bind_coeffect",
 #             fields = js(self.fields),
 #             slot = js(self.slot) }
-# 
-# class InplaceAssign
-#     +init = (self, slot, op, value):
-#         slot.slotconfig(true, false)
-#         self.slot = slot
-#         self.op = op
-#         self.value = value
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         f(self.slot)
-#         f(self.op)
-#         f(self.value)
-# 
-#     to_json = (self):
-#         return {
-#             type = "inplace_assign",
-#             slot = js(self.slot),
-#             op = js(self.op),
-#             value = js(self.value) }
-# 
-# class Item extends Expr
-#     +init = (self, base, index):
-#         self.base = base
-#         self.index = index
-#         self.loc = null
-# 
-#     slotconfig = (self, deep, wronly):
-#         null
-# 
-#     traverse = (self, f):
-#         f(self.base)
-#         f(self.index)
-# 
-#     to_json = (self):
-#         return {
-#             type = "slot",
-#             kind = "item",
-#             base = js(self.base),
-#             index = js(self.index),
-#             loc = js_loc(self.loc) }
-# 
-# class Deref extends Expr
-#     +init = (self, value):
-#         self.value = value
-#         self.loc = null
-# 
-#     slotconfig = (self, deep, wronly):
-#         null
-# 
-#     traverse = (self, f):
-#         f(self.value)
-# 
-#     to_json = (self):
-#         return {
-#             type = "slot",
-#             kind = "deref",
-#             value = js(self.value),
-#             loc = js_loc(self.loc) }
-# 
-# class Record extends Expr
-#     +init = (self, fields):
-#         self.fields = fields
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         for field in self.fields
-#             f(field)
-# 
-#     to_json = (self):
-#         return {
-#             type = "record"
-#             fields = js(self.fields)
-#         }
-# 
-# class Field
-#     +init = (self, name, mutable, value=null):
-#         self.name = name
-#         self.mutable = mutable
-#         self.value = value
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         if self.value
-#             f(self.value)
-# 
-#     to_json = (self):
-#         if self.value
-#             return {name=self.name, mutable=self.mutable, value=js(self.value)}
-#         else
-#             return {name=self.name, mutable=self.mutable}
-# 
-# class Attr extends Expr
-#     +init = (self, base, name):
-#         self.base = base
-#         self.name = name
-#         self.loc = null
-# 
-#     slotconfig = (self, deep, wronly):
-#         null
-# 
-#     traverse = (self, f):
-#         f(self.base)
-# 
-#     to_json = (self):
-#         return {
-#             type = "slot",
-#             kind = "attr",
-#             base = js(self.base),
-#             name = self.name,
-#             loc = js_loc(self.loc) }
-# 
-# class Tuple extends Expr
-#     +init = (self, slots):
-#         self.slots = slots
-#         self.loc = null
-# 
-#     slotconfig = (self, deep, wronly):
-#         for slot in self.slots
-#             slot.slotconfig(deep, wronly)
-# 
-#     traverse = (self, f):
-#         for slot in self.slots
-#             f(slot)
-# 
-#     to_json = (self):
-#         return {
-#             type = "slot",
-#             kind = "tuple",
-#             slots = js(self.slots),
-#             loc = js_loc(self.loc) }
-# 
-# class MakeTuple extends Expr
-#     +init = (self, items):
-#         self.items = items
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         for item in self.items
-#             f(item)
-# 
-#     to_json = (self):
-#         return { type = "make_tuple", items = js(self.items) }
-# 
-# #TODO: Continue from here.
-# 
-# # How closures should work: frames and subframes
-# #   shadowing transparency:
-# #     if the variable is defined in the subframe, it should
-# #     be shadowed from that point on.
-# #
-# #   Assign to variables above the defpoint.
-# #   But fetch from the whole scope.
-# #
-# #   Variable slot appears on the frame where the variable
-# #   is defined on.
-# #
-# #   repeat -subframe
-# #     expect that the subframe might not be run.
-# #
-# #   conditional -subframes
-# #     allow the variable pass into parent frame only
-# #     if it appears on all of the flowpaths.
-# #
-# #   closure always fetches from the whole scope above it.
-# #
-# #   The separate 'assignment' is removed. Not longer needed
-# #   because the topmost scope is immutable.
-# 
-# # We are not checking .sh on write.
-# # This is a fringe case arising from the need
-# # to do shadowing for the variables.
-# #
-# # I am certain that somebody, possibly a highly paid
-# # consultant, will argue for checking a shadow on write
-# # when inside a closure.
-# #
-# # The shadowing mechanism in itself is used to ensure that
-# # the user is not harmed by the unusual scoping rules that
-# # allow consistent and useful behavior for nested functions
-# # inside repetition clauses.
-# #
-# # When we get outside of certain precaution, the usefulness of
-# # the measures decrease while the inconvenience increases.
-# #
-# # If there was a check in here then we would get
-# # consultants argue that it should not be there.
-# 
-# # TODO: On toplevel, we got to "pierce" holes for the
-# #       global scope, so that assignments hit mutable
-# #       elements.
-# 
-# # Every value imported using "from" will be retrieved through
-# # "bind", and set writable. This allows the doctools to
-# # identify imported variables and define their origins,
-# # while they stay out of the scope.
-# 
-# # Must note that it won't work with "from" * -syntax.
-# 
-# class Repeat
-#     +init = (self, heads, body):
-#         self.heads = heads
-#         self.body = body
-#         self.sublocals = {}
-#         self.scope = null
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         for head in self.heads
-#             f(head)
-#         for stmt in self.body
-#             f(stmt)
-#         
-#     to_json = (self):
-#         fresh = []
-#         # TODO: associate to the repeater and add 'fresh' -field.
-#         for var, cell in self.sublocals.items()
-#             if cell.deref
-#                 fresh.append(self.scope.cellvars.index(cell))
-#         return {
-#             type = "repeat",
-#             fresh = fresh,
-#             heads = js(self.heads),
-#             body = js(self.body) }
-# 
-# class ForLoop
-#     +init = (self, slot, value):
-#         self.slot = slot
-#         self.value = value
-#         self.loc = null
-#         slot.slotconfig(false, true)
-# 
-#     traverse = (self, f):
-#         f(self.slot)
-#         f(self.value)
-# 
-#     to_json = (self):
-#         return {
-#             type = "for",
-#             slot = js(self.slot),
-#             value = js(self.value) }
-# 
-# class WhileLoop
-#     +init = (self, cond):
-#         self.cond = cond
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         f(self.cond)
-# 
-#     to_json = (self):
-#         return {
-#             type = "while",
-#             cond = js(self.cond) }
-# 
-# class IfLoop
-#     +init = (self, cond):
-#         self.cond = cond
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         f(self.cond)
-# 
-#     to_json = (self):
-#         return {
-#             type = "if",
-#             cond = js(self.cond) }
-# 
-# class Datatype
-#     +init = (self, head, rows, decls):
-#         self.slot = head[0]
-#         self.varc = head[1].length
-#         self.decls = decls
-#         self.loc = null
-#         self.slot.slotconfig(true, true)
-#         args = []
-#         for var in head[1]
-#             args.append(Argument(Symbol(var)))
-#         self.rows = []
-#         for constructor, fields in rows
-#             constructor.slotconfig(true, true)
-#             labels = {}
-#             body = []
-#             i = 0
-#             for field in fields
-#                 if field.label
-#                     labels[field.label] = i
-#                 body.append( field.value )
-#                 i += 1
-#             builder = Closure(args, [Return(MakeTuple(body))])
-#             self.rows.append([
-#                 constructor,
-#                 fields.length
-#                 labels,
-#                 builder ])
-# 
-#     traverse = (self, f):
-#         f(self.slot)
-#         for constructor, fieldc, labels, builder in self.rows
-#             f(constructor)
-#             f(builder)
-#         for decl in self.decls
-#             f(decl)
-# 
-#     to_json = (self):
-#         return {
-#             type = "datatype",
-#             slot = js(self.slot),
-#             varc = js(self.varc),
-#             rows = js(self.rows),
-#             decls = js(self.decls),
-#             loc = js_loc(self.loc) }
-# 
-# class OperatorDecl
-#     +init = (self, slot, selector, decls):
-#         self.slot = slot
-#         self.selector = selector
-#         self.decls = decls
-#         self.loc = null
-#         self.slot.slotconfig(true, true)
-# 
-#     traverse = (self, f):
-#         f(self.slot)
-#         f(self.selector)
-#         for decl in self.decls
-#             f(decl)
-# 
-#     to_json = (self):
-#         return {
-#             type = "operator",
-#             slot = js(self.slot),
-#             selector = js(self.selector),
-#             decls = js(self.decls),
-#             loc = js_loc(self.loc) }
-# 
-# class Label
-#     +init = (self, label, value):
-#         self.label = label
-#         self.value = value
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         f(self.value)
-# 
-#     to_json = (self):
-#         if self.label
-#             return {
-#                 type = "label",
-#                 name = self.label,
-#                 value = js(self.value) }
-#         else
-#             return {
-#                 type = "no_label",
-#                 value = js(self.value) }
-# 
-# class MethodDecl
-#     +init = (self, op, value):
-#         self.op = op
-#         self.value = value
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         f(self.op)
-#         f(self.value)
-# 
-#     to_json = (self):
-#         return {
-#             type = "method",
-#             op = js(self.op),
-#             value = js(self.value) }
-# 
-# class DefaultMethodDecl
-#     +init = (self, value):
-#         self.value = value
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         f(self.value)
-# 
-#     to_json = (self):
-#         return {
-#             type = "default_method",
-#             value = js(self.value) }
-# 
-# class DerivedDecl
-#     +init = (self, ops, value):
-#         self.ops = ops
-#         self.value = value
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         for op in self.ops
-#             f(op)
-#         f(self.value)
-# 
-#     to_json = (self):
-#         return {
-#             type = "derived",
-#             ops = js(self.ops),
-#             value = js(self.value) }
-# 
-# class AttrDecl
-#     +init = (self, name, value, which):
-#         self.name = name
-#         self.value = value
-#         self.which = which
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         f(self.value)
-# 
-#     to_json = (self):
-#         return {
-#             type = self.which,
-#             name = self.name,
-#             value = js(self.value) }
-# 
-# class Case
-#     +init = (self, value, cases, default):
-#         self.value = value
-#         self.cases = cases
-#         self.default = default
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         f(self.value)
-#         for case in self.cases
-#             f(case)
-#         for stmt in self.default
-#             f(stmt)
-# 
-#     to_json = (self):
-#         return {
-#             type = "case",
-#             value = js(self.value),
-#             cases = js(self.cases),
-#             default = js(self.default),
-#             loc = js_loc(self.loc) }
-# 
-# class Except
-#     +init = (self, body, excepts):
-#         self.body = body
-#         self.excepts = excepts
-#         for exc, slot, exc_body in self.excepts
-#             if slot
-#                 slot.slotconfig(false, true)
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         for stmt in self.body
-#             f(stmt)
-#         for exc, slot, exc_body in self.excepts
-#             f(exc)
-#             if slot
-#                 f(exc)
-#             for stmt in exc_body
-#                 f(stmt)
-# 
-#     to_json = (self):
-#         excepts = []
-#         for exc, slot, exc_body in self.excepts
-#             if slot
-#                 excepts.append({exc = exc, slot = slot, body=exc_body})
-#             else
-#                 excepts.append({exc = exc, body=exc_body})
-#         return {
-#             type = "except",
-#             body = js(self.body),
-#             excepts = js(excepts),
-#             loc = js_loc(self.loc) }
-# 
+
 # class Assert
 #     +init = (self, cond, value):
 #         self.cond = cond
@@ -1980,59 +2022,6 @@ print_proc_vars = (label, proc_defs, program, vartab):
 #             value = js(self.value),
 #             loc = js_loc(self.loc) }
 # 
-# class Raise
-#     +init = (self, value):
-#         self.value = value
-# 
-#     traverse = (self, f):
-#         f(self.value)
-# 
-#     to_json = (self):
-#         return {
-#             type = "raise",
-#             value = js(self.value),
-#             loc = js_loc(self.loc) }
-# 
-# class ConstantCase
-#     +init = (self, value, body):
-#         self.value = value
-#         self.body = body
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         f(self.value)
-#         for stmt in self.body
-#             f(stmt)
-# 
-#     to_json = (self):
-#         return {
-#             type = "constant",
-#             value = js(self.value),
-#             body = js(self.body),
-#             loc = js_loc(self.loc) }
-# 
-# class PatternCase
-#     +init = (self, pattern, slot, body):
-#         self.pattern = pattern
-#         self.slot = slot
-#         self.body = body
-#         slot.slotconfig(false, true)
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         f(self.pattern)
-#         f(self.slot)
-#         for stmt in self.body
-#             f(stmt)
-# 
-#     to_json = (self):
-#         return {
-#             type = "pattern",
-#             pattern = js(self.pattern),
-#             slot = js(self.slot),
-#             body = js(self.body),
-#             loc = js_loc(self.loc) }
-# 
 # class Return
 #     +init = (self, value):
 #         self.value = value
@@ -2043,17 +2032,6 @@ print_proc_vars = (label, proc_defs, program, vartab):
 # 
 #     to_json = (self):
 #         return { type = "return", value = js(self.value) }
-# 
-# class Yield
-#     +init = (self, value):
-#         self.value = value
-#         self.loc = null
-# 
-#     traverse = (self, f):
-#         f(self.value)
-# 
-#     to_json = (self):
-#         return { type = "yield", value = js(self.value) }
 # 
 # class Break
 #     +init = (self):
@@ -2074,21 +2052,3 @@ print_proc_vars = (label, proc_defs, program, vartab):
 # 
 #     to_json = (self):
 #         return { type = "continue" }
-# 
-# class IterOnce extends Expr
-#     +init = (self, value, slot):
-#         self.value = value
-#         self.slot = slot
-#         self.loc = null
-#         slot.slotconfig(false, true)
-# 
-#     traverse = (self, f):
-#         f(self.value)
-#         f(self.slot)
-# 
-#     to_json = (self):
-#         return {
-#             type = "iter_once",
-#             value = js(self.value),
-#             slot = js(self.slot),
-#             loc = js_loc(self.loc) }

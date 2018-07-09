@@ -33,7 +33,8 @@ def new_entry_point(config, interpret=False):
             call(w_import, [mspace, String(u"intro")])
         except Traceback as tb:
             os.write(0, "Traceback (most recent call last):\n")
-            for loc, sources in reversed(tb.trace):
+            for loc_builder in reversed(tb.trace):
+                loc, sources = loc_builder.build_loc()
                 col0 = cast(loc[0], Integer).toint()
                 lno0 = cast(loc[1], Integer).toint()
                 col1 = cast(loc[2], Integer).toint()
@@ -277,6 +278,23 @@ def w_is_subtype(a, b):
     else:
         return false
 
+# The placeholder error was used when there
+# was not certainty that our exception
+# construction was working.
+@python_bridge
+def w_placeholder_error():
+    return e_NoValue()
+
+@python_bridge
+def w_once(iterator):
+    if not isinstance(iterator, Iterator):
+        iterator = cast(call(op_iter, [iterator]), Iterator)
+    try:
+        x, it = iterator.next()
+    except StopIteration:
+        raise error(e_NoValue())
+    return Tuple([x, it])
+
 base_stem = {
     u"==": op_eq,
     u"!=": w_ne,
@@ -335,4 +353,6 @@ base_stem = {
 #    u"get_dom": builtin()(lambda i: common.dom.get(cast(i, Integer).toint())),
 #    u"cod": common.cod,
 #    u"is_subtype": w_is_subtype,
+    u"placeholder_error": w_placeholder_error,
+    u"once": w_once,
 }

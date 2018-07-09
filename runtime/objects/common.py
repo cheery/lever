@@ -343,49 +343,61 @@ def error(response):
 class Traceback(Exception):
     def __init__(self, error):
         self.error = error
-        self.trace = []
+        if isinstance(error, AbstractError):
+            if error.trace is None:
+                self.trace = error.trace = []
+            else:
+                self.trace = error.trace
+        else:
+            self.trace = []
+
+# Every error requires a traceback handle.
+class AbstractError(Object):
+    interface = None
+    def __init__(self):
+        self.trace = None
 
 # Type error is every error that can be discovered without
 # running the program iff the type annotation succeeds.
-class e_TypeError(Object):
+class e_TypeError(AbstractError):
     pass
 
 # Appears in the runtime/json_loader.py the first time
-class e_IOError(Object):
+class e_IOError(AbstractError):
     pass
 
-class e_JSONDecodeError(Object):
+class e_JSONDecodeError(AbstractError):
     def __init__(self, message):
         self.message = message
 
-class e_IntegerParseError(Object):
+class e_IntegerParseError(AbstractError):
     pass
 
-class e_OverflowError(Object):
+class e_OverflowError(AbstractError):
     pass
 
-class e_ModuleError(Object):
+class e_ModuleError(AbstractError):
     pass
 
-class e_EvalError(Object):
+class e_EvalError(AbstractError):
     pass
 
-class e_IntegerBaseError(Object):
+class e_IntegerBaseError(AbstractError):
     pass
 
-class e_PartialOnArgument(Object):
+class e_PartialOnArgument(AbstractError):
     pass
 
-class e_NoItems(Object):
+class e_NoItems(AbstractError):
     pass
 
-class e_NoIndex(Object):
+class e_NoIndex(AbstractError):
     pass
 
-class e_NoValue(Object):
+class e_NoValue(AbstractError):
     pass
 
-class e_AssertTriggered(Object):
+class e_AssertTriggered(AbstractError):
     def __init__(self, message):
         self.message = message
 
