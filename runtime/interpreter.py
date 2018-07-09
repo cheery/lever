@@ -420,7 +420,7 @@ def eval_body(unit, ctx, body, smap, index):
                     it = cast(call(op_iter, [it]), Iterator)
                 try:
                     value, it = it.next()
-                    motion(ctx, [value], ov)
+                    motion(ctx, [value, it], ov)
                 except StopIteration:
                     index, opcode = decode_opcode(body, x)
                     index, outputs = decode_list(body, index)

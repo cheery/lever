@@ -102,6 +102,8 @@ compile_file = (src, dst):
     solve_flow_variables(builder.program, proc_defs)
 
     if builder.entry.inputs.length > 0
+        print()
+        vartab = print_program(builder.program)
         print("ERROR: ", src.to_string(),
             "contains variables that are used before they are set")
         report = []
@@ -246,7 +248,7 @@ actions = {
         return Let([
             [lst,    Call(Symbol("list"), [])],
             [append, Attr(lst, Constant("append"))] ],
-            Prog(prog, lst))
+            ProgExpr(prog, lst))
 }
 
 # an idea.. instead of having direct branch to break/return/continue..
@@ -408,9 +410,8 @@ class Repeat extends Node
         builder.emit_branch(entry, [], [])
         builder.current = entry
         for head in self.heads
-            repeat = builder.merge()
-            head.build_loophead(leave)
-            leave = repeat
+            repeat = head.build_loophead(builder, leave)
+            leave  = repeat
         outer_jumps = builder.jumps
         for statement in self.body
             builder.build(statement, 0)
@@ -436,16 +437,20 @@ class ForLoop extends Node
         self.loc = null
 
     build_loophead = (self, builder, leave):
-        val = builder.build(self.value, 1)[0]
         x  = FlowVariable()
         it = FlowVariable()
+        val = builder.build(self.value, 1)[0]
+        builder.emit(o_move, [val], [it])
         slot = self.slot.build_slot(builder)
         if self.rest
             rest = self.rest.build_slot(builder)
         else
             rest = null
+        repeat = builder.new_proc()
+        builder.emit_branch(repeat, [], [])
+        builder.current = repeat
         fbranch = Guard([], [])
-        builder.emit_guard(o_next, [val], [x, it], fbranch)
+        builder.emit_guard(o_next, [it], [x, it], fbranch)
         slot.write(builder, x)
         if rest
             rest.write(builder, it)
@@ -458,6 +463,7 @@ class ForLoop extends Node
             builder.current = fbranch
             builder.emit_branch(leave, [], [])
             builder.current = tbranch
+        return repeat
 
 class WhileLoop extends Node
     +init = (self, cond):
@@ -465,10 +471,14 @@ class WhileLoop extends Node
         self.loc = null
 
     build_loophead = (self, builder, leave):
+        repeat = builder.new_proc()
+        builder.emit_branch(repeat, [], [])
+        builder.current = repeat
         tbranch, fbranch = builder.build_cond(self.cond)
         builder.current = fbranch
         builder.emit_branch(leave, [], [])
         builder.current = tbranch
+        return repeat
 
 class LoopControl extends Node
     +init = (self, depth, leave):
@@ -938,7 +948,7 @@ class Attr extends Node
         attrvar = builder.build(self.attr, 1)[0]
         return object({
             "read": (builder, outc):
-                return builder.emit(o_attr, [basevar, attrvar], [new_vars(outc)])
+                return builder.emit(o_attr, [basevar, attrvar], new_vars(outc))
             "write": (builder, val):
                 builder.emit(o_attr, [basevar, attrvar, val], [])
             "match": (builder, val):
@@ -965,7 +975,7 @@ class Deref extends Node
         basevar = builder.build(self.base, 1)[0]
         return object({
             "read": (builder, outc):
-                return builder.emit(o_deref, [basevar], [new_vars(outc)])
+                return builder.emit(o_deref, [basevar], new_vars(outc))
             "write": (builder, val):
                 builder.emit(o_deref, [basevar, val], [])
             "match": (builder, val):
@@ -994,7 +1004,7 @@ class Item extends Node
         indexervar = builder.build(self.indexer, 1)[0]
         return object({
             "read": (builder, outc):
-                return builder.emit(o_attr, [basevar, indexervar], [new_vars(outc)])
+                return builder.emit(o_attr, [basevar, indexervar], new_vars(outc))
             "write": (builder, val):
                 builder.emit(o_attr, [basevar, indexervar, val], [])
             "match": (builder, val):
@@ -1172,6 +1182,7 @@ class ProgExpr extends Node
     +init = (self, statements, expr):
         self.statements = statements
         self.expr = expr
+        self.loc = null
 
     build = (self, builder, outc):
         for stmt in self.statements
@@ -1203,24 +1214,26 @@ proc_defs_analysis = (program):
         keep_doing = false
         for proc in reversed(program)
             try
-                defs = proc_defs[proc]
+                defs = set(proc_defs[proc])
             except KeyError as _
-                proc_defs[proc] = defs = set()
+                defs = set()
             L = defs.length
 
             for v in proc.inputs
                 if isinstance(v, FlowVariable)
                     defs.add(v)
-            stack = [proc.clauses]
+            stack = [[proc.clauses, defs]]
             while stack.length > 0
-                clauses = stack.pop()
+                clauses, defs = stack.pop()
                 for instruction in clauses
                     if instruction.branch in proc_defs
                         defs.update(proc_defs[instruction.branch])
                     if instruction.guard
-                        stack.append(instruction.guard.clauses)
+                        guard_defs = set(defs)
                         for v in instruction.guard.outputs
-                            defs.add(v)
+                            if isinstance(v, FlowVariable)
+                                guard_defs.add(v)
+                        stack.append([instruction.guard.clauses, guard_defs])
                     for v in instruction.outputs
                         if isinstance(v, FlowVariable)
                             defs.add(v)
@@ -1229,6 +1242,8 @@ proc_defs_analysis = (program):
                     # it.
                     if instruction.opcode == o_raise
                         defs.clear()
+                        break
+            proc_defs[proc] = defs
             if defs.length != L
                 keep_doing = true
     return proc_defs
@@ -1266,8 +1281,10 @@ solve_flow_variables = (program, proc_defs):
                         stack.append([block, i, current_live_set])
                         stack.append([guard, guard.clauses.length,
                             set(filter_flow_vars(proc.outputs))])
+                        current_live_set.update(filter_flow_vars(instruction.inputs))
                         break
-                    current_live_set.update(filter_flow_vars(instruction.inputs))
+                    else
+                        current_live_set.update(filter_flow_vars(instruction.inputs))
                 if i == 0
                     if isinstance(block, Guard)
                         current_live_set.difference_update(filter_flow_vars(block.outputs))
@@ -1513,6 +1530,10 @@ class Instruction
                 closure.instruction = self
         if branch
             branch.predecessors.add(self)
+        for i in inputs
+            assert not isinstance(i, list)
+        for i in outputs
+            assert not isinstance(i, list)
 
     add_closure = (self, closure, var):
         assert not closure.instruction, "cannot reuse closures"
@@ -1613,7 +1634,7 @@ to_json = (sources, program, entry):
 
         registers.live_ranges.difference_update(proc.inputs)
         assert registers.live_ranges.length == 0,
-            ["error in encoding", list(registers.live_ranges)]
+            ["error in encoding", list(registers.live_ranges), proc.index]
 
         proc_data = {
             "tmpc": registers.max_tmpc,
@@ -1691,7 +1712,7 @@ encode_clauses = (clauses, registers, code, sourcemap):
                 else
                     assert not isinstance(v, FlowVariable),
                         "flow variables should have been removed at this point"
-                    assert isinstance(v, Constant)
+                    assert isinstance(v, Constant), [v]
                     code.append(registers.get_constant(v))
             code.append(instruction.inputs.length)
         # If there is opcode, it is encoded to the branch.
