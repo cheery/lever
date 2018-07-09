@@ -7,7 +7,7 @@ statement:
     slot operator "=" >expr      / inplace_assign(., symbol(.), .)
     slot "(" pform ")" "=" >expr / inplace_assign
     slot "=" >expr / assign
-    "if" expr "then" >(=statement)+
+    "if" condexpr "then" >(=statement)+
              ["else" >(=statement)+]? / cond
     "return" >expr? / return
     "yield" expr        / yield
@@ -63,10 +63,17 @@ slot:
     slot_item ["," slot_item]+ / tuple([.] concat .)
 
 slot_item:
+    expr "(" join(slot_item, "") ")" / pattern
     symbol               / symbol
     postfix "[" form "]" / item
     postfix "." symbol   / attr
     "*" term / deref
+    "{" sep(record_pair, ",") "}"      / record
+    "{" sep(record_shorthand, ",") "}" / record
+
+condexpr:
+    expr "@" expr "(" join(slot_item, "") ")" / match
+    expr_or
 
 expr:
     [loop_head]* "repeat" >(=statement)+  / repeat
@@ -145,7 +152,8 @@ postfix:
 
 term:
     "(" pform ")"
-    "{" sep(record_field, ",") "}" / record
+    "{" sep(record_pair, ",") "}"      / record
+    "{" sep(record_shorthand, ",") "}" / record
     "[" sep(expr_or, ",") "]" / list
     symbol  / symbol
     string  / string
@@ -161,11 +169,12 @@ pform:
 form:
     expr
 
-record_field:
-    symbol                 / record_shorthand
-    "!" symbol             / mutable_record_shorthand
-    symbol     ":" expr_or / field
-    "!" symbol ":" expr_or / mutable_field
+record_shorthand: symbol / [1, symbol(1)]
+record_pair: record_label ":" expr_or
+
+record_label:
+    symbol
+    "!" symbol / stringconcat
 
 operator: ["+", "-", "*",
     "/", "//", "%", "~", "<<", ">>", "&", "|",

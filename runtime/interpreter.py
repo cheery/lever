@@ -316,7 +316,7 @@ def eval_body(unit, ctx, body, smap, index):
                 try:
                     callee = ctx.read(iv[0])
                     args = [ctx.read(i) for i in iv[1:]]
-                    if isinstance(callee, Closure) and callee.unit is unit:
+                    if isinstance(callee, Closure) and callee.unit is unit and callee.outc == len(ov):
                         inputs = callee.frame + args
                         outputs = [ctx.addr(o) for o in ov]
                         proc = enter_closure(unit, callee,

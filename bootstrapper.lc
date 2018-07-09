@@ -39,6 +39,7 @@ compile_file = (src, dst):
             builder.env = {}
         builder.retvars_given = retvars != null
         builder.retvars = []
+        builder.retboxes = []
         if retvars
             for retvar in retvars
                 var = builder.get_variable(retvar, true)
@@ -62,10 +63,33 @@ compile_file = (src, dst):
             k += 1
         for statement in body
             builder.build(statement)
+        if builder.retboxes.length > 0
+            L = 1
+            has_1 = false
+            for block, vars in builder.retboxes
+                if vars.length != 1
+                    L = vars.length
+                else
+                    has_1 = true
+            for block, vars in builder.retboxes
+                if L == 0
+                    assert vars.length == L, "The return clauses must match"
+                else
+                    assert vars.length == 1 or vars.length == L, "The return clauses must match"
+            assert builder.retvars.length == 0
+            if has_1
+                L = 1
+            for i in range(L)
+                builder.retvars.append(FlowVariable())
+            for block, vars in builder.retboxes
+                if vars.length > 0 or builder.retvars.length > 0
+                    block.append(Instruction(o_move, vars, builder.retvars))
+            assert builder.jumps.length == 0, "break/continue missing the loop"
         for var in builder.retvars
             assert var, "return variables must be available"
             for proc in clos.entries
                 proc.outputs.append(var)
+            
 
     # The third step resolves variable flow and closure frames.
     # (we could use strongly-connected-components here)
@@ -110,36 +134,33 @@ actions = {
         return ForLoop(slot, rest, expr, cond)
     "while_loop": (cond):
         return WhileLoop(cond)
+    "break": (depths):
+        return LoopControl(depths.length, true)
+    "continue": (depths):
+        return LoopControl(depths.length, false)
+    "return": (expr=null):
+        return Return(expr)
 
-    # TODO: Implement the exception pass-through for these.
-    # Should also implement break and continue.
-    # "break": (depths):
-    #     depth = depths.length
-    # "continue": (depths):
-    #     depth = depths.length
-    # "return": (expr=null):
-    #     depth = depths.length
-    # 'return' must be empty if the expression is generator or
-    #          there are explicit return values.
-
-    # Record({labels: values})
     # TODO: Implement record slot syntax.
-
-    # Tuple(slots)
     # TODO: Implement tuple slot syntax.
-
-    # Match(val, pattern, slots)
-    # Pattern(pattern, slots)
     # TODO: Implement matching syntax.
+    "record": (pairs):
+        return Record(dict(pairs))
+    "tuple": (slots):
+        return Tuple(slots)
+    "match": (val, pattern, slots):
+        return Match(val, pattern, slots)
+    "pattern": (pattern, slots):
+        return Pattern(pattern, slots)
 
     "raise": (expr):
         return SimpleStatement(o_raise, [expr])
     "generator": (body):
         return Generator(body)
     "yield": (expr):
-        return SimpleStatement(o_yield, [expr])
+        return Yield(expr, false) 
     "yield_from": (expr):
-        return SimpleStatement(o_yield_from, [expr])
+        return Yield(expr, true) 
     "closure": (args, retvars, body):
         slots = []
         defaults = []
@@ -177,6 +198,8 @@ actions = {
         return Symbol(name)
     "prefix_symbol": (a):
         return Symbol(a ++ "expr")
+    "stringconcat": (a, b):
+        return a ++ b
     "integer": (repr):
         return Constant(parse_int(repr))
     "string": (repr):
@@ -242,9 +265,11 @@ class Builder
         self.env = null
         self.retvars = []
         self.retvars_given = false
+        self.retboxes = []
         self.record_kinds = {}
         self.record_maker = null
         self.loc = [0,0,0,0,0]
+        self.jumps = []
 
     get_variable = (self, name, def):
         if not self.env
@@ -386,8 +411,18 @@ class Repeat extends Node
             repeat = builder.merge()
             head.build_loophead(leave)
             leave = repeat
+        outer_jumps = builder.jumps
         for statement in self.body
             builder.build(statement, 0)
+        for block, depth, this_leaves in builder.jumps
+            if depth == 0
+                if this_leaves
+                    block.append(Instruction(o_branch, [], [], exit))
+                else
+                    block.append(Instruction(o_branch, [], [], repeat))
+            else
+                outer_jumps.append([block, depth-1, this_leaves])
+        builder.jumps = outer_jumps
         builder.emit_branch(repeat, [], [])
         builder.current = exit
         return []
@@ -434,6 +469,63 @@ class WhileLoop extends Node
         builder.current = fbranch
         builder.emit_branch(leave, [], [])
         builder.current = tbranch
+
+class LoopControl extends Node
+    +init = (self, depth, leave):
+        self.depth = depth
+        self.leave = leave
+        self.loc = null
+
+    build = (self, builder, outc):
+        assert outc == 0, "break/continue is statement"
+        block = builder.merge()
+        builder.jumps.append([block, self.depth, self.leave])
+        builder.current = builder.new_proc()
+
+class Return extends Node
+    +init = (self, expr):
+        self.expr = expr
+        self.loc = null
+
+    build = (self, builder, outc):
+        assert outc == 0, "return is statement"
+        vars = []
+        if builder.retvars_given
+            assert not self.expr, "If return variables are given, return must not supply values."
+        elif not builder.current_closure
+            assert not self.expr, "The toplevel script must never return anything."
+        elif builder.current_closure.is_generator
+            assert not self.expr, "return in a generator must not supply values."
+        elif isinstance(self.expr, Tuple)
+            slots = []
+            for slot in self.expr.slots
+                slots.append(slot.build_slot(builder))
+            outputs = []
+            for slot in slots
+                outputs.append(slot.read(builder, 1)[0])
+            vars = outputs
+        elif self.expr
+            val = builder.build(self.expr, 1)[0]
+            vars = [val]
+        block = builder.merge()
+        builder.retboxes.append([block, vars])
+        builder.current = builder.new_proc()
+
+class Yield extends Node
+    +init = (self, expr, stack_generators):
+        self.expr = expr
+        self.stack_generators = stack_generators
+        self.loc = null
+
+    build = (self, builder, outc):
+        assert outc == 0, "yield is statement"
+        assert builder.current_closure.is_generator,
+            "yield is only accepted within a generator."
+        val = builder.build(self.expr, 1)[0]
+        if stack_generators
+            builder.emit(o_yield_from, [val], [])
+        else
+            builder.emit(o_yield, [val], [])
 
 class Generator extends Node
     +init = (self, body):
@@ -515,11 +607,34 @@ class Except extends Node
 
     build = (self, builder, outc):
         assert outc == 0, "no output at exception handler"
+        R = builder.retboxes.length
         exit = builder.current
+        outer_jumps = builder.jumps
+        outer_retboxes = builder.retboxes
         try_block = builder.new_proc()
         builder.current = try_block
         for statement in self.body
             builder.build(statement, 0)
+        for statement in self.body
+            builder.build(statement, 0)
+        try_block = builder.merge()
+        builder.current = exit
+        for block, depth, this_leaves in builder.jumps
+            var = FlowVariable()
+            block.append(Instruction(o_false, [], var))
+            try_block.append(Instruction(o_true, [], var))
+            block = Guard([], [])
+            builder.emit_guard(o_is_true, [var], [], block)
+            outer_jumps.append([block, depth, this_leaves])
+        for block, vars in builder.retboxes
+            var = FlowVariable()
+            block.append(Instruction(o_false, [], var))
+            try_block.append(Instruction(o_true, [], var))
+            block = Guard([], [])
+            builder.emit_guard(o_is_true, [var], [], block)
+            outer_retboxes.append([block, vars])
+        builder.jumps = outer_jumps
+        builder.retboxes = outer_retboxes
         guard = Guard([self.xvar], [])
         builder.current = guard
         for statement in self.handler
