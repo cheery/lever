@@ -72,7 +72,7 @@ dependencies needed for building and processing the contents.
 These files have to be precompiled before the runtime is
 capable of loading source code programs on its own.
 
-`bootstrapper/` contains a bootstrapper written in Lever
+`bootstrapper.lc` contains a bootstrapper written in Lever
 0.9.0. Running it precompiles the `prelude/`.
 
 `lever-0.10.0.grammar` is an

@@ -129,38 +129,18 @@ case clauses cover all possibilities there are.
 
 <h1>Scoping rules</h1>
 
-The scope is lexical and it is divided into three parts:
+The scope is lexical and it is divided into global and local
+variables. Closures capture the variables when they are
+introduced and cannot write to parent's scope at all.
 
-<ul>
-    <li>Shadow: Variables defined earlier in local scope, but
-        not necessarily live.</li>
-    <li>Live: Variables that have been written and
-        are verified to be live.</li>
-    <li>All: All variables defined in current scope.</li>
-</ul>
+Decision of whether a variable is global or local variable
+is taken by its appearance in the source program. If the
+variable is written to, it immediately becomes local at that
+point.
 
-The liveness for variables is calculated by flow analysis. The
-details of how this is specifically done during parsing is
-still partially open.
-
-A closure will obtain cells that are writable and readable
-in its scope, from the point where it is defined. 'All' variables
-defined in the scope form the part that are readable. 'Live' forms
-the set of variables that are writable.
-
-If a variable inside closure is not writable in closure's upscope,
-the closure will define a local variable.
-
-If a variable is defined within a loop, it does not escape
-that loop, and it is referenced upscope, that variable gets a
-small subscope that ensures that every closure produced within
-a loop gets an unique reference.
-
-On the topmost level of a script, the local scope is only used
-within loops, and assignments end up stored in the module.
-
-The details of the scope are abstracted before the code
-reaches interpreter.
+The liveness for variables are calculated by the flow
+analysis in the frontend. It is impossible to use a variable
+if the flow analysis cannot prove it exists in the use point.
 
 <h1>Parsing</h1>
 
@@ -183,153 +163,56 @@ type of the function if it is type inferenced.
 
 The primary method used here to evaluate programs is through
 interpreting them. As a temporary measure the interpretation
-happens by loading JSON files and stepping through their
-contents.
+happens by loading JSON files and their contents into the
+memory, then evaluating a bytecode in a virtual machine.
 
-The loader assumes that the topmost object is a script that
-produces a module. It retrieves a dictionary of preset
-values for the modules, and the environment consisting of
-stack of modules.
+Encoding is designed such that it can be encoded into the
+same IR that produced it. The IR is based on
+"Horn-Clauses as an Intermediate Representation for Program
+Analysis" written by Jorge Navas.
 
-<ul>
- <li>type: "script"</li>
- <li>body: the block that produces the module.</li>
- <li>sources: list of paths to source scripts, relative to
- the directory of the json-encoded file.</li>
- <li>cellvars: list of cell variable declarations</li>
- <li>localvars: list of local variable declarations</li>
-</ul>
+The bytecode is divided into procedures that take input and
+output variables as arguments. The VM can only do
+conditional jumps forward and in the endpoint of each jump
+there's is required to be a terminal point that prevents
+execution without a jump. Inside each procedure the
+evaluation path forms a binary tree.
 
-Programs are constructed from statement blocks, expressions
-and slots.
+The virtual machine instructions are divided into 8 groups
+by their encoding. The first bits in the opcode form a
+flag that identifies the instruction's group. Some of the
+instruction groups consists of only one instruction. I do
+not specify the exact instruction format here because the
+format may still require some additional work before a major
+release. 
 
-The 'loc' field is omitted in the following descriptions.
-If an operation may fail, it can provide 'loc' -field to
-provide source location information. This is a list
-consisting of 5 values:
-[start_col,start_lno, stop_col,stop_lno, source_index]
+The simple instructions only consist of input and output
+variables. Most of the instructions go into this group:
+o_move, o_global, o_attr, o_item, o_true, o_false, o_call,
+o_deref.
 
-'localvars', 'cellvars' are not covered for now, it is
-assumed they are list of objects and contain
-debugging-related information.
+Boolean guards form an another major group, containing
+o_is_true, o_eq, o_match and o_next. These may cause the VM
+to jump and are encoded in two-parts, they all have possibility
+for two output variable lists encoded in them, although only
+o_match and o_next produce output values.
 
-Statement blocks are lists, consisting of statements, they
-include:
+The program may branch directly into an another procedure in
+the same compilation unit. It has instructions o_branch and
+o_branchx for this purpose. The o_branchx holds a
+conditional jump for exception handling. Although o_branchx
+forms it's own instruction group, it is treated as a guard.
 
-<ul>
-    <li>{type:"inplace_assign", slot:slot,
-         op:expression,
-         value:expression}</li>
-    <li>{type:"repeat", fresh, heads, body:block}</li>
-    <li>{type:"cond", cond:expression, tbody:block, fbody:block}</li>
-    <li>{type:"case", cases, default:block}</li>
-    <li>{type:"datatype", slot:slot, rows, decls}</li>
-    <li>{type:"operator", slot:slot, selector:expression, decls}</li>
-    <li>{type:"except", body:block, excepts}</li>
-    <li>{type:"assign", slot:slot, value:expression}</li>
-    <li>{type:"bind", module:expression,
-         bindings:dict([[dst:string,src:string]])}</li>
-    <li>{type:"bind_coeffect", slot:slot,
-         fields:[{name:string,mutable:bool}]}</li>
-    <li>{type:"assert", cond:expression, value:expression}</li>
-</ul>
+Closures and generators are implemented through o_frame
+-instruction. This instruction creates closure frames by
+capturing variables.
 
-Terminating statements:
+There are few instructions that do not produce output
+variables. o_yield, o_yield_from can be only used within a
+generator. o_raise raises an error, causing the procedure
+stack to be unwound.
 
-<ul>
-    <li>{type:"return", value:expression}</li>
-    <li>{type:"yield", value:expression}</li>
-    <li>{type:"break"}</li>
-    <li>{type:"continue"}</li>
-    <li>{type:"raise", value:expression}</li>
-</ul>
-
-Expressions are clauses that can be evaluated and they
-return a result or throw an exception.
-
-<ul>
-    <li>{type:"literal"}</li>
-    <li>{type:"call", callee:expression, args:expressions}</li>
-    <li>{type:"cmp", exprs:expressions, ops:expressions}</li>
-    <li>{type:"and", lhs:expression, rhs:expression}</li>
-    <li>{type:"or", lhs:expression, rhs:expression}</li>
-    <li>{type:"not", value:expression}</li>
-    <li>{type:"closure", frame, cellvars, localvars,
-        args, body:block}</li>
-    <li>{type:"generator", frame, cellvars, localvars,
-        body:block}</li>
-    <li>{type:"make_tuple", items:expressions}</li>
-    <li>{type:"list", values:expressions}</li>
-    <li>{type:"iter_once", value:expression, slot:slot}</li>
-    <li>{type:"record",
-         fields:[{name:string,mutable:bool,value:expression}]}</li>
-</ul>
-
-Slots are clauses that evaluate into a slot object. Slot
-defines a load and store operation.
-
-<ul>
-    <li>{kind:"local", index:integer}</li>
-    <li>{kind:"cell", index:integer}</li>
-    <li>{kind:"global", name:string}</li>
-    <li>{kind:"tuple", slots:slots}</li>
-    <li>{kind:"attr", base:expression, name:string}</li>
-    <li>{kind:"item", base:expression, index:expression}</li>
-    <li>{kind:"deref", value:expression}</li>
-</ul>
-
-Repeat has two elements unique to looping statements.
-'fresh' and 'heads'. 'fresh' is a set of cells that are
-initialized as fresh when the loop begins. This allows
-production of closures within a loop, without introducing
-interference between them.
-
-Heads is the sequence of modifiers for the loop. We have
-following loop headers:
-
-<ul>
-    <li>{type:"for",   slot, value:expression}</li>
-    <li>{type:"while", cond:expression}</li>
-    <li>{type:"if",    cond:expression}</li>
-</ul>
-
-Cases associate an expression or pattern into a block in
-case statement.
-
-<ul>
-    <li>{type:"constant", value:expression, body:block}</li>
-    <li>{type:"pattern",  value:expression, slot, body:block}</li>
-</ul>
-
-'frame' in closure is the list of indices of the cell
-variables that are lifted up from the scope where closure is
-created in.
-
-Closure arguments are a fixed record: {slot, default:expression} 
-The default only appears if the closure has optional arguments.
-
-Datatypes are described as rows and declarations on those
-rows.
-
-Format for rows: [slot, fieldc, labels:Dict(String, Integer), builder] 
-
-Following forms are valid datatype declarations:
-
-<ul>
-    <li>{type:"method", op:expression, value:expression}</li>
-    <li>{type:"derived", ops:expression, value:expression}</li>
-    <li>{type:"attr",     name:String, value:expression}</li>
-    <li>{type:"attr_set", name:String, value:expression}</li>
-    <li>{type:"attr_method", name:String, value:expression}</li>
-</ul>
-
-Operator declarations have following valid declarations:
-
-<ul>
-    <li>{type:"method", op:expression, value:expression}</li>
-    <li>{type:"default_method",        value:expression}</li>
-</ul>
-
-Exceptions have the following format,
-slot is optional: {exc:expression, slot, body:block}
-
+The source location is encoded through list of strings in
+source -variable for the whole unit, and each procedure has
+'sourcemap' attribute that contains sixtuples of integers:
+[bytes, col0, lno0, col1, lno1, src_index]
