@@ -1,4 +1,4 @@
-from objects import *
+from objects.core import *
 from rpython.rlib import rfile
 from rpython.rlib.objectmodel import specialize, always_inline
 from rpython.rlib.rstring import UnicodeBuilder
@@ -8,7 +8,7 @@ import os
 import sys
 
 def read_json_file(pathname):
-    pathname = cast(pathname, String).string_val
+    pathname = cast(pathname, String).string
     raw_pathname = pathname.encode('utf-8')
     try:
         fd = rfile.create_file(raw_pathname, 'rb')
@@ -19,7 +19,7 @@ def read_json_file(pathname):
     except IOError as io:
         message = os.strerror(io.errno)
         os.write(0, message + "\n")
-        raise error(e_IOError())
+        raise error(e_IOError)
 
 def read_json_fd(fd):
     stack = []
@@ -30,25 +30,24 @@ def read_json_fd(fd):
         state = parse_char(cat, ch, stack, state, ctx)
     state = parse_char(catcode[32], u' ', stack, state, ctx)
     if state != 0x00:
-        raise error(e_JSONDecodeError(u"truncated"))
+        raise error(e_JSONDecodeError, wrap(u"truncated"))
     if len(ctx.ds) != 1:
-        raise error(e_JSONDecodeError(u"too many objects"))
+        raise error(e_JSONDecodeError, wrap(u"too many objects"))
     return ctx.ds.pop()
 
 # We got json library returning null, lets leave them into json library.
-Unit = InterfaceParametric()
-null = Constant(Unit)
+UnitKind = Kind()
+null = Constant(UnitKind)
 
-# These are defined in case there are datasets or structures that use null.
-@method(Unit, op_eq)
+@method(UnitKind, op_eq, 1)
 def Unit_eq(a, b):
     return true
 
-@method(Unit, op_hash)
+@method(UnitKind, op_hash, 1)
 def Unit_hash(a):
-    return fresh_integer(0)
+    return wrap(0)
 
-@method(Unit, op_stringify)
+@method(UnitKind, op_stringify, 1)
 def Unit_stringify(a):
     return String(u"null")
 # Other than this, we really don't need null anymore.
@@ -66,7 +65,7 @@ def parse_char(cat, ch, stack, state, ctx):
         action = code >> 8 & 0xFF
         code   = code      & 0xFF
         if action == 0xFF and code == 0xFF:
-            raise error(e_JSONDecodeError(u"syntax error"))
+            raise error(e_JSONDecodeError, wrap(u"syntax error"))
         elif action >= 0x80: # shift
             stack.append(gotos[state])
             action -= 0x80
@@ -81,21 +80,21 @@ def parse_char(cat, ch, stack, state, ctx):
 @always_inline
 def decode_json(action, ch, ctx):
     if action == 0x1:              # push list
-        ctx.ds.append(fresh_list())
+        ctx.ds.append(List([]))
     # Push object to ds
     elif action == 0x2:            # push object
-        ctx.ds.append(fresh_dict())
+        ctx.ds.append(new_dict())
     elif action == 0x3:            # pop & append
         val = ctx.ds.pop()
         top = ctx.ds[len(ctx.ds)-1]
         assert isinstance(top, List) # we can trust this.
-        top.list_val.append(val)
+        top.contents.append(val)
     elif action == 0x4:            # pop pop & setitem
         val = ctx.ds.pop()
         key = ctx.ds.pop()
         top = ctx.ds[len(ctx.ds)-1]
         assert isinstance(top, Dict) # again..
-        top.dict_val[key] = val
+        top.contents[key] = val
     elif action == 0x5:           # push null
         ctx.ds.append(null)
     elif action == 0x6:           # push true
@@ -109,12 +108,12 @@ def decode_json(action, ch, ctx):
         ctx.es = UnicodeBuilder()
     elif action == 0x9:
         val = int(ctx.ss.build().encode('utf-8'))    # push int
-        ctx.ds.append(fresh_integer(val))
+        ctx.ds.append(wrap(val))
         ctx.ss = UnicodeBuilder()
     elif action == 0xA:
         # TODO: Users thank later if we use some
         #       exact decoding for these values.
-        raise error(e_JSONDecodeError(u"decimals not implemented"))
+        raise error(e_JSONDecodeError, wrap(u"decimals not implemented"))
         #val = float(ctx.ss.build().encode('utf-8'))  # push float
         #ctx.ds.append(fresh_float(val))
         #ctx.ss = UnicodeBuilder()

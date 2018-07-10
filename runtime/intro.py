@@ -1,73 +1,100 @@
 from rpython.rlib import rfile
 from json_loader import read_json_file
-from objects import common
-from objects import *
-from context import (
-    CoeffectModuleCell,
-    init_executioncontext,
-    construct_coeffect,
-    w_call_with_coeffects )
+from objects.core import *
+from objects import core, modules, chaff
+#from objects import common
+#from objects import *
+#from context import (
+#    CoeffectModuleCell,
+#    init_executioncontext,
+#    construct_coeffect,
+#    w_call_with_coeffects )
 import interpreter
 import os
 
+
+# TODO: Is the interpret -flag needed anymore?
 def new_entry_point(config, interpret=False):
-    base_module = Module()
-    for name in base_stem:
-        base_module.assign(name, base_stem[name])
+    base_module = modules.Module()
+    for name, obj in core.variables.items():
+        core.set_attribute(base_module,
+            core.wrap(name), obj)
+    for name, obj in chaff.variables.items():
+        core.set_attribute(base_module, 
+            core.wrap(name), obj)
+    for name, obj in modules.variables.items():
+        core.set_attribute(base_module, 
+            core.wrap(name), obj)
+    base_module.loaded = True
 
-    BasicIO = construct_coeffect([
-        (u"input", False), (u"print", False)], base_module)
-    base_module.assign(u"BasicIO", BasicIO)
-
-    def entry_point_a(raw_argv):
-        init_executioncontext({
-            BasicIO: construct_record([
-                (u"input", False, w_input),
-                (u"print", False, w_print) ])
-        })
+    def entry_point(raw_argv):
         try:
-            mspace = ModuleSpace(
+            mspace = modules.ModuleSpace(
                 local = String(u'prelude2'),
                 env = [base_module],
                 loader = w_json_loader)
-            call(w_import, [mspace, String(u"intro")])
-        except Traceback as tb:
+            call(modules.w_import, [mspace, String(u"intro")])
+        except OperationError as tb:
             os.write(0, "Traceback (most recent call last):\n")
-            for loc_builder in reversed(tb.trace):
-                loc, sources = loc_builder.build_loc()
-                col0 = cast(loc[0], Integer).toint()
-                lno0 = cast(loc[1], Integer).toint()
-                col1 = cast(loc[2], Integer).toint()
-                lno1 = cast(loc[3], Integer).toint()
-                srci = cast(loc[4], Integer).toint()
-                src = cast(sources[srci], String).string_val.encode('utf-8')
-                s = "  %s:%d:\n%s\n" % (src, lno0,
-                    format_source_location(col0, lno0, col1, lno1, src))
-                os.write(0, s)
-            os.write(0, tb.error.__class__.__name__ + "\n")
+            for trace_entry in reversed(tb.trace):
+                if isinstance(trace_entry, core.BuiltinTraceEntry):
+                    src = trace_entry.sourcefile
+                    s = "  %s:%d: %s\n" % (src, trace_entry.lno0, trace_entry.name)
+                    os.write(0, s)
+                elif isinstance(trace_entry, interpreter.SourceLocBuilder):
+                    loc, sources = trace_entry.build_loc()
+                    col0 = unwrap_int(cast(loc[0], Integer))
+                    lno0 = unwrap_int(cast(loc[1], Integer))
+                    col1 = unwrap_int(cast(loc[2], Integer))
+                    lno1 = unwrap_int(cast(loc[3], Integer))
+                    srci = unwrap_int(cast(loc[4], Integer))
+                    src = cast(sources[srci], String).string.encode('utf-8')
+                    s = "  %s:%d:\n%s\n" % (src, lno0,
+                        format_source_location(col0, lno0, col1, lno1, src))
+                    os.write(0, s)
+                else:
+                    print('  *** UNKNOWN ENTRY ***')
+            name = chaff.get_name(tb.error.atom).encode('utf-8')
+            if len(tb.error.items) == 0:
+                os.write(0, name + "\n")
+            else:
+                ss = []
+                for item in tb.error.items:
+                    ss.append(chaff.get_name(item).encode('utf-8'))
+                os.write(0, name + "(" + ", ".join(ss) + ")" + "\n")
+            return 1
         return 0
+    return entry_point
 
-    # This smaller version can be used during interpretation
-    # if you want more traceback than what the earlier entry
-    # point can do.
-    def entry_point_b(raw_argv):
-        init_executioncontext({
-            BasicIO: construct_record([
-                (u"input", False, w_input),
-                (u"print", False, w_print),
-                (u"print_many", False, w_print) ])
-        })
-        mspace = ModuleSpace(
-            local = String(u'prelude2'),
-            env = [base_module],
-            loader = w_json_loader)
-        call(w_import, [mspace, String(u"intro")])
+def core_diagnostics(base_module):
+    print "CORE DIAGNOSTICS"
+    for name in base_module.cells:
+        print("VARIABLE %s" % name.encode('utf-8'))
+        obj = core.get_attribute(base_module, core.wrap(name))
+        prop = core.get_properties(obj)
+        if prop is None:
+            continue
+        docref = prop.get(modules.atom_documentation, None)
+        if docref is None:
+            print("  ERROR: PROPERTIES BUT NO DOCREF")
+            continue
+        if isinstance(docref, core.Compound):
+            if docref.atom is modules.atom_docref:
+                s = docref.items[1]
+                if isinstance(s, core.String):
+                    print("  documentation name: %s" % s.string.encode('utf-8'))
+        print("  HAS PROPERTIES & DOCREF")
 
-    if not interpret:
-        return entry_point_a
-    else:
-        return entry_point_b
+#     BasicIO = construct_coeffect([
+#         (u"input", False), (u"print", False)], base_module)
+#     base_module.assign(u"BasicIO", BasicIO)
 
+#         init_executioncontext({
+#             BasicIO: construct_record([
+#                 (u"input", False, w_input),
+#                 (u"print", False, w_print) ])
+#         })
+ 
 # Especially when tired and frustrated, well-formatted information
 # can be such a morale boost, that one shouldn't skimp on it.
 def format_source_location(col0, lno0, col1, lno1, src):
@@ -101,258 +128,15 @@ def format_source_location(col0, lno0, col1, lno1, src):
         trail = " "*(col0-trim) + "^" + "-"*(col1-col0-2) + "^"
     return "    " + "\n    ".join(show_lines + [trail])
 
-@builtin()
+@builtin(1)
 def w_json_loader(mspace, name):
-    mspace = cast(mspace, ModuleSpace)
-    name = cast(name, String).string_val
-    local = cast(mspace.local, String).string_val
+    mspace = cast(mspace, modules.ModuleSpace)
+    name = cast(name, String).string
+    local = cast(mspace.local, String).string
     src = local + u"/" + name + u".lc.json"
     obj = read_json_file(String(src))
     env = mspace.env
     script, module = interpreter.read_script(obj,
-        {u'import': prefill(w_import, [mspace])}, env, src)
+        {u'import': prefill(modules.w_import, [mspace])}, env, src)
     call(script, [], 0)
     return module
-
-# The BasicIO is our first coeffect. It provides some basic
-# input/output that helps when writing the early programs. 
-@builtin()
-def w_input(prompt):
-    os.write(0, cast(prompt, String).string_val.encode('utf-8'))
-    line = os.read(0, 1024)
-    return String(line.decode('utf-8'))
-
-@builtin()
-def w_print_many(args):
-    sp = ""
-    it = call(op_iter, [args])
-    while True:
-        try:
-            arg, it = it.next()
-        except StopIteration:
-            break
-        s = cast(call(op_stringify, [arg]), String).string_val
-        b = s.encode('utf-8')
-        os.write(1, sp + b)
-        sp = " "
-    os.write(1, "\n")
-
-@builtin()
-def w_print(arg):
-    call(w_print_many, [List([arg])], 0)
-
-# The stem for the base module is defined outside the entry
-# point generator. It has nearly every utility and handle that has
-# to appear in the base module.
-@builtin()
-def w_ne(a,b):
-    result = call(op_eq, [a,b])
-    result = boolean(convert(result, Bool) is false)
-    return result
-
-@builtin()
-def w_ge(a,b):
-    i = cast(call(op_cmp, [a,b]), Integer).toint()
-    return boolean(i >= 0)
-
-@builtin()
-def w_gt(a,b):
-    i = cast(call(op_cmp, [a,b]), Integer).toint()
-    return boolean(i == 1)
-
-@builtin()
-def w_le(a,b):
-    i = cast(call(op_cmp, [a,b]), Integer).toint()
-    return boolean(i <= 0)
-
-@builtin()
-def w_lt(a,b):
-    i = cast(call(op_cmp, [a,b]), Integer).toint()
-    return boolean(i == -1)
-
-@builtin()
-def w_range(start,stop=None,step=None):
-    if stop is None:
-        stop = start
-        start = fresh_integer(0)
-    if step is None:
-        step = fresh_integer(1)
-    sign  = cast(call(op_cmp, [fresh_integer(0), step]), Integer).toint()
-    if sign == 0:
-        raise error(e_PartialOnArgument())
-    else:
-        return RangeIterator(start, stop, step, sign)
-
-class RangeIterator(Iterator):
-    interface = Iterator.interface
-    def __init__(self, current, limit, step, sign):
-        self.current = current
-        self.limit = limit
-        self.step = step
-        self.sign = sign
-
-    def next(self):
-        i = cast(call(op_cmp, [self.current, self.limit]), Integer).toint()
-        if i == self.sign:
-            value = self.current
-            next_value = call(op_add, [self.current, self.step])
-            k = RangeIterator(next_value, self.limit, self.step, self.sign)
-            return value, k
-        else:
-            raise StopIteration()
-
-@builtin()
-def w_slot(value):
-    return Slot(value)
-
-@builtin()
-def w_get_function_header(argc, opt):
-    argc = cast(argc, Integer).toint()
-    opt = cast(opt, Integer).toint()
-    return func_interfaces.get(argc, opt)
-
-@python_bridge
-def w_construct_set(items=None):
-    if items is None:
-        return fresh_set()
-    return construct_set(items)
-
-@python_bridge
-def w_construct_dict(pairs=None):
-    if pairs is None:
-        return fresh_dict()
-    return construct_dict(pairs)
-
-@python_bridge
-def w_construct_list(items=None):
-    if items is None:
-        return fresh_list()
-    return construct_list(items)
-
-@python_bridge
-def w_single(items):
-    it = cast(call(op_iter, [items]), Iterator)
-    try:
-        x, it = it.next()
-    except StopIteration:
-        raise error(e_PartialOnArgument())
-    try:
-        y, it = it.next()
-    except StopIteration:
-        return x
-    else:
-        raise error(e_PartialOnArgument())
-
-@python_bridge
-def w_unique_coercion(items):
-    faces = {}
-    it = cast(call(op_iter, [items]), Iterator)
-    while True:
-        try:
-            x, it = it.next()
-            if not isinstance(x, Interface):
-                raise error(e_TypeError())
-            faces[x] = None
-        except StopIteration:
-            break
-    face = unique_coercion(faces)
-    if face is None:
-        raise error(e_NoValue())
-    return face
-
-@python_bridge
-def w_is_closure(item):
-    if isinstance(item.face(), FunctionInterface):
-        return true
-    else:
-        return false
-
-@python_bridge
-def w_is_subtype(a, b):
-    if a is b:
-        return true
-    elif isinstance(a, FunctionInterface) and isinstance(b, FunctionInterface):
-        if a.argc - a.opt <= b.argc <= a.argc:
-            return true
-        return false
-    else:
-        return false
-
-# The placeholder error was used when there
-# was not certainty that our exception
-# construction was working.
-@python_bridge
-def w_placeholder_error():
-    return e_NoValue()
-
-@python_bridge
-def w_once(iterator):
-    if not isinstance(iterator, Iterator):
-        iterator = cast(call(op_iter, [iterator]), Iterator)
-    try:
-        x, it = iterator.next()
-    except StopIteration:
-        raise error(e_NoValue())
-    return Tuple([x, it])
-
-base_stem = {
-    u"==": op_eq,
-    u"!=": w_ne,
-    u"hash": op_hash,
-    u"in": op_in,
-    u"getitem": op_getitem,
-    u"setitem": op_setitem,
-    u"iter": op_iter,
-    u"cmp": op_cmp,
-    u">=": w_ge,
-    u">": w_gt,
-    u"<=": w_le,
-    u"<": w_lt,
-    u"++": op_concat,
-    u"copy": op_copy,
-    u"-expr": op_neg,
-    u"+expr": op_pos,
-    u"+": op_add,
-    u"-": op_sub,
-    u"*": op_mul,
-    u"%": op_mod,
-    u"~expr": op_not,
-    u"&": op_and,
-    u"|": op_or,
-    u"xor": op_xor,
-    u"stringify": op_stringify,
-    u"parse_integer": builtin()(parse_integer),
-    u"true" : true,
-    u"false": false,
-    u"range": w_range,
-    u"slot": w_slot,
-    u"set": w_construct_set,
-    u"dict": w_construct_dict,
-    u"list": w_construct_list,
-    u"call_with_coeffects": w_call_with_coeffects,
-    u"TypeError": e_TypeError.interface,
-    u"NoItems": e_NoItems.interface,
-    u"NoIndex": e_NoIndex.interface,
-    u"NoValue": e_NoValue.interface,
-    u"face": builtin()(lambda x: x.face()),
-    u"Bool": Bool,
-    u"Integer": Integer.interface,
-    u"Set": Set.interface,
-    u"List": List.interface,
-    u"Dict": Dict.interface,
-    u"String": String.interface,
-    u"Parameter": TypeParameter.interface,
-#    u"by_reference": w_by_reference,
-#    u"by_value": w_by_value,
-#    u"parameter": builtin()(lambda x: TypeParameter(cast(x, Integer))),
-#    u"get_function_header": w_get_function_header,
-#    u"single": w_single,
-    u"inspect": interpreter.w_inspect,
-#    u"unique_coercion": w_unique_coercion,
-#    u"is_closure": w_is_closure,
-#    u"get_dom": builtin()(lambda i: common.dom.get(cast(i, Integer).toint())),
-#    u"cod": common.cod,
-#    u"is_subtype": w_is_subtype,
-    u"placeholder_error": w_placeholder_error,
-    u"once": w_once,
-}

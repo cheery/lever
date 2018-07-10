@@ -3,7 +3,7 @@ file: (=statement)+
 statement:
     "import" symbol                                  / import
     "from" symbol "import" join(symbol / [1,1], ",") / import_bind
-    "bind" sep(coeffect_field, ",") "as" slot_item   / bind_coeffect
+    # "bind" sep(coeffect_field, ",") "as" slot_item   / bind_coeffect
     slot operator "=" >expr      / inplace_assign(., symbol(.), .)
     slot "(" pform ")" "=" >expr / inplace_assign
     slot "=" >expr / assign
@@ -14,8 +14,8 @@ statement:
     "yield" "from" expr / yield_from
     ["break"]* "break"    / break
     ["break"]* "continue" / continue
-    "datatype" datatype_head >"=" >join(datatype_row, "|")
-        =(=datatype_declaration)* / datatype
+    # "datatype" datatype_head >"=" >join(datatype_row, "|")
+    #     =(=datatype_declaration)* / datatype
     "case" expr "of" =(=case)+
         =("else" >(=statement)+)? / case
     "try" >(=statement)+ =(^="except" expr ("as" slot)? "then"
@@ -24,7 +24,7 @@ statement:
         >(=statement)+)+ / inline_except
     "assert" expr "as" expr / assert
     "raise" expr / raise
-    "operator" slot_item expr =(operator_row)* / operator
+    # "operator" slot_item expr =(operator_row)* / operator
     postfix "(" sep(expr_or, ',') ";" join(slot, ',') ")" / relcall
 
     expr
@@ -142,8 +142,6 @@ exponent_postfix:
     postfix ["^"] exponent_postfix / binary
 
 postfix:
-    # Replacing this with a function 'once'
-    #postfix "==>" slot_item           / iter_once
     postfix "(" sep(expr_or, ',') ")" / call
     postfix "[" form "]"              / item
     postfix "." symbol                / attr
@@ -170,7 +168,7 @@ form:
     expr
 
 record_shorthand: symbol / [1, symbol(1)]
-record_pair: record_label ":" expr_or
+record_pair:      record_label ":" expr_or
 
 record_label:
     symbol
@@ -180,7 +178,8 @@ operator: ["+", "-", "*",
     "/", "//", "%", "~", "<<", ">>", "&", "|",
     "++", "^",
     comparison]
-keyword: ["import", "yield", "and", "or", "not", "in", "repeat"]
+keyword: ["import", "yield", "and", "or", "not",
+    "in", "repeat", "if", "then", "else"]
 comparison: ["<", ">", "==", "!=", "<=", ">="]
 
 terminal symbol, string, int

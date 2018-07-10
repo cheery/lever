@@ -1,12 +1,12 @@
-from objects import common
-from objects import *
-from context import construct_coeffect
+from objects.core import *
+from objects.modules import *
+# from context import construct_coeffect
 import os
 
 def read_script(code, preset, env, src):
     module = Module()
     for key, value in preset.items():
-        module.assign(key, value)
+        set_attribute(module, wrap(key), value)
     code = as_dict(code)
     # At first I thought that I wouldn't do this right yet, but one weekday
     # when Internet connection was cut out, I decided I'd like some better
@@ -15,7 +15,7 @@ def read_script(code, preset, env, src):
     src_dir = os.path.abspath(rpython_dirname(src.encode('utf-8')))
     for w_src in as_list(attr(code, u"sources")):
         abs_src = os.path.join(src_dir, 
-            cast(w_src, String).string_val.encode('utf-8'))
+            cast(w_src, String).string.encode('utf-8'))
         sources.append(String(abs_src.decode('utf-8')))
 
     unit = Unit(
@@ -79,7 +79,7 @@ def rpython_dirname(p):
         head = head.rstrip('/')
     return head
 
-@builtin()
+@builtin(1)
 def w_inspect(closure):
     closure = cast(closure, Closure)
     unit = construct_record([
@@ -89,35 +89,12 @@ def w_inspect(closure):
         (u"sources", False, List(list(closure.unit.sources))),
     ])
     return construct_record([
-        (u"inc", False, fresh_integer(closure.inc)),
-        (u"outc", False, fresh_integer(closure.outc)),
+        (u"inc", False, wrap(closure.inc)),
+        (u"outc", False, wrap(closure.outc)),
         (u"unit", False, unit),
-        (u"entries", False, List([fresh_integer(i) for i in closure.entries])),
+        (u"entries", False, List([wrap(i) for i in closure.entries])),
         (u"frame", False, List(list(closure.frame))),
     ])
-
-# Closures have similar challenges as what builtin functions
-# have.
-class ClosureInterface(FunctionInterface):
-    def method(self, op):
-        return FunctionInterface.method(self, op)
-
-    def call(self, callee, args):
-        callee = cast(callee, Closure)
-        return call_closure(callee, args)
- 
-attr_method(ClosureInterface.interface,
-    u"params")(common.FunctionInterface_params)
-method(ClosureInterface.interface,
-    op_eq)(common.FunctionInterface_eq)
-method(ClosureInterface.interface,
-    op_hash)(common.FunctionInterface_hash)
- 
-@attr_method(ClosureInterface.interface, u"format")
-def ClosureInterface_format(f, px):
-    return common.FunctionInterface_format(f, px, String(u"closure"))
-
-closure_interfaces = FunctionMemo(ClosureInterface)
 
 class Unit:
     def __init__(self, constants, env, module, program, sources):
@@ -127,8 +104,9 @@ class Unit:
         self.program = program
         self.sources = sources
 
+ClosureKind = Kind()
 class Closure(Object):
-    interface = None
+    static_kind = ClosureKind
     def __init__(self, inc, outc, unit, entries, frame, loc):
         self.inc = inc
         self.outc = outc
@@ -136,15 +114,8 @@ class Closure(Object):
         self.entries = entries
         self.loc = loc
         self.frame = frame
-        self.closure_face = closure_interfaces.get(
-            self.inc - len(frame), len(self.entries)-1)
-
-
-    def face(self):
-        return self.closure_face
 
 class FreshGenerator(Iterator):
-    interface = Iterator.interface
     def __init__(self, unit, proc, frame):
         self.unit = unit
         self.proc = proc
@@ -155,7 +126,6 @@ class FreshGenerator(Iterator):
         return step_generator(self.unit, stack)
 
 class LiveGenerator(Iterator):
-    interface = Iterator.interface
     def __init__(self, unit, stack, front):
         self.unit = unit
         self.stack = stack
@@ -174,7 +144,7 @@ class LiveGenerator(Iterator):
 def step_generator(unit, stack):
     stack, value, stack_generators = interpreter_loop(unit, stack, True)
     if stack_generators:
-        front = cast(call(op_iter, [value]), Iterator)
+        front = cast(value, Iterator)
         return LiveGenerator(unit, stack, front).next()
     elif value is None:
         raise StopIteration()
@@ -185,7 +155,7 @@ def step_generator(unit, stack):
 # but who knows how long we will have it. It already shows
 # that it was the right choice at the beginning,
 # may not be that great later. Well it's easy to replace fortunately.
-def call_closure(closure, args):
+def closure_call(closure, args):
     closure = cast(closure, Closure)
     result = [None for k in range(closure.outc)]
     inputs = closure.frame + args
@@ -195,12 +165,13 @@ def call_closure(closure, args):
     interpreter_loop(closure.unit, stack)
     assert None not in result
     return result
+ClosureKind.properties[op_call] = BuiltinPortal(closure_call)
 
 def enter_closure(unit, closure, inc, outc):
     i = closure.inc
     opt  = len(closure.entries) - 1
     if (not (i-opt <= inc <= i)) or outc != closure.outc:
-        tb = error(e_TypeError())
+        tb = error(e_TypeError)
         tb.trace.append(closure.loc)
         raise tb
     entry = closure.entries[i - inc]
@@ -242,8 +213,9 @@ def interpreter_loop(unit, stack, is_generator=False):
                 else:
                     return stack, result.value, result.stack_generators
             else:
-                raise error(e_EvalError())
-        except Traceback as tb:
+                raise error(e_EvalError)
+        except OperationError as tb:
+            tb.trace.append(SourceLocBuilder(index, smap, unit.sources))
             if xc is None:
                 for _, (_, smap), pc, _ in reversed(stack):
                     tb.trace.append(SourceLocBuilder(pc, smap, unit.sources))
@@ -254,12 +226,12 @@ def interpreter_loop(unit, stack, is_generator=False):
             ctx, (body, smap), pc, xc = stack.pop(-1)
             index, opcode = decode_opcode(body, xc.index)
             if opcode != o_terminal:
-                tb = error(e_EvalError())
+                tb = error(e_EvalError)
                 tb.trace.append(SourceLocBuilder(pc, smap, unit.sources))
                 raise tb
             index, outputs = decode_list(body, index)
             if len(outputs) != 1:
-                tb = error(e_EvalError())
+                tb = error(e_EvalError)
                 tb.trace.append(SourceLocBuilder(pc, smap, unit.sources))
                 raise tb
             tb.trace.append(SourceLocBuilder(pc, smap, unit.sources))
@@ -283,21 +255,19 @@ def eval_body(unit, ctx, body, smap, index):
                 seq = [load_global(unit, ctx.read(iv[0]))]
                 motion(ctx, seq, ov)
             elif opcode == o_global and len(iv) > 1 and len(ov) == 0:
-                name = as_string(ctx.read(iv[0]))
+                name = ctx.read(iv[0])
                 seq = [ctx.read(i) for i in iv[1:]]
-                unit.module.assign(name, pack(seq))
+                set_attribute(unit.module, name, pack(seq))
             elif opcode == o_attr and len(iv) == 2 and len(ov) > 0:
                 base = ctx.read(iv[0])
-                name = as_string(ctx.read(iv[1]))
-                accessor = base.face().getattr(name)
-                seq = [call(accessor, [base])]
+                name = ctx.read(iv[1])
+                seq = [get_attribute(base, name)]
                 motion(ctx, seq, ov)
             elif opcode == o_attr and len(iv) > 2 and len(ov) == 0:
                 base = ctx.read(iv[0])
-                name = as_string(ctx.read(iv[1]))
+                name = ctx.read(iv[1])
                 value = pack([ctx.read(i) for i in iv[2:]])
-                accessor = base.face().setattr(name)
-                call(accessor, [base, value], 0)
+                set_attribute(base, name, value)
             elif opcode == o_item and len(iv) == 2 and len(ov) > 0:
                 base = ctx.read(iv[0])
                 indexer = ctx.read(iv[1])
@@ -324,7 +294,7 @@ def eval_body(unit, ctx, body, smap, index):
                         return Branch(index, proc, inputs, outputs)
                     out = callv(callee, args)
                     motion(ctx, out, ov)
-                except Traceback as tb:
+                except OperationError as tb:
                     loc = SourceLocBuilder(index, smap, unit.sources)
                     tb.trace.append(loc)
                     raise
@@ -337,7 +307,7 @@ def eval_body(unit, ctx, body, smap, index):
                 value = pack([ctx.read(i) for i in iv[1:]])
                 call(op_setslot, [base, value], 0)
             else:
-                raise error(e_EvalError())
+                raise error(e_EvalError)
         elif flag == o_branch:
             index, iv = decode_list(body, index)
             index, ov = decode_list(body, index)
@@ -376,13 +346,13 @@ def eval_body(unit, ctx, body, smap, index):
         elif flag == o_ionly:
             index, iv = decode_list(body, index)
             if opcode == o_raise and len(iv) == 1:
-                raise error(ctx.read(iv[0]))
+                raise OperationError(ctx.read(iv[0]))
             elif opcode == o_yield and len(iv) == 1:
                 return Yield(index, ctx.read(iv[0]))
             elif opcode == o_yield_from and len(iv) == 1:
                 return Yield(index, ctx.read(iv[0]), True)
             else:
-                raise error(e_EvalError())
+                raise error(e_EvalError)
         elif flag == o_guard:
             index, iv = decode_list(body, index)
             index, ov = decode_list(body, index)
@@ -392,32 +362,31 @@ def eval_body(unit, ctx, body, smap, index):
                     index, opcode = decode_opcode(body, x)
                     index, outputs = decode_list(body, index)
                     if opcode != o_terminal:
-                        raise error(e_EvalError())
+                        raise error(e_EvalError)
             elif opcode == o_eq and len(iv) == 2:
                 val = call(op_eq, [ctx.read(iv[0]), ctx.read(iv[1])])
-                if convert(val, Bool) is false:
+                if convert(val, BoolKind) is false:
                     index, opcode = decode_opcode(body, x)
                     index, outputs = decode_list(body, index)
                     if opcode != o_terminal:
-                        raise error(e_EvalError())
+                        raise error(e_EvalError)
             elif opcode == o_match and len(iv) == 2:
                 pattern = ctx.read(iv[0])
                 val = ctx.read(iv[1])
-                tup = cast(call(op_pattern, [pattern]), Tuple).tuple_val
-                if len(tup) != 2:
-                    raise error(e_EvalError())
-                if call(tup[0], [val]) is false:
+                has_match = cast(call(op_match, [pattern, val]), BoolKind)
+                if has_match is false:
                     index, opcode = decode_opcode(body, x)
                     index, outputs = decode_list(body, index)
                     if opcode != o_terminal:
-                        raise error(e_EvalError())
+                        raise error(e_EvalError)
                 elif len(ov) > 0:              # The matcher does not always
-                    out = callv(tup[1], [val]) # need to extract anything.
+                                               # need to extract anything.
+                    out = callv(op_unpack, [pattern, val])
                     motion(ctx, out, ov)
             elif opcode == o_next and len(iv) > 0:
                 it = ctx.read(iv[0])
                 if not isinstance(it, Iterator):
-                    it = cast(call(op_iter, [it]), Iterator)
+                    it = cast(it, Iterator)
                 try:
                     value, it = it.next()
                     motion(ctx, [value, it], ov)
@@ -425,11 +394,11 @@ def eval_body(unit, ctx, body, smap, index):
                     index, opcode = decode_opcode(body, x)
                     index, outputs = decode_list(body, index)
                     if opcode != o_terminal:
-                        raise error(e_EvalError())
+                        raise error(e_EvalError)
         elif flag == o_terminal:
             return Done()
         else:
-            raise error(e_EvalError())
+            raise error(e_EvalError)
     return Done()
 
 def decode_opcode(body, index):
@@ -472,7 +441,7 @@ def snapshot_stack(stack):
     for i, (ctx, body, index, xc) in enumerate(stack):
         n_tmp_v.append(list(ctx.tmp))
         if len(ctx.tmp) > 0:
-            ctx.tmp[0] = fresh_integer(i)
+            ctx.tmp[0] = wrap(i)
     for i, (ctx, body, index, xc) in enumerate(stack):
         n_outputs = []
         for tmp, n in ctx.outputs:
@@ -533,18 +502,6 @@ class Context:
         else:
             assert False, "this ought not happen"
 
-def load_global(unit, name):
-    name = as_string(name)
-    cell = unit.module.face().cells.get(name, None)
-    if cell is not None:
-        return cell.load()
-    for module in unit.env:
-        cell = module.face().cells.get(name, None)
-        if cell is not None:
-            return cell.load()
-    else:
-        raise error(e_TypeError())
-
 def motion(ctx, seq, ov):
     ic = len(seq)
     oc = len(ov)
@@ -552,21 +509,21 @@ def motion(ctx, seq, ov):
         for i, val in enumerate(seq):
             ctx.write(ov[i], val)
     elif ic == 1:
-        seq = cast(call(op_product, seq), Tuple).tuple_val
+        seq = cast(seq[0], Tuple).items
         if len(seq) != oc:
-            raise error(e_TypeError())
+            raise error(e_TypeError)
         for i, val in enumerate(seq):
             ctx.write(ov[i], val)
     elif oc == 1 and ic != 0:
         ctx.write(ov[0], Tuple(seq))
     else:
-        raise error(e_EvalError())
+        raise error(e_EvalError)
 
 def pack(seq):
     if len(seq) == 1:
         return seq[0]
     elif len(seq) == 0:
-        raise error(e_EvalError())
+        raise error(e_EvalError)
     else:
         return Tuple(seq)
 
@@ -591,7 +548,9 @@ class Branch(Result):
         self.outputs = outputs
         self.exc = exc
 
-class SourceLocBuilder:
+SourceLocBuilderKind = Kind()
+class SourceLocBuilder(Object):
+    static_kind = SourceLocBuilderKind
     def __init__(self, pc, smap, sources):
         assert isinstance(pc, int)
         assert isinstance(smap, list)
@@ -603,7 +562,7 @@ class SourceLocBuilder:
     def build_loc(self):
         pc = self.pc
         if pc == -1:
-            return [fresh_integer(0)] * 5, self.sources
+            return [wrap(0)] * 5, self.sources
         i = 0
         while i+6 <= len(self.smap):
             bytek = as_integer(self.smap[i])
@@ -616,7 +575,7 @@ class SourceLocBuilder:
                 return [col0, lno0, col1, lno1, srci], self.sources
             pc -= bytek
             i += 6
-        return [fresh_integer(0)] * 5, self.sources
+        return [wrap(0)] * 5, self.sources
 
 # Still missing:
 #   deref
@@ -636,7 +595,7 @@ class SourceLocBuilder:
 # for prop in as_list(attr(val, u"fields")):
 #     prop = as_dict(prop)
 #     name = as_string(attr(prop, u"name"))
-#     mutable = convert(attr(prop, u"mutable"), Bool) is true
+#     mutable = convert(attr(prop, u"mutable"), BoolKind) is true
 #     fields.append((name, mutable))
 # coeffect = construct_coeffect(fields, ctx.module)
 # slot.store(ctx, coeffect)
@@ -646,22 +605,32 @@ class SourceLocBuilder:
 #    for prop in as_list(attr(val, u"fields")):
 #        prop = as_dict(prop)
 #        name = as_string(attr(prop, u"name"))
-#        mutable = convert(attr(prop, u"mutable"), Bool) is true
+#        mutable = convert(attr(prop, u"mutable"), BoolKind) is true
 #        value = eval_expr(ctx, as_dict(attr(prop, u"value")))
 #        fields.append((name, mutable, value))
 #    return construct_record(fields)
+
+def load_global(unit, name):
+    string = cast(name, String).string
+    if string in unit.module.cells:
+        return get_attribute(unit.module, name)
+    for module in unit.env:
+        if string in module.cells:
+            return get_attribute(module, name)
+    raise error(e_NoAttr, name)
+
 
 def attr(val, name):
     return val[String(name)]
 
 def as_integer(val):
-    return cast(val, Integer).toint()
+    return unwrap_int(cast(val, Integer))
 
 def as_string(val):
-    return cast(val, String).string_val
+    return cast(val, String).string
 
 def as_list(val):
-    return cast(val, List).list_val
+    return cast(val, List).contents
 
 def as_dict(val):
-    return cast(val, Dict).dict_val
+    return cast(val, Dict).contents
