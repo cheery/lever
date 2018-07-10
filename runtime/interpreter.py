@@ -385,8 +385,7 @@ def eval_body(unit, ctx, body, smap, index):
                     motion(ctx, out, ov)
             elif opcode == o_next and len(iv) > 0:
                 it = ctx.read(iv[0])
-                if not isinstance(it, Iterator):
-                    it = cast(it, Iterator)
+                it = cast(it, Iterator)
                 try:
                     value, it = it.next()
                     motion(ctx, [value, it], ov)

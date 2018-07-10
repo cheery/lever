@@ -2,6 +2,7 @@ from rpython.rlib import rfile
 from json_loader import read_json_file
 from objects.core import *
 from objects import core, modules, chaff
+from objects import integers
 #from objects import common
 #from objects import *
 #from context import (
@@ -23,6 +24,9 @@ def new_entry_point(config, interpret=False):
         core.set_attribute(base_module, 
             core.wrap(name), obj)
     for name, obj in modules.variables.items():
+        core.set_attribute(base_module, 
+            core.wrap(name), obj)
+    for name, obj in integers.variables.items():
         core.set_attribute(base_module, 
             core.wrap(name), obj)
     base_module.loaded = True

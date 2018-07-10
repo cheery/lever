@@ -46,66 +46,61 @@ def w_print(arg):
 #        sp = " "
 #    os.write(1, "\n")
 
-# # The stem for the base module is defined outside the entry
-# # point generator. It has nearly every utility and handle that has
-# # to appear in the base module.
-# @builtin()
-# def w_ne(a,b):
-#     result = call(op_eq, [a,b])
-#     result = boolean(convert(result, Bool) is false)
-#     return result
-# 
-# @builtin()
-# def w_ge(a,b):
-#     i = cast(call(op_cmp, [a,b]), Integer).toint()
-#     return boolean(i >= 0)
-# 
-# @builtin()
-# def w_gt(a,b):
-#     i = cast(call(op_cmp, [a,b]), Integer).toint()
-#     return boolean(i == 1)
-# 
-# @builtin()
-# def w_le(a,b):
-#     i = cast(call(op_cmp, [a,b]), Integer).toint()
-#     return boolean(i <= 0)
-# 
-# @builtin()
-# def w_lt(a,b):
-#     i = cast(call(op_cmp, [a,b]), Integer).toint()
-#     return boolean(i == -1)
-# 
-# @builtin()
-# def w_range(start,stop=None,step=None):
-#     if stop is None:
-#         stop = start
-#         start = fresh_integer(0)
-#     if step is None:
-#         step = fresh_integer(1)
-#     sign  = cast(call(op_cmp, [fresh_integer(0), step]), Integer).toint()
-#     if sign == 0:
-#         raise error(e_PartialOnArgument())
-#     else:
-#         return RangeIterator(start, stop, step, sign)
-# 
-# class RangeIterator(Iterator):
-#     interface = Iterator.interface
-#     def __init__(self, current, limit, step, sign):
-#         self.current = current
-#         self.limit = limit
-#         self.step = step
-#         self.sign = sign
-# 
-#     def next(self):
-#         i = cast(call(op_cmp, [self.current, self.limit]), Integer).toint()
-#         if i == self.sign:
-#             value = self.current
-#             next_value = call(op_add, [self.current, self.step])
-#             k = RangeIterator(next_value, self.limit, self.step, self.sign)
-#             return value, k
-#         else:
-#             raise StopIteration()
-# 
+@builtin(1)
+def w_ne(a,b):
+    result = call(op_eq, [a,b], 1)
+    return wrap(convert(result, BoolKind) is false)
+
+@builtin(1)
+def w_ge(a,b):
+    i = unwrap_int(cast(call(op_cmp, [a,b]), Integer))
+    return wrap(i >= 0)
+
+@builtin(1)
+def w_gt(a,b):
+    i = unwrap_int(cast(call(op_cmp, [a,b]), Integer))
+    return wrap(i == 1)
+
+@builtin(1)
+def w_le(a,b):
+    i = unwrap_int(cast(call(op_cmp, [a,b]), Integer))
+    return wrap(i <= 0)
+
+@builtin(1)
+def w_lt(a,b):
+    i = unwrap_int(cast(call(op_cmp, [a,b]), Integer))
+    return wrap(i == -1)
+
+@builtin(1)
+def w_range(start,stop=None,step=None):
+    if stop is None:
+        stop = start
+        start = wrap(0)
+    if step is None:
+        step = wrap(1)
+    sign  = unwrap_int(cast(call(op_cmp, [wrap(0), step]), Integer))
+    if sign == 0:
+        raise error(e_PreconditionFailed)
+    else:
+        return RangeIterator(start, stop, step, sign)
+
+class RangeIterator(Iterator):
+    def __init__(self, current, limit, step, sign):
+        self.current = current
+        self.limit = limit
+        self.step = step
+        self.sign = sign
+
+    def next(self):
+        i = unwrap_int(cast(call(op_cmp, [self.current, self.limit]), Integer))
+        if i == self.sign:
+            value = self.current
+            next_value = call(op_add, [self.current, self.step])
+            k = RangeIterator(next_value, self.limit, self.step, self.sign)
+            return value, k
+        else:
+            raise StopIteration()
+
 # @builtin()
 # def w_slot(value):
 #     return Slot(value)
@@ -119,58 +114,20 @@ def w_print(arg):
 # @python_bridge
 # def w_construct_set(items=None):
 #     if items is None:
-#         return fresh_set()
+#         return new_set()
 #     return construct_set(items)
 # 
 # @python_bridge
 # def w_construct_dict(pairs=None):
 #     if pairs is None:
-#         return fresh_dict()
+#         return new_dict()
 #     return construct_dict(pairs)
 # 
 # @python_bridge
 # def w_construct_list(items=None):
 #     if items is None:
-#         return fresh_list()
+#         return new_list()
 #     return construct_list(items)
-# 
-# @python_bridge
-# def w_single(items):
-#     it = cast(call(op_iter, [items]), Iterator)
-#     try:
-#         x, it = it.next()
-#     except StopIteration:
-#         raise error(e_PartialOnArgument())
-#     try:
-#         y, it = it.next()
-#     except StopIteration:
-#         return x
-#     else:
-#         raise error(e_PartialOnArgument())
-# 
-# @python_bridge
-# def w_unique_coercion(items):
-#     faces = {}
-#     it = cast(call(op_iter, [items]), Iterator)
-#     while True:
-#         try:
-#             x, it = it.next()
-#             if not isinstance(x, Interface):
-#                 raise error(e_TypeError())
-#             faces[x] = None
-#         except StopIteration:
-#             break
-#     face = unique_coercion(faces)
-#     if face is None:
-#         raise error(e_NoValue())
-#     return face
-# 
-# @python_bridge
-# def w_is_closure(item):
-#     if isinstance(item.face(), FunctionInterface):
-#         return true
-#     else:
-#         return false
 # 
 # @python_bridge
 # def w_is_subtype(a, b):
@@ -183,58 +140,44 @@ def w_print(arg):
 #     else:
 #         return false
 # 
-# @python_bridge
-# def w_once(iterator):
-#     if not isinstance(iterator, Iterator):
-#         iterator = cast(call(op_iter, [iterator]), Iterator)
-#     try:
-#         x, it = iterator.next()
-#     except StopIteration:
-#         raise error(e_NoValue())
-#     return Tuple([x, it])
+@builtin(1)
+def w_single(items):
+    it = cast(items, Iterator)
+    try:
+        x, it = it.next()
+    except StopIteration:
+        raise error(e_PreconditionFailed)
+    try:
+        y, it = it.next()
+    except StopIteration:
+        return x
+    else:
+        raise error(e_PreconditionFailed)
 
-# base_stem = {
-#     u"==": op_eq,
-#     u"!=": w_ne,
-#     u"hash": op_hash,
-#     u"in": op_in,
-#     u"getitem": op_getitem,
-#     u"setitem": op_setitem,
-#     u"iter": op_iter,
-#     u"cmp": op_cmp,
-#     u">=": w_ge,
-#     u">": w_gt,
-#     u"<=": w_le,
-#     u"<": w_lt,
-#     u"++": op_concat,
-#     u"copy": op_copy,
-#     u"-expr": op_neg,
-#     u"+expr": op_pos,
-#     u"+": op_add,
-#     u"-": op_sub,
-#     u"*": op_mul,
-#     u"%": op_mod,
-#     u"~expr": op_not,
-#     u"&": op_and,
-#     u"|": op_or,
-#     u"xor": op_xor,
-#     u"stringify": op_stringify,
+@builtin(2)
+def w_once(iterator):
+    iterator = cast(iterator, Iterator)
+    try:
+        x, it = iterator.next()
+    except StopIteration:
+        raise error(e_NoValue)
+    return Tuple([x, it])
+
+@builtin(1)
+def w_kind(obj):
+    return obj.kind
+
 #     u"parse_integer": builtin()(parse_integer),
-#     u"true" : true,
-#     u"false": false,
-#     u"range": w_range,
 #     u"slot": w_slot,
 #     u"set": w_construct_set,
 #     u"dict": w_construct_dict,
 #     u"list": w_construct_list,
 #     u"call_with_coeffects": w_call_with_coeffects,
-#     u"face": builtin()(lambda x: x.face()),
 #     u"Parameter": TypeParameter.interface,
 # #    u"by_reference": w_by_reference,
 # #    u"by_value": w_by_value,
 # #    u"parameter": builtin()(lambda x: TypeParameter(cast(x, Integer))),
 # #    u"get_function_header": w_get_function_header,
-# #    u"single": w_single,
 #     u"inspect": interpreter.w_inspect,
 # #    u"unique_coercion": w_unique_coercion,
 # #    u"is_closure": w_is_closure,
@@ -242,10 +185,17 @@ def w_print(arg):
 # #    u"cod": common.cod,
 # #    u"is_subtype": w_is_subtype,
 #     u"placeholder_error": w_placeholder_error,
-#     u"once": w_once,
-# }
 
 variables = {
     u"input": w_input,
     u"print": w_print,
+    u"!=": w_ne,
+    u">=": w_ge,
+    u">": w_gt,
+    u"<=": w_le,
+    u"<": w_lt,
+    u"range": w_range,
+    u"single": w_single,
+    u"once": w_once,
+    u"kind": w_kind,
 }

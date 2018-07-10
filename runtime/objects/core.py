@@ -72,7 +72,7 @@ def hash_fn(a):
         return compute_hash(a)
     elif isinstance(a, String):
         return compute_hash(a.string)
-    x = unwrap_int(cast(call(op_hash, [a], 1), Integer))
+    x = unwrap_int(cast(call(op_hash, [a, op_hash], 1), Integer))
     return intmask(x)
 
 # KindSheetKind -name is there to illustrate that
@@ -549,6 +549,8 @@ def cast(obj, cls):
     if isinstance(cls, Kind):
         kind = cls
         return convert(obj, kind)
+    elif isinstance(obj, cls):
+        return obj
     else:
         assert cls.static_kind is not None
         kind = cls.static_kind

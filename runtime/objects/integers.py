@@ -1,103 +1,106 @@
-from common import *
+from core import *
 from rpython.rlib.rbigint import rbigint
 from rpython.rlib.rstring import NumberStringParser
 
 # Some methods for Integer
-@method(Integer.interface, op_eq)
+@method(Integer, op_eq, 1)
 def Integer_eq(a, b):
-    if a.integer_val.eq(b.integer_val):
-        return true
-    else:
-        return false
+    a = cast(a, Integer)
+    b = cast(a, Integer)
+    return wrap(a.bignum.eq(b.bignum))
 
-@method(Integer.interface, op_hash)
-def Integer_hash(a):
+@method(Integer, op_hash, 1)
+def Integer_hash(a, w_hash):
+    a = cast(a, Integer)
     return a
 
-@method(Integer.interface, op_cmp)
+@method(Integer, op_cmp, 1)
 def Integer_cmp(a, b):
     a = cast(a, Integer)
     b = cast(b, Integer)
-    if a.integer_val.lt(b.integer_val):
-        return fresh_integer(-1)
-    elif a.integer_val.gt(b.integer_val):
-        return fresh_integer(+1)
+    if a.bignum.lt(b.bignum):
+        return wrap(-1)
+    elif a.bignum.gt(b.bignum):
+        return wrap(+1)
     else:
-        return fresh_integer(0)
+        return wrap(0)
 
-@method(Integer.interface, op_neg)
+@method(Integer, op_neg, 1)
 def Integer_neg(a):
     a = cast(a, Integer)
-    return Integer(a.integer_val.neg())
+    return Integer(a.bignum.neg())
 
-@method(Integer.interface, op_pos)
+@method(Integer, op_pos, 1)
 def Integer_pos(a):
     return cast(a, Integer)
 
-@method(Integer.interface, op_add)
+@method(Integer, op_add, 1)
 def Integer_add(a, b):
     a = cast(a, Integer)
     b = cast(b, Integer)
-    return Integer(a.integer_val.add(b.integer_val))
+    return Integer(a.bignum.add(b.bignum))
 
-@method(Integer.interface, op_sub)
+@method(Integer, op_sub, 1)
 def Integer_sub(a, b):
     a = cast(a, Integer)
     b = cast(b, Integer)
-    return Integer(a.integer_val.sub(b.integer_val))
+    return Integer(a.bignum.sub(b.bignum))
 
-@method(Integer.interface, op_mul)
+@method(Integer, op_mul, 1)
 def Integer_mul(a, b):
     a = cast(a, Integer)
     b = cast(b, Integer)
-    return Integer(a.integer_val.mul(b.integer_val))
+    return Integer(a.bignum.mul(b.bignum))
 
-@method(Integer.interface, op_mod)
+@method(Integer, op_mod, 1)
 def Integer_mod(a, b):
     a = cast(a, Integer)
     b = cast(b, Integer)
-    return Integer(a.integer_val.mod(b.integer_val))
+    return Integer(a.bignum.mod(b.bignum))
 
-@method(Integer.interface, op_and)
+@method(Integer, op_and, 1)
 def Integer_and(a, b):
     a = cast(a, Integer)
     b = cast(b, Integer)
-    return Integer(a.integer_val.and_(b.integer_val))
+    return Integer(a.bignum.and_(b.bignum))
 
-@method(Integer.interface, op_or)
+@method(Integer, op_or, 1)
 def Integer_or(a, b):
     a = cast(a, Integer)
     b = cast(b, Integer)
-    return Integer(a.integer_val.or_(b.integer_val))
+    return Integer(a.bignum.or_(b.bignum))
 
-@method(Integer.interface, op_xor)
+@method(Integer, op_xor, 1)
 def Integer_xor(a, b):
     a = cast(a, Integer)
     b = cast(b, Integer)
-    return Integer(a.integer_val.xor(b.integer_val))
+    return Integer(a.bignum.xor(b.bignum))
 
-# TODO: The error messages here need improvement.
-@method(Integer.interface, op_stringify)
-def Integer_stringify(a, base=fresh_integer(10)):
-    integer = cast(a, Integer).integer_val
-    base = cast(base, Integer).toint()
-    if base > len(digits):        # we have only 36 digits.
-        raise error(e_IntegerBaseError()) # not enough digits to this base
+@method(Integer, op_stringify, 1)
+def Integer_stringify(a, base=wrap(10)):
+    integer = cast(a, Integer).bignum
+    base = unwrap_int(cast(base, Integer))
+    if base > len(digits):              # we have only 36 digits.
+        raise error(e_IntegerBaseError) # not enough digits to this base
     if base < 0:
-        raise error(e_IntegerBaseError()) # negative base not supported
+        raise error(e_IntegerBaseError) # negative base not supported
     return String(integer.format(digits[:base]).decode('utf-8'))
 
 digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 
 # Needed in the evaluator. It receives integer literals as
 # strings in the current structure.
-def parse_integer(string, base=fresh_integer(10)):
-    string = cast(string, String)
-    base = cast(base, Integer).toint()
+def parse_integer(string, base=wrap(10)):
+    string = cast(string, String).string
+    base = unwrap_int(cast(base, Integer))
     if base > 36:        # we have only 36 digits.
-        raise error(e_IntegerBaseError()) # not enough digits to this base
+        raise error(e_IntegerBaseError) # not enough digits to this base
     if base < 0:
-        raise error(e_IntegerBaseError()) # negative base not supported
-    s = literal = string.string_val.encode('utf-8')
+        raise error(e_IntegerBaseError) # negative base not supported
+    s = literal = string.encode('utf-8')
     parser = NumberStringParser(s, literal, base, 'long')
     return Integer(rbigint._from_numberstring_parser(parser))
+
+variables = {
+    u"parse_integer": builtin(1)(parse_integer),
+}
