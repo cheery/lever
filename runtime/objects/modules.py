@@ -24,7 +24,7 @@ def Module_eq(a, b):
     return wrap(a is b)
 
 @core.method(Module, core.op_hash, outc=1)
-def Module_hash(a, w_hash):
+def Module_hash(a):
     return wrap(compute_hash(a))
 
 @core.method(Module, core.atom_dynamic_getattr, outc=1)

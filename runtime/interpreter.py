@@ -79,7 +79,7 @@ def rpython_dirname(p):
         head = head.rstrip('/')
     return head
 
-@builtin(1)
+@builtin(3)
 def w_inspect(closure):
     closure = cast(closure, Closure)
     return Tuple([closure.unit,

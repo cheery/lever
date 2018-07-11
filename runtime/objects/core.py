@@ -268,32 +268,32 @@ def python_bridge(function, outc):
     def py_bridge(argv):
         args = ()
         length = len(argv)
-        if length < argc - optc:
-            raise error(e_ArgumentCountError,
-                wrap(argc), wrap(optc), wrap(length))
-        if argc < length:
-            raise error(e_ArgumentCountError,
-                wrap(argc), wrap(optc), wrap(length))
-        for i in argi:
-            args += (argv[i],)
-        for i in argj:
-            if i < length:
-                args += (argv[i],)
-            else:
-                args += (defaults[i+optc-argc],)
         try:
+            if length < argc - optc:
+                raise error(e_ArgumentCountError,
+                    wrap(argc), wrap(optc), wrap(length))
+            if argc < length:
+                raise error(e_ArgumentCountError,
+                    wrap(argc), wrap(optc), wrap(length))
+            for i in argi:
+                args += (argv[i],)
+            for i in argj:
+                if i < length:
+                    args += (argv[i],)
+                else:
+                    args += (defaults[i+optc-argc],)
             result = function(*args)
+            if result is None:
+                ret = []
+            elif isinstance(result, Tuple):
+                ret = result.items
+            else:
+                ret = [result]
+            if len(ret) != outc:
+                raise error(e_BugResultCountError, wrap(outc), wrap(len(ret)))
         except OperationError as oe:
             oe.trace.append(BuiltinTraceEntry(sourcefile, lno0, lno1, name))
             raise
-        if result is None:
-            ret = []
-        elif isinstance(result, Tuple):
-            ret = result.items
-        else:
-            ret = [result]
-        if len(ret) != outc:
-            raise error(e_BugResultCountError, wrap(outc), wrap(len(ret)))
         return ret
     py_bridge.__name__ = name
     function_name = name.decode('utf-8')

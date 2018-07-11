@@ -10,7 +10,19 @@ main = ():
         if entry.type == "file" and entry.path.endswith(".lc")
             src = prelude ++ entry.path
             dst = prelude ++ (entry.path ++ ".json")
-            compile_file(src, dst)
+            src_mtime = fs.stat(src).mtime
+            if fs.exists(dst)
+                dst_mtime = fs.stat(dst).mtime
+                if src_mtime > dst_mtime
+                    stale = true
+                else
+                    stale = false
+            else
+                stale = true
+            if stale
+                print('compiling', src)
+                print('to       ', dst)
+                compile_file(src, dst)
 
 # The frontend compiler compiles down into a logic-based IR.
 compile_file = (src, dst):
@@ -1005,11 +1017,11 @@ class Item extends Node
         indexervar = builder.build(self.indexer, 1)[0]
         return object({
             "read": (builder, outc):
-                return builder.emit(o_attr, [basevar, indexervar], new_vars(outc))
+                return builder.emit(o_item, [basevar, indexervar], new_vars(outc))
             "write": (builder, val):
-                builder.emit(o_attr, [basevar, indexervar, val], [])
+                builder.emit(o_item, [basevar, indexervar, val], [])
             "match": (builder, val):
-                builder.emit(o_attr, [basevar, indexervar, val], [])
+                builder.emit(o_item, [basevar, indexervar, val], [])
                 return []
         })
 

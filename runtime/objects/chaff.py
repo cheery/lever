@@ -10,6 +10,12 @@ def get_name(obj, show_arity=True):
         for item in obj.items:
             items.append(get_name(item))
         return prefix + u"(" + u", ".join(items) + u")"
+    if isinstance(obj, ImmutableList) or isinstance(obj, List):
+        items = [get_name(item) for item in iterate(obj)]
+        return u"[" + u", ".join(items) + u"]"
+    if isinstance(obj, Tuple):
+        items = [get_name(item) for item in obj.items]
+        return u"(" + u", ".join(items) + u")"
     try:
         return cast(call(op_stringify, [obj], 1), String).string
     except OperationError as op:
@@ -194,6 +200,20 @@ def w_Operator(w_selectors, w_argc, w_properties, default=None):
 def w_has_properties(obj):
     return wrap(isinstance(obj, KObject))
 
+@builtin(1)
+def w_enumerate(obj, index=wrap(0)):
+    return Enumerator(cast(obj, Iterator), unwrap_int(index))
+
+class Enumerator(Iterator):
+    def __init__(self, iterator, index):
+        self.iterator = iterator
+        self.index = index
+
+    def next(self):
+        x, iterator = self.iterator.next()
+        return Tuple([wrap(self.index), x]), Enumerator(iterator, self.index+1)
+
+
 variables = {
     u"repr": builtin(1)(lambda a: wrap(get_name(a))),
     u"input": w_input,
@@ -211,4 +231,5 @@ variables = {
     u"has_properties": w_has_properties,
     u"get_attribute": builtin(1)(get_attribute),
     u"set_attribute": builtin(0)(set_attribute),
+    u"enumerate": w_enumerate,
 }

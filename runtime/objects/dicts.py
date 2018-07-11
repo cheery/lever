@@ -30,7 +30,7 @@ def Dict_in(item, a):
 
 @conversion_to(ImmutableDict, IteratorKind)
 def ImmutableDict_iter(a):
-    a = cast(a, Dict).table
+    a = cast(a, ImmutableDict).table
     return DictIterator(a.iteritems())
 
 @conversion_to(Dict, IteratorKind)
@@ -52,16 +52,16 @@ def ImmutableDict_eq(a, b):
     return true
 
 @method(ImmutableDict, op_hash, 1)
-def ImmutableDict_hash(a, w_hash):
+def ImmutableDict_hash(a):
     a = cast(a, ImmutableDict).table
     multi = r_uint(1822399083) + r_uint(1822399083) + 1
     hash = r_uint(1927868237)
     hash *= r_uint(len(a) + 1)
     for key, item in a.iteritems():
-        h = unwrap_int(call(w_hash, [key]))
+        h = unwrap_int(call(op_hash, [key]))
         value = (r_uint(h ^ (h << 16) ^ 89869747)  * multi)
         hash = hash ^ value
-        h = unwrap_int(call(w_hash, [item]))
+        h = unwrap_int(call(op_hash, [item]))
         value = (r_uint(h ^ (h << 16) ^ 89869747)  * multi)
         hash = hash ^ value
     hash = hash * 69069 + 907133923

@@ -10,7 +10,7 @@ def Integer_eq(a, b):
     return wrap(a.bignum.eq(b.bignum))
 
 @method(Integer, op_hash, 1)
-def Integer_hash(a, w_hash):
+def Integer_hash(a):
     a = cast(a, Integer)
     return a
 

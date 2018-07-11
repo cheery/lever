@@ -1,3 +1,4 @@
+from rpython.rlib.objectmodel import we_are_translated
 from rpython.rlib import rfile
 from json_loader import read_json_file
 from objects.core import *
@@ -52,7 +53,7 @@ def new_entry_point(config):
                     os.write(0, s)
                 else:
                     print('  *** UNKNOWN ENTRY ***')
-            name = chaff.get_name(tb.error.atom).encode('utf-8')
+            name = chaff.get_name(tb.error.atom, True).encode('utf-8')
             if len(tb.error.items) == 0:
                 os.write(0, name + "\n")
             else:
@@ -60,6 +61,8 @@ def new_entry_point(config):
                 for item in tb.error.items:
                     ss.append(chaff.get_name(item).encode('utf-8'))
                 os.write(0, name + "(" + ", ".join(ss) + ")" + "\n")
+            if not we_are_translated():
+                raise
             return 1
         return 0
     return entry_point

@@ -33,13 +33,13 @@ def ImmutableList_eq(a, b):
     return true
 
 @method(ImmutableList, op_hash, 1)
-def ImmutableList_hash(a, w_hash):
+def ImmutableList_hash(a):
     a = cast(a, ImmutableList).contents
     mult = 1000003
     x = 0x345678
     z = len(a)
-    for w_item in a:
-        y = unwrap_int(call(w_hash, [w_item]))
+    for item in a:
+        y = unwrap_int(call(op_hash, [item]))
         x = (x ^ y) * mult
         z -= 1
         mult += 82520 + z + z

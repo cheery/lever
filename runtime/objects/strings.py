@@ -11,7 +11,7 @@ def String_eq(a, b):
     return wrap(a.string == b.string)
 
 @method(String, op_hash, 1)
-def String_hash(a, w_hash):
+def String_hash(a):
     a = cast(a, String)
     return wrap(compute_hash(a.string))
 

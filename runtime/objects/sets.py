@@ -64,13 +64,13 @@ def ImmutableSet_eq(a, b):
     return true
 
 @method(ImmutableSet, op_hash, 1)
-def ImmutableSet_hash(a, w_hash):
+def ImmutableSet_hash(a):
     a = cast(a, ImmutableSet).table
     multi = r_uint(1822399083) + r_uint(1822399083) + 1
     hash = r_uint(1927868237)
     hash *= r_uint(len(a) + 1)
     for item in a.iterkeys():
-        h = unwrap_int(call(w_hash, [item]))
+        h = unwrap_int(call(op_hash, [item]))
         value = (r_uint(h ^ (h << 16) ^ 89869747)  * multi)
         hash = hash ^ value
     hash = hash * 69069 + 907133923
