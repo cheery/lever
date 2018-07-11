@@ -127,6 +127,15 @@ that properly hide how they're implemented. They also encourage
 writing of more immutable structures, and we can check that their
 case clauses cover all possibilities there are.
 
+All datatypes use a notion of operational equivalence defined
+in the paper
+<a href="http://home.pipeline.com/~hbaker1/ObjectIdentity.html"
+>"Equal Rights for Functional Objects or, The More Things
+Change, The More They Are the Same"</a>.
+
+The operational equivalence means that if x == y, then there's
+nothing you can do with x or y to distinguish them from each other.
+
 <h1>Scoping rules</h1>
 
 The scope is lexical and it is divided into global and local

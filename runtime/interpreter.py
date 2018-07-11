@@ -82,21 +82,13 @@ def rpython_dirname(p):
 @builtin(1)
 def w_inspect(closure):
     closure = cast(closure, Closure)
-    unit = construct_record([
-        (u"constants", False, List(list(closure.unit.constants))),
-        (u"env", False, List(list(closure.unit.env))),
-        (u"module", False, closure.unit.module),
-        (u"sources", False, List(list(closure.unit.sources))),
-    ])
-    return construct_record([
-        (u"inc", False, wrap(closure.inc)),
-        (u"outc", False, wrap(closure.outc)),
-        (u"unit", False, unit),
-        (u"entries", False, List([wrap(i) for i in closure.entries])),
-        (u"frame", False, List(list(closure.frame))),
-    ])
+    return Tuple([closure.unit,
+        ImmutableList(closure.frame[:]),
+        ImmutableList([wrap(i) for i in closure.entries]) ])
 
-class Unit:
+VMUnitKind = Kind()
+class Unit(Object):
+    static_kind = VMUnitKind
     def __init__(self, constants, env, module, program, sources):
         self.constants = constants
         self.env = env
@@ -105,7 +97,7 @@ class Unit:
         self.sources = sources
 
 ClosureKind = Kind()
-class Closure(Object):
+class Closure(KObject):
     static_kind = ClosureKind
     def __init__(self, inc, outc, unit, entries, frame, loc):
         self.inc = inc
@@ -114,6 +106,7 @@ class Closure(Object):
         self.entries = entries
         self.loc = loc
         self.frame = frame
+        KObject.__init__(self)
 
 class FreshGenerator(Iterator):
     def __init__(self, unit, proc, frame):
@@ -629,3 +622,44 @@ def as_list(val):
 
 def as_dict(val):
     return cast(val, Dict).table
+
+variables = {
+    u"VMUnitKind": VMUnitKind,
+    u"ClosureKind": ClosureKind,
+    u"inspect": w_inspect,
+}
+
+@getter(Unit, u"constants", 1)
+def Unit_get_constants(unit):
+    unit = cast(unit, Unit)
+    return ImmutableList(unit.constants[:])
+
+@getter(Unit, u"env", 1)
+def Unit_get_env(unit):
+    unit = cast(unit, Unit)
+    return ImmutableList(unit.env[:])
+
+@getter(Unit, u"module", 1)
+def Unit_get_module(unit):
+    unit = cast(unit, Unit)
+    return unit.module
+
+@getter(Unit, u"program", 1)
+def Unit_get_program(unit):
+    unit = cast(unit, Unit)
+    program = []
+    for proc in unit.program:
+        table = empty_r_dict()
+        if not isinstance(proc, Dict):
+            raise error(e_EvalError)
+        for key, value in proc.table.iteritems():
+            if isinstance(value, List):
+                value = call(op_snapshot, [value])
+            table[key] = value
+        program.append(ImmutableDict(table))
+    return ImmutableList(program)
+
+@getter(Unit, u"sources", 1)
+def Unit_get_sources(unit):
+    unit = cast(unit, Unit)
+    return ImmutableList(unit.sources[:])

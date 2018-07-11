@@ -32,17 +32,6 @@ def ImmutableList_eq(a, b):
             return false
     return true
 
-@method(List, op_eq, 1)
-def List_eq(a, b):
-    a = cast(a, List).contents
-    b = cast(b, List).contents
-    if len(a) != len(b):
-        return false
-    for i in range(len(a)):
-        if not unwrap_bool(call(op_eq, [a[i], b[i]])):
-            return false
-    return true
-
 @method(ImmutableList, op_hash, 1)
 def ImmutableList_hash(a, w_hash):
     a = cast(a, ImmutableList).contents
@@ -57,11 +46,11 @@ def ImmutableList_hash(a, w_hash):
     x += 97531
     return wrap(intmask(x))
 
-@method(List, op_invariate, 1)
-def List_invariate(a, w_invariate):
+@method(List, op_snapshot, 1)
+def List_snapshot(a):
     contents = []
     for item in cast(a, List).contents:
-        contents.append(call(w_invariate, [item], 1))
+        contents.append(item)
     return ImmutableList(contents)
 
 @method(ImmutableList, op_concat, 1)

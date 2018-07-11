@@ -18,8 +18,7 @@ def read_json_file(pathname):
             fd.close()
     except IOError as io:
         message = os.strerror(io.errno)
-        os.write(0, message + "\n")
-        raise error(e_IOError)
+        raise error(e_IOError, wrap(message))
 
 def read_json_fd(fd):
     stack = []

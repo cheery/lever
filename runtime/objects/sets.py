@@ -63,17 +63,6 @@ def ImmutableSet_eq(a, b):
             return false
     return true
 
-@method(Set, op_eq, 1)
-def Set_eq(a, b):
-    a = cast(a, Set).table
-    b = cast(b, Set).table
-    if len(a) != len(b):
-        return false
-    for item in a.iterkeys():
-        if item not in b:
-            return false
-    return true
-
 @method(ImmutableSet, op_hash, 1)
 def ImmutableSet_hash(a, w_hash):
     a = cast(a, ImmutableSet).table
@@ -99,11 +88,10 @@ def Set_copy(a):
     c.table.update(cast(a, Set).table)
     return c
 
-@method(Set, op_invariate, 1)
-def Set_invariate(a, w_invariate):
+@method(Set, op_snapshot, 1)
+def Set_snapshot(a):
     table = empty_r_dict()
-    for item in a.table.iterkeys():
-        table[invariate(item)] = None
+    table.update(cast(a, Set).table)
     return ImmutableSet(table)
 
 @attr_method(Set, u"clear", 0)
@@ -112,20 +100,19 @@ def Set_clear(a):
 
 @attr_method(Set, u"add", 0)
 def Set_add(a, item):
-    cast(a, Set).table[invariate(item)] = None
+    cast(a, Set).table[item] = None
 
 @attr_method(Set, u"update", 0)
 def Set_update(a, items):
     a = cast(a, Set)
     for item in iterate(items):
-        a.table[invariate(item)] = None
+        a.table[item] = None
 
 @attr_method(Set, u"intersection_update", 0)
 def Set_intersection_update(a, items):
     a = cast(a, Set)
     common = r_dict(eq_fn, hash_fn, force_non_null=True) 
     for item in iterate(items):
-        item = invariate(item)
         if item in a.table:
             common[item] = None
     a.table = common
@@ -135,7 +122,7 @@ def Set_difference_update(a, items):
     a = cast(a, Set)
     for item in iterate(items):
         try:
-            del a.table[invariate(item)]
+            del a.table[item]
         except KeyError:
             pass
 
@@ -143,7 +130,6 @@ def Set_difference_update(a, items):
 def Set_symmetric_difference_update(a, items):
     a = cast(a, Set)
     for item in iterate(items):
-        item = invariate(item)
         try:
             del a.table[item]
         except KeyError:
@@ -153,7 +139,7 @@ def Set_symmetric_difference_update(a, items):
 def Set_discard(a, item):
     a = cast(a, Set)
     try:
-        del a.table[invariate(item)]
+        del a.table[item]
     except KeyError:
         pass
 
@@ -161,7 +147,7 @@ def Set_discard(a, item):
 def Set_remove(a, item):
     a = cast(a, Set)
     try:
-        del a.table[invariate(item)]
+        del a.table[item]
     except KeyError:
         raise error(e_NoValue)
 
@@ -177,7 +163,7 @@ def Set_pop(a):
 def ImmutableSet_is_disjoint(a, items):
     a = cast(a, ImmutableSet)
     for item in iterate(items):
-        if invariate(item) in a.table:
+        if item in a.table:
             return false
     return true
 
@@ -185,7 +171,7 @@ def ImmutableSet_is_disjoint(a, items):
 def Set_is_disjoint(a, items):
     a = cast(a, Set)
     for item in iterate(items):
-        if invariate(item) in a.table:
+        if item in a.table:
             return false
     return true
 
@@ -194,7 +180,7 @@ def ImmutableSet_is_subset(a, items):
     a = cast(a, ImmutableSet)
     count = 0
     for item in iterate(call(w_set, [items])):
-        if invariate(item) in a.table:
+        if item in a.table:
             count += 1
     return wrap(count == len(a.table))
 
@@ -203,7 +189,7 @@ def Set_is_subset(a, items):
     a = cast(a, Set)
     count = 0
     for item in iterate(call(w_set, [items])):
-        if invariate(item) in a.table:
+        if item in a.table:
             count += 1
     return wrap(count == len(a.table))
 
@@ -211,7 +197,7 @@ def Set_is_subset(a, items):
 def Set_is_superset(a, items):
     a = cast(a, ImmutableSet)
     for item in iterate(items):
-        if invariate(item) not in a.table:
+        if item not in a.table:
             return false
     return true
 
@@ -219,7 +205,7 @@ def Set_is_superset(a, items):
 def Set_is_superset(a, items):
     a = cast(a, Set)
     for item in iterate(items):
-        if invariate(item) not in a.table:
+        if item not in a.table:
             return false
     return true
 
@@ -267,7 +253,7 @@ def ImmutableSet_union(a, items):
     table = empty_r_dict()
     table.update(cast(a, ImmutableSet).table)
     for item in iterate(items):
-        table[invariate(item)] = None
+        table[item] = None
     return ImmutableSet(table)
 
 @attr_method(ImmutableSet, u"intersection", 1)
@@ -276,7 +262,6 @@ def ImmutableSet_intersection(a, items):
     table = empty_r_dict()
     a = cast(a, ImmutableSet)
     for item in iterate(items):
-        item = invariate(item)
         if item in a.table:
             table[item] = None
     return ImmutableSet(table)
@@ -287,7 +272,6 @@ def ImmutableSet_difference(a, items):
     table = empty_r_dict()
     table.update(cast(a, ImmutableSet).table)
     for item in iterate(items):
-        item = invariate(item)
         try:
             table.pop(item)
         except KeyError:
@@ -300,7 +284,6 @@ def Set_symmetric_difference(a, items):
     table = empty_r_dict()
     table.update(cast(a, ImmutableSet).table)
     for item in iterate(items):
-        item = invariate(item)
         try:
             table.pop(item)
         except KeyError:

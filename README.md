@@ -1,7 +1,8 @@
 # Next-generation Lever
 
 Note: At the moment this project does not run properly. I uploaded
-intermediary results of the new VM.
+intermediary results of the new VM. The new frontend is slightly unstable
+and differs from the previous one.
 
 The rewrite improves on...
 
@@ -167,126 +168,16 @@ of fibonacci and factorial.
 
  It can be done in single flush if the designer is careful.
 
+ TODO: Write some IR loading code into prelude.
 
-Think about the variance model that appears in functions/records
-and 'extends upwards', such that we have different types that
-only vary by a parameter.
-
-
-Consider what the behavior should be for 'binary_operator'
-and 'get_coercion_function_type'...
-
-'immutalize' -function
-
-Add immutable constructs, but provide them such that they don't cause
-much ado. (operation for setattr as key, for example.)
-
-Tune pattern matchers usable without case construct.
-
- TODO: The technical documentation should describe how the
-       forms end up evaluated.
-
- TODO: Start exploring the buildup of the inferencer.
-
- TODO: Consider writing a sample program that uses the whole palette
-       of methods that are available for strings.
-
-    a < b
-    a == b
-    a ++ b
-    a.count(b)
-    a.endswith(b)
-    a in b
-    a.is_alpha()
-    a.is_digit(base=10)
-    a.is_lower()
-    a.is_space()
-    a.is_upper()
-    a.length
-    a.lower()
-    a.replace(x,y)
-    a.rsplit(sep, maxsplit=n)
-    a.split(sep, maxsplit=n)
-    a.startswith(b)
-    a.upper()
-    a[x]
-    hash(a)
-    iter(a)
-    a.ljust(width, fillchar=' ')
-    a.rjust(width, fillchar=' ')
-
- TODO: The same for dicts:
-
-    a.length
-    a in b
-    iter(a) -> produces pairs
-    copy(a)
-    a.get(key, default)
-    a.pop(key)
-    a[key] (setitem and getitem)
-    a.keys()
-    a.items()
-    a.values()
-    a.update(iterable)
-
- TODO: the same for lists:
-
-    a == b
-    a ++ b
-    a in b
-    a[b] (setitem)
-    a.extend(iterable)
-    a.insert(index, obj)
-    a.remove(obj)
-    a.count(obj)
-    a.reverse()
-    a.sort(fcmp=cmp)
-
- TODO: the same for sets
-
-    a.length
-    a in b
-    iter(a)
-    a == b
-    copy(a)
-    a.clear()
-    a.add(b)
-    a.update(iterable)
-    a.intersection_update(iterable)
-    a.difference_update(iterable)
-    a.symmetric_difference_update(iterable)
-    a.discard(b)
-    a.remove(item)
-    a.pop()
-    a.is_disjoint(iterable)
-    a.is_subset(iterable)
-    a.is_superset(iterable)
-    a.union(iterable), a | b
-    a.intersection(iterable), a & b
-    a.difference(iterable), a - b
-    a.symmetric_difference(iterable), xor(a, b)
-
- TODO: Consider similar sample programs for lists, dicts, sets, slots.
-
- TODO: Split lists/sets/dicts properly into immutable/mutable
-       constructs.
+ TODO: Restore the remaining functionality.
 
  TODO: Implement some binary format for binary data,
        and try serialization.
 
- TODO: Exception handler is a bit like pattern matcher.
-
  TODO: Add documentation reference building into modules.
 
- TODO: If module load fails due to module not present, mark the
-       item not present and try again from higher scope.
-
- TODO: Add direct conversions between types.
-
- TODO: Add slot syntax for record fields.
-
- TODO: Resume and correct the solve_scope in bootstrapper/main.lc
-       Also make the BindCoeffect work correctly with mutable fields.
+ TODO: Re-implement coeffects.
 
  TODO: Ensure the datatypes are implemented well. This may require that
        we have some type inference with them already.
@@ -301,37 +192,14 @@ Tune pattern matchers usable without case construct.
 
  Add read and write indexers.
 
- TODO: https://srfi.schemers.org/srfi-41/srfi-41.html
+ https://srfi.schemers.org/srfi-41/srfi-41.html -like behavior has been
+ implemented, but it should be probably documented somewhere.
 
  TODO: Create stringbuilders.
-
- TODO: If the case clause contains assignment into same local variable in a
-       group, I'd like to create an implicit check that the value extracted
-       into that slot is the same.
-       Or alternatively would like to disallow that.
-
- (Now condition block may set the value into a module,
- whereas since assuming repeat may not occur at all, the
- repeat block does assign things locally because we know it
- won't always set it.)
 
  TODO: When interesting and useful software appears at the
        prelude/intro.lc as result of testing. Put them into
        samples/
-
- TODO: Write a program that checks variance in an object
- (best effort, false positives).
-
- TODO: The coercion&conversion subsystem needs to be added
- soon, but it's not clear how to extend it in.
- 
- TODO: Lifting between base types and some parametric structures.
-
- TODO: Implement optionals to interpreter and compiler.
-
- TODO: read_script should resolve the relative source paths.
-
- TODO: doc/technical_overview.text is not finished.
 
  TODO: Create a step-by-step tutorial for beginners that walks
  through the language and teaches to program with it. Add

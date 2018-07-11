@@ -51,19 +51,6 @@ def ImmutableDict_eq(a, b):
             return false
     return true
 
-@method(Dict, op_eq, 1)
-def Dict_eq(a, b):
-    a = cast(a, Dict).table
-    b = cast(b, Dict).table
-    if len(a) != len(b):
-        return false
-    for key, item in a.iteritems():
-        if key not in b:
-            return false
-        if not unwrap_bool(call(op_eq, [item, b[key]], 1)):
-            return false
-    return true
-
 @method(ImmutableDict, op_hash, 1)
 def ImmutableDict_hash(a, w_hash):
     a = cast(a, ImmutableDict).table
@@ -101,7 +88,7 @@ def Dict_getitem(a, item):
 @method(Dict, op_setitem, 1)
 def Dict_setitem(a, item, value):
     a = cast(a, Dict)
-    a.table[invariate(item)] = value
+    a.table[item] = value
 
 @method(ImmutableDict, op_copy, 1)
 def ImmutableDict_copy(a):
@@ -113,12 +100,12 @@ def Dict_copy(a):
     c.table.update(cast(a, Dict).table)
     return c
 
-@method(Dict, op_invariate, 1)
-def Dict_invariate(a, w_invariate):
+@method(Dict, op_snapshot, 1)
+def Dict_snapshot(a):
     table = empty_r_dict()
     for key, item in a.table.iteritems():
-        table[invariate(key)] = invariate(item)
-    return Dict(table)
+        table[key] = item
+    return ImmutableDict(table)
 
 @attr_method(ImmutableDict, u"get", 1)
 def get(a, item, default):
@@ -221,7 +208,7 @@ def Dict_update(a, items):
             items = cast(item, Tuple).items
             if len(items) != 2:
                 raise error(e_TypeError)
-            a.table[invariate(items[0])] = items[1]
+            a.table[items[0]] = items[1]
 
 variables = {
     u"dict": w_dict,

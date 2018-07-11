@@ -122,10 +122,21 @@ def w_import(mspace, w_name):
     mspace.loaded[name] = None # Ensure recursion is catched.
     try:
         module = call(mspace.loader, [mspace, w_name])
+    except core.OperationError as oe:
+        if oe.error.atom is core.e_ModuleError and mspace.parent:
+            return call(w_import, [mspace.parent, w_name])
+        raise
     finally:
         mspace.loaded.pop(name)
     mspace.loaded[name] = module
     return module
+
+@builtin(1)
+def w_module_contents_list(module):
+    listing = core.List([])
+    for name in module.cells:
+        listing.contents.append(core.String(name))
+    return listing
 
 variables = {
     u"documentation": atom_documentation,
@@ -133,4 +144,5 @@ variables = {
     u"docroot": atom_docroot,
     u"ModuleKind": ModuleKind,
     u"ModuleSpaceKind": ModuleSpaceKind,
+    u"module_contents_list": w_module_contents_list,
 }

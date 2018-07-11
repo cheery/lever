@@ -20,12 +20,14 @@ class Object:
     def kind(self):
         return self.static_kind
 
-# Resolving methods on interfaces help to ensure that
-# interface block corresponds with the type of an object.
-class Kind(Object):
-    static_kind = None
+class KObject(Object):
     def __init__(self):
         self.properties = r_dict(eq_fn, hash_fn, force_non_null=True)
+
+# Resolving methods on interfaces help to ensure that
+# interface block corresponds with the type of an object.
+class Kind(KObject):
+    static_kind = None
 
 # Because the property list is an ordinary dictionary entry, it means
 # that we must short-circuit the eq and hash lookup for some elements. 
@@ -80,11 +82,12 @@ def hash_fn(a):
 # keep a record of things in order to implement them.
 Kind.static_kind = KindSheetKind = Kind()
 
-class Constant(Object):
+ConstantKind = Kind()
+class Constant(KObject):
     static_kind = None
     def __init__(self, dynamic_kind):
         self.dynamic_kind = dynamic_kind
-        self.properties = r_dict(eq_fn, hash_fn, force_non_null=True)
+        KObject.__init__(self)
 
     @property
     def kind(self):
@@ -96,11 +99,11 @@ false = Constant(BoolKind)
 
 # Atoms and compounds are necessary in describing the kind sheets.
 AtomKind = Kind()
-class Atom(Object):
+class Atom(KObject):
     static_kind = AtomKind
     def __init__(self, arity):
         self.arity = arity
-        self.properties = r_dict(eq_fn, hash_fn, force_non_null=True)
+        KObject.__init__(self)
 
 CompoundKind = Kind()
 class Compound(Object):
@@ -220,24 +223,26 @@ def unwrap_bool(a):
     return convert(a, BoolKind) is true
 
 BuiltinKind = Kind()
-class Builtin(Object):
+class Builtin(KObject):
     static_kind = BuiltinKind
-    def __init__(self, function, argc, optc, outc, prefill=[]):
+    def __init__(self, function, name, argc, optc, outc, prefill=[]):
+        self.function_name = name
         self.function = function
         self.argc = argc
         self.optc = optc
         self.outc = outc
         self.prefill = prefill
-        self.properties = r_dict(eq_fn, hash_fn, force_non_null=True)
+        KObject.__init__(self)
 
 BuiltinPortalKind = Kind()
 class BuiltinPortal(Object):
     static_kind = BuiltinPortalKind
     def __init__(self, function):
         self.function = function
+        self.function_name = function.__name__.decode('utf-8')
 
 def prefill(builtin, prefill):
-    return Builtin(builtin.function,
+    return Builtin(builtin.function, builtin.function_name,
         argc = builtin.argc-1,
         optc = min(builtin.argc-1, builtin.optc),
         outc = builtin.outc,
@@ -290,8 +295,9 @@ def python_bridge(function, outc):
         if len(ret) != outc:
             raise error(e_BugResultCountError, wrap(outc), wrap(len(ret)))
         return ret
-    py_bridge.__name__ = function.__name__
-    return Builtin(py_bridge, argc, optc, outc)
+    py_bridge.__name__ = name
+    function_name = name.decode('utf-8')
+    return Builtin(py_bridge, function_name, argc, optc, outc)
 
 def error(atom, *args):
     return OperationError(ErrorCompound(atom, list(args)))
@@ -354,7 +360,7 @@ e_AlreadySet = Atom(1)
 e_ModuleAlreadyLoaded = Atom(1)
 
 # These errors do not have a category yet.
-e_IOError           = Atom(0)
+e_IOError           = Atom(1)
 e_JSONDecodeError   = Atom(1)
 e_IntegerParseError = Atom(0)
 e_OverflowError = Atom(0)
@@ -369,19 +375,18 @@ e_PostconditionFailed = Atom(0)
 e_NoItems = Atom(0)
 e_NoIndex = Atom(0)
 e_NoValue = Atom(0)
-e_InvariateRecursion = Atom(0)
 
 OperatorKind = Kind()
-class Operator(Object):
+class Operator(KObject):
     static_kind = OperatorKind
     def __init__(self, selectors, argc, default=None):
         self.argc = argc # the minimum number of arguments required.
         self.selectors = selectors
         self.default = default
-        self.properties = r_dict(eq_fn, hash_fn, force_non_null=True)
         for selector in self.selectors:
             if selector >= argc:
                 raise error(e_SelectorExceedsArgumentCount)
+        KObject.__init__(self)
 
 # call takes the callee and a tuple as arguments.
 op_call = Operator([0], 2)
@@ -391,8 +396,12 @@ def op_eq_default(a, b):
     return wrap(a is b)
 op_eq   = Operator([0, 1], 2, op_eq_default)
 
-op_hash = Operator([0], 1)
-op_invariate = Operator([0], 2)
+@builtin(1)
+def op_hash_default(a):
+    return wrap(compute_hash(a))
+op_hash = Operator([0], 1, op_hash_default)
+
+op_snapshot = Operator([0], 1)
 
 op_in = Operator([1], 2)
 op_getitem = Operator([0], 2)
@@ -639,14 +648,16 @@ def method(kind_cls, operator, outc):
         kind.properties[operator] = python_bridge(function, outc)
         # If operator has a hash, it also gets an invariator.
         if operator is op_hash:
-            @builtin(1)
-            def free_invariator(a, w_invariate):
-                return a
             assert op_eq in kind.properties, (
                 "op_hash without op_eq is pointless.")
-            assert op_invariate not in kind.properties, (
-                "implement op_hash, get a free invariator.")
-            kind.properties[op_invariate] = free_invariator
+        if operator is op_cmp:
+            assert op_eq in kind.properties, (
+                "op_cmp without op_eq is pointless.")
+        all_properties = set(kind.properties)
+        has_eq = len(set([op_eq, op_hash, op_cmp]) & all_properties) > 0
+        is_mutable = len(set([op_snapshot, op_setitem, op_setslot]) & all_properties) > 0
+        assert not (has_eq and is_mutable), (
+            "mutable objects must retain equality by identity")
         return function
     return _decorator_
 
@@ -702,30 +713,6 @@ def attr_method(kind_cls, name, outc):
         return function
     return _decorator_
 
-# Invariator is an internal functionality in dictionaries
-# and sets.
-def invariate(key):
-    invariator = Invariator()
-    invariator.w_invariate = prefill(w_invariate, [invariator])
-    return call(invariator.w_invariate, [key], 1)
-
-@builtin(1)
-def w_invariate(invariator, obj):
-    assert isinstance(invariator, Invariator)
-    if obj in invariator.visited:
-        raise error(e_InvariateRecursion)
-    invariator.visited.append(obj)
-    result = call(op_invariate, [obj, invariator.w_invariate], 1)
-    invariator.visited.pop()
-    return result
-
-InvariatorKind = Kind()
-class Invariator(Object):
-    static_kind = InvariatorKind
-    def __init__(self, w_invariate=None):
-        self.w_invariate = w_invariate
-        self.visited = []
-
 variables = {
     u"KindSheetKind": KindSheetKind,
     u"BoolKind": BoolKind,
@@ -772,12 +759,11 @@ variables = {
     u"NoItems": e_NoItems,
     u"NoIndex": e_NoIndex,
     u"NoValue": e_NoValue,
-    u"InvariateRecursion": e_InvariateRecursion,
     u"OperatorKind": OperatorKind,
     u"call": op_call,
     u"==": op_eq,
     u"hash": op_hash,
-    u"invariate": op_invariate,
+    u"snapshot": op_snapshot,
     u"in": op_in,
     u"getitem": op_getitem,
     u"setitem": op_setitem,
@@ -822,14 +808,109 @@ variables = {
 }
 
 def get_properties(x):
-    if isinstance(x, Kind):
+    if isinstance(x, KObject):
         return x.properties
-    if isinstance(x, Constant):
-        return x.properties
-    if isinstance(x, Atom):
-        return x.properties
-    if isinstance(x, Builtin):
-        return x.properties
-    if isinstance(x, Operator):
-        return x.properties
-    return None
+
+def Atom_call(atom, args):
+    atom = cast(atom, Atom)
+    if atom.arity == 0:
+        raise error(e_NoMethod, op_call, AtomKind)
+    if atom.arity != len(args):
+        raise error(e_ArgumentCountError,
+            wrap(atom.arity), wrap(0), wrap(len(args)))
+    return [Compound(atom, args)]
+AtomKind.properties[op_call] = BuiltinPortal(Atom_call)
+
+@method(Atom, op_match, 1)
+def Atom_match(atom, compound):
+    atom = cast(atom, Atom)
+    if isinstance(compound, Compound):
+        return wrap(atom is compound.atom)
+    if isinstance(compound, ErrorCompound):
+        return wrap(atom is compound.atom)
+    return false
+
+@method(Atom, op_unpack, 1)
+def Atom_unpack(atom, compound):
+    atom = cast(atom, Atom)
+    if isinstance(compound, Compound):
+        if atom is compound.atom:
+            return Tuple(compound.items)
+    if isinstance(compound, ErrorCompound):
+        if atom is compound.atom:
+            return Tuple(compound.items)
+    raise error(e_NoValue)
+
+@getter(Atom, u"arity", 1)
+def Atom_arity(atom):
+    return wrap(cast(atom, Atom).arity)
+
+@method(Compound, op_eq, 1)
+def Compound_eq(a, b):
+    a = cast(a, Compound)
+    b = cast(b, Compound)
+    if not (a.atom is b.atom):
+        return false
+    if len(a.items) != len(b.items):
+        return false
+    for i in range(len(a.items)):
+        if not eq_fn(a.items[i], b.items[i]):
+            return false
+    return true
+
+@method(Compound, op_hash, 1)
+def Compound_hash(a):
+    a = cast(a, Compound)
+    mult = 1000003
+    x = 0x345678
+    z = len(a.items)
+    for item in a.items:
+        y = unwrap_int(call(op_hash, [item]))
+        x = (x ^ y) * mult
+        z -= 1
+        mult += 82520 + z + z
+    x += 97531
+    return wrap(intmask(x))
+
+@getter(Compound, u"atom", 1)
+def Compound_atom(a):
+    return cast(a, Compound).atom
+
+@getter(Kind, u"properties", 1)
+def Kind_get_properties(a):
+    a = cast(a, Kind)
+    return PropertyIterator(a.properties.iteritems())
+
+@getter(BoolKind, u"properties", 1)
+def Bool_get_properties(a):
+    a = cast(a, Constant)
+    return PropertyIterator(a.properties.iteritems())
+
+@getter(Atom, u"properties", 1)
+def Atom_get_properties(a):
+    a = cast(a, Atom)
+    return PropertyIterator(a.properties.iteritems())
+
+@getter(Builtin, u"properties", 1)
+def Builtin_get_properties(a):
+    a = cast(a, Builtin)
+    return PropertyIterator(a.properties.iteritems())
+
+@getter(Operator, u"properties", 1)
+def Operator_get_properties(a):
+    a = cast(a, Operator)
+    return PropertyIterator(a.properties.iteritems())
+
+class PropertyIterator(Iterator):
+    def __init__(self, iterator):
+        self.iterator = iterator
+        self.value = None
+        self.tail = None
+
+    def next(self):
+        if self.tail is None:
+            k,v = self.iterator.next()
+            self.value = Tuple([k,v])
+            self.tail = PropertyIterator(self.iterator)
+        return self.value, self.tail
+

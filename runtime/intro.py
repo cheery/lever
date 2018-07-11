@@ -3,8 +3,6 @@ from json_loader import read_json_file
 from objects.core import *
 from objects import core, modules, chaff
 from objects import variables
-#from objects import common
-#from objects import *
 #from context import (
 #    CoeffectModuleCell,
 #    init_executioncontext,
@@ -13,28 +11,33 @@ from objects import variables
 import interpreter
 import os
 
-
-# TODO: Is the interpret -flag needed anymore?
-def new_entry_point(config, interpret=False):
+def new_entry_point(config):
     base_module = modules.Module()
     for name, obj in variables.items():
         core.set_attribute(base_module,
             core.wrap(name), obj)
+    for name, obj in interpreter.variables.items():
+        core.set_attribute(base_module,
+            core.wrap(name), obj)
     base_module.loaded = True
-
+    rt_mspace = modules.ModuleSpace(String(u"runtime://"), [], None)
+    rt_mspace.loaded[u"base"] = base_module
     def entry_point(raw_argv):
         try:
             mspace = modules.ModuleSpace(
                 local = String(u'prelude2'),
                 env = [base_module],
-                loader = w_json_loader)
-            call(modules.w_import, [mspace, String(u"intro")])
+                loader = w_json_loader,
+                parent = rt_mspace)
+            module = call(modules.w_import, [mspace, String(u"intro")])
+            call(get_attribute(module, String(u"main")), [], 0)
         except OperationError as tb:
             os.write(0, "Traceback (most recent call last):\n")
             for trace_entry in reversed(tb.trace):
                 if isinstance(trace_entry, core.BuiltinTraceEntry):
                     src = trace_entry.sourcefile
-                    s = "  %s:%d: %s\n" % (src, trace_entry.lno0, trace_entry.name)
+                    name = trace_entry.name
+                    s = "  %s:%d: %s\n" % (src, trace_entry.lno0, name)
                     os.write(0, s)
                 elif isinstance(trace_entry, interpreter.SourceLocBuilder):
                     loc, sources = trace_entry.build_loc()
@@ -129,7 +132,12 @@ def w_json_loader(mspace, name):
     name = cast(name, String).string
     local = cast(mspace.local, String).string
     src = local + u"/" + name + u".lc.json"
-    obj = read_json_file(String(src))
+    try:
+        obj = read_json_file(String(src))
+    except OperationError as oe:
+        if oe.error.atom is e_IOError:
+            raise error(e_ModuleError)
+        raise
     env = mspace.env
     script, module = interpreter.read_script(obj,
         {u'import': prefill(modules.w_import, [mspace])}, env, src)

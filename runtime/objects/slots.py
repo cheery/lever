@@ -25,17 +25,6 @@ def Slot_copy(slot):
     slot = cast(slot, Slot)
     return Slot(slot.value)
 
-@method(Slot, op_eq, 1)
-def Slot_eq(a, b):
-    a = cast(a, Slot)
-    b = cast(b, Slot)
-    return wrap(a is b)
-
-@method(Slot, op_hash, 1)
-def Slot_hash(a, w_hash):
-    a = cast(a, Slot)
-    return wrap(compute_hash(a))
-
 variables = {
     u"SlotKind": SlotKind,
     u"slot": w_slot,

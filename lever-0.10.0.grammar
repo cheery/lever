@@ -79,7 +79,7 @@ expr:
     [loop_head]* "repeat" >(=statement)+  / repeat
     "generator" >(=statement)+         / generator
     "(" arglist (";" join(symbol, ","))? ")" ":" >(=statement)+ / closure
-    expr_or ["," expr_or]+ / make_tuple([.] concat .)
+    expr_or ["," expr_or]+ / tuple([.] concat .)
     expr_or
 
 loop_head:

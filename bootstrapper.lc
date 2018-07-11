@@ -143,9 +143,6 @@ actions = {
     "return": (expr=null):
         return Return(expr)
 
-    # TODO: Implement record slot syntax.
-    # TODO: Implement tuple slot syntax.
-    # TODO: Implement matching syntax.
     "record": (pairs):
         return Record(dict(pairs))
     "tuple": (slots):
@@ -232,7 +229,7 @@ actions = {
         return Not(Call(Symbol("in"), [lhs, rhs]))
     "import": (name):
         return Assign(Symbol(name),
-            Call(Symbol("import"), [Literal("string", name)]))
+            Call(Symbol("import"), [Constant(name)]))
     "attr": (base, name):
         return Attr(base, Constant(name))
     "deref": (value):
@@ -413,6 +410,7 @@ class Repeat extends Node
             repeat = head.build_loophead(builder, leave)
             leave  = repeat
         outer_jumps = builder.jumps
+        builder.jumps = []
         for statement in self.body
             builder.build(statement, 0)
         for block, depth, this_leaves in builder.jumps
@@ -424,6 +422,7 @@ class Repeat extends Node
             else
                 outer_jumps.append([block, depth-1, this_leaves])
         builder.jumps = outer_jumps
+        print('OUTER JUMPS', outer_jumps)
         builder.emit_branch(repeat, [], [])
         builder.current = exit
         return []
@@ -621,6 +620,8 @@ class Except extends Node
         exit = builder.current
         outer_jumps = builder.jumps
         outer_retboxes = builder.retboxes
+        builder.jumps = []
+        builder.retboxes = []
         try_block = builder.new_proc()
         builder.current = try_block
         for statement in self.body
@@ -1120,12 +1121,10 @@ class Tuple extends Node
                     inputs.append(slot.read(builder)[0])
                 return builder.emit(o_move, inputs, new_vars(1))
             "write": (builder, val):
-                outputs = []
-                for slot in slots
-                    v = FlowVariable()
-                    slot.write(builder, v)
-                    outputs.append(v)
+                outputs = new_vars(slots.length)
                 builder.emit(o_move, [val], outputs)
+                for i in range(outputs.length)
+                    slots[i].write(builder, outputs[i])
             "match": (builder, val):
                 outputs = []
                 for slot in slots
@@ -2051,7 +2050,7 @@ print_proc_vars = (label, proc_defs, program, vartab):
 
 #     "import_bind": (name, bindings):
 #         return Bind(
-#             Call(Symbol(u"import"), [Literal("string", name)]),
+#             Call(Symbol(u"import"), [Constant("string", name)]),
 #             bindings)
 #     "bind_coeffect": (fields, slot):
 #         return BindCoeffect(fields, slot)
@@ -2090,13 +2089,9 @@ print_proc_vars = (label, proc_defs, program, vartab):
 #             return PatternCase(pattern, Tuple(slots), body)
 #     "return": (expr=Symbol("null")):
 #         return Return(expr)
-#     "tuple": (slots):
-#         return Tuple(slots)
 #     "iter_once": (value, slot):
 #         return IterOnce(value, slot)
 # 
-#     "make_tuple": (items):
-#         return MakeTuple(items)
 #     "record": (fields):
 #         return Record(fields)
 #     "record_shorthand": (label):

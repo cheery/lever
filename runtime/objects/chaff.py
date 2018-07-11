@@ -3,7 +3,13 @@ from core import *
 from modules import *
 import os
 
-def get_name(obj):
+def get_name(obj, show_arity=True):
+    if isinstance(obj, Compound):
+        prefix = get_name(obj.atom, show_arity=False)
+        items = []
+        for item in obj.items:
+            items.append(get_name(item))
+        return prefix + u"(" + u", ".join(items) + u")"
     try:
         return cast(call(op_stringify, [obj], 1), String).string
     except OperationError as op:
@@ -12,10 +18,16 @@ def get_name(obj):
         prop = get_properties(obj)
         if prop is not None:
             docref = prop.get(atom_documentation, None)
-            if docref.atom is atom_docref:
+            if docref and docref.atom is atom_docref:
                 s = docref.items[1]
                 if isinstance(s, String):
+                    if isinstance(obj, Atom) and show_arity and obj.arity > 0:
+                        return s.string + ("/%s" % obj.arity).decode('utf-8')
                     return s.string
+        if isinstance(obj, Builtin):
+            return (u"<Builtin %s>" % obj.function_name)
+        if isinstance(obj, BuiltinPortal):
+            return (u"<BuiltinPortal %s>" % obj.function_name)
         obj_id = current_object_addr_as_int(obj)
         return ("<%s %s>" % (obj.__class__.__name__, obj_id)).decode('utf-8')
 
@@ -154,7 +166,36 @@ def w_kind(obj):
 # #    u"is_subtype": w_is_subtype,
 #     u"placeholder_error": w_placeholder_error,
 
+@builtin(1)
+def w_Atom(w_arity, w_properties):
+    atom = Atom(unwrap_int(w_arity))
+    for item in iterate(w_properties):
+        items = cast(item, Tuple).items
+        if len(items) != 2:
+            raise error(e_TypeError)
+        operator.properties[items[0]] = items[1]
+    return atom
+
+@builtin(1)
+def w_Operator(w_selectors, w_argc, w_properties, default=None):
+    selectors = []
+    for sel in iterate(w_selectors):
+        selectors.append(unwrap_int(sel))
+    argc = unwrap_int(w_argc)
+    operator = Operator(selectors, argc, default)
+    for item in iterate(w_properties):
+        items = cast(item, Tuple).items
+        if len(items) != 2:
+            raise error(e_TypeError)
+        operator.properties[items[0]] = items[1]
+    return operator
+
+@builtin(1)
+def w_has_properties(obj):
+    return wrap(isinstance(obj, KObject))
+
 variables = {
+    u"repr": builtin(1)(lambda a: wrap(get_name(a))),
     u"input": w_input,
     u"print": w_print,
     u"!=": w_ne,
@@ -166,4 +207,8 @@ variables = {
     u"single": w_single,
     u"once": w_once,
     u"kind": w_kind,
+    u"Operator": w_Operator,
+    u"has_properties": w_has_properties,
+    u"get_attribute": builtin(1)(get_attribute),
+    u"set_attribute": builtin(0)(set_attribute),
 }
