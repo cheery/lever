@@ -2,7 +2,7 @@ from rpython.rlib import rfile
 from json_loader import read_json_file
 from objects.core import *
 from objects import core, modules, chaff
-from objects import integers
+from objects import variables
 #from objects import common
 #from objects import *
 #from context import (
@@ -17,17 +17,8 @@ import os
 # TODO: Is the interpret -flag needed anymore?
 def new_entry_point(config, interpret=False):
     base_module = modules.Module()
-    for name, obj in core.variables.items():
+    for name, obj in variables.items():
         core.set_attribute(base_module,
-            core.wrap(name), obj)
-    for name, obj in chaff.variables.items():
-        core.set_attribute(base_module, 
-            core.wrap(name), obj)
-    for name, obj in modules.variables.items():
-        core.set_attribute(base_module, 
-            core.wrap(name), obj)
-    for name, obj in integers.variables.items():
-        core.set_attribute(base_module, 
             core.wrap(name), obj)
     base_module.loaded = True
 
@@ -47,11 +38,11 @@ def new_entry_point(config, interpret=False):
                     os.write(0, s)
                 elif isinstance(trace_entry, interpreter.SourceLocBuilder):
                     loc, sources = trace_entry.build_loc()
-                    col0 = unwrap_int(cast(loc[0], Integer))
-                    lno0 = unwrap_int(cast(loc[1], Integer))
-                    col1 = unwrap_int(cast(loc[2], Integer))
-                    lno1 = unwrap_int(cast(loc[3], Integer))
-                    srci = unwrap_int(cast(loc[4], Integer))
+                    col0 = unwrap_int(loc[0])
+                    lno0 = unwrap_int(loc[1])
+                    col1 = unwrap_int(loc[2])
+                    lno1 = unwrap_int(loc[3])
+                    srci = unwrap_int(loc[4])
                     src = cast(sources[srci], String).string.encode('utf-8')
                     s = "  %s:%d:\n%s\n" % (src, lno0,
                         format_source_location(col0, lno0, col1, lno1, src))

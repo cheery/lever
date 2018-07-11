@@ -79,7 +79,7 @@ def Integer_xor(a, b):
 @method(Integer, op_stringify, 1)
 def Integer_stringify(a, base=wrap(10)):
     integer = cast(a, Integer).bignum
-    base = unwrap_int(cast(base, Integer))
+    base = unwrap_int(base)
     if base > len(digits):              # we have only 36 digits.
         raise error(e_IntegerBaseError) # not enough digits to this base
     if base < 0:
@@ -92,7 +92,7 @@ digits = "0123456789abcdefghijklmnopqrstuvwxyz"
 # strings in the current structure.
 def parse_integer(string, base=wrap(10)):
     string = cast(string, String).string
-    base = unwrap_int(cast(base, Integer))
+    base = unwrap_int(base)
     if base > 36:        # we have only 36 digits.
         raise error(e_IntegerBaseError) # not enough digits to this base
     if base < 0:

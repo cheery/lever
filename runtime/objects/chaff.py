@@ -34,13 +34,8 @@ def w_print(arg):
 #@builtin(0)
 #def w_print_many(args):
 #    sp = ""
-#    it = cast(args, Iterator)
-#    while True:
-#        try:
-#            arg, it = it.next()
-#        except StopIteration:
-#            break
-#        s = cast(call(op_stringify, [arg]), String).string_val
+#    for arg in iterate(args):
+#        s = cast(call(op_stringify, [arg]), String).string
 #        b = s.encode('utf-8')
 #        os.write(1, sp + b)
 #        sp = " "
@@ -48,27 +43,26 @@ def w_print(arg):
 
 @builtin(1)
 def w_ne(a,b):
-    result = call(op_eq, [a,b], 1)
-    return wrap(convert(result, BoolKind) is false)
+    return wrap(not unwrap_bool(call(op_eq, [a,b], 1)))
 
 @builtin(1)
 def w_ge(a,b):
-    i = unwrap_int(cast(call(op_cmp, [a,b]), Integer))
+    i = unwrap_int(call(op_cmp, [a,b]))
     return wrap(i >= 0)
 
 @builtin(1)
 def w_gt(a,b):
-    i = unwrap_int(cast(call(op_cmp, [a,b]), Integer))
+    i = unwrap_int(call(op_cmp, [a,b]))
     return wrap(i == 1)
 
 @builtin(1)
 def w_le(a,b):
-    i = unwrap_int(cast(call(op_cmp, [a,b]), Integer))
+    i = unwrap_int(call(op_cmp, [a,b]))
     return wrap(i <= 0)
 
 @builtin(1)
 def w_lt(a,b):
-    i = unwrap_int(cast(call(op_cmp, [a,b]), Integer))
+    i = unwrap_int(call(op_cmp, [a,b]))
     return wrap(i == -1)
 
 @builtin(1)
@@ -78,7 +72,7 @@ def w_range(start,stop=None,step=None):
         start = wrap(0)
     if step is None:
         step = wrap(1)
-    sign  = unwrap_int(cast(call(op_cmp, [wrap(0), step]), Integer))
+    sign  = unwrap_int(call(op_cmp, [wrap(0), step]))
     if sign == 0:
         raise error(e_PreconditionFailed)
     else:
@@ -92,7 +86,7 @@ class RangeIterator(Iterator):
         self.sign = sign
 
     def next(self):
-        i = unwrap_int(cast(call(op_cmp, [self.current, self.limit]), Integer))
+        i = unwrap_int(call(op_cmp, [self.current, self.limit]))
         if i == self.sign:
             value = self.current
             next_value = call(op_add, [self.current, self.step])
@@ -102,32 +96,10 @@ class RangeIterator(Iterator):
             raise StopIteration()
 
 # @builtin()
-# def w_slot(value):
-#     return Slot(value)
-# 
-# @builtin()
 # def w_get_function_header(argc, opt):
 #     argc = cast(argc, Integer).toint()
 #     opt = cast(opt, Integer).toint()
 #     return func_interfaces.get(argc, opt)
-# 
-# @python_bridge
-# def w_construct_set(items=None):
-#     if items is None:
-#         return new_set()
-#     return construct_set(items)
-# 
-# @python_bridge
-# def w_construct_dict(pairs=None):
-#     if pairs is None:
-#         return new_dict()
-#     return construct_dict(pairs)
-# 
-# @python_bridge
-# def w_construct_list(items=None):
-#     if items is None:
-#         return new_list()
-#     return construct_list(items)
 # 
 # @python_bridge
 # def w_is_subtype(a, b):
@@ -139,7 +111,7 @@ class RangeIterator(Iterator):
 #         return false
 #     else:
 #         return false
-# 
+ 
 @builtin(1)
 def w_single(items):
     it = cast(items, Iterator)
@@ -168,10 +140,6 @@ def w_kind(obj):
     return obj.kind
 
 #     u"parse_integer": builtin()(parse_integer),
-#     u"slot": w_slot,
-#     u"set": w_construct_set,
-#     u"dict": w_construct_dict,
-#     u"list": w_construct_list,
 #     u"call_with_coeffects": w_call_with_coeffects,
 #     u"Parameter": TypeParameter.interface,
 # #    u"by_reference": w_by_reference,

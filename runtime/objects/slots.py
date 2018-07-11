@@ -1,21 +1,42 @@
-from common import *
+from core import *
 
+@builtin(1)
+def w_slot(value):
+    return Slot(value)
+
+SlotKind = Kind()
 class Slot(Object):
-    interface = InterfaceParametric([BIV])
-    def __init__(self, slot_val):
-        self.slot_val = slot_val
+    static_kind = SlotKind
+    def __init__(self, value):
+        self.value = value
 
-@method(Slot.interface, op_getslot)
+@method(Slot, op_getslot, 1)
 def Slot_getslot(slot):
     slot = cast(slot, Slot)
-    return slot.slot_val
+    return slot.value
 
-@method(Slot.interface, op_setslot)
+@method(Slot, op_setslot, 0)
 def Slot_setslot(slot, value):
     slot = cast(slot, Slot)
-    slot.slot_val = value
+    slot.value = value
 
-@method(Slot.interface, op_copy)
+@method(Slot, op_copy, 1)
 def Slot_copy(slot):
     slot = cast(slot, Slot)
-    return Slot(slot.slot_val)
+    return Slot(slot.value)
+
+@method(Slot, op_eq, 1)
+def Slot_eq(a, b):
+    a = cast(a, Slot)
+    b = cast(b, Slot)
+    return wrap(a is b)
+
+@method(Slot, op_hash, 1)
+def Slot_hash(a, w_hash):
+    a = cast(a, Slot)
+    return wrap(compute_hash(a))
+
+variables = {
+    u"SlotKind": SlotKind,
+    u"slot": w_slot,
+}

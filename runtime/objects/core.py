@@ -47,7 +47,7 @@ def eq_fn(a, b):
         return (a is b)
     elif isinstance(a, String) and isinstance(b, String):
         return (a.string == b.string)
-    if convert(call(op_eq, [a, b], 1), BoolKind) is true:
+    if unwrap_bool(call(op_eq, [a, b], 1)):
         return True
     else:
         return False
@@ -72,7 +72,7 @@ def hash_fn(a):
         return compute_hash(a)
     elif isinstance(a, String):
         return compute_hash(a.string)
-    x = unwrap_int(cast(call(op_hash, [a, op_hash], 1), Integer))
+    x = unwrap_int(call(op_hash, [a], 1))
     return intmask(x)
 
 # KindSheetKind -name is there to illustrate that
@@ -141,21 +141,24 @@ class List(Object):
 DictKind = Kind()
 class Dict(Object):
     static_kind = DictKind
-    def __init__(self, contents):
-        self.contents = contents
+    def __init__(self, table):
+        self.table = table
 
-def new_dict():
+def empty_dict():
     return Dict(r_dict(eq_fn, hash_fn, force_non_null=True))
 
 SetKind = Kind()
 class Set(Object):
     static_kind = SetKind
-    def __init__(self, contents):
-        self.contents = contents
+    def __init__(self, table):
+        self.table = table
 
-def new_set():
+def empty_set():
     return Set(r_dict(eq_fn, hash_fn, force_non_null=True))
 
+# The immutable version of mutable objects are always required to be
+# non-cyclic and have hash defined for every element it refers to.
+# Otherwise we don't gain much by using them.
 ImmutableListKind = Kind()
 class ImmutableList(Object):
     static_kind = ImmutableListKind
@@ -165,26 +168,34 @@ class ImmutableList(Object):
 ImmutableDictKind = Kind()
 class ImmutableDict(Object):
     static_kind = ImmutableDictKind
-    def __init__(self, contents):
-        self.contents = contents
-
-def new_immutable_dict():
-    return ImmutableSet(r_dict(eq_fn, hash_fn, force_non_null=True))
+    def __init__(self, table):
+        self.table = table
 
 ImmutableSetKind = Kind()
 class ImmutableSet(Object):
     static_kind = ImmutableSetKind
-    def __init__(self, contents):
-        self.contents = contents
+    def __init__(self, table):
+        self.table = table
 
-def new_immutable_set():
-    return ImmutableSet(r_dict(eq_fn, hash_fn, force_non_null=True))
+@specialize.call_location()
+def empty_r_dict():
+    return r_dict(eq_fn, hash_fn, force_non_null=True)
 
 IteratorKind = Kind()
 class Iterator(Object):
     static_kind = IteratorKind
     def next(self):
         raise StopIteration()
+
+def iterate(a):
+    it = cast(a, Iterator)
+    while True:
+        try:
+            item, it = it.next()
+        except StopIteration:
+            break
+        else:
+            yield item
 
 @specialize.argtype(0)
 def wrap(a):
@@ -199,10 +210,14 @@ def wrap(a):
     assert False, ""
 
 def unwrap_int(a): # TODO: Should this thing have a better error?
+    a = cast(a, Integer)
     try:
         return a.bignum.toint()
     except OverflowError:
         raise error(e_OverflowError)
+
+def unwrap_bool(a):
+    return convert(a, BoolKind) is true
 
 BuiltinKind = Kind()
 class Builtin(Object):
@@ -268,8 +283,8 @@ def python_bridge(function, outc):
             raise
         if result is None:
             ret = []
-        #elif isinstance(result, Tuple):
-        #    ret = result.items
+        elif isinstance(result, Tuple):
+            ret = result.items
         else:
             ret = [result]
         if len(ret) != outc:
@@ -354,6 +369,7 @@ e_PostconditionFailed = Atom(0)
 e_NoItems = Atom(0)
 e_NoIndex = Atom(0)
 e_NoValue = Atom(0)
+e_InvariateRecursion = Atom(0)
 
 OperatorKind = Kind()
 class Operator(Object):
@@ -375,9 +391,7 @@ def op_eq_default(a, b):
     return wrap(a is b)
 op_eq   = Operator([0, 1], 2, op_eq_default)
 
-# hash function takes in a function to hash.
-op_hash = Operator([0], 2)
-# invariate
+op_hash = Operator([0], 1)
 op_invariate = Operator([0], 2)
 
 op_in = Operator([1], 2)
@@ -470,8 +484,8 @@ def operator_call(op, args):
         if kind is None:
             if op.default is not None:
                 return callv(op.default, args)
-            raise OperationError(ErrorCompound(e_NoCoercion, [op,
-                ImmutableList(list(kinds))]))
+            raise error(e_NoCoercion,
+                ImmutableList(list(kinds)))
         needs_coerce = True
     impl = kind.properties.get(op, None)
     if impl is None:
@@ -479,7 +493,7 @@ def operator_call(op, args):
     if impl is None:
         if op.default is not None:
             return callv(op.default, args)
-        raise OperationError(ErrorCompound(e_NoMethod, [op, kind]))
+        raise error(e_NoMethod, op, kind)
     if needs_coerce:
         args = list(args)
         for index in op.selectors:
@@ -521,8 +535,7 @@ def coerce(x, kind):
         if conv is None:
             conv = xkind.properties.get(c, None)
         if conv is None:
-            raise OperationError(ErrorCompound(e_NoConversion,
-                [x, kind]))
+            raise error(e_NoConversion, x, kind)
         return call(conv, [x], 1)
  
 def convert(x, kind):
@@ -540,8 +553,7 @@ def convert(x, kind):
             if conv is None:
                 conv = xkind.properties.get(d, None)
         if conv is None:
-            raise OperationError(ErrorCompound(e_NoConversion,
-                [x, kind]))
+            raise error(e_NoConversion, x, kind)
         return call(conv, [x], 1)
 
 @specialize.arg(1)
@@ -557,16 +569,15 @@ def cast(obj, cls):
         obj = convert(obj, kind)
         if isinstance(obj, cls):
             return obj
-    raise OperationError(ErrorCompound(e_BuggedConversion,
-        [obj, cls.static_kind]))
+        raise error(e_BuggedConversion, obj, kind)
 
 # Every call made by the runtime must resolve to a builtin.
 @specialize.arg(2)
 def call(callee, args, outc=1):
     result = callv(callee, args)
     if len(result) != outc:
-        raise OperationError(ErrorCompound(e_ResultCountError,
-            [wrap(outc), wrap(len(result))]))
+        raise error(e_ResultCountError, 
+            wrap(outc), wrap(len(result)))
     if outc == 1:
         return result[0]
     else:
@@ -580,7 +591,7 @@ def callv(callee, args):
         kind = callee.kind
         impl = kind.properties.get(op_call, None)
         if impl is None:
-            raise OperationError(ErrorCompound(e_NoMethod, [op_call, kind]))
+            raise error(e_NoMethod, op_call, kind)
         if isinstance(impl, BuiltinPortal):
             return impl.function(callee, args)
         args.insert(0, callee)
@@ -600,8 +611,7 @@ def get_attribute(obj, name):
     if impl is None:
         impl = kind.properties.get(atom_dynamic_getattr, None)
         if impl is None:
-            raise OperationError(ErrorCompound(e_NoAttr,
-                [name]))
+            raise error(e_NoAttr, name)
         impl = call(impl, [name])
     return call(impl, [obj])
 
@@ -612,7 +622,7 @@ def set_attribute(obj, name, value):
     if impl is None:
         impl = kind.properties.get(atom_dynamic_setattr, None)
         if impl is None:
-            raise OperationError(ErrorCompound(e_NoAttr, [name]))
+            raise error(e_NoAttr, name)
         impl = call(impl, [name])
     call(impl, [obj, value], 0)
 
@@ -625,9 +635,29 @@ def method(kind_cls, operator, outc):
         assert kind_cls.static_kind is not None
         kind = kind_cls.static_kind
     def _decorator_(function):
+        assert operator not in kind.properties, "redefinition"
         kind.properties[operator] = python_bridge(function, outc)
+        # If operator has a hash, it also gets an invariator.
+        if operator is op_hash:
+            @builtin(1)
+            def free_invariator(a, w_invariate):
+                return a
+            assert op_eq in kind.properties, (
+                "op_hash without op_eq is pointless.")
+            assert op_invariate not in kind.properties, (
+                "implement op_hash, get a free invariator.")
+            kind.properties[op_invariate] = free_invariator
         return function
     return _decorator_
+
+@not_rpython
+def conversion_to(kind_cls, to_kind):
+    if isinstance(kind_cls, Kind):
+        kind = kind_cls
+    else:
+        assert kind_cls.static_kind is not None
+        kind = kind_cls.static_kind
+    return method(kind_cls, Compound(atom_conversion, [kind, to_kind]), 1)
 
 @not_rpython
 def getter(kind_cls, name, outc):
@@ -656,20 +686,45 @@ def setter(kind_cls, name):
     return _decorator_
 
 @not_rpython
-def attr_method(face, name, outc):
-    if isinstance(cls, Kind):
-        kind = cls
+def attr_method(kind_cls, name, outc):
+    if isinstance(kind_cls, Kind):
+        kind = kind_cls
     else:
-        assert cls.static_kind is not None
-        kind = cls.static_kind
+        assert kind_cls.static_kind is not None
+        kind = kind_cls.static_kind
     attr = Compound(atom_getattr, [wrap(name)])
     def _decorator_(function):
-        w_fn = python_bridge(function)
+        w_fn = python_bridge(function, outc)
         def _wrapper_(a):
             return prefill(w_fn, [a])
+        _wrapper_.__name__ = function.__name__
         kind.properties[attr] = python_bridge(_wrapper_, 1)
         return function
     return _decorator_
+
+# Invariator is an internal functionality in dictionaries
+# and sets.
+def invariate(key):
+    invariator = Invariator()
+    invariator.w_invariate = prefill(w_invariate, [invariator])
+    return call(invariator.w_invariate, [key], 1)
+
+@builtin(1)
+def w_invariate(invariator, obj):
+    assert isinstance(invariator, Invariator)
+    if obj in invariator.visited:
+        raise error(e_InvariateRecursion)
+    invariator.visited.append(obj)
+    result = call(op_invariate, [obj, invariator.w_invariate], 1)
+    invariator.visited.pop()
+    return result
+
+InvariatorKind = Kind()
+class Invariator(Object):
+    static_kind = InvariatorKind
+    def __init__(self, w_invariate=None):
+        self.w_invariate = w_invariate
+        self.visited = []
 
 variables = {
     u"KindSheetKind": KindSheetKind,
@@ -717,6 +772,7 @@ variables = {
     u"NoItems": e_NoItems,
     u"NoIndex": e_NoIndex,
     u"NoValue": e_NoValue,
+    u"InvariateRecursion": e_InvariateRecursion,
     u"OperatorKind": OperatorKind,
     u"call": op_call,
     u"==": op_eq,

@@ -1,47 +1,34 @@
-from common import *
+from core import *
 
-# The interface of the booleans is defined in the
-# common -module, because booleans appear everywhere.
-
-# All methods for Bool
-@method(Bool, op_eq)
+@method(BoolKind, op_eq, 1)
 def Bool_eq(a, b):
-    if a is b:
-        return true
-    else:
-        return false
+    return wrap(a is b)
 
-@method(Bool, op_hash)
+@method(BoolKind, op_hash, 1)
 def Bool_hash(a):
     if a is true:
-        return fresh_integer(1)
+        return wrap(1)
     else:
-        return fresh_integer(0)
+        return wrap(0)
 
-@method(Bool, op_cmp)
+@method(BoolKind, op_cmp, 1)
 def Bool_cmp(a, b):
     if a is false and b is true:
-        return fresh_integer(-1)
+        return wrap(-1)
     elif a is true and b is false:
-        return fresh_integer(+1)
+        return wrap(+1)
     else:
-        return fresh_integer(0)
+        return wrap(0)
 
-@method(Bool, op_and)
+@method(BoolKind, op_and, 1)
 def Bool_and(a, b):
-    if a is true and b is true:
-        return true
-    else:
-        return false
+    return wrap(a is true and b is true)
 
-@method(Bool, op_or)
+@method(BoolKind, op_or, 1)
 def Bool_or(a, b):
-    if a is true or b is true:
-        return true
-    else:
-        return false
+    return wrap(a is true or b is true)
 
-@method(Bool, op_xor)
+@method(BoolKind, op_xor, 1)
 def Bool_xor(a, b):
     if a is true and b is true:
         return false
@@ -50,17 +37,12 @@ def Bool_xor(a, b):
     else:
         return false
 
-@method(Bool, op_stringify)
+@method(BoolKind, op_stringify, 1)
 def Bool_stringify(a):
     if a is true:
         return String(u"true")
     else:
         return String(u"false")
 
-# This utility helps a bit if handling booleans.
-def boolean(a):
-    if a:
-        return true
-    else:
-        return false
-
+variables = {
+}

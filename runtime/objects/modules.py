@@ -80,6 +80,7 @@ class ModuleCell:
 
 class ConstantModuleCell(ModuleCell):
     def __init__(self, val):
+        assert isinstance(val, Object)
         self.val = val
 
     def load(self):

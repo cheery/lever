@@ -178,7 +178,7 @@ def enter_closure(unit, closure, inc, outc):
     return as_dict(unit.program[entry])
 
 def enter_proc(unit, proc, inputs, outputs, xc=None):
-    tmp = [None] * as_integer(attr(proc, u"tmpc"))
+    tmp = [None] * unwrap_int(attr(proc, u"tmpc"))
     body = as_list(attr(proc, u"body"))
     smap = as_list(attr(proc, u"sourcemap"))
     ctx = Context(tmp, inputs, outputs, unit.constants)
@@ -326,8 +326,8 @@ def eval_body(unit, ctx, body, smap, index):
                     obj = FreshGenerator(unit, proc, frame)
                 else:
                     proc = as_dict(unit.program[entries[0]])
-                    inc  = as_integer(attr(proc, u"inc"))
-                    outc = as_integer(attr(proc, u"outc"))
+                    inc  = unwrap_int(attr(proc, u"inc"))
+                    outc = unwrap_int(attr(proc, u"outc"))
                     loc = SourceLocBuilder(index, smap, unit.sources)
                     obj = Closure(inc, outc, unit, entries, frame, loc)
                 if in_frame:
@@ -365,7 +365,7 @@ def eval_body(unit, ctx, body, smap, index):
                         raise error(e_EvalError)
             elif opcode == o_eq and len(iv) == 2:
                 val = call(op_eq, [ctx.read(iv[0]), ctx.read(iv[1])])
-                if convert(val, BoolKind) is false:
+                if not unwrap_bool(val):
                     index, opcode = decode_opcode(body, x)
                     index, outputs = decode_list(body, index)
                     if opcode != o_terminal:
@@ -373,8 +373,7 @@ def eval_body(unit, ctx, body, smap, index):
             elif opcode == o_match and len(iv) == 2:
                 pattern = ctx.read(iv[0])
                 val = ctx.read(iv[1])
-                has_match = cast(call(op_match, [pattern, val]), BoolKind)
-                if has_match is false:
+                if not unwrap_bool(call(op_match, [pattern, val], 1)):
                     index, opcode = decode_opcode(body, x)
                     index, outputs = decode_list(body, index)
                     if opcode != o_terminal:
@@ -401,32 +400,32 @@ def eval_body(unit, ctx, body, smap, index):
     return Done()
 
 def decode_opcode(body, index):
-    opcode = as_integer(body[index])
+    opcode = unwrap_int(body[index])
     return index+1, opcode
 
 def at_nonterminal(body, index):
-    opcode = as_integer(body[index])
+    opcode = unwrap_int(body[index])
     return opcode != o_terminal
 
 def decode_list(body, index):
-    count = as_integer(body[index])
+    count = unwrap_int(body[index])
     k0 = index+1
     k1 = index+count+1
-    result = [as_integer(body[k]) for k in range(k0, k1)]
+    result = [unwrap_int(body[k]) for k in range(k0, k1)]
     return k1, result
 
 def decode_frame(body, index):
-    info = as_integer(body[index])
+    info = unwrap_int(body[index])
     in_frame = (info & 1 == 1)
     is_generator = (info & 2 == 2)
     count = info >> 2
     k0 = index+1
     k1 = index+count+1
-    entries = [as_integer(body[k]) for k in range(k0, k1)]
+    entries = [unwrap_int(body[k]) for k in range(k0, k1)]
     return k1, in_frame, is_generator, entries
 
 def decode_jump(body, index):
-    offset = as_integer(body[index])
+    offset = unwrap_int(body[index])
     return index+1, index+1+offset
 
 # This operation only works on generators, because they have no
@@ -444,11 +443,11 @@ def snapshot_stack(stack):
     for i, (ctx, body, index, xc) in enumerate(stack):
         n_outputs = []
         for tmp, n in ctx.outputs:
-            n_tmp = n_tmp_v[as_integer(tmp[0])]
+            n_tmp = n_tmp_v[unwrap_int(tmp[0])]
             n_outputs.append((n_tmp, n))
         n_outputs_v.append(n_outputs)
     for i, (ctx, body, index, xc) in enumerate(stack):
-        ctx.tmp[0] = n_tmp_v[as_integer(ctx.tmp[0])][0]
+        ctx.tmp[0] = n_tmp_v[unwrap_int(ctx.tmp[0])][0]
         n_ctx = Context(n_tmp_v[i],
             ctx.inputs, n_outputs_v[i], ctx.constants)
         n_stack.append((n_ctx, body, index, xc))
@@ -564,7 +563,7 @@ class SourceLocBuilder(Object):
             return [wrap(0)] * 5, self.sources
         i = 0
         while i+6 <= len(self.smap):
-            bytek = as_integer(self.smap[i])
+            bytek = unwrap_int(self.smap[i])
             if pc <= bytek:
                 col0 = self.smap[i+1]
                 lno0 = self.smap[i+2]
@@ -594,7 +593,7 @@ class SourceLocBuilder(Object):
 # for prop in as_list(attr(val, u"fields")):
 #     prop = as_dict(prop)
 #     name = as_string(attr(prop, u"name"))
-#     mutable = convert(attr(prop, u"mutable"), BoolKind) is true
+#     mutable = unwrap_bool(attr(prop, u"mutable"))
 #     fields.append((name, mutable))
 # coeffect = construct_coeffect(fields, ctx.module)
 # slot.store(ctx, coeffect)
@@ -604,7 +603,7 @@ class SourceLocBuilder(Object):
 #    for prop in as_list(attr(val, u"fields")):
 #        prop = as_dict(prop)
 #        name = as_string(attr(prop, u"name"))
-#        mutable = convert(attr(prop, u"mutable"), BoolKind) is true
+#        mutable = unwrap_bool(attr(prop, u"mutable"))
 #        value = eval_expr(ctx, as_dict(attr(prop, u"value")))
 #        fields.append((name, mutable, value))
 #    return construct_record(fields)
@@ -622,9 +621,6 @@ def load_global(unit, name):
 def attr(val, name):
     return val[String(name)]
 
-def as_integer(val):
-    return unwrap_int(cast(val, Integer))
-
 def as_string(val):
     return cast(val, String).string
 
@@ -632,4 +628,4 @@ def as_list(val):
     return cast(val, List).contents
 
 def as_dict(val):
-    return cast(val, Dict).contents
+    return cast(val, Dict).table

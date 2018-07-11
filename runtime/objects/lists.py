@@ -1,172 +1,238 @@
+from core import *
 from rpython.rlib.listsort import make_timsort_class
 from rpython.rlib.rarithmetic import intmask, r_uint
-from common import *
 
-def construct_list(iterable):
-    l = fresh_list()
-    List_extend(l, iterable)
-    return l
+@builtin(1)
+def w_list(iterable=None):
+    if iterable is None:
+        return List([])
+    else:
+        result = List([])
+        List_extend(result, iterable)
+        return result
 
-def fresh_list():
-    return List([])
+@getter(ImmutableList, u"length", 1)
+def ImmutableList_get_length(a):
+    a = cast(a, ImmutableList).contents
+    return wrap(len(a))
 
-@getter(List.interface, u"length")
+@getter(List, u"length", 1)
 def List_get_length(a):
-    a = cast(a, List).list_val
-    return fresh_integer(len(a))
+    a = cast(a, List).contents
+    return wrap(len(a))
 
-@method(List.interface, op_eq)
-def List_eq(a, b):
-    a = cast(a, List).list_val
-    b = cast(b, List).list_val
+@method(ImmutableList, op_eq, 1)
+def ImmutableList_eq(a, b):
+    a = cast(a, ImmutableList).contents
+    b = cast(b, ImmutableList).contents
     if len(a) != len(b):
         return false
     for i in range(len(a)):
-        if convert(call(op_eq, [a[i], b[i]]), Bool) is false:
+        if not unwrap_bool(call(op_eq, [a[i], b[i]])):
             return false
     return true
 
-@method(List.interface, op_hash)
-def List_hash(a):
-    a = cast(a, List).list_val
+@method(List, op_eq, 1)
+def List_eq(a, b):
+    a = cast(a, List).contents
+    b = cast(b, List).contents
+    if len(a) != len(b):
+        return false
+    for i in range(len(a)):
+        if not unwrap_bool(call(op_eq, [a[i], b[i]])):
+            return false
+    return true
+
+@method(ImmutableList, op_hash, 1)
+def ImmutableList_hash(a, w_hash):
+    a = cast(a, ImmutableList).contents
     mult = 1000003
     x = 0x345678
     z = len(a)
     for w_item in a:
-        y = cast(call(op_hash, [w_item]), Integer).toint()
+        y = unwrap_int(call(w_hash, [w_item]))
         x = (x ^ y) * mult
         z -= 1
         mult += 82520 + z + z
     x += 97531
-    return fresh_integer(intmask(x))
+    return wrap(intmask(x))
 
-@method(List.interface, op_concat)
+@method(List, op_invariate, 1)
+def List_invariate(a, w_invariate):
+    contents = []
+    for item in cast(a, List).contents:
+        contents.append(call(w_invariate, [item], 1))
+    return ImmutableList(contents)
+
+@method(ImmutableList, op_concat, 1)
+def ImmutableList_concat(a, b):
+    a = cast(a, ImmutableList)
+    b = cast(b, ImmutableList)
+    return ImmutableList(a.contents + b.contents)
+
+@method(List, op_concat, 1)
 def List_concat(a, b):
-    a = cast(a, List).list_val
-    b = cast(b, List).list_val
+    a = cast(a, List).contents
+    b = cast(b, List).contents
     return List(a + b)
 
-@method(List.interface, op_copy)
+@method(ImmutableList, op_copy, 1)
+def ImmutableList_copy(a):
+    return a
+
+@method(List, op_copy, 1)
 def List_copy(a):
-    return List(list(cast(a, List).list_val))
+    return List(list(cast(a, List).contents))
 
-@method(List.interface, op_in)
+@method(ImmutableList, op_in, 1)
+def ImmutableList_in(item, a):
+    a = cast(a, ImmutableList).contents
+    return wrap(item in a)
+
+@method(List, op_in, 1)
 def List_in(item, a):
-    a = cast(a, List).list_val
-    if item in a:
-        return true
-    else:
-        return false
+    a = cast(a, List).contents
+    return wrap(item in a)
 
-@method(List.interface, op_getitem)
+@method(ImmutableList, op_getitem, 1)
+def ImmutableList_getitem(a, index):
+    a = cast(a, ImmutableList)
+    index = unwrap_int(index)
+    if index < len(a.contents):
+        return a.contents[index]
+    raise error(e_NoIndex)
+
+@method(List, op_getitem, 1)
 def List_getitem(a, index):
-    index = cast(index, Integer).toint()
-    if index < len(a.list_val):
-        return a.list_val[index]
-    raise error(e_NoIndex())
+    a = cast(a, List)
+    index = unwrap_int(index)
+    if index < len(a.contents):
+        return a.contents[index]
+    raise error(e_NoIndex)
 
-@method(List.interface, op_setitem)
+@method(List, op_setitem, 0)
 def List_setitem(a, index, value):
-    index = cast(index, Integer).toint()
-    if index < len(a.list_val):
-        a.list_val[index] = value
+    a = cast(a, List)
+    index = unwrap_int(index)
+    if index < len(a.contents):
+        a.contents[index] = value
     else:
-        raise error(e_NoIndex())
+        raise error(e_NoIndex)
 
-@method(List.interface, op_iter)
+@conversion_to(ImmutableList, IteratorKind)
+def ImmutableList_iter(a):
+    return ListIterator(0, a.contents)
+
+@conversion_to(List, IteratorKind)
 def List_iter(a):
-    return ListIterator(0, a.list_val)
+    return ListIterator(0, a.contents)
 
 class ListIterator(Iterator):
-    interface = Iterator.interface
-    def __init__(self, index, list_val):
+    def __init__(self, index, contents):
         self.index = index
-        self.list_val = list_val
+        self.contents = contents
 
     def next(self):
-        if self.index < len(self.list_val):
-            k = ListIterator(self.index+1, self.list_val)
-            return self.list_val[self.index], k
+        if self.index < len(self.contents):
+            k = ListIterator(self.index+1, self.contents)
+            return self.contents[self.index], k
         raise StopIteration()
 
-@attr_method(List.interface, u"append")
+@attr_method(List, u"append", 0)
 def List_append(a, item):
     a = cast(a, List)
-    a.list_val.append(item)
+    a.contents.append(item)
 
-@attr_method(List.interface, u"extend")
+@attr_method(List, u"extend", 0)
 def List_extend(a, items):
     a = cast(a, List)
-    it = cast(call(op_iter, [items]), Iterator)
-    while True:
-        try:
-            x, it = it.next()
-        except StopIteration:
-            break
-        a.list_val.append(x)
+    for item in iterate(items):
+        a.contents.append(item)
 
-@attr_method(List.interface, u"insert")
+@attr_method(List, u"insert", 0)
 def List_insert(a, index, obj):
     a = cast(a, List)
-    index = cast(index, Integer).toint()
-    if not 0 <= index <= len(a.list_val):
-        raise error(e_PartialOnArgument())
-    a.list_val[index] = obj
+    index = unwrap_int(index)
+    if not 0 <= index <= len(a.contents):
+        raise error(e_PreconditionFailed)
+    a.contents[index] = obj
 
-@attr_method(List.interface, u"remove")
+@attr_method(List, u"remove", 0)
 def List_remove(a, obj):
     a = cast(a, List)
-    for index, item in enumerate(a.list_val):
-        if convert(call(op_eq, [item, obj]), Bool) is true:
-            a.list_val.pop(index)
+    for index, item in enumerate(a.contents):
+        if unwrap_bool(call(op_eq, [item, obj])):
+            a.contents.pop(index)
             break
     else:
-        raise error(e_NoValue())
+        raise error(e_NoValue)
 
-@attr_method(List.interface, u"pop")
+@attr_method(List, u"pop", 1)
 def List_pop(a, index=None):
     a = cast(a, List)
     if index is None:
-        index = len(a.list_val) - 1
+        index = len(a.contents) - 1
     else:
-        index = cast(index, Integer).toint()
-    if not 0 <= index <= len(a.list_val):
-        raise error(e_NoIndex())
-    return a.list_val.pop(index)
+        index = unwrap_int(index)
+    if not 0 <= index <= len(a.contents):
+        raise error(e_NoIndex)
+    return a.contents.pop(index)
 
-@attr_method(List.interface, u"index")
+@attr_method(ImmutableList, u"index", 1)
+def ImmutableList_index(a, obj):
+    a = cast(a, ImmutableList)
+    for index, item in enumerate(a.contents):
+        if unwrap_bool(call(op_eq, [item, obj])):
+            return wrap(index)
+    raise error(e_NoValue)
+
+@attr_method(List, u"index", 1)
 def List_index(a, obj):
     a = cast(a, List)
-    for index, item in enumerate(a.list_val):
-        if convert(call(op_eq, [item, obj]), Bool) is true:
-            return fresh_integer(index)
-    raise error(e_PartialOnArgument())
+    for index, item in enumerate(a.contents):
+        if unwrap_bool(call(op_eq, [item, obj])):
+            return wrap(index)
+    raise error(e_NoValue)
 
-@attr_method(List.interface, u"count")
-def List_count(a, obj):
+@attr_method(ImmutableList, u"count", 1)
+def ImmutableList_count(a, obj):
+    a = cast(a, ImmutableList)
     count = 0
-    for item in a.list_val:
-        if convert(call(op_eq, [item, obj]), Bool) is true:
+    for item in a.contents:
+        if unwrap_bool(call(op_eq, [item, obj])):
             count += 1
-    return fresh_integer(count)
+    return wrap(count)
 
-@attr_method(List.interface, u"reverse")
+@attr_method(List, u"count", 1)
+def List_count(a, obj):
+    a = cast(a, List)
+    count = 0
+    for item in a.contents:
+        if unwrap_bool(call(op_eq, [item, obj])):
+            count += 1
+    return wrap(count)
+
+@attr_method(List, u"reverse", 0)
 def List_reverse(a):
-    a.list_val.reverse()
+    a = cast(a, List)
+    a.contents.reverse()
 
-@attr_method(List.interface, u"sort")
+@attr_method(List, u"sort", 0)
 def List_sort(a, w_cmp = op_cmp):
     a = cast(a, List)
-    sorter = ListSort(a.list_val, len(a.list_val))
+    sorter = ListSort(a.contents, len(a.contents))
     sorter.w_cmp = w_cmp
-    a.list_val = []
+    a.contents = []
     sorter.sort()
-    a.list_val = sorter.list
+    a.contents = sorter.list
 
 TimSort = make_timsort_class()
 
 class ListSort(TimSort):
     def lt(self, a, b):
-        n = cast(call(self.w_cmp, [a,b]), Integer).toint()
+        n = unwrap_int(call(self.w_cmp, [a,b]))
         return n < 0
 
+variables = {
+    u"list": w_list,
+}

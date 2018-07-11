@@ -83,7 +83,7 @@ def decode_json(action, ch, ctx):
         ctx.ds.append(List([]))
     # Push object to ds
     elif action == 0x2:            # push object
-        ctx.ds.append(new_dict())
+        ctx.ds.append(empty_dict())
     elif action == 0x3:            # pop & append
         val = ctx.ds.pop()
         top = ctx.ds[len(ctx.ds)-1]
@@ -94,7 +94,7 @@ def decode_json(action, ch, ctx):
         key = ctx.ds.pop()
         top = ctx.ds[len(ctx.ds)-1]
         assert isinstance(top, Dict) # again..
-        top.contents[key] = val
+        top.table[key] = val
     elif action == 0x5:           # push null
         ctx.ds.append(null)
     elif action == 0x6:           # push true

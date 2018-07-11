@@ -2,148 +2,127 @@ from rpython.rlib import rstring
 from rpython.rlib.objectmodel import compute_hash
 from rpython.rlib.rstring import UnicodeBuilder, split, rsplit
 from rpython.rlib.unicodedata import unicodedb_6_2_0 as unicodedb
-from common import *
+from core import *
 
-@method(String.interface, op_eq)
+@method(String, op_eq, 1)
 def String_eq(a, b):
     a = cast(a, String)
     b = cast(b, String)
-    if a.string_val == b.string_val:
-        return true
-    else:
-        return false
+    return wrap(a.string == b.string)
 
-@method(String.interface, op_hash)
-def String_hash(a):
+@method(String, op_hash, 1)
+def String_hash(a, w_hash):
     a = cast(a, String)
-    return fresh_integer(compute_hash(a.string_val))
+    return wrap(compute_hash(a.string))
 
-@method(String.interface, op_in)
+@method(String, op_in, 1)
 def String_in(i, a):
-    i = cast(i, String).string_val
-    a = cast(a, String).string_val
-    if i in a:
-        return true
-    else:
-        return false
+    i = cast(i, String).string
+    a = cast(a, String).string
+    return wrap(i in a)
 
-@method(String.interface, op_getitem)
+@method(String, op_getitem, 1)
 def String_getitem(a, index):
     a = cast(a, String)
-    index = cast(a, Integer).toint()
-    return String(a.string_val[index])
+    index = unwrap_int(a)
+    return String(a.string[index])
 
-@getter(List.interface, u"length")
-def List_get_length(a):
-    return fresh_integer(len(a.string_val))
+@getter(String, u"length", 1)
+def String_get_length(a):
+    return wrap(len(a.string))
 
-@method(String.interface, op_iter)
+@conversion_to(String, IteratorKind)
 def String_iter(a):
-    return StringIterator(0, a.string_val)
+    return StringIterator(0, a.string)
 
 class StringIterator(Iterator):
-    interface = Iterator.interface
-    def __init__(self, index, string_val):
+    def __init__(self, index, string):
         self.index = index
-        self.string_val = string_val
+        self.string = string
 
     def next(self):
-        if self.index < len(self.string_val):
-            k = StringIterator(self.index+1, self.string_val)
-            return String(self.string_val[self.index]), k
+        if self.index < len(self.string):
+            k = StringIterator(self.index+1, self.string)
+            return String(self.string[self.index]), k
         raise StopIteration()
 
-@method(String.interface, op_cmp)
+@method(String, op_cmp, 1)
 def String_cmp(a, b):
-    a = cast(a, String).string_val
-    b = cast(b, String).string_val
+    a = cast(a, String).string
+    b = cast(b, String).string
     if a < b:
-        return fresh_integer(-1)
+        return wrap(-1)
     elif a > b:
-        return fresh_integer(+1)
+        return wrap(+1)
     else:
-        return fresh_integer(0)
+        return wrap(0)
 
-@method(String.interface, op_concat)
+@method(String, op_concat, 1)
 def String_concat(a, b):
     a = cast(a, String)
     b = cast(b, String)
-    return String(a.string_val + b.string_val)
+    return String(a.string + b.string)
 
-@method(String.interface, op_stringify)
+@method(String, op_stringify, 1)
 def String_stringify(a):
     return cast(a, String)
 
-@attr_method(String.interface, u"count")
+@attr_method(String, u"count", 1)
 def String_count(a, ch):
-    a = cast(a, String).string_val
-    ch = cast(ch, String).string_val
+    a = cast(a, String).string
+    ch = cast(ch, String).string
     if len(ch) != 1:
-        raise error(e_PartialOnArgument())
+        raise error(e_PreconditionFailed)
     count = 0
     x = ch[0]
     for ch in a:
         if ch == x:
             count += 1
-    return fresh_integer(count)
+    return wrap(count)
 
-@attr_method(String.interface, u"join")
+@attr_method(String, u"join", 1)
 def String_join(string, seq):
-    string = cast(string, String).string_val
-    iterator = cast(call(op_iter, [seq]), Iterator)
+    string = cast(string, String).string
     strings = []
-    while True:
-        try:
-            x, iterator = iterator.next()
-        except StopIteration:
-            break
-        x = cast(x, String).string_val
-        strings.append(x)
+    for item in iterate(seq):
+        strings.append(cast(item, String).string)
     return String(string.join(strings))
 
-@attr_method(String.interface, u"is_lower")
+@attr_method(String, u"is_lower", 1)
 def String_is_lower(string):
-    string = cast(string, String).string_val
+    string = cast(string, String).string
     for ch in string:
         if not unicodedb.islower(ord(ch)):
             return false
-    if len(string) == 0:
-        return false
-    return true
+    return wrap(len(string) != 0)
 
-@attr_method(String.interface, u"is_upper")
+@attr_method(String, u"is_upper", 1)
 def String_is_upper(string):
-    string = cast(string, String).string_val
+    string = cast(string, String).string
     for ch in string:
         if not unicodedb.isupper(ord(ch)):
             return false
-    if len(string) == 0:
-        return false
-    return true
+    return wrap(len(string) != 0)
 
-@attr_method(String.interface, u"is_alpha")
+@attr_method(String, u"is_alpha", 1)
 def String_is_alpha(string):
-    string = cast(string, String).string_val
+    string = cast(string, String).string
     for ch in string:
         if not unicodedb.isalpha(ord(ch)):
             return false
-    if len(string) == 0:
-        return false
-    return true
+    return wrap(len(string) != 0)
 
-@attr_method(String.interface, u"is_digit")
-def String_is_digit(string, base=fresh_integer(10)):
-    string = cast(string, String).string_val
-    base = cast(base, Integer).toint()
+@attr_method(String, u"is_digit", 1)
+def String_is_digit(string, base=wrap(10)):
+    string = cast(string, String).string
+    base = unwrap_int(base)
     if not 0 <= base <= 36:
-        raise error(e_PartialOnArgument())
-#       raise space.unwind(space.LError(u"is_digit base not in range .:36")) 
+        raise error(e_PreconditionFailed)
+#       raise ... u"is_digit base not in range .:36"
     for ch in string:
         if not 0 <= as_alphadigit_i(ord(ch)) < base:
             return false
-    if len(string) == 0:
-        return false
-    return true
+    return wrap(len(string) != 0)
 
 def as_alphadigit_i(index):
     if ord('0') <= index <= ord('9'):
@@ -154,37 +133,29 @@ def as_alphadigit_i(index):
         return index - ord('a') + 10
     return -1
 
-@attr_method(String.interface, u"is_space")
+@attr_method(String, u"is_space", 1)
 def String_is_space(string):
-    string = cast(string, String).string_val
+    string = cast(string, String).string
     for ch in string:
         if not unicodedb.isspace(ord(ch)):
             return false
-    if len(string) == 0:
-        return false
-    return true
+    return wrap(len(string) != 0)
 
-@attr_method(String.interface, u"startswith")
+@attr_method(String, u"startswith", 1)
 def String_startswith(string, prefix):
-    string = cast(string, String).string_val
-    prefix = cast(prefix, String).string_val
-    if string.startswith(prefix):
-        return true
-    else:
-        return false
+    string = cast(string, String).string
+    prefix = cast(prefix, String).string
+    return wrap(string.startswith(prefix))
 
-@attr_method(String.interface, u"endswith")
+@attr_method(String, u"endswith", 1)
 def String_endswith(string, postfix):
-    string = cast(string, String).string_val
-    postfix = cast(postfix, String).string_val
-    if string.endswith(postfix):
-        return true
-    else:
-        return false
+    string = cast(string, String).string
+    postfix = cast(postfix, String).string
+    return wrap(string.endswith(postfix))
 
-@attr_method(String.interface, u"upper")
+@attr_method(String, u"upper", 1)
 def String_upper(string):
-    string = cast(string, String).string_val
+    string = cast(string, String).string
     return String(string_upper(string))
 
 def string_upper(string):
@@ -193,9 +164,9 @@ def string_upper(string):
         b.append(unichr(unicodedb.toupper(ord(ch))))
     return b.build()
 
-@attr_method(String.interface, u"lower")
+@attr_method(String, u"lower", 1)
 def String_lower(string):
-    string = cast(string, String).string_val
+    string = cast(string, String).string
     return String(string_lower(string))
 
 def string_lower(string):
@@ -204,11 +175,11 @@ def string_lower(string):
         b.append(unichr(unicodedb.tolower(ord(ch))))
     return b.build()
 
-@attr_method(String.interface, u"replace")
+@attr_method(String, u"replace", 1)
 def String_replace(a, b, c):
-    a = cast(a, String).string_val
-    b = cast(b, String).string_val
-    c = cast(c, String).string_val
+    a = cast(a, String).string
+    b = cast(b, String).string
+    c = cast(c, String).string
     return String(rstring.replace(a, b, c))
 
 # TODO: Consider whether this is still used
@@ -240,60 +211,63 @@ def String_replace(a, b, c):
 #
 #character_escapes = {8: u'b', 9: u't', 10: u'n', 12: u'f', 13: u'r'}
 
-@attr_method(String.interface, u"split")
-def String_split(string, sep, maxsplit=fresh_integer(-1)):
-    string = cast(string, String).string_val
-    sep = cast(sep, String).string_val
+@attr_method(String, u"split", 1)
+def String_split(string, sep, maxsplit=wrap(-1)):
+    string = cast(string, String).string
+    sep = cast(sep, String).string
     out = []
-    m = cast(maxsplit, Integer).toint()
+    m = unwrap_int(maxsplit)
     for s in split(string, sep, m):
         out.append(String(s))
     return List(out)
 
-@attr_method(String.interface, u"rsplit")
-def String_rsplit(string, sep, maxsplit=fresh_integer(-1)):
-    string = cast(string, String).string_val
-    sep = cast(sep, String).string_val
+@attr_method(String, u"rsplit", 1)
+def String_rsplit(string, sep, maxsplit=wrap(-1)):
+    string = cast(string, String).string
+    sep = cast(sep, String).string
     out = []
-    m = cast(maxsplit, Integer).toint()
+    m = unwrap_int(maxsplit)
     for s in rsplit(string, sep, m):
         out.append(String(s))
     return List(out)
 
-@attr_method(String.interface, u"ljust")
+@attr_method(String, u"ljust", 1)
 def String_ljust(string, width, fillchar=String(u' ')):
-    string = cast(string, String).string_val
-    width = cast(width, Integer).toint()
-    fill = cast(fillchar, String).string_val
+    string = cast(string, String).string
+    width = unwrap_int(width)
+    fill = cast(fillchar, String).string
     if len(fill) != 1:
-        raise error(e_PartialOnArgument())
+        raise error(e_PreconditionFailed)
     c = max(0, width - len(string))
     return String(string + fill*c)
 
-@attr_method(String.interface, u"rjust")
+@attr_method(String, u"rjust", 1)
 def String_rjust(string, width, fillchar=String(u' ')):
-    string = cast(string, String).string_val
-    width = cast(width, Integer).toint()
-    fill = cast(fillchar, String).string_val
+    string = cast(string, String).string
+    width = unwrap_int(width)
+    fill = cast(fillchar, String).string
     if len(fill) != 1:
-        raise error(e_PartialOnArgument())
+        raise error(e_PreconditionFailed)
     c = max(0, width - len(string))
     return String(fill*c + string)
 
-@attr_method(String.interface, u"center")
+@attr_method(String, u"center", 1)
 def String_center(string, width, fillchar=String(u' ')):
-    string = cast(string, String).string_val
-    width = cast(width, Integer).toint()
-    fill = cast(fillchar, String).string_val
+    string = cast(string, String).string
+    width = unwrap_int(width)
+    fill = cast(fillchar, String).string
     if len(fill) != 1:
-        raise error(e_PartialOnArgument())
+        raise error(e_PreconditionFailed)
     c = max(0, width - len(string))
     lhs = (c&1)+c/2
     rhs = c/2
     return String(fill*lhs + string + fill*rhs)
 
-@attr_method(String.interface, u"repeat")
+@attr_method(String, u"repeat", 1)
 def String_repeat(string, count):
-    string = cast(string, String).string_val
-    count = cast(count, Integer).toint()
+    string = cast(string, String).string
+    count = unwrap_int(count)
     return String(string * count)
+
+variables = {
+}

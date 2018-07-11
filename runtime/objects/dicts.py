@@ -1,72 +1,160 @@
-from rpython.rlib.objectmodel import r_dict
-from booleans import boolean
-from common import *
+from rpython.rlib.rarithmetic import intmask, r_uint
+from core import *
 
-def construct_dict(iterable):
-    d = fresh_dict()
-    Dict_update(d, iterable)
-    return d
+@builtin(1)
+def w_dict(iterable=None):
+    result = empty_dict()
+    if iterable is not None:
+        Dict_update(result, iterable)
+    return result
 
-def fresh_dict():
-    return Dict(r_dict(eq_fn, hash_fn, force_non_null=True))
+@getter(ImmutableDict, u"length", 1)
+def ImmutableDict_get_length(a):
+    a = cast(a, ImmutableDict)
+    return wrap(len(a.table))
 
-@getter(Dict.interface, u"length")
+@getter(Dict, u"length", 1)
 def Dict_get_length(a):
-    return fresh_integer(len(a.dict_val))
+    a = cast(a, Dict)
+    return wrap(len(a.table))
 
-@method(Dict.interface, op_in)
+@method(ImmutableDict, op_in, 1)
+def ImmutableDict_in(item, a):
+    a = cast(a, ImmutableDict)
+    return wrap(item in a.table)
+
+@method(Dict, op_in, 1)
 def Dict_in(item, a):
     a = cast(a, Dict)
-    return boolean(item in a.dict_val)
+    return wrap(item in a.table)
 
-@method(Dict.interface, op_iter)
-def Dict_iter(a):
-    a = cast(a, Dict).dict_val
+@conversion_to(ImmutableDict, IteratorKind)
+def ImmutableDict_iter(a):
+    a = cast(a, Dict).table
     return DictIterator(a.iteritems())
 
-@method(Dict.interface, op_getitem)
+@conversion_to(Dict, IteratorKind)
+def Dict_iter(a):
+    a = cast(a, Dict).table
+    return DictIterator(a.iteritems())
+
+@method(ImmutableDict, op_eq, 1)
+def ImmutableDict_eq(a, b):
+    a = cast(a, ImmutableDict).table
+    b = cast(b, ImmutableDict).table
+    if len(a) != len(b):
+        return false
+    for key, item in a.iteritems():
+        if key not in b:
+            return false
+        if not unwrap_bool(call(op_eq, [item, b[key]], 1)):
+            return false
+    return true
+
+@method(Dict, op_eq, 1)
+def Dict_eq(a, b):
+    a = cast(a, Dict).table
+    b = cast(b, Dict).table
+    if len(a) != len(b):
+        return false
+    for key, item in a.iteritems():
+        if key not in b:
+            return false
+        if not unwrap_bool(call(op_eq, [item, b[key]], 1)):
+            return false
+    return true
+
+@method(ImmutableDict, op_hash, 1)
+def ImmutableDict_hash(a, w_hash):
+    a = cast(a, ImmutableDict).table
+    multi = r_uint(1822399083) + r_uint(1822399083) + 1
+    hash = r_uint(1927868237)
+    hash *= r_uint(len(a) + 1)
+    for key, item in a.iteritems():
+        h = unwrap_int(call(w_hash, [key]))
+        value = (r_uint(h ^ (h << 16) ^ 89869747)  * multi)
+        hash = hash ^ value
+        h = unwrap_int(call(w_hash, [item]))
+        value = (r_uint(h ^ (h << 16) ^ 89869747)  * multi)
+        hash = hash ^ value
+    hash = hash * 69069 + 907133923
+    if hash == 0:
+        hash = 590923713
+    return wrap(intmask(hash))
+
+@method(ImmutableDict, op_getitem, 1)
+def ImmutableDict_getitem(a, item):
+    a = cast(a, ImmutableDict)
+    try:
+        return a.table[item]
+    except KeyError:
+        raise error(e_NoIndex)
+
+@method(Dict, op_getitem, 1)
 def Dict_getitem(a, item):
     a = cast(a, Dict)
     try:
-        return a.dict_val[item]
+        return a.table[item]
     except KeyError:
-        raise error(e_NoIndex())
+        raise error(e_NoIndex)
 
-@method(Dict.interface, op_setitem)
+@method(Dict, op_setitem, 1)
 def Dict_setitem(a, item, value):
     a = cast(a, Dict)
-    a.dict_val[item] = value
+    a.table[invariate(item)] = value
 
-@method(Dict.interface, op_copy)
+@method(ImmutableDict, op_copy, 1)
+def ImmutableDict_copy(a):
+    return a
+
+@method(Dict, op_copy, 1)
 def Dict_copy(a):
-    c = fresh_dict()
-    c.dict_val.update(cast(a, Dict).dict_val)
+    c = empty_dict()
+    c.table.update(cast(a, Dict).table)
     return c
 
-@attr_method(Dict.interface, u"get")
+@method(Dict, op_invariate, 1)
+def Dict_invariate(a, w_invariate):
+    table = empty_r_dict()
+    for key, item in a.table.iteritems():
+        table[invariate(key)] = invariate(item)
+    return Dict(table)
+
+@attr_method(ImmutableDict, u"get", 1)
 def get(a, item, default):
-    a = cast(a, Dict)
+    a = cast(a, ImmutableDict)
     try:
-        return a.dict_val[item]
+        return a.table[item]
     except KeyError:
         return default
 
-@attr_method(Dict.interface, u"pop")
+@attr_method(Dict, u"get", 1)
+def get(a, item, default):
+    a = cast(a, Dict)
+    try:
+        return a.table[item]
+    except KeyError:
+        return default
+
+@attr_method(Dict, u"pop", 1)
 def Dict_pop(a, key):
     a = cast(a, Dict)
     try:
-        return a.dict_val.pop(key)
+        return a.table.pop(key)
     except KeyError:
-        raise error(e_NoIndex())
+        raise error(e_NoIndex)
 
-@attr_method(Dict.interface, u"keys")
+@attr_method(ImmutableDict, u"keys", 1)
+def ImmutableDict_keys(a):
+    a = cast(a, ImmutableDict).table
+    return KeyIterator(a.iterkeys())
+
+@attr_method(Dict, u"keys", 1)
 def Dict_keys(a):
-    a = cast(a, Dict).dict_val
+    a = cast(a, Dict).table
     return KeyIterator(a.iterkeys())
 
 class KeyIterator(Iterator):
-    interface = Iterator.interface
-
     def __init__(self, iterator):
         self.iterator = iterator
         self.value = None
@@ -78,14 +166,17 @@ class KeyIterator(Iterator):
             self.tail = KeyIterator(self.iterator)
         return self.value, self.tail
 
-@attr_method(Dict.interface, u"items")
+@attr_method(ImmutableDict, u"items", 1)
+def ImmutableDict_items(a):
+    a = cast(a, ImmutableDict).table
+    return DictIterator(a.iteritems())
+
+@attr_method(Dict, u"items", 1)
 def Dict_items(a):
-    a = cast(a, Dict).dict_val
+    a = cast(a, Dict).table
     return DictIterator(a.iteritems())
 
 class DictIterator(Iterator):
-    interface = Iterator.interface
-
     def __init__(self, iterator):
         self.iterator = iterator
         self.value = None
@@ -98,14 +189,17 @@ class DictIterator(Iterator):
             self.tail = DictIterator(self.iterator)
         return self.value, self.tail
 
-@attr_method(Dict.interface, u"values")
+@attr_method(ImmutableDict, u"values", 1)
+def ImmutableDict_values(a):
+    a = cast(a, ImmutableDict).table
+    return ValueIterator(a.itervalues())
+
+@attr_method(Dict, u"values", 1)
 def Dict_values(a):
-    a = cast(a, Dict).dict_val
+    a = cast(a, Dict).table
     return ValueIterator(a.itervalues())
 
 class ValueIterator(Iterator):
-    interface = Iterator.interface
-
     def __init__(self, iterator):
         self.iterator = iterator
         self.value = None
@@ -117,20 +211,18 @@ class ValueIterator(Iterator):
             self.tail = ValueIterator(self.iterator)
         return self.value, self.tail
 
-@attr_method(Dict.interface, u"update")
+@attr_method(Dict, u"update", 0)
 def Dict_update(a, items):
     a = cast(a, Dict)
     if isinstance(items, Dict):
-        a.dict_val.update(items.dict_val)
+        a.table.update(items.table)
     else:
-        it = call(op_iter, [items])
-        while True:
-            try:
-                x, it = it.next()
-            except StopIteration:
-                break
-            else:
-                tup = cast(x, Tuple).tuple_val
-                if len(tup) != 2:
-                    raise error(e_TypeError())
-                a.dict_val[tup[0]] = tup[1]
+        for item in iterate(items):
+            items = cast(item, Tuple).items
+            if len(items) != 2:
+                raise error(e_TypeError)
+            a.table[invariate(items[0])] = items[1]
+
+variables = {
+    u"dict": w_dict,
+}

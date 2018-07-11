@@ -1,7 +1,27 @@
+import core
+import booleans
+import chaff
+import dicts
+import integers
+import lists
+import modules
+import sets
+import strings
+import slots
+
+variables = {}
+variables.update(core.variables)
+variables.update(booleans.variables)
+variables.update(chaff.variables)
+variables.update(dicts.variables)
+variables.update(integers.variables)
+variables.update(lists.variables)
+variables.update(modules.variables)
+variables.update(sets.variables)
+variables.update(strings.variables)
+variables.update(slots.variables)
+
 #import common
-#from rpython.rlib.objectmodel import (
-#    compute_hash, r_dict, specialize, always_inline)
-#from rpython.rlib.rarithmetic import intmask
 #from common import (
 #    Object,
 #    Interface,
@@ -87,12 +107,8 @@
 #    TypeParameter,
 #    w_by_reference,
 #    w_by_value )
-#from booleans import boolean
 #from integers import parse_integer
-#import strings
-#from lists import construct_list, fresh_list
 #from dicts import construct_dict, fresh_dict
 #from sets import construct_set, fresh_set
-#from slots import Slot
 #from records import (
 #    construct_record )
