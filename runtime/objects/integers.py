@@ -6,7 +6,7 @@ from rpython.rlib.rstring import NumberStringParser
 @method(Integer, op_eq, 1)
 def Integer_eq(a, b):
     a = cast(a, Integer)
-    b = cast(a, Integer)
+    b = cast(b, Integer)
     return wrap(a.bignum.eq(b.bignum))
 
 @method(Integer, op_hash, 1)
@@ -58,6 +58,24 @@ def Integer_mod(a, b):
     b = cast(b, Integer)
     return Integer(a.bignum.mod(b.bignum))
 
+@method(Integer, op_floordiv, 1)
+def Integer_floordiv(a, b):
+    a = cast(a, Integer)
+    b = cast(b, Integer)
+    return Integer(a.bignum.floordiv(b.bignum))
+
+@method(Integer, op_divmod, 1)
+def Integer_divmod(a, b):
+    a = cast(a, Integer)
+    b = cast(b, Integer)
+    d, m = a.bignum.divmod(b.bignum)
+    return Tuple([Integer(d), Integer(m)])
+
+@method(Integer, op_not, 1)
+def Integer_not(a):
+    a = cast(a, Integer)
+    return Integer(a.bignum.invert())
+
 @method(Integer, op_and, 1)
 def Integer_and(a, b):
     a = cast(a, Integer)
@@ -75,6 +93,29 @@ def Integer_xor(a, b):
     a = cast(a, Integer)
     b = cast(b, Integer)
     return Integer(a.bignum.xor(b.bignum))
+
+@method(Integer, op_shl, 1)
+def Integer_shl(a, b):
+    a = cast(a, Integer)
+    b = unwrap_int(b)
+    return Integer(a.bignum.lshift(b))
+
+@method(Integer, op_shr, 1)
+def Integer_shr(a, b):
+    a = cast(a, Integer)
+    b = unwrap_int(b)
+    return Integer(a.bignum.rshift(b))
+
+@method(Integer, op_abs, 1)
+def Integer_abs(a):
+    a = cast(a, Integer)
+    return Integer(a.bignum.abs())
+
+@method(Integer, op_pow, 1)
+def Integer_pow(a, b):
+    a = cast(a, Integer)
+    b = cast(b, Integer)
+    return Integer(a.bignum.pow(b.bignum))
 
 @method(Integer, op_stringify, 1)
 def Integer_stringify(a, base=wrap(10)):

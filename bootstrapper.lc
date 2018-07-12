@@ -122,9 +122,10 @@ compile_file = (src, dst):
         for v in builder.entry.inputs
             if v.name
                 report.append(v.name)
-            else
-                print("There are implicitly defined variables that cause issues too")
-        print("Variables causing issues:", ", ".join(report))
+            for proc in builder.program
+                find_variable_in_clause(proc, proc, v)
+        if report.length > 0
+            print("Variables causing issues:", ", ".join(report))
     else
         rewrite_flow_variables(builder.program)
         inline_functions(builder.program)
@@ -135,6 +136,17 @@ compile_file = (src, dst):
         # Conversion into json is a temporary measure.
         out = to_json(sources, builder.program, builder.entry)
         json.write_file(dst, out, {indent=2})
+
+find_variable_in_clause = (proc, block, variable):
+    for instruction in block.clauses
+        if variable in instruction.inputs
+            if instruction.opcode == o_branch
+                continue
+            s = opcode_names[instruction.opcode]
+            print("instruction", s, " in proc", proc.index, "has issues")
+            print("line ", instruction.loc[1])
+        if instruction.guard
+            find_variable_in_clause(proc, instruction.guard, variable)
 
 filter_flow_vars = (values):
     for item in values
@@ -414,13 +426,14 @@ class Repeat extends Node
         # This thing builds an infinite loop if there are no heads.
         exit = builder.new_proc()
         entry = builder.new_proc()
-        repeat = entry
+        repeat = exit
         leave = exit
         builder.emit_branch(entry, [], [])
         builder.current = entry
         for head in self.heads
-            repeat = head.build_loophead(builder, leave)
-            leave  = repeat
+            repeat = head.build_loophead(builder, repeat)
+        if self.heads.length == 0
+            repeat = entry
         outer_jumps = builder.jumps
         builder.jumps = []
         for statement in self.body
@@ -434,7 +447,6 @@ class Repeat extends Node
             else
                 outer_jumps.append([block, depth-1, this_leaves])
         builder.jumps = outer_jumps
-        print('OUTER JUMPS', outer_jumps)
         builder.emit_branch(repeat, [], [])
         builder.current = exit
         return []
@@ -543,7 +555,7 @@ class Yield extends Node
         assert builder.current_closure.is_generator,
             "yield is only accepted within a generator."
         val = builder.build(self.expr, 1)[0]
-        if stack_generators
+        if self.stack_generators
             builder.emit(o_yield_from, [val], [])
         else
             builder.emit(o_yield, [val], [])
@@ -940,6 +952,12 @@ class Call extends Node
         builder.emit_guard(o_is_true, out, [], fbranch)
         return [tbranch, fbranch]
 
+    build_slot = (self, builder):
+        return object({
+            "read": (builder, outc):
+                return self.build(builder, outc)
+        })
+
 class Attr extends Node
     +init = (self, base, attr):
         self.base = base
@@ -1260,52 +1278,18 @@ proc_defs_analysis = (program):
     return proc_defs
 
 solve_flow_variables = (program, proc_defs):
-    keep_doing = true
-    while keep_doing
-        keep_doing = false
+    red = true
+    while red
+        red = false
         # When def tables are resolved, we can flow use-dependencies towards
         # the other direction.
         for proc in program
-            stack = [[proc, proc.clauses.length, set()]]
-            current_live_set = set(filter_flow_vars(proc.outputs))
-            while stack.length > 0
-                block, i, live_set = stack.pop()
-                current_live_set.update(live_set)
-                for instruction in reversed(block.clauses[.:i])
-                    i -= 1
-                    current_live_set.difference_update(filter_flow_vars(instruction.outputs))
-                    if instruction.branch
-                        assert instruction.outputs.length == instruction.branch.outputs.length
-                        for x in current_live_set & proc_defs[instruction.branch]
-                            # We are inserting into output here, so inserting into
-                            # a closure would obviously not be a choice.
-                            if instruction.branch.closure
-                                continue # this could be lifted out from the loop though...
-                            keep_doing = true
-                            current_live_set.discard(x)
-                            instruction.branch.outputs.insert(0, x)
-                            # We also got to be considerate for other users of this branch.
-                            for prec in instruction.branch.predecessors
-                                prec.outputs.insert(0, x)
-                    guard = instruction.guard
-                    if guard
-                        stack.append([block, i, current_live_set])
-                        stack.append([guard, guard.clauses.length,
-                            set(filter_flow_vars(proc.outputs))])
-                        current_live_set.update(filter_flow_vars(instruction.inputs))
-                        break
-                    else
-                        current_live_set.update(filter_flow_vars(instruction.inputs))
-                if i == 0
-                    if isinstance(block, Guard)
-                        current_live_set.difference_update(filter_flow_vars(block.outputs))
-                    else
-                        current_live_set.difference_update(filter_flow_vars(block.inputs))
+            current_live_set, red = reverse_flow_step(proc, proc, proc_defs, red)
             # closure input frame consists of in_frame-flagged frames, and framed variables.
             # This means that the insertion is considerably different for closures.
             new_vars = list(current_live_set)
             if new_vars.length > 0
-                keep_doing = true
+                red = true
                 if proc.closure
                     instruction = proc.closure.instruction
                     for v in new_vars
@@ -1334,6 +1318,35 @@ solve_flow_variables = (program, proc_defs):
                         for v in new_vars
                             prec.inputs.insert(0, v)
 
+reverse_flow_step = (proc, block, proc_defs, red):
+    current_live_set = set(filter_flow_vars(proc.outputs))
+    for instruction in reversed(block.clauses)
+        current_live_set.difference_update(
+            filter_flow_vars(instruction.outputs))
+        if instruction.branch
+            assert instruction.outputs.length == instruction.branch.outputs.length
+            for x in current_live_set & proc_defs[instruction.branch]
+                # We are inserting into output here, so inserting into
+                # a closure would obviously not be a choice.
+                if instruction.branch.closure
+                    continue # this could be lifted out from the loop though...
+                red = true # Because variable flow is changing.
+                current_live_set.discard(x)
+                instruction.branch.outputs.insert(0, x)
+                # We also got to be considerate for other users of this branch.
+                for prec in instruction.branch.predecessors
+                    prec.outputs.insert(0, x)
+        if instruction.guard
+            live_set, red = reverse_flow_step(proc, instruction.guard, proc_defs, red)
+            live_set.difference_update(filter_flow_vars(block.outputs))
+            current_live_set.update(live_set)
+        current_live_set.update(filter_flow_vars(instruction.inputs))
+    if proc == block
+        current_live_set.difference_update(filter_flow_vars(block.inputs))
+    return [current_live_set, red]
+
+
+
 rewrite_flow_variables = (program):
     for proc in program
         bindings = {}
@@ -1344,7 +1357,9 @@ rewrite_flow_variables = (program):
         # Rewriting the inputs last, creating new variables if needed.
         proc.inputs = rewrite_flow_variable_writes(proc.inputs, bindings)
 
-        drop_superfluous_moves(proc, {}, proc)
+        # The drop_superfluous_moves turned out to be hard to implement
+        # because the IR outputs should be separate for each clause.
+        #drop_superfluous_moves(proc, {}, proc)
 
 rewrite_flow_variables_in_clauses = (block, end_bindings, proc):
     bindings = dict(end_bindings)

@@ -26,7 +26,7 @@ statement:
     "raise" expr / raise
     # "operator" slot_item expr =(operator_row)* / operator
     postfix "(" sep(expr_or, ',') ";" join(slot, ',') ")" / relcall
-
+    [loop_head]* "repeat" >(=statement)+  / repeat
     expr
 
 coeffect_field:
@@ -76,11 +76,13 @@ condexpr:
     expr_or
 
 expr:
-    [loop_head]* "repeat" >(=statement)+  / repeat
-    "generator" >(=statement)+         / generator
-    "(" arglist (";" join(symbol, ","))? ")" ":" >(=statement)+ / closure
+    frame
     expr_or ["," expr_or]+ / tuple([.] concat .)
     expr_or
+
+frame:
+    "generator" >(=statement)+         / generator
+    "(" arglist (";" join(symbol, ","))? ")" ":" >(=statement)+ / closure
 
 loop_head:
     "while" expr                                  / while_loop
@@ -143,6 +145,7 @@ exponent_postfix:
 
 postfix:
     postfix "(" sep(expr_or, ',') ")" / call
+    postfix "(" frame             ")" / call(., [.])
     postfix "[" form "]"              / item
     postfix "." symbol                / attr
     postfix "." keyword               / attr

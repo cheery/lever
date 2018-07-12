@@ -9,6 +9,7 @@ from objects import variables
 #    init_executioncontext,
 #    construct_coeffect,
 #    w_call_with_coeffects )
+import vmoptable
 import interpreter
 import os
 
@@ -23,6 +24,7 @@ def new_entry_point(config):
     base_module.loaded = True
     rt_mspace = modules.ModuleSpace(String(u"runtime://"), [], None)
     rt_mspace.loaded[u"base"] = base_module
+    rt_mspace.loaded[u"vmoptable"] = vmoptable.module
     def entry_point(raw_argv):
         try:
             mspace = modules.ModuleSpace(

@@ -420,9 +420,6 @@ op_unpack = Operator([0], 2)
 # The prelude will provide an advanced stringifier.
 # Therefore we don't have op_form here.
 
-op_shl = Operator([0], 2) # left shift
-op_shr = Operator([0], 2) # right shift
-
 # all comparison operations are derived from the op_cmp
 op_cmp = Operator([0,1], 2)
  
@@ -439,12 +436,15 @@ op_mul = Operator([0,1], 2)
 op_div = Operator([0,1], 2)
 op_mod = Operator([0,1], 2)
 op_floordiv = Operator([0,1], 2) # floordiv(a, b)
-op_divrem = Operator([0,1], 2)
+op_divmod = Operator([0,1], 2)
  
 op_not = Operator([0], 1)   # ~
 op_and = Operator([0,1], 2) # &
 op_or  = Operator([0,1], 2) # |
 op_xor = Operator([0,1], 2) # xor(a,b)
+
+op_shl = Operator([0], 2) # left shift
+op_shr = Operator([0], 2) # right shift
  
 op_clamp = Operator([0], 3) # clamp(a, min,max)
 op_abs = Operator([0], 1)
@@ -784,7 +784,7 @@ variables = {
     u"/": op_div,
     u"%": op_mod,
     u"//": op_floordiv,
-    u"divrem": op_divrem,
+    u"divmod": op_divmod,
     u"~": op_not,
     u"&": op_and,
     u"|": op_or,

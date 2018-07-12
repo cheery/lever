@@ -1,5 +1,6 @@
 from objects.core import *
 from objects.modules import *
+from vmoptable import *
 # from context import construct_coeffect
 import os
 
@@ -27,44 +28,6 @@ def read_script(code, preset, env, src):
     loc = SourceLocBuilder(-1,
         as_list(attr(as_dict(unit.program[0]), u"sourcemap")), sources)
     return Closure(0, 0, unit, [0], [], loc), module
-
-# The instruction set for clauses.
-o_simple   = 0x0 # Group of simple instructions.
-o_branch   = 0x1 # With a procedure index to identify branch target.
-o_frame    = 0x2 # With a bitmask telling which closures are not inserted into frame.
-                 # closures*, inputs*, outputs*
-o_branchx  = 0x3 # With procedure index, failure_path, inputs*, outputs[T]*
-o_guard    = 0x4 # Boolean guards. With a count telling where terminal is.
-                 # Terminal position counted forwards from next instruction.
-
-o_ionly    = 0x5 # Inputs-only instructions.
-o_oonly    = 0x6 # Outputs-only instructions.
-o_terminal = 0x7 # Terminal for guards.
-                 # outputs[F]*     
-
-# The guards
-o_is_true = (0x0 << 3) | 0x4 # failure_path, inputs*, outputs[T]*
-o_eq      = (0x1 << 3) | 0x4 
-o_match   = (0x2 << 3) | 0x4 
-o_next    = (0x3 << 3) | 0x4 
-
-# Basic abstract instructions
-o_move   = (0x0 << 3) # inputs*, outputs*
-o_global = (0x1 << 3)
-o_attr   = (0x2 << 3)
-o_item   = (0x3 << 3)
-
-o_true   = (0x4 << 3)
-o_false  = (0x5 << 3)
-o_call   = (0x6 << 3)
-
-# Inputs-only instructions.
-o_raise      = (0x8 << 3) | 0x5 # inputs*
-o_yield      = (0x9 << 3) | 0x5
-o_yield_from = (0xA << 3) | 0x5
-
-# Basic abstract instructions (extended)
-o_deref   = (0xC << 3)
 
 # RPython cannot ensure that the 'i' is nonzero, so it refuses to compile this
 # without modifications.
