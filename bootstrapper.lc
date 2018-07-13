@@ -393,24 +393,24 @@ class Builder
             mk = self.record_maker
         else
             proc = self.new_proc()
-            KindRecordFunc = FlowVariable()
-            SetFunc = FlowVariable()
-            proc.append(Instruction(o_global, [Constant("KindRecord")], [KindRecordFunc]))
-            proc.append(Instruction(o_global, [Constant("set")], [SetFunc]))
+            RecordConstructor = FlowVariable()
+            ListFunc = FlowVariable()
+            proc.append(Instruction(o_global, [Constant("RecordConstructor")], [RecordConstructor]))
+            proc.append(Instruction(o_global, [Constant("list")], [ListFunc]))
             self.entry.insert(0, Instruction(o_branch, [], [], proc))
             self.record_maker = mk = (proc=proc,
-                KindRecordFunc=KindRecordFunc,
-                SetFunc=SetFunc)
+                RecordConstructor=RecordConstructor,
+                ListFunc=ListFunc)
         # This thing creates the type for record.
-        recond_kind = FlowVariable()
+        record_kind = FlowVariable()
         self.record_kinds[key] = record_kind
         labelset = FlowVariable()
         add_func = FlowVariable()
-        mk.proc.append(Instruction(o_call, [mk.SetFunc], [labelset]))
-        mk.proc.append(Instruction(o_attr, [labelset, Constant("add")], [add_func]))
+        mk.proc.append(Instruction(o_call, [mk.ListFunc], [labelset]))
+        mk.proc.append(Instruction(o_attr, [labelset, Constant("append")], [add_func]))
         for label in labels
             mk.proc.append(Instruction(o_call, [add_func, Constant(label)], []))
-        mk.proc.append(Instruction(o_call, [mk.KindRecordFunc, labelset], [record_kind]))
+        mk.proc.append(Instruction(o_call, [mk.RecordConstructor, labelset], [record_kind]))
         return record_kind
 
 class Node
@@ -1060,15 +1060,38 @@ class Record extends Node
         return [tbranch, fbranch]
 
     build_slot = (self, builder):
+        if self.loc
+            builder.loc = self.loc
         labels = []
-        for label, slot in self.table
+        for label, slot in self.table.items()
             labels.append(label)
         labels.sort()
-        pat = builder.kind_record(labels)
         slots = []
         for label in labels
-            slots.append(self.table[label])
-        return PatternSlot(pat, slots).build_slot(builder)
+            slots.append(self.table[label].build_slot(builder))
+        return object({
+            "read": (builder, outc):
+                record_cons = builder.kind_record(labels)
+                inputs = [record_cons]
+                for slot in slots
+                    inputs.append(slot.read(builder, 1)[0])
+                return builder.emit(o_call, inputs, new_vars(1))
+            "write": (builder, val):
+                k = 0
+                for slot in slots
+                    label = Constant(labels[k])
+                    var = builder.emit(o_attr, [val, label], new_vars(1))[0]
+                    slot.write(builder, var)
+                    k += 1
+            "match": (builder, val):
+                k = 0
+                for slot in slots
+                    label = Constant(labels[k])
+                    var = builder.emit(o_attr, [val, label], new_vars(1))[0]
+                    slot.write(builder, var)
+                    k += 1
+                return set([])
+        })
 
 class Pattern
     +init = (self, pat, slots):
@@ -1608,9 +1631,25 @@ class Variable
     +repr = (self):
         return "Variable()"
 
+    # Temporary hack.
+    build_slot = (self, builder):
+        return object({
+            "read": (builder, outc):
+                assert outc == 1, "TODO"
+                return [self]
+        })
+
 class Constant
     +init = (self, value):
         self.value = value
+
+    # Temporary hack.
+    build_slot = (self, builder):
+        return object({
+            "read": (builder, outc):
+                assert outc == 1, "TODO"
+                return [self]
+        })
 
 class Closure
     +init = (self, entries, in_frame=false, is_generator=false):

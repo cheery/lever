@@ -175,7 +175,7 @@ record_pair:      record_label ":" expr_or
 
 record_label:
     symbol
-    "!" symbol / stringconcat
+    ["!"] symbol / stringconcat
 
 operator: ["+", "-", "*",
     "/", "//", "%", "~", "<<", ">>", "&", "|",

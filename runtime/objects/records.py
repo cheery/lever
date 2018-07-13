@@ -1,64 +1,61 @@
 from rpython.rlib.listsort import make_timsort_class
-from rpython.rlib import jit
-from common import *
+from core import *
 
-def construct_record_type(fields):
-    sorter = FieldSort(fields, len(fields))
+@builtin(1)
+def w_RecordConstructor(fields):
+    args = []
+    items = []
+    mutables = {}
+    for item in iterate(fields):
+        item = cast(item, String).string
+        if item.startswith(u"!"):
+            item = item[1:]
+            mutables[item] = None
+        args.append(item)
+        items.append(item)
+    sorter = FieldSort(items, len(items))
     sorter.sort()
-    map = EMPTY_MAP
-    for name, mutable in sorter.list:
-        if map.getindex(name) != -1:
-            raise error(e_TypeError())
-        map = map.new_map_with_additional_attribute(name, mutable)
-    return RecordInterface(map)
+    indices = {}
+    index = 0
+    for item in items:
+        indices[item] = index
+        index += 1
+    argi = [indices[arg] for arg in args]
+    return RecordConstructor(argi, indices, mutables)
 
-def construct_record(fields):
-    t_fields = []
-    for name, mutable, value in fields:
-        t_fields.append((name, mutable))
-    face = construct_record_type(t_fields)
-    record_val = [None for i in range(len(fields))]
-    for name, mutable, value in fields:
-        record_val[face.map.getindex(name)] = value
-    assert None not in record_val
-    return Record(face, record_val)
+RecordConstructorKind = Kind()
+class RecordConstructor(Object):
+    static_kind = RecordConstructorKind
+    def __init__(self, argi, indices, mutables):
+        self.argi = argi
+        self.indices = indices
+        self.mutables = mutables
 
-class RecordInterface(Interface):
-    def __init__(self, map):
-        self.map = map
+def Constructor_call(rcons, args):
+    rcons = cast(rcons, RecordConstructor)
+    ritems = [None] * len(args)
+    if len(args) != len(rcons.argi):
+        raise error(e_TypeError)
+    for i in range(len(args)):
+        ritems[rcons.argi[i]] = args[i]
+    if len(rcons.mutables) > 0:
+        return [MutableRecord(rcons, ritems)]
+    else:
+        return [ImmutableRecord(rcons, ritems)]
+RecordConstructorKind.properties[op_call] = BuiltinPortal(Constructor_call)
 
-    def getattr(self, name):
-        index = self.map.getindex(name)
-        if index == -1:
-            raise error(e_TypeError())
-        return prefill(w_r_index_get, [fresh_integer(index)])
+RecordKind = Kind()
+class ImmutableRecord(Object):
+    static_kind = RecordKind
+    def __init__(self, rcons, ritems):
+        self.rcons = rcons
+        self.ritems = ritems
 
-    def setattr(self, name):
-        index = self.map.getindex(name)
-        if index == -1 or not self.map.is_mutable_field(name):
-            raise error(e_TypeError())
-        return prefill(w_r_index_set, [fresh_integer(index)])
-
-class Record(Object):
-    interface = None
-    def __init__(self, record_face, record_val):
-        self.record_face = record_face
-        self.record_val = record_val
-
-    def face(self):
-        return self.record_face
-
-@builtin()
-def w_r_index_get(index, record):
-    i = cast(index, Integer).toint()
-    record = cast(record, Record)
-    return record.record_val[i]
-
-@builtin()
-def w_r_index_set(index, record, value):
-    i = cast(index, Integer).toint()
-    record = cast(record, Record)
-    record.record_val[i] = value
+class MutableRecord(Object):
+    static_kind = RecordKind
+    def __init__(self, rcons, ritems):
+        self.rcons = rcons
+        self.ritems = ritems
 
 TimSort = make_timsort_class()
 
@@ -66,30 +63,72 @@ class FieldSort(TimSort):
     def lt(self, a, b):
         return a[0] < b[0]
 
-class Map(object):
-    def __init__(self):
-        self.indexes = {}
-        self.mutables = {}
-        self.other_maps = {}
+@method(RecordKind, op_eq, 1)
+def Record_eq(a, b):
+    if isinstance(a, MutableRecord) and isinstance(b, MutableRecord):
+        return wrap(a is b)
+    a = cast(a, ImmutableRecord)
+    b = cast(b, ImmutableRecord)
+    if a.rcons.indices.keys() != b.rcons.indices.keys():
+        return false
+    if len(a.items) != len(b.items):
+        return false
+    for i in range(len(a.items)):
+        if not eq_fn(a.items[i], b.items[i]):
+            return false
+    return true
 
-    @jit.elidable
-    def getindex(self, name):
-        return self.indexes.get(name, -1)
+@method(RecordKind, op_hash, 1)
+def Record_hash(a):
+    if isinstance(a, MutableRecord):
+        return wrap(compute_hash(a))
+    a = cast(a, ImmutableRecord)
+    mult = 1000003
+    x = 0x345678
+    z = len(a.items)
+    for item in a.items:
+        y = unwrap_int(call(op_hash, [item]))
+        x = (x ^ y) * mult
+        z -= 1
+        mult += 82520 + z + z
+    x += 97531
+    return wrap(intmask(x))
 
-    @jit.elidable
-    def is_mutable_field(self, name):
-        return name in self.mutables
+@method(RecordKind, atom_dynamic_getattr, outc=1)
+def Record_dynamic_getattr(name):
+    return prefill(w_load_item, [name])
 
-    @jit.elidable
-    def new_map_with_additional_attribute(self, name, mutable):
-        if (name, mutable) not in self.other_maps:
-            newmap = Map()
-            newmap.indexes.update(self.indexes)
-            newmap.indexes[name] = len(self.indexes)
-            newmap.mutables.update(self.mutables)
-            self.other_maps[(name, mutable)] = newmap
-            if mutable:
-                newmap.mutables[name] = None
-        return self.other_maps[(name, mutable)]
+@method(RecordKind, atom_dynamic_setattr, outc=1)
+def Record_dynamic_setattr(name):
+    return prefill(w_store_item, [name])
 
-EMPTY_MAP = Map()
+@builtin(1)
+def w_load_item(w_name, record):
+    name = cast(w_name, String).string
+    if isinstance(record, MutableRecord):
+        index = record.rcons.indices.get(name, -1)
+        if index >= 0:
+            return record.ritems[index]
+    else:
+        record = cast(record, ImmutableRecord)
+        index = record.rcons.indices.get(name, -1)
+        if index >= 0:
+            return record.ritems[index]
+    raise error(e_NoAttr, w_name)
+
+@builtin(0)
+def w_store_item(w_name, record, value):
+    name = cast(w_name, String).string
+    if isinstance(record, ImmutableRecord):
+        raise error(e_TypeError)
+    record = cast(record, MutableRecord)
+    index = record.rcons.indices.get(name, -1)
+    if index >= 0 and name in record.rcons.mutables:
+        record.ritems[index] = value
+    else:
+        raise error(e_NoAttr)
+
+variables = {
+    "RecordConstructor": w_RecordConstructor,
+    "RecordKind": RecordKind,
+}
