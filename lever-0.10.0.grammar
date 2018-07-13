@@ -5,7 +5,7 @@ statement:
     "from" symbol "import" join(symbol / [1,1], ",") / import_bind
     # "bind" sep(coeffect_field, ",") "as" slot_item   / bind_coeffect
     slot operator "=" >expr      / inplace_assign(., symbol(.), .)
-    slot "(" pform ")" "=" >expr / inplace_assign
+    slot "{" pform "}" "=" >expr / inplace_assign
     slot "=" >expr / assign
     "if" condexpr "then" >(=statement)+
              ["else" >(=statement)+]? / cond

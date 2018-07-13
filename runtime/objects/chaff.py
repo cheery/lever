@@ -173,8 +173,10 @@ def w_kind(obj):
 #     u"placeholder_error": w_placeholder_error,
 
 @builtin(1)
-def w_Atom(w_arity, w_properties):
+def w_Atom(w_arity, w_properties=None):
     atom = Atom(unwrap_int(w_arity))
+    if w_properties is None:
+        return atom
     for item in iterate(w_properties):
         items = cast(item, Tuple).items
         if len(items) != 2:
@@ -227,6 +229,7 @@ variables = {
     u"single": w_single,
     u"once": w_once,
     u"kind": w_kind,
+    u"Atom": w_Atom,
     u"Operator": w_Operator,
     u"has_properties": w_has_properties,
     u"get_attribute": builtin(1)(get_attribute),

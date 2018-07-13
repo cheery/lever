@@ -413,6 +413,16 @@ class Builder
         mk.proc.append(Instruction(o_call, [mk.RecordConstructor, labelset], [record_kind]))
         return record_kind
 
+    type_error_raiser = (self, is_guard=false):
+        if is_guard
+            raiser = Guard([], [])
+        else
+            raiser = self.new_proc()
+        te = Variable()
+        raiser.append(Instruction(o_global, [Constant("TypeError")], [te]))
+        raiser.append(Instruction(o_raise, [te], []))
+        return raiser
+
 class Node
 
 class Repeat extends Node
@@ -776,17 +786,18 @@ class Match extends Node
         return [v3]
 
     build_cond = (self, builder):
-        val = builder.build(self.value, 1)
-        pat = builder.build(self.pattern, 1)
+        val = builder.build(self.value, 1)[0]
+        pat = builder.build(self.pattern, 1)[0]
         tbranch = builder.current
-        fbranch = set([Guard([], [])])
+        fbranch = Guard([], [])
         outputs = new_vars(self.slots.length)
         builder.emit_guard(o_match, [pat, val], outputs, fbranch)
+        fbranches = set([fbranch])
         k = 0
         for slot in self.slots
-            fbranch.update(slot.build_slot(builder).match(builder, outputs[k]))
+            fbranches.update(slot.build_slot(builder).match(builder, outputs[k]))
             k += 1
-        return [tbranch, fbranch]
+        return [tbranch, fbranches]
 
 class And extends Node
     +init = (self, lhs, rhs):
@@ -1111,6 +1122,7 @@ class Pattern
         return [tbranch, fbranch]
 
     build_slot = (self, builder):
+        pat = builder.build(self.pat, 1)[0]
         slots = []
         for slot in self.slots
             slots.append(slot.build_slot(builder))
@@ -1121,7 +1133,7 @@ class Pattern
                     inputs.append(slot.read(builder)[0])
                 return builder.emit(o_call, inputs, new_vars(1))
             "write": (builder, val):
-                guard = builder.type_error_raiser()
+                guard = builder.type_error_raiser(true)
                 outputs = new_vars(self.slots.length)
                 builder.emit_guard(o_match, [pat, val], outputs, guard)
                 k = 0
