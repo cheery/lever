@@ -285,7 +285,7 @@ def python_bridge(function, outc):
             result = function(*args)
             if result is None:
                 ret = []
-            elif isinstance(result, Tuple):
+            elif isinstance(result, Tuple) and outc != 1:
                 ret = result.items
             else:
                 ret = [result]
@@ -584,6 +584,8 @@ def cast(obj, cls):
 @specialize.arg(2)
 def call(callee, args, outc=1):
     result = callv(callee, args)
+    if outc == 1 < len(result):
+        return Tuple(result)
     if len(result) != outc:
         raise error(e_ResultCountError, 
             wrap(outc), wrap(len(result)))

@@ -85,7 +85,7 @@ def Dict_getitem(a, item):
     except KeyError:
         raise error(e_NoIndex)
 
-@method(Dict, op_setitem, 1)
+@method(Dict, op_setitem, 0)
 def Dict_setitem(a, item, value):
     a = cast(a, Dict)
     a.table[item] = value

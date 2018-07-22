@@ -147,7 +147,7 @@ def interpreter_loop(unit, stack, is_generator=False):
         try:
             result = eval_body(unit, ctx, body, smap, index)
             if isinstance(result, Done):
-                pass
+                assert ctx.all_outputs_written()
             elif isinstance(result, Branch):
                 if result.exc >= 0:
                     stxc = ExceptionCatch(len(stack), result.exc)
@@ -346,9 +346,9 @@ def eval_body(unit, ctx, body, smap, index):
                     motion(ctx, [value, it], ov)
                 except StopIteration:
                     index, opcode = decode_opcode(body, x)
-                    index, outputs = decode_list(body, index)
                     if opcode != o_terminal:
                         raise error(e_EvalError)
+                    index, outputs = decode_list(body, index)
         elif flag == o_terminal:
             return Done()
         else:
@@ -432,7 +432,7 @@ class Context:
         elif flag == 2:
             slots, n = self.outputs[ix >> 2]
             value = slots[n]
-            assert value is not None
+            assert value is not None, ix >> 2
             return value
         else:
             return self.constants[ix >> 2]
@@ -455,6 +455,12 @@ class Context:
             return self.outputs[ix >> 2]
         else:
             assert False, "this ought not happen"
+
+    def all_outputs_written(self):
+        for slots, n in self.outputs:
+            if slots[n] is None:
+                return False
+        return True
 
 def motion(ctx, seq, ov):
     ic = len(seq)

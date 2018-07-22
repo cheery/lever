@@ -171,7 +171,7 @@ form:
     expr
 
 record_shorthand: symbol / [1, symbol(1)]
-record_pair:      record_label ":" expr_or
+record_pair:      record_label "=" expr_or
 
 record_label:
     symbol

@@ -20,8 +20,8 @@ main = ():
             else
                 stale = true
             if stale
-                print('compiling', src)
-                print('to       ', dst)
+                #print('compiling', src)
+                #print('to       ', dst)
                 compile_file(src, dst)
 
 # The frontend compiler compiles down into a logic-based IR.
@@ -107,9 +107,9 @@ compile_file = (src, dst):
     # (we could use strongly-connected-components here)
     proc_defs = proc_defs_analysis(builder.program)
 
-    vartab = print_program(builder.program)
-    print()
-    print_proc_vars('DEFS', proc_defs, builder.program, vartab)
+    #vartab = print_program(builder.program)
+    #print()
+    #print_proc_vars('DEFS', proc_defs, builder.program, vartab)
 
     solve_flow_variables(builder.program, proc_defs)
 
@@ -131,8 +131,8 @@ compile_file = (src, dst):
         inline_functions(builder.program)
         # Finally some further flow analysis and inlining could be done,
         # for now we compile directly down to VM.
-        print()
-        vartab = print_program(builder.program)
+        #print()
+        #vartab = print_program(builder.program)
         # Conversion into json is a temporary measure.
         out = to_json(sources, builder.program, builder.entry)
         json.write_file(dst, out, {indent=2})
@@ -200,7 +200,7 @@ actions = {
     "assign": (slot, value):
         return Assign(slot, value)
     "inplace_assign": (slot, op, value):
-        return InplaceAssign(slot, Symbol(op), value)
+        return InplaceAssign(slot, op, value)
     "cond": (cond, tb, fb=[]):
         return Cond(cond, tb, fb)
     "and": (lhs, rhs):
@@ -723,7 +723,7 @@ class InplaceAssign extends Node
         op = builder.build(self.op, 1)[0]
         block = builder.current
         slot = self.slot.build_slot(builder)
-        inputs = [op] ++ slot.read(builder, 1)
+        inputs = [op, slot.read(builder, 1)[0], val]
         outputs = new_vars(1)
         builder.emit(o_call, inputs, outputs)
         slot.write(builder, outputs[0])
@@ -908,6 +908,12 @@ class Let extends Node
         for v, ast in self.bindings
             builder.emit(o_move, builder.build(ast, 1), [v])
         return builder.build_cond(self.body)
+
+    build_slot = (self, builder):
+        return object({
+            "read": (builder, outc):
+                return self.build(builder, outc)
+        })
 
 class RelCall extends Node
     +init = (self, callee, args, slots):
@@ -1183,7 +1189,7 @@ class Tuple extends Node
             "read": (builder, outc):
                 inputs = []
                 for slot in slots
-                    inputs.append(slot.read(builder)[0])
+                    inputs.append(slot.read(builder, 1)[0])
                 return builder.emit(o_move, inputs, new_vars(1))
             "write": (builder, val):
                 outputs = new_vars(slots.length)
@@ -1202,6 +1208,7 @@ class Tuple extends Node
 
 class Symbol extends Node
     +init = (self, name, is_global=false):
+        assert isinstance(name, str)
         self.name = name
         self.is_global = is_global
         self.loc = null
@@ -1593,8 +1600,12 @@ class Instruction
             branch.predecessors.add(self)
         for i in inputs
             assert not isinstance(i, list)
+            assert not isinstance(i, Node)
+            assert not isinstance(i, Symbol)
         for i in outputs
             assert not isinstance(i, list)
+            assert not isinstance(i, Node)
+            assert not isinstance(i, Symbol)
 
     add_closure = (self, closure, var):
         assert not closure.instruction, "cannot reuse closures"
@@ -1751,6 +1762,11 @@ encode_clauses = (clauses, registers, code, sourcemap):
         code.append(0)
         code.append(o_terminal)
     for instruction in reversed(clauses)
+        if instruction.opcode == o_move
+            if instruction.inputs == instruction.outputs
+                # I am not sure why it produces these, but they are
+                # incorrect.
+                continue
         # location of guard (if any).
         if instruction.guard
             offset = code.length - instruction.guard.index
@@ -1775,7 +1791,10 @@ encode_clauses = (clauses, registers, code, sourcemap):
             for v in reversed(instruction.inputs)
                 if v in registers.inputs
                     continue
-                assert v not in registers.outputs, "output variables used as input"
+                # Not a bug if register is assigned.
+                #assert v not in registers.outputs, "output variables used as input"
+                if v in registers.outputs
+                    continue
                 if not isinstance(v, Variable)
                     continue
                 reg = registers.get_free_register()

@@ -181,7 +181,7 @@ def w_Atom(w_arity, w_properties=None):
         items = cast(item, Tuple).items
         if len(items) != 2:
             raise error(e_TypeError)
-        operator.properties[items[0]] = items[1]
+        atom.properties[items[0]] = items[1]
     return atom
 
 @builtin(1)
