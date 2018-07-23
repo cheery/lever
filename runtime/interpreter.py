@@ -127,7 +127,9 @@ def enter_closure(unit, closure, inc, outc):
     i = closure.inc
     opt  = len(closure.entries) - 1
     if (not (i-opt <= inc <= i)) or outc != closure.outc:
-        tb = error(e_TypeError)
+        tb = error(e_ArgumentCountError,
+            wrap(i-len(closure.frame)),
+            wrap(opt), wrap(inc-len(closure.frame)))
         tb.trace.append(closure.loc)
         raise tb
     entry = closure.entries[i - inc]
@@ -344,7 +346,7 @@ def eval_body(unit, ctx, body, smap, index):
                 try:
                     value, it = it.next()
                     motion(ctx, [value, it], ov)
-                except StopIteration:
+                except StopIteration as stop:
                     index, opcode = decode_opcode(body, x)
                     if opcode != o_terminal:
                         raise error(e_EvalError)
@@ -526,7 +528,7 @@ class SourceLocBuilder(Object):
         i = 0
         while i+6 <= len(self.smap):
             bytek = unwrap_int(self.smap[i])
-            if pc <= bytek:
+            if pc < bytek:
                 col0 = self.smap[i+1]
                 lno0 = self.smap[i+2]
                 col1 = self.smap[i+3]

@@ -63,7 +63,7 @@ slot:
     slot_item ["," slot_item]+ / tuple([.] concat .)
 
 slot_item:
-    expr "(" join(slot_item, "") ")" / pattern
+    expr "(" join(slot_item, ",") ")" / pattern
     symbol               / symbol
     postfix "[" form "]" / item
     postfix "." symbol   / attr
@@ -72,7 +72,7 @@ slot_item:
     "{" sep(record_shorthand, ",") "}" / record
 
 condexpr:
-    expr "@" expr "(" join(slot_item, "") ")" / match
+    expr "@" postfix "(" sep(slot_item, ",") ")" / match
     expr_or
 
 expr:

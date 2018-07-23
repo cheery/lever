@@ -837,9 +837,13 @@ def Atom_unpack(atom, compound):
     atom = cast(atom, Atom)
     if isinstance(compound, Compound):
         if atom is compound.atom:
+            if len(compound.items) == 1:
+                return compound.items[0]
             return Tuple(compound.items)
     if isinstance(compound, ErrorCompound):
         if atom is compound.atom:
+            if len(compound.items) == 1:
+                return compound.items[0]
             return Tuple(compound.items)
     raise error(e_NoValue)
 

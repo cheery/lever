@@ -109,6 +109,7 @@ compile_file = (src, dst):
         return var
     rewrite_flow_variables(build.program, env)
     inline_functions(build.program, new_var)
+    rewrite_variables(build.program)
 
     print(sources)
     print_program(build.program)
@@ -318,14 +319,16 @@ class Builder
         if isinstance(expr, [Constant, FlowVariable])
             return [expr, cont]
         loc = cont.loc
-        cont.loc = expr.loc
+        if expr.loc
+            cont.loc = expr.loc
         val, cont = expr.build_expr(self, cont)
         cont.loc = loc
         return [val, cont]
 
     cond = (self, cond, cont):
         loc = cont.loc
-        cont.loc = cond.loc
+        if cond.loc
+            cont.loc = cond.loc
         tcont, fcont = cond.build_cond(self, cont)
         tcont.loc = loc
         fcont.loc = loc
@@ -353,10 +356,7 @@ class Builder
         return [val, cont]
 
     write = (self, sv, val, cont):
-        loc = cont.loc
-        cont.loc = sv.loc
         cont = sv.write(self, val, cont)
-        cont.loc = loc
         return cont
 
     match = (self, sv, val, cont):
@@ -739,6 +739,7 @@ class Cond extends Node
     build_stmt = (self, build, cont):
         succ, fail = build.cond(self.cond, cont)
         exit = build.new_proc()
+        exit.loc = self.loc
 
         for stmt in self.t_block
             succ = build.stmt(stmt, succ)
@@ -1390,6 +1391,36 @@ rewrite_fv_writes = (outputs, bindings, env):
             bindings[var] = outputs[i] = Variable(env.next_varid)
             env.next_varid += 1
 
+rewrite_variables = (program):
+    for proc in program
+        block_rewrite_variables(proc.block, {})
+
+block_rewrite_variables = (block, bindings):
+    for ins in list(block)
+        if ins.opcode == o_move and ins.inputs.length == ins.outputs.length
+            rewrite_v_reads(ins.inputs, bindings)
+            for i in range(ins.inputs.length)
+                bindings[ins.outputs[i]] = ins.inputs[i]
+            block.contents.remove(ins)
+        else
+            rewrite_v_reads(ins.inputs, bindings)
+    term = block.terminal
+    if isinstance(term, Terminal)
+        rewrite_v_reads(term.outputs, bindings)
+    elif isinstance(term, Guard)
+        rewrite_v_reads(term.inputs, bindings)
+        block_rewrite_variables(term.tblock, dict(bindings))
+        block_rewrite_variables(term.fblock, bindings)
+    elif isinstance(term, RaiseTerminal)
+        rewrite_v_reads(term.outputs, bindings)
+    else
+        assert false, term
+
+rewrite_v_reads = (inputs, bindings):
+    for i in range(inputs.length)
+        if inputs[i] in bindings
+            inputs[i] = bindings[inputs[i]]
+
 #        # The drop_superfluous_moves turned out to be hard to implement
 #        # because the IR outputs should be separate for each clause.
 #        #drop_superfluous_moves(proc, {}, proc)
@@ -1581,7 +1612,7 @@ inline_proc = (base_ins, proc, new_var, frame_handled=false):
     for k in range(outputs.length)
         var = outputs[k]
         if isinstance(var, Constant)
-            movi.append(ins.outputs[k])
+            movi.append(var)
         else
             movi.append(bindings[var])
         movo.append(base_ins.outputs[k])
@@ -1635,6 +1666,7 @@ class Cont
         fblock = Block(self.block.proc, self.block)
         fblock.inputs = outputs2
         self.block.terminal = Guard(opcode, inputs, tblock, fblock)
+        self.block.terminal.loc = self.loc
         self.is_terminated = true
         return [Cont(tblock), Cont(fblock)]
 
@@ -1956,6 +1988,8 @@ print_clause = (clause, vartab):
             outputs = format_vars(block.inputs, vartab)
             sb.append(format_io(inputs, outputs))
             sp = ", "
+            #sp = "\n  "
+            #sb.append(repr(terminal.loc))
         for ins in block
             sb.append(sp)
             if ins.opcode == o_branch
@@ -1980,6 +2014,8 @@ print_clause = (clause, vartab):
                     cls.append(cl)
                 sb.append("{" ++ ", ".join(cls) ++ "}")
             sp = ", "
+            #sp = "\n  "
+            #sb.append(repr(ins.loc))
     sb.append(".")
     print(sb.build())
 
@@ -2103,9 +2139,12 @@ simple_live_analysis = (block, rega):
         # The inconsistent outputs are dropped at detection.
         consistents = dict()
         for i, val1 in rega.consistents[tblock].items()
-            val2 = rega.consistents.get(fblock, null)
+            val2 = rega.consistents[fblock].get(i, null)
             if val1 == val2
                 consistents[i] = val1
+                # Ensure the output is written when it's the time for it.
+                rega.consistents[tblock].pop(i)
+                rega.consistents[fblock].pop(i)
         rega.consistents[block] = consistents
         # The uses are copied over. These counts won't run down anyway.
         uses = dict()
@@ -2133,10 +2172,15 @@ encode_program = (body, block, rega, bound):
             movi.append((rega.inputs.index(var)<<2)|1)
             movo.append((i<<2)|2)
             rega.outputs_written.add((i<<2)|2)
-        if var in bound and bound[var] != ((i<<2)|2)
+        elif var in bound and bound[var] != ((i<<2)|2)
             movi.append(bound[var])
             movo.append((i<<2)|2)
             rega.outputs_written.add((i<<2)|2)
+        elif isinstance(var, Constant)
+            movi.append(rega.const(var))
+            movo.append((i<<2)|2)
+            rega.outputs_written.add((i<<2)|2)
+
     if movi.length > 0
         body.append(o_move)
         body.append(movi)
@@ -2178,6 +2222,7 @@ encode_program = (body, block, rega, bound):
         jump = AsmJump()
         body.append(jump)
         encode_program(body, block.terminal.tblock, rega, tbound)
+        assert body.pop() == o_terminal
         body.append(AsmLabel(jump))
         body.append(o_terminal)
         body.append(rega.add_defs(
@@ -2261,14 +2306,14 @@ class SourceMapBuilder
             self.top_bytes = top_bytes 
         else
             if self.top_bytes > self.committed
-                self.sourcemap.extend(reversed([self.top_bytes] ++ self.top_loc))
+                self.sourcemap.extend(reversed([self.top_bytes-self.committed] ++ self.top_loc))
                 self.committed = self.top_bytes
             self.top_loc = loc
             self.top_bytes = top_bytes
 
     build = (self, top):
         if top > self.committed
-            self.sourcemap.extend(reversed([self.top_bytes] ++ self.top_loc))
+            self.sourcemap.extend(reversed([self.top_bytes-self.committed] ++ self.top_loc))
             self.committed = top
             self.top_bytes = top
         return list(reversed(self.sourcemap))
@@ -2300,7 +2345,7 @@ single_pass_assemble = (body, smap):
             code.jump.location = out.length
         elif isinstance(code, AsmJump)
             offset = out.length - code.location
-            assert offset > 0
+            assert offset >= 0, [offset, body]
             out.append(offset)
         else
             assert false, code
