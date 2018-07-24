@@ -123,7 +123,7 @@ def Set_difference_update(a, items):
     for item in iterate(items):
         try:
             del a.table[item]
-        except KeyError:
+        except KeyError as _:
             pass
 
 @attr_method(Set, u"symmetric_difference_update", 0)
@@ -132,7 +132,7 @@ def Set_symmetric_difference_update(a, items):
     for item in iterate(items):
         try:
             del a.table[item]
-        except KeyError:
+        except KeyError as _:
             a.table[item] = None
 
 @attr_method(Set, u"discard", 0)
@@ -140,7 +140,7 @@ def Set_discard(a, item):
     a = cast(a, Set)
     try:
         del a.table[item]
-    except KeyError:
+    except KeyError as _:
         pass
 
 @attr_method(Set, u"remove", 0)
@@ -148,7 +148,7 @@ def Set_remove(a, item):
     a = cast(a, Set)
     try:
         del a.table[item]
-    except KeyError:
+    except KeyError as _:
         raise error(e_NoValue)
 
 @attr_method(Set, u"pop", 1)
@@ -156,7 +156,7 @@ def Set_pop(a):
     a = cast(a, Set)
     try:
         return a.table.popitem()[0]
-    except KeyError:
+    except KeyError as _:
         raise error(e_NoItems)
 
 @attr_method(ImmutableSet, u"is_disjoint", 1)
@@ -274,7 +274,7 @@ def ImmutableSet_difference(a, items):
     for item in iterate(items):
         try:
             table.pop(item)
-        except KeyError:
+        except KeyError as _:
             pass
     return ImmutableSet(table)
 
@@ -286,7 +286,7 @@ def Set_symmetric_difference(a, items):
     for item in iterate(items):
         try:
             table.pop(item)
-        except KeyError:
+        except KeyError as _:
             table[item] = None
     return ImmutableSet(table)
 

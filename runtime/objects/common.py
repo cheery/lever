@@ -130,7 +130,7 @@ class Integer(Object):
     def toint(self):
         try:
             return self.integer_val.toint()
-        except OverflowError:
+        except OverflowError as _:
             raise error(e_OverflowError())
 
 # 
@@ -204,7 +204,7 @@ class FunctionMemo:
         key = (argc, opt)
         try:
             return self.memo[key]
-        except KeyError:
+        except KeyError as _:
             face = self.cls(argc, opt)
             self.memo[key] = face
             return face
@@ -835,7 +835,7 @@ class TupleMemo:
     def get(self, arity):
         try:
             return self.memo[arity]
-        except KeyError:
+        except KeyError as _:
             face = TupleInterface(arity)
             self.memo[arity] = face
             return face
@@ -1052,7 +1052,7 @@ def w_tagu_accessor(name, tagu):
     name = cast(name, String).string_val
     try:
         return tagu.fields[tagu.tagu_cons.cons_labels[name]]
-    except KeyError:
+    except KeyError as _:
         raise error(e_PartialOnArgument())
 
 class TaggedUnion(Object):

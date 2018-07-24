@@ -74,7 +74,7 @@ def ImmutableDict_getitem(a, item):
     a = cast(a, ImmutableDict)
     try:
         return a.table[item]
-    except KeyError:
+    except KeyError as _:
         raise error(e_NoIndex)
 
 @method(Dict, op_getitem, 1)
@@ -82,7 +82,7 @@ def Dict_getitem(a, item):
     a = cast(a, Dict)
     try:
         return a.table[item]
-    except KeyError:
+    except KeyError as _:
         raise error(e_NoIndex)
 
 @method(Dict, op_setitem, 0)
@@ -112,7 +112,7 @@ def get(a, item, default):
     a = cast(a, ImmutableDict)
     try:
         return a.table[item]
-    except KeyError:
+    except KeyError as _:
         return default
 
 @attr_method(Dict, u"get", 1)
@@ -120,7 +120,7 @@ def get(a, item, default):
     a = cast(a, Dict)
     try:
         return a.table[item]
-    except KeyError:
+    except KeyError as _:
         return default
 
 @attr_method(Dict, u"pop", 1)
@@ -128,7 +128,7 @@ def Dict_pop(a, key):
     a = cast(a, Dict)
     try:
         return a.table.pop(key)
-    except KeyError:
+    except KeyError as _:
         raise error(e_NoIndex)
 
 @attr_method(ImmutableDict, u"keys", 1)

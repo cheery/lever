@@ -31,7 +31,7 @@ def get_coeffect(face):
     ec = get_ec()
     try:
         return ec.coeffects[face]
-    except KeyError:
+    except KeyError as _:
         raise error(e_TypeError())
 
 @builtin()
@@ -46,7 +46,7 @@ def w_call_with_coeffects(fn, coeffects):
             if len(tup) != 2:
                 raise error(e_TypeError())
             coeffect, obj = tup
-        except StopIteration:
+        except StopIteration as _:
             break
         call_coeffects[coeffect] = obj
     previous = ec.coeffects

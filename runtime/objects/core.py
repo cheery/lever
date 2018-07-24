@@ -195,7 +195,7 @@ def iterate(a):
     while True:
         try:
             item, it = it.next()
-        except StopIteration:
+        except StopIteration as _:
             break
         else:
             yield item
@@ -216,7 +216,7 @@ def unwrap_int(a): # TODO: Should this thing have a better error?
     a = cast(a, Integer)
     try:
         return a.bignum.toint()
-    except OverflowError:
+    except OverflowError as _:
         raise error(e_OverflowError)
 
 def unwrap_bool(a):

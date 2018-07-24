@@ -135,11 +135,11 @@ def w_single(items):
     it = cast(items, Iterator)
     try:
         x, it = it.next()
-    except StopIteration:
+    except StopIteration as _:
         raise error(e_PreconditionFailed)
     try:
         y, it = it.next()
-    except StopIteration:
+    except StopIteration as _:
         return x
     else:
         raise error(e_PreconditionFailed)
@@ -149,7 +149,7 @@ def w_once(iterator):
     iterator = cast(iterator, Iterator)
     try:
         x, it = iterator.next()
-    except StopIteration:
+    except StopIteration as _:
         raise error(e_NoValue)
     return Tuple([x, it])
 

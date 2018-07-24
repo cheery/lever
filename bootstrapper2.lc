@@ -19,10 +19,10 @@ main = ():
                     stale = false
             else
                 stale = true
-            #if stale
-            print('compiling', src)
-            print('to       ', dst)
-            compile_file(src, dst)
+            if stale
+                print('compiling', src)
+                print('to       ', dst)
+                compile_file(src, dst)
 
 # The frontend compiler compiles down into a logic-based IR.
 compile_file = (src, dst):
@@ -97,16 +97,17 @@ compile_file = (src, dst):
         assert build.jumps.length == 0, "break/continue missing the loop"
     build.finalize()
 
-    proc_defs = proc_defs_analysis(build.program)
-    solve_flow_variables(build.program, proc_defs)
+    proc_defs, proc_term = proc_defs_analysis(build.program)
+    solve_flow_variables(build.program, proc_defs, proc_term)
     assert build.program[0].block.inputs.length == 0
-        print_program(build.program, {}, proc_defs)
+        print_program(build.program, {}, proc_defs, proc_term)
         ["variable flow issue"]
     env = object({next_varid=0, vartab={}})
     new_var = ():
         var = Variable(env.next_varid)
         env.next_varid += 1
         return var
+    trim_unreachable(build.program, proc_term)
     rewrite_flow_variables(build.program, env)
     inline_functions(build.program, new_var)
     rewrite_variables(build.program)
@@ -167,6 +168,16 @@ class ReturnValuesRequired
 # otherwise it will do that otherwise around.
 
 actions = {
+    "inline_except": (statement, excepts):
+        xvar = FlowVariable()
+        print(excepts)
+        xc = Raise(xvar)
+        for pattern, slots, body in reversed(excepts)
+            if slots == null
+                slots = []
+            xc = Cond(Match(xvar, pattern, slots), body, [xc])
+        return Except([statement], [xc], xvar)
+
     "repeat": (heads, body):
         return Repeat(heads, body)
     "for_loop": (slot, rest, expr, cond=null):
@@ -315,13 +326,14 @@ class Builder
         cont.loc = loc
         return cont
 
-    expr = (self, expr, cont):
+    # 'var' is here to passthrough in the 'Assign.build_stmt'.
+    expr = (self, expr, cont, var=null):
         if isinstance(expr, [Constant, FlowVariable])
             return [expr, cont]
         loc = cont.loc
         if expr.loc
             cont.loc = expr.loc
-        val, cont = expr.build_expr(self, cont)
+        val, cont = expr.build_expr(self, cont, var)
         cont.loc = loc
         return [val, cont]
 
@@ -645,45 +657,39 @@ class Except extends Node
         self.xvar = xvar        # This variable gets the exception.
         self.loc = null
 
-#    build = (self, builder, outc):
-#        assert outc == 0, "no output at exception handler"
-#        R = builder.retboxes.length
-#        exit = builder.current
-#        outer_jumps = builder.jumps
-#        outer_retboxes = builder.retboxes
-#        builder.jumps = []
-#        builder.retboxes = []
-#        try_block = builder.new_proc()
-#        builder.current = try_block
-#        for statement in self.body
-#            builder.build(statement, 0)
-#        for statement in self.body
-#            builder.build(statement, 0)
-#        try_block = builder.merge()
-#        builder.current = exit
-#        for block, depth, this_leaves in builder.jumps
-#            var = FlowVariable()
-#            block.append(Instruction(o_false, [], var))
-#            try_block.append(Instruction(o_true, [], var))
-#            block = Guard([], [])
-#            builder.emit_guard(o_is_true, [var], [], block)
-#            outer_jumps.append([block, depth, this_leaves])
-#        for block, vars in builder.retboxes
-#            var = FlowVariable()
-#            block.append(Instruction(o_false, [], var))
-#            try_block.append(Instruction(o_true, [], var))
-#            block = Guard([], [])
-#            builder.emit_guard(o_is_true, [var], [], block)
-#            outer_retboxes.append([block, vars])
-#        builder.jumps = outer_jumps
-#        builder.retboxes = outer_retboxes
-#        guard = Guard([self.xvar], [])
-#        builder.current = guard
-#        for statement in self.handler
-#            builder.build(statement, 0)
-#        builder.current = exit
-#        builder.emit_branch(try_block, [], [], guard)
-#        return []
+    build_stmt = (self, build, begin):
+        retboxes = build.ret.boxes
+        outer_jumps = build.jumps
+        build.ret.boxes = []
+        build.jumps = []
+        tryblock = tryblock_end = build.new_proc()
+        for stmt in self.body
+            tryblock_end = build.stmt(stmt, tryblock_end)
+        succ, fail = begin.guard(o_branchx, [], [], [self.xvar], tryblock)
+        for cont, depth, leaving in build.jumps
+            var = FlowVariable()
+            cont.append(Instruction(o_false, [], [var]))
+            tryblock_end.append(Instruction(o_true, [], [var]))
+            cont.terminate([])
+            succ, cont = succ.guard(o_is_true, [var], [], [])
+            outer_jumps.append([cont, depth, leaving])
+        for cont in build.ret.boxes
+            var = FlowVariable()
+            cont.append(Instruction(o_false, [], [var]))
+            tryblock_end.append(Instruction(o_true, [], [var]))
+            cont.terminate([])
+            succ, cont = succ.guard(o_is_true, [var], [], [])
+            retboxes.append(cont)
+        tryblock_end.terminate([])
+        build.ret.boxes = retboxes
+        build.jumps = outer_jumps
+        # The handler needs to be built last, because it is
+        # outside the try block and
+        # must not be affected by jump rewriting.
+        for stmt in self.handler
+            fail = build.stmt(stmt, fail)
+        fail.terminate([])
+        return succ
 
 class Assign extends Node
     +init = (self, slot, value):
@@ -692,21 +698,12 @@ class Assign extends Node
         self.loc = null
 
     build_stmt = (self, build, cont):
-        # TODO: Reimplement Symbol = Function/Generator
-#        assert outc == 0, "no output at assign"
-#        val = builder.build(self.value, 1)[0]
-#        block = builder.merge()
-#        if builder.env and has_frame_under(block)
-#            if isinstance(self.slot, Symbol)
-#                var = builder.get_variable(self.slot.name, true)
-#                if var
-#                    instruction = block.clauses[block.clauses.length-1]
-#                    ix = instruction.outputs.index(val)
-#                    instruction.outputs[ix] = var
-#                    return []
-#        slot = self.slot.build_slot(builder)
-#        slot.write(builder, val)
-#        return []
+        if isinstance(self.slot, Symbol) and isinstance(self.value, [Function, Generator])
+            var = build.get_variable(self.slot.name, true)
+            if var
+                val, cont = build.expr(self.value, cont, var)
+                assert val == var # Would mean there is a bug or feature.
+                return cont
         slot, cont = build.slot(self.slot, cont)
         val, cont = build.expr(self.value, cont)
         cont = build.write(slot, val, cont)
@@ -1240,36 +1237,44 @@ class ProgExpr extends Node
 # rewrite the flow variables into ordinary variables.
 proc_defs_analysis = (program):
     proc_defs = {}
+    proc_term = {}
     for proc in program
         proc_defs[proc] = set()
+        proc_term[proc] = true
     # First the defs tables are resolved.
     keep_doing = true
     while keep_doing
         keep_doing = false
         for proc in reversed(program)
             L = proc_defs[proc].length
-            defs = block_defs_analysis(proc.block, set(), proc_defs)
-            if defs.length != L
+            defs, term = block_defs_analysis(proc.block, set(), proc_defs, proc_term)
+            if defs.length != L or proc_term[proc] != term
                 keep_doing = true
             proc_defs[proc] = defs
-    return proc_defs
+            proc_term[proc] = term
+    return [proc_defs, proc_term]
 
-block_defs_analysis = (block, defs, proc_defs):
+block_defs_analysis = (block, defs, proc_defs, proc_term):
+    if block.guard and block.guard.terminal.tblock == block
+        if block.guard.terminal.branch
+            defs.update(proc_defs[block.guard.terminal.branch])
     defs.update(filter_flow_vars(block.inputs))
     for ins in block
+        if ins.branch and proc_term[ins.branch] == false
+            return [set(), false]
         if ins.branch
             defs.update(proc_defs[ins.branch])
         defs.update(filter_flow_vars(ins.outputs))
     term = block.terminal
     if isinstance(term, Terminal)
-        return defs
+        return [defs, true]
     elif isinstance(term, Guard)
-        tdefs = block_defs_analysis(term.tblock, set(defs), proc_defs)
-        defs = block_defs_analysis(term.fblock, defs, proc_defs)
+        tdefs, term1 = block_defs_analysis(term.tblock, set(defs), proc_defs, proc_term)
+        defs, term2 = block_defs_analysis(term.fblock, defs, proc_defs, proc_term)
         defs.update(tdefs)
-        return defs
+        return [defs, term1 or term2]
     elif isinstance(term, RaiseTerminal)
-        return set()
+        return [set(), false]
     elif term == null
         for ins in block.contents
             print("LOC", ins.loc)
@@ -1287,12 +1292,12 @@ filter_flow_vars = (values):
 
 # When def tables are resolved, we can flow use-dependencies towards
 # the other direction.
-solve_flow_variables = (program, proc_defs):
+solve_flow_variables = (program, proc_defs, proc_term):
     red = true
     while red
         red = false
         for proc in program
-            live, red = block_solve_flow(proc.block, proc_defs, red)
+            live, red = block_solve_flow(proc.block, proc_defs, proc_term, red)
             # closure input frame consists of in_frame-flagged frames, and framed variables.
             # This means that the insertion is considerably different for closures.
             if live.length > 0
@@ -1323,11 +1328,11 @@ solve_flow_variables = (program, proc_defs):
                         for prec in proc.predecessors
                             prec.inputs.insert(0, v)
 
-block_solve_flow = (block, proc_defs, red):
+block_solve_flow = (block, proc_defs, proc_term, red):
     term = block.terminal
     if isinstance(term, Guard)
-        live1, red = block_solve_flow(term.tblock, proc_defs, red)
-        live2, red = block_solve_flow(term.fblock, proc_defs, red)
+        live1, red = block_solve_flow(term.tblock, proc_defs, proc_term, red)
+        live2, red = block_solve_flow(term.fblock, proc_defs, proc_term, red)
         live = set(filter_flow_vars(term.inputs)) | live1 | live2
     elif isinstance(term, Terminal)
         live = set(filter_flow_vars(term.outputs))
@@ -1336,19 +1341,52 @@ block_solve_flow = (block, proc_defs, red):
     for ins in reversed(block.contents)
         live.difference_update(filter_flow_vars(ins.outputs))
         if ins.branch and not ins.branch.closure
-            #assert ins.outputs.length == 
-            for x in live & proc_defs[ins.branch]
+            red = update_ins_boundary(live, ins, proc_defs, red)
+        if ins.branch and proc_term[ins.branch] == false
+            live = set()
+        live.update(filter_flow_vars(ins.inputs))
+    live.difference_update(block.inputs)
+    if block.guard and block.guard.terminal.tblock == block
+        term = block.guard.terminal
+        if term.branch
+            for x in live.intersection(proc_defs[term.branch])
+                assert x in proc_defs[ins.branch], "WAT"
                 red = true # because variable flow is changing
-                for tblock in ins.branch.get_terminal_blocks()
+                for tblock in term.branch.get_terminal_blocks()
                     outputs = tblock.terminal.outputs
                     outputs.insert(0, x)
                 # all predecessors, including this, has to be updated
-                for prec in ins.branch.predecessors
-                    prec.outputs.insert(0, x)
+                for prec in term.branch.predecessors
+                    prec.tblock.inputs.insert(0, x)
                 live.discard(x)
-        live.update(filter_flow_vars(ins.inputs))
-    live.difference_update(block.inputs)
     return [live, red]
+
+update_ins_boundary = (live, ins, proc_defs, red):
+    for x in live.intersection(proc_defs[ins.branch])
+        assert x in proc_defs[ins.branch], "WAT"
+        red = true # because variable flow is changing
+        for tblock in ins.branch.get_terminal_blocks()
+            outputs = tblock.terminal.outputs
+            outputs.insert(0, x)
+        # all predecessors, including this, has to be updated
+        for prec in ins.branch.predecessors
+            prec.outputs.insert(0, x)
+        live.discard(x)
+    return red
+
+trim_unreachable = (program, proc_term):
+    for proc in proc_term
+        if proc_term[proc] == true
+            continue
+        for ins in proc.predecessors
+            if not isinstance(ins, Instruction)
+                continue
+            block = ins.block
+            new_length = block.index(ins) + 1
+            while block.length > new_length
+                block.remove(block[block.length-1])
+            assert isinstance(block.terminal, Terminal), "TODO"
+            block.terminal = RaiseTerminal([])
 
 rewrite_flow_variables = (program, env):
     for proc in program
@@ -1382,7 +1420,7 @@ rewrite_fv_reads = (inputs, bindings, env):
         if inputs[i] in bindings
             inputs[i] = bindings[inputs[i]]
         assert not isinstance(inputs[i], FlowVariable),
-            [env.vartab.get(inputs[i], inputs[i]), list(bindings)]
+            [env.vartab.get(inputs[i], inputs[i]), list(bindings.items())]
 
 rewrite_fv_writes = (outputs, bindings, env):
     for i in range(outputs.length)
@@ -1532,7 +1570,7 @@ inline_functions = (program, new_var):
             # The continuation construction may leave this kind of
             # flanging branches, so we get rid of them.
             for ins in list(proc.predecessors)
-                if ins.block == null
+                if isinstance(ins, Instruction) and ins.block == null
                     proc.predecessors.discard(ins)
             # We only focus on trivial procedures here, for now.
             if not isinstance(proc.block.terminal, Terminal)
@@ -1554,9 +1592,11 @@ inline_functions = (program, new_var):
                 for ins in list(proc.predecessors)
                     inline_proc(ins, proc, new_var)
             # With some objects this means that we got an unneeded jump.
-            if proc.predecessors.length == 1 and list(proc.predecessors)[0].block.length == 1
-                for ins in list(proc.predecessors)
-                    inline_proc(ins, proc, new_var, true)
+            if proc.predecessors.length == 1
+                ins = list(proc.predecessors)[0]
+                if isinstance(ins, Instruction) and ins.block.length == 1
+                    for ins in list(proc.predecessors)
+                        inline_proc(ins, proc, new_var, true)
 
             # If we succeeded to remove the predecessors
             # it means we can remove the procedure.
@@ -1572,6 +1612,8 @@ inline_functions = (program, new_var):
         i += 1
 
 inline_proc = (base_ins, proc, new_var, frame_handled=false):
+    if not isinstance(base_ins, Instruction)
+        return
     if base_ins.block == null
         return
     base_block = base_ins.block
@@ -1658,14 +1700,16 @@ class Cont
         self.block.terminal = RaiseTerminal(outputs)
         self.is_terminated = true
 
-    guard = (self, opcode, inputs, outputs1, outputs2):
+    guard = (self, opcode, inputs, outputs1, outputs2, branch=null):
         if self.is_terminated
             return
         tblock = Block(self.block.proc, self.block)
         tblock.inputs = outputs1
         fblock = Block(self.block.proc, self.block)
         fblock.inputs = outputs2
-        self.block.terminal = Guard(opcode, inputs, tblock, fblock)
+        if branch
+            branch = branch.block.proc
+        self.block.terminal = Guard(opcode, inputs, tblock, fblock, branch)
         self.block.terminal.loc = self.loc
         self.is_terminated = true
         return [Cont(tblock), Cont(fblock)]
@@ -1806,7 +1850,7 @@ class Guard
         if branch
             branch.predecessors.add(self)
 
-class RaiseTerminal
+class RaiseTerminal            # When empty, represents 'unreachable'
     +init = (self, outputs):
         self.outputs = outputs
 
@@ -1945,7 +1989,7 @@ opcode_names = {
 # proc0() <- 
 #   global("print"; v1), call(v1, "Hello!";).
 
-print_program = (program, vartab={}, proc_defs=null):
+print_program = (program, vartab={}, proc_defs=null, proc_term=null):
     cr = false
     for proc in program
         if cr
@@ -1955,7 +1999,12 @@ print_program = (program, vartab={}, proc_defs=null):
         if proc_defs
             defs = proc_defs[proc]
             print("DEFS: ", format_vars(defs, vartab))
+        if proc_term
+            print("TERM?", proc_term[proc])
         cr = true
+    for var, name in vartab.items()
+        if isinstance(var, FlowVariable) and var.name
+            print(name ++ ":", var.name)
 
 print_clause = (clause, vartab):
     proc_name = "proc" ++ clause[0].proc.index.to_string()
@@ -1983,7 +2032,10 @@ print_clause = (clause, vartab):
                 sb.append("  ")
             else
                 sb.append(" ¬")
-            sb.append(opcode_names.get(terminal.opcode, terminal.opcode))
+            if terminal.opcode == o_branchx
+                sb.append("proc" ++ terminal.branch.index.to_string() ++ ":x")
+            else
+                sb.append(opcode_names.get(terminal.opcode, terminal.opcode))
             inputs  = format_vars(terminal.inputs, vartab)
             outputs = format_vars(block.inputs, vartab)
             sb.append(format_io(inputs, outputs))
@@ -2093,8 +2145,9 @@ to_json = (sources, program):
         rega = RegisterAllocator(const, proc.block.inputs)
         simple_live_analysis(proc.block, rega)
         encode_program(body, proc.block, rega, dict())
-        smap = SourceMapBuilder(proc.loc)
-        body = single_pass_assemble(body, smap)
+        output, sourcemap = single_pass_assemble(body, proc.loc)
+        if rega.outc == -1 # If reaching this point, we can conclude
+            rega.outc = 0  # that the function had no terminals.
         assert rega.outc == rega.outputs_written.length, 
             ["not all outputs written",
              list(rega.outputs_written),
@@ -2104,8 +2157,8 @@ to_json = (sources, program):
             "tmpc": rega.tmpc,
             "inc":  proc.block.inputs.length,
             "outc": rega.outc,
-            "body": body,
-            "sourcemap": smap.build(body.length),
+            "body": output,
+            "sourcemap": sourcemap,
         }
         program_json.append(proc_json)
     return {
@@ -2152,12 +2205,14 @@ simple_live_analysis = (block, rega):
         uses.update(rega.uses[tblock])
         for var in filter_vars(block.terminal.inputs)
             uses[var] = uses.get(var, 0) + 1
-    else
+    elif isinstance(block.terminal, RaiseTerminal)
         consistents = dict()
         rega.consistents[block] = consistents
         uses = dict()
         for var in filter_vars(block.terminal.outputs)
             uses[var] = uses.get(var, 0) + 1
+    else
+        assert false, block.terminal
     for ins in reversed(list(block))
         for var in filter_vars(ins.inputs)
             uses[var] = uses.get(var, 0) + 1
@@ -2222,16 +2277,19 @@ encode_program = (body, block, rega, bound):
         jump = AsmJump()
         body.append(jump)
         encode_program(body, block.terminal.tblock, rega, tbound)
-        assert body.pop() == o_terminal
+        opcode = body.pop()
+        assert opcode in [o_terminal]
         body.append(AsmLabel(jump))
-        body.append(o_terminal)
+        body.append(opcode)
         body.append(rega.add_defs(
             block.terminal.fblock, block.terminal.fblock.inputs, fbound))
         encode_program(body, block.terminal.fblock, rega, fbound)
-    else
+    elif isinstance(term, RaiseTerminal)
         body.append(o_raise)
         body.append(rega.add_uses(block, block.terminal.outputs, bound))
         body.append(o_terminal)
+    else
+        assert false, ""
 
 filter_vars = (variables):
     for var in variables
@@ -2292,32 +2350,6 @@ class RegisterAllocator
                 self.uses[block][var] -= uses
         return ret
 
-class SourceMapBuilder
-    +init = (self, top_loc=[0,0,0,0,0]):
-        self.sourcemap = []
-        self.committed = 0
-        self.top_loc = top_loc
-        self.top_bytes = 0
-
-    mark = (self, top_bytes, loc):
-        if loc == null
-            loc = self.top_loc
-        if loc == self.top_loc
-            self.top_bytes = top_bytes 
-        else
-            if self.top_bytes > self.committed
-                self.sourcemap.extend(reversed([self.top_bytes-self.committed] ++ self.top_loc))
-                self.committed = self.top_bytes
-            self.top_loc = loc
-            self.top_bytes = top_bytes
-
-    build = (self, top):
-        if top > self.committed
-            self.sourcemap.extend(reversed([self.top_bytes-self.committed] ++ self.top_loc))
-            self.committed = top
-            self.top_bytes = top
-        return list(reversed(self.sourcemap))
-
 class AsmLoc
     +init = (self, loc):
         self.loc = loc
@@ -2330,9 +2362,12 @@ class AsmLabel
     +init = (self, jump):
         self.jump = jump
 
-single_pass_assemble = (body, smap):
+# The 'single_pass_assemble' assumes that
+#   body is a sequence with: list, integer, asmloc, asmlabel or asmjump
+#   AsmLabel never appears before corresponding AsmJump.
+single_pass_assemble = (body, proc_loc):
     out = []
-    jumps = {}
+    smap = SourceMapBuilder()
     for code in reversed(body)
         if isinstance(code, list)
             out.extend(reversed(code))
@@ -2350,4 +2385,45 @@ single_pass_assemble = (body, smap):
         else
             assert false, code
     out.reverse()
-    return out
+    return [out, smap.build(out.length, proc_loc)]
+
+# SourceMapBuilder constructs a sourcemap (in reverse)
+# 'committed' is amount of bytes already mapped.
+# 'top_bytes' amount of bytes marked.
+class SourceMapBuilder
+    +init = (self, top_loc=[0,0,0,0,0]):
+        self.sourcemap = []
+        self.committed = 0
+        self.top_loc = top_loc
+        self.top_bytes = 0
+
+    mark = (self, top_bytes, loc):
+        # If the 'loc' is null, the outcome is we will map the
+        # bytes same way as the bytes coming after it.
+        if loc == null
+            loc = self.top_loc
+        # If the location is the same as one coming after,
+        # it is better to chunk them together.
+        if loc == self.top_loc
+            self.top_bytes = top_bytes 
+        elif self.top_bytes > self.committed
+            bytek = self.top_bytes - self.committed
+            self.sourcemap.extend(reversed([bytek] ++ self.top_loc))
+            self.committed = self.top_bytes
+            self.top_loc = loc
+            self.top_bytes = top_bytes
+        else
+            self.top_loc = loc
+            self.top_bytes = top_bytes
+
+    build = (self, top, proc_loc):
+        if top > self.committed
+            bytek = self.top_bytes - self.committed
+            self.sourcemap.extend(reversed([bytek] ++ self.top_loc))
+            self.committed = top
+            self.top_bytes = top
+        # If the procedure location is supplied, we will wrap
+        # it to the beginning of the source map.
+        if proc_loc
+            self.sourcemap.extend(reversed([0] ++ proc_loc))
+        return list(reversed(self.sourcemap))

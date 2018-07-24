@@ -92,7 +92,7 @@ class LiveGenerator(Iterator):
             try:
                 value, front = self.front.next()
                 return value, LiveGenerator(self.unit, self.stack, front)
-            except StopIteration:
+            except StopIteration as _:
                 pass
         stack = snapshot_stack(self.stack)
         return step_generator(self.unit, stack)
@@ -538,10 +538,6 @@ class SourceLocBuilder(Object):
             pc -= bytek
             i += 6
         return [wrap(0)] * 5, self.sources
-
-# Still missing:
-#   deref
-#   source locations
 
 # 'bind' instruction may be necessary for importing stuff from
 # other modules. And should use ! -syntax for describing mutables.
