@@ -28,7 +28,7 @@ def new_entry_point(config):
     def entry_point(raw_argv):
         try:
             mspace = modules.ModuleSpace(
-                local = String(u'prelude2'),
+                local = String(u'prelude'),
                 env = [base_module],
                 loader = w_json_loader,
                 parent = rt_mspace)

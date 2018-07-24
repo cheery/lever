@@ -5,7 +5,7 @@ language = grammar.read_file(dir ++ "lever-0.10.0.grammar")
 # The task of this software is to scan the prelude directory
 # and produce a .json dump for every file in there.
 main = ():
-    prelude = path(dir ++ "prelude2")
+    prelude = path(dir ++ "prelude")
     for entry in fs.scandir(prelude)
         if entry.type == "file" and entry.path.endswith(".lc")
             src = prelude ++ entry.path

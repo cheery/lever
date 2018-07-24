@@ -15,13 +15,15 @@ greedy_biclique_decomposition = (graph, get_edges):
     repeat
         bicliques = generator for vertex in graph repeat
             a = flow_edges[vertex]
-            b = flow_edges[a ==> rest]
+            first, rest = once(a)
+            b = flow_edges[first]
             except NoItems then continue
             for w in rest repeat
                 b.intersection_update(flow_edges[w])
             if a.length * b.length != 0 then
                 yield ((copy(a),copy(b)), a.length * b.length)
-        best_biclique, best_score = bicliques ==> rest
+        first, rest = once(bicliques)
+        best_biclique, best_score = first
         except NoItems then break
         for biclique, score in rest repeat
             if best_score < score then
@@ -37,7 +39,7 @@ greedy_biclique_decomposition = (graph, get_edges):
         var_id += 1
     return flow_variables
 
-## https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
+# https://en.wikipedia.org/wiki/Tarjan%27s_strongly_connected_components_algorithm
 tarjan_find_scc = (graph):
     table = dict()
     index = 0
@@ -47,7 +49,7 @@ tarjan_find_scc = (graph):
     strong_connect = (vertex):
         # set depth index for v to the smallest unused index
         stack.append(vertex)
-        v = {!index:index, !lowlink:index, !on_stack:true}
+        v = {!index=index, !lowlink=index, !on_stack=true}
         table[vertex] = v
         index += 1
         # consider successors of v

@@ -1,0 +1,244 @@
+import base
+import sample_module
+import ir
+
+# https://www.youtube.com/watch?v=bB336bDiq4o&index=20&list=RDs6aHXell_vk
+
+# The remaining type inference issues that I may meet.
+
+#   The tensor datatype may turn out to be hard to inference.
+
+#   The type inferencer produces operator constraints into the types.
+#   The simplification of those constraints may be hard.
+
+#   I seem to be missing a method to construct new abstract datatypes
+#   and a method to type inference datatypes is also missing.
+
+#   The match-instruction indicates that type information is weaker.
+
+#   The negative match-instruction followed by type error
+#   proposes errors may be converted into type constraints.
+
+main = ():
+    unit, frame, entries = inspect(sample_module.gcd)
+    ir_unit = ir.read_unit(unit)
+    print_program(ir_unit.program)
+#    for proc in ir_unit.program repeat
+#        print("proc" ++ stringify(proc.index) ++ " <- ")
+#        print(proc.block.inputs)
+#        for instruction in proc.block.contents repeat
+#            print(
+#                repr(instruction.opcode) ++
+#                repr(instruction.inputs) ++
+#                repr(instruction.outputs))
+#        if proc.block.terminal @ ir.Terminal(outputs) then
+#            print("terminal " ++ repr(outputs))
+
+#±o_is_true(a;):            a <: bool
+
+#+o_eq(a, b;):              (a, b) same domain, with eq (c,c) -> bool
+
+#-o_eq(a, b;):              no constraints.
+
+# Only valid when 'pat' is a constant.
+#+o_match(pat, val; attrs): val <: type(pat), val.x <: attr.x
+
+#-o_match(pat, val):        no constraints.
+
+#+o_next(it1; a, it2):      it1 <: iterator(a)
+#                           iterator(a) <: it2
+
+#-o_next(it1;):             it1 <: iterator(a)
+
+#o_move(a; b):              a <: b
+#o_move(a,b,c; d):          pack(a,b,c) <: d
+#o_move(d; a,b,c):          d <: pack(a,b,c)
+
+# only valid when a is constant.
+#o_global(a, val)           val <: global(a)
+#o_global(a; val)           global(a) <: val
+
+# only valid when name is constant.
+#o_attr(a, name; val)       a.name <: val
+#o_attr(a, name, val)       val <: a.name
+
+#o_item(a, index; val)      a[] <: val
+#o_item(a, index, val)      val <: a[]
+
+#o_true/o_false(;a)         bool <: a
+#o_call(a, b*; c*)          a <: b* -> c*
+#o_branch(...)              similar
+#o_branchx(...)             similar with exc
+#
+#o_terminal(a*)             a* <: result
+#o_raise(a;)                +a to exc
+#o_yield(a;)                a <: generator
+#o_yield_from(a;)           a <: iterable(generator)
+
+#o_deref(a; val)            deref(a) <: val
+#o_deref(a, val)            val <: deref(a)
+
+
+print_program = (program):
+    cr = false
+    for proc in program repeat
+        if cr then
+            print("")
+        print_procedure(proc)
+        cr = true
+
+print_procedure = (proc):
+    for clause in ir.clauses(proc.block) repeat
+        print_clause(clause)
+
+print_clause = (clause):
+    out = generator
+        proc_name = "proc" ++ stringify(clause[0].proc.index)
+        yield proc_name
+        inputs = format_vars(clause[0].inputs)
+        terminal = clause[clause.length-1].terminal
+        if terminal @ ir.Terminal(outputs) then
+            outputs = format_vars(outputs)
+        else if terminal @ ir.RaiseTerminal(outputs) then
+            outputs = format_vars(outputs)
+            if outputs.length == 0 then
+                outputs.append("raise <empty>")
+            else
+                outputs[0] = "raise " ++ outputs[0]
+        else if terminal @ ir.Guard(opcode, inputs, tblock, fblock) then
+            outputs = ["<guard>"]
+        else
+            outputs = ["<unterminated>"]
+        yield format_io(inputs, outputs)
+        sp = " <- \n  "
+        for block in clause repeat
+            if block.guard != ir.initial then
+                if block.guard.terminal @ ir.Guard(opcode, inputs, tblock, fblock)
+                then
+                    if block == tblock then
+                        yield "  "
+                    else
+                        yield " ¬"
+                    yield repr(opcode)
+                    inputs  = format_vars(inputs)
+                    outputs = format_vars(block.inputs)
+                    yield format_io(inputs, outputs)
+                    sp = ", "
+            for ins in block.contents repeat
+                yield sp
+                if ins.opcode == ir.vmoptable.o_branch then
+                    yield "proc" ++ stringify(ins.branch.index)
+                else
+                    yield repr(ins.opcode)
+                inputs  = format_vars(ins.inputs)
+                outputs = format_vars(ins.outputs)
+                yield format_io(inputs, outputs)
+                if ins.opcode == ir.vmoptable.o_frame then
+                    cls = []
+                    for clos in ins.frame repeat
+                        cl = ""
+                        if clos.is_generator then
+                            cl ++= "gen "
+                        if clos.in_frame then
+                            cl ++= "rec "
+                        es = []
+                        for entry in clos.entries repeat
+                            es.append("proc" ++ stringify(entry.index))
+                        cl ++= ", ".join(es)
+                        cls.append(cl)
+                    yield "{" ++ ", ".join(cls) ++ "}"
+                sp = ", "
+        yield "."
+    print("".join(out))
+
+format_io = (inputs, outputs; signature):
+    if inputs.length == 0 and outputs.length == 0 then
+        signature = "()"
+    else if outputs.length == 0 then
+        signature = "(" ++ ", ".join(inputs) ++ ";)"
+    else
+        io = [", ".join(inputs), ", ".join(outputs)]
+        signature = "(" ++ "; ".join(io) ++ ")"
+
+format_vars = (variables; result):
+    result = []
+    for var in variables repeat
+        if var @ ir.Variable(varid) then
+            result.append("v" ++ repr(varid))
+        else if var @ ir.Constant(value) then
+            result.append(repr(value))
+        else
+            result.append(repr(var))
+
+
+    #show_base_module_contents()
+
+    #foo = just(5)
+    #print(foo)
+    #just(y) = foo
+    #print(y)
+    #if foo @ just(x) then
+    #    print(x)
+
+    #rg = {foo: 10, !bar: 20}
+    #print(rg.foo)
+    #print(rg.bar)
+    #rg.bar = 2
+    #print(rg.bar)
+    #{foo, bar} = rg
+    #print(foo)
+    #print(bar)
+
+# numerics -system.
+# dimensions
+# stride (increasing)
+# topmost kind first.
+
+# some_other_func = ():
+#     contents = module_contents_list(sample_module)
+#     print("sample_module contents:")
+#     for name in contents repeat
+#         print("  " ++ name)
+#     print("Examining closure sample_module.gcd")
+#     unit, frame, entries = inspect(sample_module.gcd)
+#     for k, entry in enumerate(entries) repeat
+#         print("  entry[" ++ repr(k) ++ "] = " ++ repr(entry))
+#     entry = entries[0]
+#     print("printing proc(" ++ stringify(entry) ++ ")")
+#     procedure = unit.program[entry]
+#     for key, value in procedure repeat
+#         print("  " ++ key ++ " = " ++ repr(value))
+#     print("printing the first instruction")
+#     body = procedure["body"]
+#     pc = 0
+#     valid_guards = set()
+#     while pc < body.length repeat
+#         print("pc=" ++ repr(pc))
+#         pc, opcode = decode_opcode(body, pc)
+#         group = opcode & 7
+#         print("opcode=" ++ name_table.get(opcode, repr(opcode)))
+#         print("opcode group=" ++ repr(group))
+
+show_base_module_contents = ():
+    print("BASE MODULE CONTENTS")
+    contents = module_contents_list(base)
+    contents.sort()
+    for name in contents repeat
+        object = get_attribute(base, name)
+        if kind(object) == AtomKind then
+            print(name ++ "/" ++ stringify(object.arity))
+        else if is_literal(name) then
+            print(name)
+        else
+            print("(" ++ name ++ ")")
+        if has_properties(object) then
+            for property, value in object.properties repeat
+                if property == documentation then
+                    continue
+                print("  " ++ repr(property).ljust(40) ++ repr(value))
+
+is_literal = (name):
+    for char in name repeat
+        if not (char.is_alpha() or char.is_digit() or char == "_") then
+            return false
+    return true

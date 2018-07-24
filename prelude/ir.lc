@@ -1,0 +1,271 @@
+import vmoptable
+
+no_closure = Atom(0)
+Variable = Atom(1)
+Constant = Atom(1)
+
+read_unit = (unit; ir_unit):
+    env = {
+        constants = unit.constants,
+        !next_varid = 0}
+    program = []
+    for i, procedure in enumerate(unit.program) repeat
+        entry = new_block([])
+        proc = {
+            !index = i,
+            block = entry,
+            !closure = no_closure,
+            predecessors = set()
+        }
+        entry.proc = proc
+        program.append(proc)
+
+    for i, procedure in enumerate(unit.program) repeat
+        proc = program[i]
+        valid_guards = dict()
+        body = procedure['body']
+        pc   = 0
+        block = proc.block
+        bindings = dict(generator
+            for ix in range(procedure['inc']) repeat
+                yield ((ix<<2)|1, Variable(env.next_varid))
+                env.next_varid += 1)
+        block.inputs.extend(generator
+            for ix in range(procedure['inc']) repeat
+                yield bindings[(ix<<2)|1])
+        while pc < body.length repeat
+            pc, opcode = decode_opcode(body, pc)
+            group = group_table[opcode & 7]
+            if group == vmoptable.o_simple then
+                opcode = name_table[opcode]
+                pc, inputs = decode_list(body, pc)
+                pc, outputs = decode_list(body, pc)
+                if opcode == vmoptable.o_move and inputs.length == outputs.length then
+                    for i, val in enumerate(read_vars(inputs, bindings, env))
+                    repeat
+                        ix = outputs[i]
+                        bindings[ix] = val
+                    continue
+                instruction = {opcode = opcode,
+                    inputs = read_vars(inputs, bindings, env),
+                    outputs = write_vars(outputs, bindings, env),
+                    !block = block}
+            else if group == vmoptable.o_branch then
+                branch = program[opcode >> 3]
+                pc, inputs = decode_list(body, pc)
+                pc, outputs = decode_list(body, pc)
+                instruction = {
+                    opcode = vmoptable.o_branch,
+                    branch = branch,
+                    inputs = read_vars(inputs, bindings, env),
+                    outputs = write_vars(outputs, bindings, env),
+                    !block = block}
+                branch.predecessors.add(instruction)
+            else if group == vmoptable.o_frame then
+                pc, inputs = decode_list(body, pc)
+                pc, outputs = decode_list(body, pc)
+                frame = []
+                for i, out in enumerate(outputs) repeat
+                    pc, in_frame, is_generator, entries = decode_frame(body, pc)
+                    frame.append({
+                        entries = list(generator for entry in entries repeat
+                            yield program[entry]),
+                        !in_frame = in_frame,
+                        is_generator = is_generator,
+                        !instruction = unattached})
+                instruction = {opcode = vmoptable.o_frame,
+                    inputs = read_vars(inputs, bindings, env),
+                    outputs = write_vars(outputs, bindings, env),
+                    frame = frame,
+                    !block = block}
+                for closure in frame repeat
+                    closure.instruction = instruction
+                    for subproc in closure.entries repeat
+                        #if subproc.closure then
+                        #    raise TypeError
+                        subproc.closure = closure
+            else if group == vmoptable.o_branchx then
+                branch = program[opcode >> 3]
+                branch.predecessors.add(proc)
+                pc, inputs = decode_list(body, pc)
+                pc, outputs = decode_list(body, pc)
+                pc, jump = decode_jump(body, pc)
+                inputs = read_vars(inputs, bindings, env)
+                fblock = new_block([])
+                fblock.proc = proc
+                fblock.guard = block
+                valid_guards[jump] = fblock, dict(bindings)
+                tblock = new_block(write_vars(outputs, bindings, env))
+                tblock.proc = proc
+                tblock.guard = block
+                block.terminal = Guard(vmoptable.o_branchx, inputs,
+                    tblock, fblock)
+                block = tblock
+                continue
+            else if group == vmoptable.o_guard then
+                opcode = name_table[opcode]
+                pc, inputs = decode_list(body, pc)
+                pc, outputs = decode_list(body, pc)
+                pc, jump = decode_jump(body, pc)
+                inputs = read_vars(inputs, bindings, env)
+                fblock = new_block([])
+                fblock.proc = proc
+                fblock.guard = block
+                valid_guards[jump] = fblock, dict(bindings)
+                tblock = new_block(write_vars(outputs, bindings, env))
+                tblock.proc = proc
+                tblock.guard = block
+                block.terminal = Guard(opcode, inputs,
+                    tblock, fblock)
+                block = tblock
+                continue
+            else if group == vmoptable.o_ionly then
+                opcode = name_table[opcode]
+                pc, inputs = decode_list(body, pc)
+                if opcode == vmoptable.o_raise then
+                    inputs = read_vars(inputs, bindings, env)
+                    block.terminal = RaiseTerminal(inputs)
+                    continue
+                instruction = {opcode = opcode,
+                    inputs = read_vars(inputs, bindings, env),
+                    outputs = [],
+                    !block = block}
+            else if group == vmoptable.o_oonly then
+                opcode = name_table[opcode]
+                pc, outputs = decode_list(body, pc)
+                instruction = {opcode = opcode,
+                    inputs = [],
+                    outputs = write_vars(outputs, bindings, env),
+                    !block = block}
+            else if group == vmoptable.o_terminal then
+                block.terminal = new_terminal(
+                    procedure['outc'], bindings, env)
+                if pc-1 in valid_guards then
+                    block, bindings = valid_guards[pc-1]
+                    pc, outputs = decode_list(body, pc)
+                    outputs = write_vars(outputs, bindings, env)
+                    block.inputs.extend(outputs)
+                    continue
+                else
+                    break
+            else
+                print(group)
+                break
+            if block.terminal == unterminated then
+                block.contents.append(instruction)
+    ir_unit = {program = program, !next_varid=env.next_varid}
+
+unattached = Atom(0)
+initial    = Atom(0)
+
+unterminated = Atom(0)
+RaiseTerminal = Atom(1) # Has list of outputs.
+Terminal = Atom(1) # Has list of outputs.
+Guard    = Atom(4) # opcode, inputs, tblock, fblock 
+
+new_block = (inputs):
+    return {
+        !proc = unattached,
+        !guard = initial,
+        inputs = list(inputs),
+        contents = [],
+        !terminal = unterminated }
+
+new_terminal = (outc, bindings, env):
+    return Terminal(read_vars(
+        (generator for ix in range(outc) repeat
+            yield (ix<<2)|2),
+        bindings,
+        env))
+
+read_vars = (input_codes, bindings, env):
+    inputs = []
+    for ix in input_codes repeat
+        flag = ix&3
+        if flag == 0 then        # temporary
+            value = bindings[ix]
+            inputs.append(value)
+        else if flag == 1 then   # input
+            value = bindings[ix]
+            inputs.append(value)
+        else if flag == 2 then   # output
+            value = bindings[ix]
+            inputs.append(value)
+        else
+            const = env.constants[ix >> 2]
+            inputs.append(Constant(const))
+    return inputs
+
+write_vars = (output_codes, bindings, env):
+    outputs = []
+    for ix in output_codes repeat
+        flag = ix&3
+        if flag == 0 then        # temporary
+            value = Variable(env.next_varid)
+            env.next_varid += 1
+            bindings[ix] = value
+            outputs.append(value)
+        else if flag == 1 then   # input
+            raise TypeError # Cannot write to input
+        else if flag == 2 then   # output
+            value = Variable(env.next_varid)
+            env.next_varid += 1
+            bindings[ix] = value
+            outputs.append(value)
+        else
+            raise TypeError # Constants not accepted on this side.
+    return outputs
+
+group_table = snapshot(dict(generator
+    for name, atom, code in vmoptable.groups repeat
+        yield (code, atom)))
+
+name_table = snapshot(dict(generator
+    for name, atom, code in vmoptable.opcodes repeat
+        yield (code, atom)))
+
+decode_opcode = (body, index):
+    opcode = body[index]
+    return index+1, opcode
+
+decode_list = (body, index):
+    count = body[index]
+    k0 = index+1
+    k1 = index+count+1
+    result = list(generator
+        for k in range(k0, k1) repeat yield body[k])
+    return k1, result
+
+decode_frame = (body, index):
+    info = body[index]
+    in_frame = (info & 1 == 1)
+    is_generator = (info & 2 == 2)
+    count = (info >> 2)
+    k0 = index+1
+    k1 = index+count+1
+    entries = list(generator
+        for k in range(k0, k1) repeat yield body[k])
+    return k1, in_frame, is_generator, entries
+
+decode_jump = (body, index):
+    offset = body[index]
+    return index+1, index+1+offset
+
+# Retrieval of every clause in the program forms
+# the basis for printing and operating on the IR.
+clauses = (block): return generator
+    unvisited = [block]
+    while unvisited.length > 0 repeat
+        block = unvisited.pop()
+        if block.terminal @ Guard(opcode, inputs, tblock, fblock) then
+            unvisited.append(fblock)
+            unvisited.append(tblock)
+        else
+            blocks = []
+            blocks.append(block)
+            block = block.guard
+            while block != initial repeat
+                blocks.append(block)
+                block = block.guard
+            blocks.reverse()
+            yield blocks

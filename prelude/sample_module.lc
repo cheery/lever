@@ -1,0 +1,15 @@
+# The sample module consists of few simple programs
+# that are meant for testing the IR.
+
+gcd = (a, b; ret):
+    if b != 0 then
+        gcd(b, a%b; ret)
+    else
+        ret = a
+
+fibonacci = (a; ret):
+    if a == 1 or a == 2 then
+        ret = 1
+    else
+        ret = fibonacci(a-2) + fibonacci(a-1)
+
