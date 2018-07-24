@@ -1,6 +1,8 @@
 from graph_utils import
     greedy_biclique_decomposition
 
+#TODO: Modify for the new syntax.
+
 # The type inferencer forms a state machine. States have flow
 # edges and transitions. Most of this is described in
 # Stephen Dolan's MLsub thesis.
